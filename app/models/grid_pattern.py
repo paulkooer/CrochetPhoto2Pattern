@@ -28,44 +28,15 @@ class GridPattern:
     symbol_map: Dict[int, str]
 
 
-_YARN_COLORS: List[Tuple[Tuple[int, int, int], str]] = [
-    ((255, 228, 196), "米色"),
-    ((255, 218, 185), "桃肤色"),
-    ((245, 194, 158), "浅肤色"),
-    ((210, 140,  80), "棕肤色"),
-    ((139,  90,  43), "深棕色"),
-    ((255, 255, 255), "白色"),
-    ((240, 240, 240), "浅灰色"),
-    ((180, 180, 180), "灰色"),
-    ((100, 100, 100), "深灰色"),
-    (( 30,  30,  30), "黑色"),
-    ((255,   0,   0), "红色"),
-    ((220,  50,  50), "暗红色"),
-    ((255, 150, 150), "粉红色"),
-    ((255, 105, 180), "玫红色"),
-    ((255, 200,   0), "金黄色"),
-    ((255, 165,   0), "橙色"),
-    ((255, 255,   0), "黄色"),
-    (( 50, 205,  50), "草绿色"),
-    ((  0, 128,   0), "深绿色"),
-    ((  0, 200, 200), "青色"),
-    ((  0, 120, 215), "蓝色"),
-    (( 70, 130, 180), "钢蓝色"),
-    ((128,   0, 128), "紫色"),
-    ((216, 191, 216), "薰衣草色"),
-]
+# Yarn table + perceptual matching live in app.models.colors (shared source)
+from .colors import nearest_yarn
 
 _SYMBOLS = "■▲●◆★✦◉▼⊕①②③④⑤⑥⑦⑧⑨⑩"
 
 
 def _nearest_yarn_name(r: int, g: int, b: int) -> Tuple[str, Tuple[int, int, int]]:
-    """Find the nearest yarn color (name + quantized RGB) by Euclidean distance."""
-    best_name, best_rgb, best_dist = "未知色", (r, g, b), float("inf")
-    for (cr, cg, cb), name in _YARN_COLORS:
-        dist = (r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2
-        if dist < best_dist:
-            best_dist, best_name, best_rgb = dist, name, (cr, cg, cb)
-    return best_name, best_rgb
+    """Find the nearest yarn color (name + table RGB) by perceptual Lab distance."""
+    return nearest_yarn(r, g, b)
 
 
 def generate_grid_pattern(

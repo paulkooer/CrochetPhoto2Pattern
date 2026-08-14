@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict, Literal, Optional
+from typing import List, Literal, Optional
 
 class CrochetStitch(BaseModel):
     row: int = Field(gt=0)
@@ -18,16 +18,6 @@ class CrochetPart(BaseModel):
     color: str
     notes: Optional[str] = None
     magic_ring: bool = False
-
-class CrochetPattern(BaseModel):
-    character_name: str
-    materials: List[Dict[str, str]]  # name, quantity, etc.
-    parts: List[CrochetPart]
-    assembly_instructions: str
-    difficulty: str  # easy, medium, hard
-    estimated_time_minutes: int
-    total_estimated_uses: Optional[int] = None
-    notes: Optional[str] = None
 
 class ImageAnalysis(BaseModel):
     body_type: str

@@ -66,14 +66,23 @@ pytest tests/ -v
 ```
 CrochetPhoto2Pattern/
 ├── app/
-│   ├── main.py              # Streamlit 入口
+│   ├── main.py              # Streamlit 入口（薄壳：配置 + Tab 分发）
 │   ├── schemas.py           # Pydantic 数据模型
 │   ├── models/
 │   │   ├── image_parser.py  # Vision API 图像解析
 │   │   ├── structure_designer.py  # 3D 结构设计
 │   │   ├── crochet_params.py      # 钩织参数生成
 │   │   ├── grid_pattern.py        # 2D 像素网格图案
+│   │   ├── colors.py              # 共享毛线色表 + Lab 感知色距
 │   │   └── orchestrator.py        # 流水线编排
+│   ├── ui/
+│   │   ├── sidebar.py             # API Key 配置
+│   │   ├── tab_photo.py           # 照片识别 Tab
+│   │   ├── tab_manual.py          # 手动输入 Tab
+│   │   ├── tab_grid.py            # 2D 网格 Tab
+│   │   └── result_renderer.py     # 结果渲染（进度/修正/导出）
+│   ├── utils/
+│   │   └── exporters.py           # Markdown 导出
 │   └── prompts/             # LLM 提示词模板
 ├── tests/                   # 自动化测试
 ├── docs/                    # 文档

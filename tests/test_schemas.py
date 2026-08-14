@@ -1,6 +1,6 @@
 """Tests for Pydantic schemas."""
 import pytest
-from app.schemas import ImageAnalysis, CrochetStitch, CrochetPart, CrochetPattern
+from app.schemas import ImageAnalysis, CrochetStitch, CrochetPart
 
 
 def test_image_analysis_valid():

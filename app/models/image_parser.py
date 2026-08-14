@@ -49,43 +49,14 @@ def _image_to_base64(image: Image.Image, max_size: int = 1024) -> str:
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-# Yarn color name lookup table: (R, G, B) → yarn name
-_YARN_COLORS = [
-    ((255, 228, 196), "米色"),
-    ((255, 218, 185), "桃肤色"),
-    ((245, 194, 158), "浅肤色"),
-    ((210, 140,  80), "棕肤色"),
-    ((139,  90,  43), "深棕色"),
-    ((255, 255, 255), "白色"),
-    ((240, 240, 240), "浅灰色"),
-    ((180, 180, 180), "灰色"),
-    ((100, 100, 100), "深灰色"),
-    (( 30,  30,  30), "黑色"),
-    ((255,   0,   0), "红色"),
-    ((220,  50,  50), "暗红色"),
-    ((255, 150, 150), "粉红色"),
-    ((255, 105, 180), "玫红色"),
-    ((255, 200,   0), "金黄色"),
-    ((255, 165,   0), "橙色"),
-    ((255, 255,   0), "黄色"),
-    (( 50, 205,  50), "草绿色"),
-    ((  0, 128,   0), "深绿色"),
-    ((  0, 200, 200), "青色"),
-    ((  0, 120, 215), "蓝色"),
-    (( 70, 130, 180), "钢蓝色"),
-    ((128,   0, 128), "紫色"),
-    ((216, 191, 216), "薰衣草色"),
-]
+# Yarn color matching lives in app.models.colors (shared with grid_pattern,
+# perceptual Lab distance). `_nearest_yarn` is kept as the public local name.
+from .colors import nearest_yarn
 
 
 def _nearest_yarn(r: int, g: int, b: int) -> str:
-    """Find the nearest yarn color name using Euclidean distance in RGB space."""
-    best_name, best_dist = "未知色", float("inf")
-    for (cr, cg, cb), name in _YARN_COLORS:
-        dist = (r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2
-        if dist < best_dist:
-            best_dist, best_name = dist, name
-    return best_name
+    """Find the nearest yarn color name (perceptual Lab distance)."""
+    return nearest_yarn(r, g, b)[0]
 
 
 def extract_color_palette(image: Image.Image, n_colors: int = 5) -> list[str]:
