@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crochet-photo2pattern"
+version = "0.1.0"
+description = "AI-powered Amigurumi crochet pattern generator from photos"
+requires-python = ">=3.9"
+dependencies = [
+    "streamlit>=1.40.0",
+    "openai>=1.0.0",
+    "anthropic>=0.95.0",
+    "pydantic>=2.0",
+    "pillow>=10.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]

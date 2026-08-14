@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Test / tooling caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments & secrets
+.env
+.venv/
+venv/
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
