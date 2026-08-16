@@ -1,0 +1,46 @@
+"""Tests for gauge（小样密度单一事实来源，M4.15）。"""
+
+from app.models.gauge import DEFAULT, PRESETS, gauge_from_ui
+
+
+def test_classic_preset_preserves_behavior():
+    assert DEFAULT.stitches_for_diameter(9.0) == 36   # 经典锚点不变
+    assert abs(DEFAULT.stitch_w_cm - 0.769) < 0.01
+    assert abs(DEFAULT.row_h_cm - 0.625) < 0.01
+
+
+def test_fine_preset_matches_real_amigurumi():
+    """紧密玩偶规格下 9cm 头应落在 fable5 预测的 48–60 针区间。"""
+    n = PRESETS["fine"].stitches_for_diameter(9.0)
+    assert 48 <= n <= 60, n
+
+
+def test_aspect_within_physical_range():
+    """短针物理上高>宽（外部实务 w/h≈0.67–0.83）——除 classic 外预设须落区间内。"""
+    for name in ("dk", "fine"):
+        assert 0.6 <= PRESETS[name].aspect_wh <= 0.9, name
+
+
+def test_hook_labels_by_stitch_width():
+    assert "2.0–2.5" in PRESETS["fine"].hook_yarn_label
+    assert "4–5" in PRESETS["classic"].hook_yarn_label  # 特粗（旧"2.5mm"标签的修正）
+
+
+def test_grams_scale_with_area():
+    assert PRESETS["fine"].grams_per_stitch < DEFAULT.grams_per_stitch
+
+
+def test_unified_row_height_across_parts():
+    """行高是纱线属性：同一 gauge 下身体/四肢圈数换算共用同一行高。"""
+    g = PRESETS["fine"]
+    assert g.rounds_for_height(4.5) == g.rounds_for_height(4.5)
+    assert g.rounds_for_height(3.2) == int(3.2 / g.row_h_cm + 0.5)
+
+
+def test_gauge_from_ui_custom_and_fallback():
+    g = gauge_from_ui("custom", 22.0, 30.0)
+    assert (g.stitches_per_10cm, g.rows_per_10cm) == (22.0, 30.0)
+    assert gauge_from_ui("classic", None, None) is DEFAULT
+    assert gauge_from_ui("custom", None, None) is DEFAULT  # 空值回退
+    clamped = gauge_from_ui("custom", 999, -5)             # 越界钳制到边界
+    assert (clamped.stitches_per_10cm, clamped.rows_per_10cm) == (40.0, 8.0)

@@ -7,11 +7,18 @@ import uuid
 import streamlit as st
 
 from app.models.crochet_params import CrochetParamsGenerator
+from app.models.gauge import gauge_from_ui
 from app.models.structure_designer import StructureDesigner
 from app.schemas import PART_NAMES, ImageAnalysis
 from app.ui.result_renderer import purge_result_state, render_results
 
 logger = logging.getLogger(__name__)
+
+
+def _gauge_values():
+    import streamlit as st
+    return (st.session_state.get("gauge_preset", "classic"),
+            st.session_state.get("gauge_st_input"), st.session_state.get("gauge_rw_input"))
 
 
 def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
@@ -21,7 +28,9 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
     PipelineOrchestrator（那会连带初始化 ImageParser 并加载 prompt 文件）。
     """
     structure = StructureDesigner.design_3d_structure(analysis)
-    params = CrochetParamsGenerator.generate_params(analysis, structure)
+    params = CrochetParamsGenerator.generate_params(
+        analysis, structure,
+        gauge=gauge_from_ui(*_gauge_values()))
     return {
         "analysis": analysis.model_dump(),
         "structure": structure,

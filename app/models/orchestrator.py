@@ -34,6 +34,7 @@ class PipelineOrchestrator:
         image: Image.Image,
         progress_cb: Optional[ProgressCB] = None,
         local_vision: bool = False,
+        gauge=None,
     ) -> Dict[str, Any]:
         """Run the complete pipeline: parse → design → generate params.
 
@@ -71,10 +72,18 @@ class PipelineOrchestrator:
         _report(70, "Step 3/3: 生成钩织参数...")
         # 照片纵向色带 → 逐圈配色（让针法配色来自照片本身）
         from .color_design import vertical_color_bands
+        from .gauge import DEFAULT as DEFAULT_GAUGE
 
+        gauge = gauge or DEFAULT_GAUGE
         color_bands = vertical_color_bands(image)
+        # M1.1：照片宽度剖面 → 身体轮廓驱动（AmiGo 旋转体范式的单图简化）
+        body_profile = None
+        sil = (self.parser.last_local_meta or {}).get("silhouette") or {}
+        if isinstance(sil.get("profile"), list) and sil["profile"]:
+            body_profile = [float(v) for v in sil["profile"]]
         params = self.params_generator.generate_params(
-            analysis, structure, color_bands=color_bands or None
+            analysis, structure, color_bands=color_bands or None,
+            body_profile=body_profile, gauge=gauge,
         )
         logger.info("Parameters generated: %d parts, difficulty=%s, %d color bands",
                     len(params.get("parts", [])), params.get("difficulty"),
@@ -88,4 +97,7 @@ class PipelineOrchestrator:
             "usage": self.parser.last_usage,
             # 本地视觉估算的依据（LLM 路径为空 dict）
             "vision_meta": self.parser.last_local_meta,
+            # 本次使用的 gauge（渲染轮廓 SVG 时需要针宽/行高）
+            "gauge": {"stitches_per_10cm": gauge.stitches_per_10cm,
+                      "rows_per_10cm": gauge.rows_per_10cm},
         }

@@ -114,10 +114,13 @@ def analyze(image: Image.Image, n_colors: int = 5) -> Tuple[ImageAnalysis, Dict[
     profile = _silhouette_profile(image)
     parts = list(_CANONICAL_PARTS)
     silhouette: Dict[str, Any] = {}
-    if profile is not None and _has_bottom_flare(profile):
-        parts.append("裙子")
-        silhouette = {"flare": True,
-                      "note": "检测到下摆展开的轮廓，已自动添加裙子部件"}
+    if profile is not None:
+        # M1.1：完整剖面透传下游（此前只消费了一个裙摆布尔——信息漏斗）
+        silhouette = {"profile": [round(v, 3) for v in profile]}
+        if _has_bottom_flare(profile):
+            parts.append("裙子")
+            silhouette["flare"] = True
+            silhouette["note"] = "检测到下摆展开的轮廓，已自动添加裙子部件"
 
     if box is None:
         meta: Dict[str, Any] = {
@@ -138,13 +141,20 @@ def analyze(image: Image.Image, n_colors: int = 5) -> Tuple[ImageAnalysis, Dict[
 
     _x, _y, face_w, face_h = box
     head_px = max(face_w, face_h, 1)
-    subject_px = H * FRAME_FILL_RATIO
+    # M1.4：主体高度取剖面首/末超阈行（此前用 0.9×图高盲设）
+    if profile is not None:
+        rows = [i for i, w in enumerate(profile) if w > 0.08]
+        subject_px = ((rows[-1] - rows[0] + 1) / len(profile)) * H if rows else H * 0.9
+    else:
+        subject_px = H * FRAME_FILL_RATIO
     ratio = min(max(subject_px / head_px, MIN_BODY_RATIO), MAX_BODY_RATIO)
     height_cm = round(DEFAULT_HEAD_CM * ratio, 1)
     body_type = "胖" if ratio <= 3.0 else ("标准" if ratio <= 5.5 else "瘦")
+    head_span = (round(box[1] / H, 3), round((box[1] + box[3]) / H, 3))
     meta = {
         "source": "opencv-face",
         "face_box": [int(v) for v in box],
+        "head_span": head_span,  # M1.3：实测头部纵向占比（先展示，暂不替代先验）
         "body_ratio": round(ratio, 2),
         "head_cm_anchor": DEFAULT_HEAD_CM,
         "note": (

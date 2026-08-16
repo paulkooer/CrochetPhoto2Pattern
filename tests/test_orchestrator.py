@@ -21,7 +21,7 @@ def test_full_pipeline_returns_three_stage_result():
     with patch.object(ImageParser, "parse_image", return_value=_analysis()):
         result = orch.run_full_pipeline(Image.new("RGB", (40, 40)))
     assert set(result.keys()) == {
-        "analysis", "structure", "params", "usage", "vision_meta",
+        "analysis", "structure", "params", "usage", "vision_meta", "gauge",
     }
     assert result["analysis"]["body_type"] == "标准"
     assert len(result["structure"]["parts"]) == 2

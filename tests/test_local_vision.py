@@ -107,7 +107,10 @@ def test_full_pipeline_local_vision_mode(monkeypatch):
                         lambda _img: (60, 30, 80, 80))
     orch = PipelineOrchestrator()
     result = orch.run_full_pipeline(_img(), local_vision=True)
-    assert set(result.keys()) == {"analysis", "structure", "params", "usage", "vision_meta"}
+    assert set(result.keys()) == {
+        "analysis", "structure", "params", "usage", "vision_meta", "gauge",
+    }
+    assert result["gauge"]["stitches_per_10cm"] > 0  # gauge 透传（M4.15）
     assert result["analysis"]["body_type"] == "标准"
     assert [p.name for p in result["params"]["parts"]] == ["头部", "身体", "手臂", "腿部"]
     assert result["vision_meta"]["source"] == "opencv-face"
@@ -157,7 +160,8 @@ def test_straight_silhouette_no_skirt(monkeypatch):
     monkeypatch.setattr(lv, "_detect_face", lambda _i: None)
     analysis, meta = lv.analyze(_person(dress=False))
     assert "裙子" not in analysis.parts
-    assert "silhouette" not in meta
+    # 剖面始终透传（M1.1），但无裙摆时不带 flare 标记
+    assert not (meta.get("silhouette") or {}).get("flare")
 
 
 def test_silhouette_profile_normalized():
@@ -205,3 +209,27 @@ def test_no_image_no_colorwork():
     head = result["params"]["parts"][0]
     assert all(r.color is None for r in head.rounds)
     assert "换线" not in (head.notes or "")
+
+
+def test_photo_driven_profile_body_end_to_end():
+    """照片剖面 → 身体轮廓驱动（M1.2 端到端）：梨形剪影产出的身体逐圈针数
+    随剖面变化，而非等粗圆柱；且结果带 gauge 供渲染层使用。"""
+    from PIL import Image, ImageDraw
+
+    from app.models.orchestrator import PipelineOrchestrator as Orch
+
+    img = Image.new("RGB", (200, 400), (245, 245, 245))
+    d = ImageDraw.Draw(img)
+    d.ellipse([75, 5, 125, 55], fill=(230, 180, 150))                    # 头
+    d.polygon([(85, 60), (115, 60), (150, 250), (50, 250)], fill=(0, 120, 215))  # 梨形身
+    d.rounded_rectangle([55, 255, 90, 395], radius=12, fill=(70, 130, 180))
+    d.rounded_rectangle([110, 255, 145, 395], radius=12, fill=(70, 130, 180))
+    result = Orch().run_full_pipeline(img, local_vision=True)
+    body = [p for p in result["params"]["parts"] if p.name == "身体"][0]
+    assert body.type == "profile"
+    wall = [r.stitches for r in body.rounds]
+    n_dome = wall[0] // 6
+    wall_st = wall[n_dome:]
+    assert len(set(wall_st)) > 1, f"剖面驱动身体不应是等粗筒: {wall_st}"
+    assert "照片驱动轮廓身体" in body.notes
+    assert result["gauge"]["stitches_per_10cm"] > 0

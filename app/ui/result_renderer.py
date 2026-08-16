@@ -129,6 +129,35 @@ def render_results(result: dict, slot: str) -> None:
 
     # Section 2: Structure
     st.subheader("2️⃣ 立体结构设计")
+    profile_parts = [p for p in params.get("parts", [])
+                     if getattr(p, "type", None) == "profile"]
+    if profile_parts:
+        with st.expander("📐 轮廓对应验证（生成侧影 vs 照片剖面）", expanded=False):
+            try:
+                import streamlit.components.v1 as _components
+
+                from app.models.color_design import PART_SPAN as _SPAN
+                from app.models.gauge import Gauge as _G
+                from app.models.profile_shaping import render_silhouette_svg as _svg
+
+                _gd = result.get("gauge") or {}
+                _gauge = _G(_gd.get("stitches_per_10cm", 13.0),
+                            _gd.get("rows_per_10cm", 16.0))
+                _photo = ((result.get("vision_meta") or {})
+                          .get("silhouette") or {}).get("profile")
+                for _pp in profile_parts:
+                    _stitches = [r.stitches for r in _pp.rounds
+                                 if "起针圈" not in (r.notes or "") or True][1:]
+                    # 跳过底部圆盘圈（圆盘不计筒壁）
+                    _wall = [r.stitches for r in _pp.rounds]
+                    _n_dome = _wall[0] // 6
+                    _components.html(
+                        _svg(_wall[_n_dome:], _gauge, _photo, _SPAN.get("身体")),
+                        height=320, scrolling=False,
+                    )
+                    st.caption(f"{_pp.name}：逐圈针数反渲染的侧影（蓝）与照片剖面（橙虚线）")
+            except Exception as e:  # 可视化失败不影响主流程
+                st.caption(f"轮廓可视化不可用：{e}")
     for part in structure.get("parts", []):
         with st.expander(f"📦 {part['name']} — {part['shape']}"):
             st.json(part)

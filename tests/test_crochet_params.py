@@ -227,8 +227,10 @@ def test_special_rounds_notes():
     by_row = {r["row"]: r for r in rounds}
     assert by_row[1]["notes"] == "魔法环起6针（X×6）"
     assert by_row[2]["notes"] == "加针×6（V×6，每针都加）"          # 6→12
-    assert by_row[3]["notes"] == "(X,V)×6，隔1针加1针"             # 12→18，系数 1 省略
-    assert by_row[6]["notes"] == "(4X,V)×6，隔4针加1针"            # 30→36
+    # 连续加针圈带错开半组提示（PlanetJune 技法，M2.9）
+    assert by_row[3]["notes"].startswith("(X,V)×6，隔1针加1针")   # 12→18
+    assert "错开半组" in by_row[3]["notes"]
+    assert by_row[6]["notes"].startswith("(4X,V)×6，隔4针加1针")  # 30→36
     assert by_row[13]["notes"].startswith("(4X,A)×6，隔4针减1针")  # 36→30
     assert by_row[16]["notes"].startswith("(X,A)×6，隔1针减1针")   # 18→12
     assert by_row[17]["notes"].startswith("减针×6（A×6，每2针并1针）")  # 12→6
@@ -264,7 +266,8 @@ def test_stitches_scale_with_head_diameter():
     """身体/四肢针数随头径缩放（回归：旧硬编码 24/12 针）。"""
     big = _params_for(["头部", "身体", "手臂"], head_d=20.0, height=45.0)
     by_name = {p.name: p for p in big["parts"]}
-    assert max(r.stitches for r in by_name["身体"].rounds) == 78  # 20cm 头 → 78 针
+    # 20cm 头 → 默认 gauge（0.769cm/针）下 84 针（旧 0.785 锚点为 78）
+    assert max(r.stitches for r in by_name["身体"].rounds) == 84
     assert 18 <= max(r.stitches for r in by_name["手臂"].rounds) <= 30  # 6.6cm 直径
 
     small = _params_for(["头部", "身体", "手臂"], head_d=5.0, height=12.0)
@@ -281,21 +284,23 @@ def test_annotated_height_excludes_base_dome():
     """
     from app.models.crochet_params import (
         BODY_HEAD_RATIO,
-        BODY_ROUNDS_PER_CM,
+        DEFAULT_GAUGE,
         LIMB_HEAD_RATIO,
-        LIMB_ROUNDS_PER_CM,
         _stitches_for_diameter,
     )
     params = _params_for(["头部", "身体", "手臂", "帽子"])
     by_name = {p.name: p for p in params["parts"]}
     body = by_name["身体"]
     n_dome = _stitches_for_diameter(9.0 * BODY_HEAD_RATIO) // 6
-    assert body.height_cm == round((len(body.rounds) - n_dome) / BODY_ROUNDS_PER_CM, 1)
+    # 四肢与身体统一行高（旧 1.2/1.6 差异已取消——行高是纱线属性）
+    assert body.height_cm == round(
+        (len(body.rounds) - n_dome) * DEFAULT_GAUGE.row_h_cm, 1)
     arm = by_name["手臂"]
     n_dome_arm = _stitches_for_diameter(9.0 * LIMB_HEAD_RATIO) // 6
-    assert arm.height_cm == round((len(arm.rounds) - n_dome_arm) / LIMB_ROUNDS_PER_CM, 1)
+    assert arm.height_cm == round(
+        (len(arm.rounds) - n_dome_arm) * DEFAULT_GAUGE.row_h_cm, 1)
     hat = by_name["帽子"]
-    assert abs(hat.height_cm - len(hat.rounds) / BODY_ROUNDS_PER_CM) < 0.06
+    assert abs(hat.height_cm - len(hat.rounds) * DEFAULT_GAUGE.row_h_cm) < 0.06
     # 头+身体标注不超过输入总高（旧版 9 + 9.4 > 18）
     assert 9.0 + body.height_cm <= 18.0 + 0.5
     # 身体 notes 明示"另含底部圆盘"

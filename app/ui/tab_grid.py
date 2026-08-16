@@ -4,6 +4,7 @@ from __future__ import annotations
 import streamlit as st
 import streamlit.components.v1 as components
 
+from app.models.gauge import gauge_from_ui
 from app.models.grid_pattern import (
     generate_grid_pattern,
     render_legend_markdown,
@@ -30,12 +31,18 @@ def render_tab_grid() -> None:
     with col_g2:
         grid_width = st.slider("网格宽度（针数/行）", 10, 80, 40, 5, key="grid_w")
         n_colors = st.slider("颜色数量", 2, 10, 6, 1, key="grid_nc")
+        _g = gauge_from_ui(st.session_state.get("gauge_preset", "classic"),
+                           st.session_state.get("gauge_st_input"),
+                           st.session_state.get("gauge_rw_input"))
+        _gauge_wh = round(_g.aspect_wh, 2)
+        _options = [0.5, 0.6, 0.75, _gauge_wh, 1.0]
+        _fmt = {0.5: "长针 dc (~0.5)", 0.6: "中长 hdc (~0.6)",
+                0.75: "短针 sc (~0.75)", 1.0: "正方"}
         aspect = st.select_slider(
             "针法比例",
-            options=[0.5, 0.6, 0.75, 1.0],
+            options=_options,
             value=0.75,
-            format_func=lambda x: {0.5: "长针 dc (~0.5)", 0.6: "中长 hdc (~0.6)",
-                                    0.75: "短针 sc (~0.75)", 1.0: "正方"}[x],
+            format_func=lambda x: _fmt.get(x, f"按小样 ({_gauge_wh})"),
             key="grid_aspect",
         )
         resample = st.select_slider(

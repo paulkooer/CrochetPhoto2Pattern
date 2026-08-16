@@ -6,6 +6,7 @@ import uuid
 
 import streamlit as st
 
+from app.models.gauge import gauge_from_ui
 from app.models.orchestrator import PipelineOrchestrator
 from app.ui.result_renderer import purge_result_state, render_results
 from app.utils.images import load_uploaded_image_cached
@@ -69,6 +70,11 @@ def render_tab_photo() -> None:
                 try:
                     result = orchestrator.run_full_pipeline(
                         image, progress_cb=progress.progress, local_vision=use_local,
+                        gauge=gauge_from_ui(
+                            st.session_state.get("gauge_preset", "classic"),
+                            st.session_state.get("gauge_st_input"),
+                            st.session_state.get("gauge_rw_input"),
+                        ),
                     )
                     # 替换旧结果前清掉它命名空间下的 widget 状态，防累积
                     if "result" in st.session_state:
