@@ -6,18 +6,22 @@ import uuid
 
 import streamlit as st
 
-from app.models.orchestrator import PipelineOrchestrator
-from app.schemas import ImageAnalysis
-from app.ui.result_renderer import render_results
+from app.models.crochet_params import CrochetParamsGenerator
+from app.models.structure_designer import StructureDesigner
+from app.schemas import PART_NAMES, ImageAnalysis
+from app.ui.result_renderer import purge_result_state, render_results
 
 logger = logging.getLogger(__name__)
 
 
-def _run_pipeline_from_analysis(analysis: ImageAnalysis, openai_key=None, anthropic_key=None) -> dict:
-    """Run structure + param stages given an already-parsed ImageAnalysis."""
-    orchestrator = PipelineOrchestrator(openai_key=openai_key, anthropic_key=anthropic_key)
-    structure = orchestrator.structure_designer.design_3d_structure(analysis)
-    params = orchestrator.params_generator.generate_params(analysis, structure)
+def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
+    """Run structure + param stages given an already-parsed ImageAnalysis.
+
+    手动输入无需 Vision 解析，因此直接用后两个阶段类，不构造
+    PipelineOrchestrator（那会连带初始化 ImageParser 并加载 prompt 文件）。
+    """
+    structure = StructureDesigner.design_3d_structure(analysis)
+    params = CrochetParamsGenerator.generate_params(analysis, structure)
     return {
         "analysis": analysis.model_dump(),
         "structure": structure,
@@ -43,7 +47,7 @@ def render_tab_manual() -> None:
         m_pose = st.selectbox("姿态", ["站立", "坐姿", "其他"], key="m_pose")
         m_parts = st.multiselect(
             "包含部件",
-            ["头部", "身体", "手臂", "腿部", "尾巴", "耳朵", "帽子"],
+            list(PART_NAMES),
             default=["头部", "身体"],
             key="m_parts",
         )
@@ -53,7 +57,7 @@ def render_tab_manual() -> None:
             key="m_features",
         )
 
-    if st.button("🚀 生成钉织图解", type="primary",
+    if st.button("🚀 生成钩织图解", type="primary",
                  use_container_width=True, key="btn_manual"):
         if not m_parts:
             st.warning("请至少选择一个部件。")
@@ -70,11 +74,10 @@ def render_tab_manual() -> None:
                     parts=m_parts,
                 )
                 with st.spinner("生成图解中…"):
-                    result = _run_pipeline_from_analysis(
-                        analysis,
-                        openai_key=st.session_state.get("openai_key"),
-                        anthropic_key=st.session_state.get("anthropic_key"),
-                    )
+                    result = _run_pipeline_from_analysis(analysis)
+                # 替换旧结果前清掉它命名空间下的 widget 状态，防累积
+                if "manual_result" in st.session_state:
+                    purge_result_state(st.session_state.manual_result)
                 st.session_state.manual_result = result
                 st.success("✅ 图解已生成！")
             except Exception as e:

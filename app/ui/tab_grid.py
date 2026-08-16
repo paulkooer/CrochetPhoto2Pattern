@@ -2,18 +2,22 @@
 from __future__ import annotations
 
 import streamlit as st
-from PIL import Image
+import streamlit.components.v1 as components
 
 from app.models.grid_pattern import (
-    generate_grid_pattern, render_svg, render_legend_markdown, render_text_chart
+    generate_grid_pattern,
+    render_legend_markdown,
+    render_svg,
+    render_text_chart,
 )
+from app.utils.images import load_uploaded_image_cached
 
 
 def render_tab_grid() -> None:
     st.subheader("📹 2D 像素网格图案（Tapestry Crochet）")
     st.info(
-        "将照片转化为彩色网格图案，适合平面采花钉织、C2C 角路派或十字绣。"
-        "每格 = 1 针，符号代表毛线颜色。"
+        "将照片转化为彩色网格图案，适合平面嵌花钩织（Tapestry）、"
+        "C2C（角对角）或十字绣。每格 = 1 针，符号代表毛线颜色。"
     )
 
     col_g1, col_g2 = st.columns([1, 1])
@@ -34,53 +38,67 @@ def render_tab_grid() -> None:
                                     0.75: "短针 sc (~0.75)", 1.0: "正方"}[x],
             key="grid_aspect",
         )
+        resample = st.select_slider(
+            "缩放算法",
+            options=["lanczos", "nearest"],
+            value="lanczos",
+            format_func={"lanczos": "平滑（照片）", "nearest": "锐利（像素画）"}.get,
+            key="grid_resample",
+        )
 
     if grid_file:
-        grid_image = Image.open(grid_file)
-        if st.button("🎨 生成网格图案", type="primary",
-                     use_container_width=True, key="btn_grid"):
+        grid_image = load_uploaded_image_cached(grid_file)
+        if grid_image is not None and st.button(
+            "🎨 生成网格图案", type="primary", use_container_width=True, key="btn_grid"
+        ):
             with st.spinner("生成中…"):
                 pattern = generate_grid_pattern(
                     grid_image, grid_width=grid_width,
-                    n_colors=n_colors, aspect_ratio=aspect,
+                    n_colors=n_colors, aspect_ratio=aspect, resample=resample,
                 )
-            st.session_state.grid_pattern = pattern
+                # 只在此处渲染一次，存轻量字符串视图：GridPattern 含上万
+                # GridCell 对象，且每次 rerun 重渲染 SVG 是纯浪费。
+                st.session_state.grid_view = {
+                    "width": pattern.width,
+                    "height": pattern.height,
+                    "n_colors": len(pattern.palette),
+                    "svg": render_svg(pattern, cell_px=14),
+                    "legend": render_legend_markdown(pattern),
+                    "chart": render_text_chart(pattern),
+                }
 
-    if "grid_pattern" in st.session_state:
-        pat = st.session_state.grid_pattern
-        st.success(f"✅ 网格大小：{pat.width} 列 × {pat.height} 行，{len(pat.palette)} 种颜色")
+    if "grid_view" in st.session_state:
+        view = st.session_state.grid_view
+        st.success(f"✅ 网格大小：{view['width']} 列 × {view['height']} 行，{view['n_colors']} 种颜色")
 
         col_v1, col_v2 = st.columns([3, 1])
         with col_v1:
             st.subheader("🖼️ 彩色网格预览")
-            svg_str = render_svg(pat, cell_px=14)
-            # Wrap in scrollable div for large grids
-            st.markdown(
-                f'<div style="overflow:auto;max-height:600px;border:1px solid #ccc;border-radius:6px;padding:4px;">'
-                + svg_str + "</div>",
-                unsafe_allow_html=True,
-            )
+            # components.html 比 st.markdown(unsafe_allow_html=True) 对 <svg>
+            # 的渲染更稳定（markdown 管线对内联 SVG 的 sanitize 行为随版本波动），
+            # 且 iframe 自带滚动，大网格无需外层 div。
+            components.html(view["svg"], height=600, scrolling=True)
         with col_v2:
             st.subheader("📋 颜色图例")
-            st.markdown(render_legend_markdown(pat))
+            st.markdown(view["legend"])
 
         st.subheader("📝 文字符号图表")
         with st.expander("展开查看 / 复制到聊天", expanded=False):
-            st.code(render_text_chart(pat), language="")
+            st.code(view["chart"], language="")
 
-        # Downloads
+        # Downloads（复用已渲染的字符串，不再二次渲染）
         col_d1, col_d2 = st.columns(2)
         with col_d1:
             st.download_button(
                 "📥 下载 SVG 网格图",
-                render_svg(pat, cell_px=14),
+                view["svg"],
                 file_name="tapestry_grid.svg",
                 mime="image/svg+xml",
             )
         with col_d2:
             st.download_button(
                 "📄 下载 Markdown 图例",
-                render_legend_markdown(pat),
+                view["legend"],
                 file_name="tapestry_legend.md",
                 mime="text/markdown",
             )

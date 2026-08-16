@@ -1,4 +1,5 @@
-from .image_parser import ImageParser
-from .structure_designer import StructureDesigner
-from .crochet_params import CrochetParamsGenerator
-from .orchestrator import PipelineOrchestrator
+"""Model layer re-exports (explicit `as` form marks intentional re-export)."""
+from .crochet_params import CrochetParamsGenerator as CrochetParamsGenerator
+from .image_parser import ImageParser as ImageParser
+from .orchestrator import PipelineOrchestrator as PipelineOrchestrator
+from .structure_designer import StructureDesigner as StructureDesigner

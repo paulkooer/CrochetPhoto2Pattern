@@ -5,9 +5,14 @@ tapestry crochet, C2C (corner-to-corner), or cross-stitch projects.
 No external dependencies beyond Pillow.
 """
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
+
 from PIL import Image
+
+# Yarn table + perceptual matching live in app.models.colors (shared source)
+from .colors import nearest_yarn
 
 
 @dataclass
@@ -28,15 +33,10 @@ class GridPattern:
     symbol_map: Dict[int, str]
 
 
-# Yarn table + perceptual matching live in app.models.colors (shared source)
-from .colors import nearest_yarn
-
 _SYMBOLS = "■▲●◆★✦◉▼⊕①②③④⑤⑥⑦⑧⑨⑩"
 
-
-def _nearest_yarn_name(r: int, g: int, b: int) -> Tuple[str, Tuple[int, int, int]]:
-    """Find the nearest yarn color (name + table RGB) by perceptual Lab distance."""
-    return nearest_yarn(r, g, b)
+# UI slider 与文档约定的调色上限（符号表 20 个只是防御性硬顶）
+_MAX_PALETTE = 10
 
 
 def generate_grid_pattern(
@@ -44,6 +44,7 @@ def generate_grid_pattern(
     grid_width: int = 40,
     n_colors: int = 6,
     aspect_ratio: float = 0.75,
+    resample: str = "lanczos",
 ) -> GridPattern:
     """Convert a PIL image to a 2D tapestry crochet grid pattern.
 
@@ -51,16 +52,25 @@ def generate_grid_pattern(
         image:        Source image (any mode).
         grid_width:   Number of stitches (columns) in the output.
         n_colors:     Number of yarn colors in the palette (2-10).
-        aspect_ratio: Stitch w/h ratio. Single crochet ~0.75.
+        aspect_ratio: Stitch width/height ratio. Single crochet ~0.75.
+        resample:     缩放算法："lanczos"（面积加权，照片平滑，默认）或
+                      "nearest"（单点采样，像素画不糊边）。
 
     Returns:
         GridPattern with cells, palette, and symbol map.
     """
-    n_colors = max(2, min(n_colors, len(_SYMBOLS)))
+    n_colors = max(2, min(n_colors, _MAX_PALETTE, len(_SYMBOLS)))
     img = image.convert("RGB")
     orig_w, orig_h = img.size
-    grid_height = max(2, round(grid_width * orig_h / orig_w * aspect_ratio))
-    img_small = img.resize((grid_width, grid_height), Image.NEAREST)
+    # 比例补偿推导（aspect_ratio = 针的宽/高，sc≈0.75 即针略"高"）：
+    #   成品宽/高 = grid_width·w / (grid_height·h) 应等于 orig_w/orig_h
+    #   ⇒ grid_height = grid_width · (w/h) · orig_h/orig_w = grid_width · aspect_ratio · orig_h/orig_w
+    # 例：正方形图片 + 0.75 → 行数 = 列数×0.75，成品因针本身偏高仍为正方形。
+    # int(x+0.5) 半步向上取整（Python round 是银行家舍入，.5 偏向偶数）。
+    grid_height = max(2, int(grid_width * orig_h / orig_w * aspect_ratio + 0.5))
+    resampler = (Image.Resampling.NEAREST if resample == "nearest"
+                 else Image.Resampling.LANCZOS)
+    img_small = img.resize((grid_width, grid_height), resampler)
     quantized = img_small.quantize(colors=n_colors, method=Image.Quantize.MEDIANCUT)
     raw_palette = quantized.getpalette()
 
@@ -69,7 +79,7 @@ def generate_grid_pattern(
     q_to_yarn: Dict[int, Tuple[str, Tuple[int, int, int]]] = {}
     for idx in range(actual_colors):
         rv, gv, bv = raw_palette[idx * 3], raw_palette[idx * 3 + 1], raw_palette[idx * 3 + 2]
-        name, yarn_rgb = _nearest_yarn_name(rv, gv, bv)
+        name, yarn_rgb = nearest_yarn(rv, gv, bv)
         q_to_yarn[idx] = (name, yarn_rgb)
 
     name_to_pal_idx: Dict[str, int] = {}

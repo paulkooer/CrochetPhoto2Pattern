@@ -16,11 +16,13 @@ from app.ui.tab_manual import render_tab_manual
 from app.ui.tab_photo import render_tab_photo
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
+# 仅在根 logger 尚无 handler 时配置（以库形式 import app.main 时不劫持宿主配置）
+if not logging.getLogger().handlers:
+    logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
 
 st.set_page_config(page_title="Photo2Amigurumi", page_icon="🧶", layout="wide")
 st.title("🧶 Photo2Amigurumi")
-st.markdown("**从一张照片 → 立体人物钉织完整图解** (Amigurumi 风格)")
+st.markdown("**从一张照片 → 立体人物钩织完整图解** (Amigurumi 风格)")
 
 render_sidebar()
 
@@ -35,4 +37,4 @@ with tab_grid:
     render_tab_grid()
 
 st.divider()
-st.caption("Photo2Amigurumi — AI 驱动的立体钉织图解生成器")
+st.caption("Photo2Amigurumi — AI 驱动的立体钩织图解生成器")

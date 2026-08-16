@@ -16,5 +16,14 @@
   "main_features": ["大眼睛", "蓬松头发", "条纹衣服"],
   "pose": "站立|坐姿|其他",
   "difficulty": "easy|medium|hard",
-  "parts": ["头部", "身体", "手臂", "腿部"]
+  "parts": ["头部", "身体", "手臂", "腿部"],
+  "hair_color": "深棕色",
+  "top_color": "蓝色",
+  "bottom_color": "红色",
+  "clothing_type": "裤子|裙子|连衣裙|其他"
 }
+
+**配色字段规则**：
+- hair_color / top_color / bottom_color 用常见毛线色名（黑色/深棕色/蓝色/红色/草绿色/白色/粉红色 等），看不清或不存在时填 null
+- clothing_type 按下装形态选：裤子 / 裙子 / 连衣裙（上衣下装连体）/ 其他；看不清填 null
+- parts 中有"裙子"或 clothing_type 为"裙子/连衣裙"时保持一致

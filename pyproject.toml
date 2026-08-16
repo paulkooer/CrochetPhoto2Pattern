@@ -6,18 +6,53 @@ build-backend = "setuptools.build_meta"
 name = "crochet-photo2pattern"
 version = "0.1.0"
 description = "AI-powered Amigurumi crochet pattern generator from photos"
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.9"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Artistic Software",
+]
 dependencies = [
-    "streamlit>=1.40.0",
+    # 上界 <2.0：Streamlit 大版本常有破坏性 API 变更，升 2.x 需人工验证
+    "streamlit>=1.40.0,<2.0",
     "openai>=1.0.0",
+    # 0.95.0 已含 messages.parse(output_format=...)（structured outputs），
+    # 已在本地实测；低于此版本不可用。
     "anthropic>=0.95.0",
     "pydantic>=2.0",
     "pillow>=10.0",
     "python-dotenv>=1.0",
+    # 无 LLM 的本地视觉降级（haar 人脸检测）；缺失时自动退纯默认值路径。
+    # 上界 <5：OpenCV 5.x 移除了 legacy CascadeClassifier API。
+    "opencv-python-headless>=4.8,<5",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
     "pytest-cov",
+    "ruff>=0.4",
 ]
+
+# app/prompts/*.txt 是包内数据（运行时由 image_parser 读取）。
+# pyproject 模式下 setuptools 默认不打包 package data，缺了这一段，
+# `pip install .`（非 -e）后会静默降级到内置的弱 fallback 提示词。
+[tool.setuptools.package-data]
+app = ["prompts/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+
+[tool.ruff.lint]
+# E/W pycodestyle、F pyflakes、I isort、B bugbear（常见隐患）
+select = ["E", "F", "W", "I", "B"]
