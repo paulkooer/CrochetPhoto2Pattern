@@ -1,0 +1,200 @@
+<title>Photo2Amigurumi 第三轮审查</title>
+<style>
+:root{
+  --bg:#FAFAF7; --surface:#FFFFFF; --ink:#22252A; --ink-2:#5A6068; --ink-3:#8A9098;
+  --line:#E4E4DE; --accent:#2F5D8C; --accent-soft:#EAF1F7;
+  --crit:#B2372E; --crit-bg:#F9ECEA; --warn:#8A6410; --warn-bg:#F7F1E2;
+  --ok:#2E6F4E; --ok-bg:#E9F2EC; --info:#4A5A6A; --info-bg:#EDF0F3;
+  --code-bg:#F1F1EC; --mono:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#191B1E; --surface:#202327; --ink:#E6E4DE; --ink-2:#A8ACB2; --ink-3:#787D84;
+    --line:#33373C; --accent:#7FA8D0; --accent-soft:#243240;
+    --crit:#E08A81; --crit-bg:#3A2724; --warn:#D3B36A; --warn-bg:#37301F;
+    --ok:#84BC9C; --ok-bg:#22322A; --info:#A3B2C0; --info-bg:#282E34;
+    --code-bg:#26292E;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#191B1E; --surface:#202327; --ink:#E6E4DE; --ink-2:#A8ACB2; --ink-3:#787D84;
+  --line:#33373C; --accent:#7FA8D0; --accent-soft:#243240;
+  --crit:#E08A81; --crit-bg:#3A2724; --warn:#D3B36A; --warn-bg:#37301F;
+  --ok:#84BC9C; --ok-bg:#22322A; --info:#A3B2C0; --info-bg:#282E34;
+  --code-bg:#26292E;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  line-height:1.75; font-size:15.5px;
+}
+main{max-width:880px; margin:0 auto; padding:48px 28px 96px}
+header.top{border-bottom:2px solid var(--ink); padding-bottom:20px; margin-bottom:8px}
+.kicker{font-size:12px; letter-spacing:.18em; color:var(--accent); font-weight:600; margin-bottom:10px}
+h1{font-size:30px; line-height:1.3; margin:0 0 10px; font-weight:700; text-wrap:balance}
+.meta{color:var(--ink-2); font-size:13.5px}
+.meta b{color:var(--ink)}
+h2{font-size:20px; margin:52px 0 6px; padding-top:18px; border-top:1px solid var(--line); font-weight:700}
+h2 .sec{color:var(--ink-3); font-weight:600; font-size:13px; letter-spacing:.12em; display:block; margin-bottom:2px}
+h3{font-size:16px; margin:26px 0 8px}
+p{margin:10px 0}
+.lede{font-size:16.5px; color:var(--ink); margin:18px 0 6px}
+code{font-family:var(--mono); font-size:.86em; background:var(--code-bg); padding:1px 5px; border-radius:4px}
+pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:12.8px; line-height:1.6}
+pre code{background:none; padding:0}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px}
+th{font-size:12.5px; letter-spacing:.06em; color:var(--ink-2); text-align:left; border-bottom:2px solid var(--line); padding:8px 10px; white-space:nowrap}
+td{border-bottom:1px solid var(--line); padding:9px 10px; vertical-align:top}
+.tablewrap{overflow-x:auto}
+.chip{display:inline-block; font-size:12px; font-weight:700; padding:1px 10px; border-radius:99px; white-space:nowrap; letter-spacing:.04em}
+.chip.crit{color:var(--crit); background:var(--crit-bg)}
+.chip.warn{color:var(--warn); background:var(--warn-bg)}
+.chip.ok{color:var(--ok); background:var(--ok-bg)}
+.chip.info{color:var(--info); background:var(--info-bg)}
+.finding{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px 22px; margin:18px 0}
+.finding.crit{border-left:4px solid var(--crit)}
+.finding.warn{border-left:4px solid var(--warn)}
+.finding.low{border-left:4px solid var(--info)}
+.finding h3{margin:0 0 4px; font-size:16.5px}
+.finding .where{font-family:var(--mono); font-size:12.5px; color:var(--ink-2); margin-bottom:10px}
+.label{font-size:12.5px; font-weight:700; color:var(--ink-2); letter-spacing:.08em; margin:12px 0 2px}
+ul{margin:8px 0; padding-left:22px}
+li{margin:5px 0}
+.okbox{background:var(--ok-bg); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:14px 0}
+.okbox h3{margin-top:0; color:var(--ok)}
+.small{font-size:13px; color:var(--ink-2)}
+.num{font-variant-numeric:tabular-nums}
+footer{margin-top:64px; padding-top:16px; border-top:1px solid var(--line); color:var(--ink-3); font-size:12.5px}
+a{color:var(--accent)}
+</style>
+<main>
+<header class="top">
+  <div class="kicker">CROCHETPHOTO2PATTERN · 独立审查 · ROUND 3</div>
+  <h1>Photo2Amigurumi 第三轮审查报告</h1>
+  <div class="meta">审查者：Claude（Fable 5）&nbsp;·&nbsp;2026-08-16&nbsp;·&nbsp;依据 <code>docs/handoff-review.md</code> 全量通读源码/测试/CI，<b>所有实锤结论均经脚本实验复核</b>，未复核项明确标注</div>
+</header>
+
+<p class="lede">总评：工程质量与自我认知俱佳——质量声明（133 测试 / 93% 覆盖 / ruff 零告警 / wheel 含 prompts）全部复现，历史两轮的三处"误报"复检后确认均为误报。但本轮在交接文档最欢迎审查的<b>领域正确性</b>（§5.1）方向发现 3 个实锤问题：<b>裙子实为闭口起针（与文档"开口裙筒"声明相反）、身体/四肢的照片配色方向与钩织方向颠倒、圆柱标注高度把起底圆盘计入高度（实测偏大约 68%）</b>。三者都有测试"锁定"，恰好构成"测试通过 ≠ 领域正确"的假信心案例。</p>
+
+<h2><span class="sec">§0</span>质量声明复现</h2>
+<div class="tablewrap"><table>
+<tr><th>声明</th><th>复现方式</th><th>结果</th></tr>
+<tr><td>133 测试全过，覆盖率 93%</td><td><code>pytest -q --cov=app</code></td><td class="num"><span class="chip ok">复现</span> 133 passed，总覆盖 93%，核心模块 99–100%</td></tr>
+<tr><td>ruff 零告警</td><td><code>ruff check app tests</code></td><td><span class="chip ok">复现</span> All checks passed</td></tr>
+<tr><td>D7：anthropic 0.95.0 含 <code>messages.parse</code></td><td>inspect 已安装 SDK 签名</td><td><span class="chip ok">实测为真</span> 0.95.0 的 parse 同时接受 <code>output_format</code> 与 <code>output_config</code></td></tr>
+<tr><td>CI 打包锁（wheel 含 prompts）</td><td>读 <code>.github/workflows</code></td><td><span class="chip ok">存在</span> 4 个 Python 版本矩阵 + cov 阈值 80% + wheel 断言</td></tr>
+</table></div>
+
+<h2><span class="sec">§1</span>实锤问题（经实验复核）</h2>
+
+<div class="finding crit">
+<h3>F1 · 裙子是闭口杯形，套不进腰部 <span class="chip crit">高 · 领域正确性</span></h3>
+<div class="where">app/models/crochet_params.py:310-325 · _cup_rounds() · docs/handoff-review.md §2</div>
+<p><b>证据（实测）</b>：生成含裙子的图解，裙子 R1 = <code>魔法环起6针（X×6）</code>，逐圈加针到 48 针后直钩。魔法环起针意味着<b>腰部一端是闭死的圆盘</b>——只有裙摆开口。部件说明却写"开口裙筒……<b>套在腰部</b>后缝合固定"：闭口端无法让身体穿过，物理上套不进去。这与已修复的"帽子闭口球戴不进去"是同一族缺陷——帽子（顶部理应闭合）修对了，裙子（两端都应开口）复用 <code>_cup_rounds</code> 时把闭口端带了进来。</p>
+<p><b>连带不一致</b>：<code>structure_designer.py:32</code> 把裙子映射为 <code>cylinder</code>，参数层却生成 <code>cup</code>——UI 第 2 节向用户展示的形状与第 3 节图解自相矛盾。交接文档 §2 "裙子=开口裙筒" 亦与代码不符（按文档自己的约定指出失实处）。</p>
+<p><b>假信心</b>：<code>test_skirt_is_open_and_wider_than_body</code> 只断言"末圈无收针"（裙摆开口），没断言起针端开口，因此闭腰逃过了测试。</p>
+<div class="label">建议修法</div>
+<ul>
+<li>裙子改为<b>环形开口起针</b>：以腰围针数（≈身体针数 36）锁针环起 → 1–2 圈内加到裙摆针数（48）→ 直钩至裙长；<code>magic_ring=False</code>。</li>
+<li>structure 层为裙子引入独立形状名（如 <code>tube</code>/<code>skirt</code>），两层口径统一。</li>
+<li>补方向性测试：断言裙子 R1 针数 ≈ 腰围而非 6。</li>
+</ul>
+</div>
+
+<div class="finding crit">
+<h3>F2 · 身体/手臂/腿部的照片配色方向颠倒 <span class="chip crit">高 · 领域正确性</span></h3>
+<div class="where">app/models/crochet_params.py:350-372 · _apply_color_plan()</div>
+<p><b>证据（实测）</b>：喂入色带「上=肤色，中=红（上衣），下=蓝（裤），底=黑（鞋）」，腿部逐圈色序为 <code>[蓝×5, 黑×2]</code>——鞋色被铺在<b>最后两圈</b>。但按代码自身的装配语义，腿从脚底魔法环起针，末圈"断线留15cm用于缝合"到身体底部：<b>R1 = 脚底</b>，鞋色应在 R1–R2。现在的图解会让人把鞋色钩在腿根。</p>
+<p><b>根因</b>：<code>_apply_color_plan</code> 对所有部件统一按「R1 = 部件纵向区间顶端」映射（<code>frac = span_s + span_len·(j+0.5)/n</code>）。这对<b>从顶端起针</b>的部件（头部、帽子）正确；对<b>末圈为缝合端</b>的部件（身体：末圈收针后缝头部；手臂：末圈缝肩部；腿部：末圈缝身体底）——起针端在空间下方，映射整体颠倒。身体单色场景（占比区间恰与一条色带重合）掩盖了该问题，双色裤袜/鞋类照片必现。</p>
+<div class="label">建议修法</div>
+<ul>
+<li>为每个部件声明钩织方向（<code>_BOTTOM_UP = {"身体","手臂","腿部"}</code>），对这些部件用 <code>frac = span_e − span_len·(j+0.5)/n</code>。尾巴方向存疑（水平部件），可保持现状并注释。</li>
+<li>补方向性测试：底部色带的颜色必须出现在四肢的 R1 端。</li>
+</ul>
+</div>
+
+<div class="finding crit">
+<h3>F3 · 圆柱"标注高度"把起底圆盘计入高度，实测偏大 ~68% <span class="chip warn">中高 · 领域正确性</span></h3>
+<div class="where">app/models/crochet_params.py:294-341 · 身体/四肢分支 · docs/handoff-review.md §2 末条</div>
+<p><b>证据（实测）</b>：结构层要求身体高 <b>4.5cm</b>，生成的标注高度为 <b>9.4cm</b>（15 圈 ÷ 1.6 圈/cm）。但加针段 6 圈是<b>水平的起底圆盘</b>——贡献直径、几乎不贡献高度；物理高度 ≈ (7 圈直钩 + 2 圈收针) ÷ 1.6 ≈ <b>5.6cm</b>。"标注 = 实际钩出"这一口径隐含"每一圈贡献 1/1.6cm 高度"的假设，对圆盘段不成立。四肢同理（1.2 圈/cm）。</p>
+<p><b>连带影响</b>：用户输入总高 18cm 时，头 9cm + 身体标注 9.4cm 已超总高，加四肢后图解各处高度自相矛盾；<code>test_annotated_height_matches_round_count</code> 锁定的正是这一错误口径——测试断言了实现而非领域事实。</p>
+<div class="label">建议修法</div>
+<ul>
+<li>标注高度改为 <code>(直钩圈数 + 收针圈数) ÷ 密度</code>（圆盘段只计直径），或按球冠近似给圆盘一个小的高度贡献。</li>
+<li>同步更新 <code>test_annotated_height_matches_round_count</code> 的口径与注释，并请按你们的流程<b>试钩一个 24 针小圆柱实测</b>校准。</li>
+</ul>
+</div>
+
+<div class="finding warn">
+<h3>F4 · 背景色估计：注释称"众数"，实现是量化后均值 <span class="chip warn">中</span></h3>
+<div class="where">app/models/color_design.py:40-52 · app/models/local_vision.py:77-82（重复实现）</div>
+<p><code>(samples // 16 * 16).mean(axis=0)</code> 不是众数：量化后取均值只引入每通道约 −7.5 的系统性偏暗，并无抗噪作用。更实质的风险：<b>双色背景</b>（白墙 + 深色地板是人像常见构图）时均值落在两色之间，与两种背景像素的距离都可能超过阈值 48，背景剔除退化为"全图皆主体"，直接拉低配色带与轮廓剖面（裙摆检测）的质量——这两条正是 §5.2/§5.3 请求外部意见的链路。另外该逻辑在两个文件里各写了一份（<code>_BG_DIST_THRESHOLD</code> 也定义了两次）。</p>
+<div class="label">建议修法</div>
+<ul>
+<li>改为真众数（量化后 <code>np.unique(axis=0, return_counts=True)</code> 取最大计数），或至少逐通道中位数。</li>
+<li>抽出共享的 <code>estimate_background(px)</code> 到一处（如 <code>colors.py</code> 或新 util），两处引用，注释与实现对齐。</li>
+</ul>
+</div>
+
+<div class="finding low">
+<h3>F5 · JSON 修正后装配说明不重算 <span class="chip info">低中 · D13 盲区</span></h3>
+<div class="where">app/models/crochet_params.py:192-204 · refresh_derived()</div>
+<p>用户在 JSON 编辑器删掉帽子部件后，时长/总针数/材料都会重算（D13），但 <code>assembly_instructions</code> 原样保留——装配说明仍写"帽口不收口，直接戴在头部"。装配步骤生成逻辑已在 <code>_build_result</code> 中按部件条件化，抽出后在 <code>refresh_derived</code> 里复用即可（用户手改过 assembly 的场景可用"仅当 parts 集合变化时重算"折中）。</p>
+</div>
+
+<h2><span class="sec">§2</span>一致性与文案</h2>
+<div class="tablewrap"><table>
+<tr><th>#</th><th>位置</th><th>问题</th><th>severity</th></tr>
+<tr><td>F6</td><td><code>structure_designer.py:32</code></td><td>裙子 shape=<code>cylinder</code> vs 参数层生成 <code>cup</code>，随 F1 一并统一</td><td><span class="chip warn">中</span></td></tr>
+<tr><td>F7</td><td><code>docs/handoff-review.md</code> §2</td><td>"裙子=开口裙筒" 与代码不符（文档失实处，按文档末行约定指出）</td><td><span class="chip warn">中</span></td></tr>
+<tr><td>F8</td><td><code>app/ui/sidebar.py:31</code></td><td>"两者皆无时使用 Mock 数据演示" 已过时——现在无 Key 默认是本地估算，Mock 需显式选择</td><td><span class="chip info">低</span></td></tr>
+<tr><td>F9</td><td><code>tab_photo.py</code> / <code>result_renderer.py</code></td><td>Mock 结果无水印：选 Mock 生成的结果在渲染、Markdown 导出、备份 JSON 中无任何"演示数据"标记，备份导入后无从分辨真假。建议 mock 路径写入 <code>vision_meta={"source":"mock"}</code>，渲染层显示醒目提示、导出加脚注</td><td><span class="chip warn">中</span></td></tr>
+</table></div>
+
+<h2><span class="sec">§3</span>假信心面（回应 §5.5）</h2>
+<ul>
+<li><b>最有价值的教训不在 mock，在领域断言测试</b>：<code>test_skirt_is_open_…</code>（只测裙摆端）与 <code>test_annotated_height_matches_round_count</code>（锁定错误高度口径）都在"用测试锁定实现"而非"锁定领域事实"。F1/F3 修复时这两条测试要一起改口径。</li>
+<li><b>fake SDK 缺口可低成本收窄</b>：现有 fake 只锁我方参数（已如实声明）。建议加一个零网络的<b>契约测试</b>：用 <code>inspect.signature</code> 对已安装的真 SDK 断言 <code>anthropic.resources.messages.Messages.parse</code> 存在且接受 <code>output_format / output_config / max_tokens</code>；OpenAI 侧同理断言 <code>chat.completions.create</code> 接受 <code>response_format</code>。依赖升级破坏 API 时 CI 会先于运行时报警（本轮审查即以此法核验 D7 为真）。</li>
+<li>fake `_Resp` 未模拟 <code>refusal + parsed_output 同时存在</code>、流式截断等真实形态——保持现状可接受，但升级 SDK 大版本时应人工过一遍 <code>_parse_with_anthropic</code>。</li>
+</ul>
+
+<h2><span class="sec">§4</span>核实为正确的项（防止下一轮误报）</h2>
+<div class="okbox">
+<h3>以下各项本轮已逐一验证，请后续审查者勿再报</h3>
+<ul>
+<li><b>网格 aspect_ratio 方向</b>：验算 <code>grid_height = grid_width·(w/h)·(orig_h/orig_w)</code> 推导成立（第三次确认为正确）。</li>
+<li><b>anthropic&gt;=0.95.0</b>：本机 0.95.0 实测含 <code>messages.parse(output_format=…, output_config=…)</code>；模型 ID <code>claude-sonnet-5</code> 有效，"Sonnet 5 默认自适应思考、max_tokens 含思考预算"的注释与官方口径一致，<code>output_config={"effort":"low"}</code> 合法。</li>
+<li><b>getpalette 越界疑虑</b>：<code>quantize(MEDIANCUT)</code> 后按 <code>len(palette)//3</code> 防御性遍历，无越界。</li>
+<li><b>D2 注入防护</b>：全仓唯一 <code>unsafe_allow_html</code> 处（色卡）已 <code>html.escape</code>；其余模型可控字段走 <code>st.write/st.metric</code>（默认转义）；网格 SVG 内容全部来自固定色表。</li>
+<li><b>OpenAI JSON mode 前置条件</b>（prompt 含 "JSON" 字样）满足；<code>gpt-4o</code> 接受 <code>max_tokens</code>。</li>
+<li><b>减针"隔N针"口径</b>：抽查 36→30（隔4）、24→18（隔2）符号算术自洽，与文件头注释的通行规范一致。</li>
+<li><b>sidebar key 优先级</b>：输入框优先、清空回退 .env 的行为与文案一致（除 F8 一句过时描述）。</li>
+</ul>
+</div>
+
+<h2><span class="sec">§5</span>优化提升方案（分级）</h2>
+<h3>P0 · 领域正确性（本轮核心产出，建议先试钩/画图验证再动手）</h3>
+<ol>
+<li>裙子改开口环起 + structure/参数层形状口径统一（F1/F6/F7），补"腰端开口"测试。</li>
+<li>配色方向按部件钩织方向翻转（F2），补"底部色带落在四肢 R1"方向性测试。</li>
+<li>标注高度剔除起底圆盘段（F3），同步改 <code>test_annotated_height_…</code>，试钩校准。</li>
+</ol>
+<h3>P1 · 质量与透明度</h3>
+<ol>
+<li>背景色真众数 + 抽公共函数（F4）——本地视觉与配色两条链路同时受益。</li>
+<li><code>refresh_derived</code> 重算装配说明（F5）。</li>
+<li>Mock 结果全链路水印（F9）+ sidebar 文案更新（F8）。</li>
+<li>新增 SDK 契约测试（零网络，见 §3）。</li>
+</ol>
+<h3>P2 · 产品路线（与既有路线图合并）</h3>
+<ol>
+<li>LLM schema 增加语义配色字段（已列计划，§4.4），与 F2 修正后的方向语义一起设计。</li>
+<li>网格 Tab 为像素画输入提供 NEAREST 缩放选项（已知局限 #8）。</li>
+<li>LLM 路径也产出 <code>vision_meta</code>（模型名/耗时），与本地路径的透明度对齐。</li>
+<li>非必改：Anthropic 结构化输出可迁移到 canonical 的 <code>output_config.format</code> 形式（当前 <code>output_format</code> 仍受支持）。</li>
+</ol>
+
+<footer>审查方法：全量通读 app/ + tests/ + CI/打包配置；pytest/ruff/wheel 复现；针对 F1–F4 编写一次性验证脚本实测（合成色带 → 生成图解逐圈检查；inspect SDK 签名）。与 docs/handoff-review.md §5 的五个聚焦点逐一对应：§5.1→F1/F2/F3，§5.2/5.3→F4，§5.4→未发现新问题（purge/stale-key/import 路径审查通过），§5.5→§3。</footer>
+</main>
