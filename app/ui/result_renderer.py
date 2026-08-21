@@ -64,9 +64,14 @@ def render_results(result: dict, slot: str) -> None:
     result_key = result.get("result_id") or slot
 
     st.divider()
+    st.markdown(
+        "<p class='crochet-section-note'>图解已生成。"
+        "你可以查看结构、逐圈勾选进度、局部修正并下载备份。</p>",
+        unsafe_allow_html=True,
+    )
 
     # Section 1: Analysis
-    st.subheader("1️⃣ 人物语义解析")
+    st.subheader("1️⃣ 人物与比例")
     col_a, col_b = st.columns(2)
     with col_a:
         st.metric("体型", analysis["body_type"])

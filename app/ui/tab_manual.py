@@ -15,6 +15,19 @@ from app.ui.result_renderer import purge_result_state, render_results
 logger = logging.getLogger(__name__)
 
 
+def _style_from_session():
+    import streamlit as _st
+
+    from app.models.gauge import ShapingStyle
+
+    return ShapingStyle(
+        sphere_mode=_st.session_state.get("style_sphere", "ladder"),
+        one_piece=bool(_st.session_state.get("style_onepiece", False)),
+        skirt_style=_st.session_state.get("style_skirt", "ring"),
+        ruffle_hem=bool(_st.session_state.get("style_ruffle", False)),
+    )
+
+
 def _gauge_values():
     import streamlit as st
     return (st.session_state.get("gauge_preset", "classic"),
@@ -30,7 +43,8 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
     structure = StructureDesigner.design_3d_structure(analysis)
     params = CrochetParamsGenerator.generate_params(
         analysis, structure,
-        gauge=gauge_from_ui(*_gauge_values()))
+        gauge=gauge_from_ui(*_gauge_values()),
+        style=_style_from_session())
     return {
         "analysis": analysis.model_dump(),
         "structure": structure,
@@ -40,8 +54,12 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
 
 
 def render_tab_manual() -> None:
-    st.subheader("✏️ 手动输入参数")
-    st.info("无需上传照片，手动填写人物参数直接生成图解。")
+    st.subheader("✏️ 手动设计玩偶")
+    st.markdown(
+        "<p class='crochet-section-note'>无需上传照片，填写人物比例、姿态与部件，"
+        "就能直接生成专属钩织图解。</p>",
+        unsafe_allow_html=True,
+    )
 
     col_m1, col_m2 = st.columns(2)
     with col_m1:

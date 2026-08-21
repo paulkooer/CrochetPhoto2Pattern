@@ -14,6 +14,19 @@ from app.utils.images import load_uploaded_image_cached
 logger = logging.getLogger(__name__)
 
 
+
+
+def _style_from_session():
+    from app.models.gauge import ShapingStyle
+
+    return ShapingStyle(
+        sphere_mode=st.session_state.get("style_sphere", "ladder"),
+        one_piece=bool(st.session_state.get("style_onepiece", False)),
+        skirt_style=st.session_state.get("style_skirt", "ring"),
+        ruffle_hem=bool(st.session_state.get("style_ruffle", False)),
+    )
+
+
 def _build_orchestrator() -> PipelineOrchestrator:
     """每次点击新建（不缓存）。
 
@@ -28,7 +41,12 @@ def _build_orchestrator() -> PipelineOrchestrator:
 
 
 def render_tab_photo() -> None:
-    st.subheader("📷 照片上传")
+    st.subheader("📷 从照片开始创作")
+    st.markdown(
+        "<p class='crochet-section-note'>上传一张轮廓清晰的正面照片，"
+        "我们会整理人物比例、结构与逐圈针法。</p>",
+        unsafe_allow_html=True,
+    )
     col_upload, col_preview = st.columns([1, 1])
 
     with col_upload:
@@ -75,6 +93,7 @@ def render_tab_photo() -> None:
                             st.session_state.get("gauge_st_input"),
                             st.session_state.get("gauge_rw_input"),
                         ),
+                        style=_style_from_session(),
                     )
                     # 替换旧结果前清掉它命名空间下的 widget 状态，防累积
                     if "result" in st.session_state:

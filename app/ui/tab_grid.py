@@ -15,10 +15,11 @@ from app.utils.images import load_uploaded_image_cached
 
 
 def render_tab_grid() -> None:
-    st.subheader("📹 2D 像素网格图案（Tapestry Crochet）")
-    st.info(
-        "将照片转化为彩色网格图案，适合平面嵌花钩织（Tapestry）、"
-        "C2C（角对角）或十字绣。每格 = 1 针，符号代表毛线颜色。"
+    st.subheader("🎨 制作平面像素图案")
+    st.markdown(
+        "<p class='crochet-section-note'>将照片整理成彩色针目网格，适合平面嵌花钩织、"
+        "C2C 或十字绣。每格代表 1 针，符号对应一种毛线颜色。</p>",
+        unsafe_allow_html=True,
     )
 
     col_g1, col_g2 = st.columns([1, 1])

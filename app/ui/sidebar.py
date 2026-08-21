@@ -6,7 +6,8 @@ import streamlit as st
 
 def render_sidebar() -> None:
     with st.sidebar:
-        st.header("⚙️ 设置")
+        st.header("🧺 创作设置")
+        st.caption("先选择密度与塑形偏好，再开始生成你的专属钩织图解。")
         # 无条件写回（含空串）：否则用户清空输入框后旧 key 仍残留在
         # session_state 且会在下次 rerun 时回填输入框，造成"删不掉"的假象。
         openai_key = st.text_input(
@@ -45,6 +46,28 @@ def render_sidebar() -> None:
             st.number_input(
                 "10cm 行数", 8.0, 50.0, 16.0, 0.5, key="gauge_rw_input",
                 disabled=preset != "custom")
+
+        st.divider()
+        with st.expander("🎛 塑形选项（进阶）", expanded=False):
+            st.select_slider(
+                "头部球体", options=["ladder", "ideal", "egg"], value="ladder",
+                format_func={"ladder": "经典阶梯球（图解通行）",
+                             "ideal": "理想球（sinθ，更圆）",
+                             "egg": "蛋形（下半收窄）"}.get,
+                key="style_sphere",
+                help="阶梯球=发布图解通用做法；理想球逐圈针数按 sin 极角分布"
+                     "（mspremiseconclusion 2010），布料量更接近真球；蛋形为"
+                     "玩偶头主流形状",
+            )
+            st.checkbox("头身一体钩（免缝合）", value=False, key="style_onepiece",
+                        help="头收针到颈围后不断线直接钩身体")
+            st.select_slider(
+                "裙子做法", options=["ring", "attached"], value="ring",
+                format_func={"ring": "独立裙筒（腰部环起）",
+                             "attached": "挑后半针（钩在身体上）"}.get,
+                key="style_skirt",
+            )
+            st.checkbox("波浪裙摆（末圈每针放2针）", value=False, key="style_ruffle")
 
         if openai_key or anthropic_key:
             st.success("✅ API Key 已设置")

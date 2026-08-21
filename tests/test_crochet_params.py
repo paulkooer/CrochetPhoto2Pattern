@@ -427,3 +427,103 @@ def test_structure_added_skirt_reaches_params():
     skirt = params["parts"][-1]
     assert skirt.rounds[0].stitches == 36  # 腰部开口起针
     assert "裙" in params["assembly_instructions"]
+
+
+# ── M2.6/M2.7 理想球与蛋形头 ───────────────────────────────────────────────
+
+def test_ideal_sphere_shape_and_constraints():
+    from app.models.crochet_params import _ideal_sphere_rounds
+    r = _ideal_sphere_rounds(9.0)
+    sts = [x["stitches"] for x in r]
+    assert max(sts) == 36                       # 与阶梯球同锚点
+    assert sts[0] == 6 and sts[-1] <= 12       # 顶极 6；末极受 ±6 限制停在 ≤12（断线勒紧收口）
+    assert all(n % 6 == 0 for n in sts)
+    assert all(abs(b - a) <= 6 for a, b in zip(sts, sts[1:]))
+    # 近似对称（球）：上半镜像与下半差 ≤ 每侧 1 档
+    half = len(sts) // 2
+    assert abs(sum(sts[:half]) - sum(sts[-half:])) <= 36
+    assert any("勒紧收口" in (x["notes"] or "") for x in r)
+
+
+def test_egg_head_narrower_bottom_and_eye():
+    from app.models.crochet_params import _ideal_sphere_rounds
+    egg = [x["stitches"] for x in _ideal_sphere_rounds(9.0, egg=True)]
+    ball = [x["stitches"] for x in _ideal_sphere_rounds(9.0)]
+    # 蛋形下半更早收窄：下半针数和 < 球的下半
+    half = len(egg) // 2
+    assert sum(egg[half:]) < sum(ball[len(ball) - half:]) or egg[-1] < ball[-1]
+    r = _ideal_sphere_rounds(9.0, egg=True)
+    assert 2 <= r[0]["eye_round"] <= len(r)     # 几何化眼睛定位
+
+
+def test_head_mode_ideal_via_style():
+    from app.models.gauge import ShapingStyle
+    params = CrochetParamsGenerator.generate_params(
+        *_sd(["头部"]), style=ShapingStyle(sphere_mode="ideal"))
+    head = params["parts"][0]
+    assert "理想球形" in head.notes
+    params2 = CrochetParamsGenerator.generate_params(
+        *_sd(["头部"]), style=ShapingStyle(sphere_mode="egg"))
+    assert "蛋形" in params2["parts"][0].notes
+
+
+def _sd(parts, **kw):
+    from app.models.structure_designer import StructureDesigner
+    a = ImageAnalysis(body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
+                      main_features=[], pose="站立", difficulty="easy",
+                      parts=parts, **kw)
+    return a, StructureDesigner.design_3d_structure(a)
+
+
+# ── M2.10 头身一体钩 ───────────────────────────────────────────────────────
+
+def test_one_piece_merge():
+    from app.models.gauge import ShapingStyle
+    params = CrochetParamsGenerator.generate_params(
+        *_sd(["头部", "身体", "手臂"]), style=ShapingStyle(one_piece=True))
+    names = [p.name for p in params["parts"]]
+    assert "头身（一体）" in names and "头部" not in names and "身体" not in names
+    op = [p for p in params["parts"] if p.name == "头身（一体）"][0]
+    sts = [r.stitches for r in op.rounds]
+    assert sts[0] == 6                                  # 头顶起针
+    assert sts[-1] == 6                                 # 底部收口
+    assert max(sts) >= 30                               # 含头部最宽圈
+    notes = "".join(r.notes or "" for r in op.rounds)
+    assert "颈部" in notes and "勒紧收口" in notes
+    assert any("错开半组" in (r.notes or "") for r in op.rounds)
+    # 装配：一体件有分阶段填充，且无头身缝合步骤
+    asm = params["assembly_instructions"]
+    assert "分阶段填充" in asm and "接合到身体顶部" not in asm
+    # 手臂等其余部件保留
+    assert "手臂" in names
+
+
+# ── M2.11 裙子做法与波浪摆 ────────────────────────────────────────────────
+
+def test_skirt_attached_style_and_ruffle():
+    from app.models.gauge import ShapingStyle
+    params = CrochetParamsGenerator.generate_params(
+        *_sd(["身体", "裙子"]),
+        style=ShapingStyle(skirt_style="attached", ruffle_hem=True))
+    skirt = [p for p in params["parts"] if p.name == "裙子"][0]
+    assert "后半针" in skirt.rounds[0].notes
+    last = skirt.rounds[-1]
+    assert last.stitches == skirt.rounds[-2].stitches * 2    # 波浪摆翻倍
+    assert "波浪裙摆" in (last.notes or "") and "免缝合" in skirt.notes
+
+
+# ── M3.13 语义色与色带融合 ────────────────────────────────────────────────
+
+def test_semantic_color_snaps_nearest_band_segment():
+    """红裙白边：白色带保留，蓝色带吸附为语义红色。"""
+    bands = [{"start": 0.0, "end": 0.7, "color": "蓝色"},
+             {"start": 0.7, "end": 1.0, "color": "白色"}]
+    a, struct = _sd(["裙子"], bottom_color="红色")
+    params = CrochetParamsGenerator.generate_params(
+        a, struct, color_bands=bands)
+    skirt = params["parts"][0]
+    colors = [r.color for r in skirt.rounds]
+    assert "红色" in colors and "白色" in colors     # 分段保留
+    assert "蓝色" not in colors                       # 最近段被吸附
+    assert any("换线" in (r.notes or "") for r in skirt.rounds)
+    assert "校正" in (skirt.notes or "")

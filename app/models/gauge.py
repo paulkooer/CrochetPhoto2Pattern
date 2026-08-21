@@ -97,3 +97,32 @@ def gauge_from_ui(preset: str, stitches: Optional[float],
         return Gauge(st, rw)
     except (TypeError, ValueError):
         return DEFAULT
+
+
+@dataclass(frozen=True)
+class ShapingStyle:
+    """塑形风格（侧栏可调，模型层透传）。
+
+    - sphere_mode: 头部球体生成方式。ladder=经典阶梯球（发布图解通行做法，
+      默认）；ideal=理想球（逐圈针数 ∝ sinθ，mspremiseconclusion 2010，
+      布料量分布更接近真球）；egg=蛋形（下半提前收窄的 sin 变体，玩偶头
+      主流形状；安全眼定位取最大围下一两圈）。
+    - one_piece: 头身一体钩（头收针到颈围不断线直接钩身体，免缝合更牢固）。
+    - skirt_style: ring=独立裙筒（腰部环起）；attached=挑后半针法（身体腰圈
+      只挑前半针，裙子直接钩在预留后半针上——发布图解更常见的做法）。
+    - ruffle_hem: 波浪裙摆（裙末圈每针放 2 针）。
+    """
+
+    sphere_mode: str = "ladder"
+    one_piece: bool = False
+    skirt_style: str = "ring"
+    ruffle_hem: bool = False
+
+    def __post_init__(self) -> None:
+        if self.sphere_mode not in ("ladder", "ideal", "egg"):
+            object.__setattr__(self, "sphere_mode", "ladder")
+        if self.skirt_style not in ("ring", "attached"):
+            object.__setattr__(self, "skirt_style", "ring")
+
+
+DEFAULT_STYLE = ShapingStyle()

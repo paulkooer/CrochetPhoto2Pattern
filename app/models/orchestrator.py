@@ -35,6 +35,7 @@ class PipelineOrchestrator:
         progress_cb: Optional[ProgressCB] = None,
         local_vision: bool = False,
         gauge=None,
+        style=None,
     ) -> Dict[str, Any]:
         """Run the complete pipeline: parse → design → generate params.
 
@@ -73,8 +74,10 @@ class PipelineOrchestrator:
         # 照片纵向色带 → 逐圈配色（让针法配色来自照片本身）
         from .color_design import vertical_color_bands
         from .gauge import DEFAULT as DEFAULT_GAUGE
+        from .gauge import DEFAULT_STYLE
 
         gauge = gauge or DEFAULT_GAUGE
+        style = style or DEFAULT_STYLE
         color_bands = vertical_color_bands(image)
         # M1.1：照片宽度剖面 → 身体轮廓驱动（AmiGo 旋转体范式的单图简化）
         body_profile = None
@@ -83,7 +86,7 @@ class PipelineOrchestrator:
             body_profile = [float(v) for v in sil["profile"]]
         params = self.params_generator.generate_params(
             analysis, structure, color_bands=color_bands or None,
-            body_profile=body_profile, gauge=gauge,
+            body_profile=body_profile, gauge=gauge, style=style,
         )
         logger.info("Parameters generated: %d parts, difficulty=%s, %d color bands",
                     len(params.get("parts", [])), params.get("difficulty"),

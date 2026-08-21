@@ -8,7 +8,7 @@ from .color_design import (
     round_color,
 )
 from .gauge import DEFAULT as DEFAULT_GAUGE
-from .gauge import Gauge
+from .gauge import Gauge, ShapingStyle
 from .profile_shaping import profile_to_rounds, rounds_to_notes
 
 # 圈针说明依据的通行规范（非自行设计）：
@@ -36,6 +36,9 @@ SKIRT_BODY_RATIO = 1.25      # 裙摆直径相对身体放大
 
 # 自端部起针的部件（R1 对应照片低处）：照片配色映射自底向上
 _BOTTOM_UP_PARTS = frozenset({"身体", "手臂", "腿部"})
+
+# 头身一体件：粗略计入两组用线（实际占比取决于配色，可试钩后修正）
+_ONE_PIECE_NAME = "头身（一体）"
 
 
 def _semantic_color(part_name: str, analysis) -> Optional[str]:
@@ -156,6 +159,66 @@ def _sphere_rounds(max_stitches: int = 36) -> List[Dict[str, Any]]:
     return rounds
 
 
+def _ideal_sphere_rounds(
+    diameter_cm: float,
+    gauge: Gauge = DEFAULT_GAUGE,
+    egg: bool = False,
+    egg_e: float = 0.12,
+) -> List[Dict[str, Any]]:
+    """理想球/蛋形（M2.6/M2.7）：逐圈针数 ∝ sin(极角)。
+
+    依据：The Ideal Crochet Sphere（mspremiseconclusion, 2010，已核实）——
+    第 j 圈针数 = π·D·sinθ_j / 针宽；经典阶梯球沿经线布料量偏少（+6 阶梯
+    只在极点附近密集），理想球分布均匀、填充后更圆。
+    egg=True：宽度乘 (1 + e·cosθ)（θ 自顶极点），上略宽下略窄的蛋形——
+    玩偶头主流形状；返回值附 eye_round（最大围行，眼睛在其下一两圈）。
+    """
+    import math
+
+    n = max(5, int(diameter_cm / gauge.row_h_cm + 0.5))
+    row_h = gauge.row_h_cm
+    targets = []
+    for j in range(1, n + 1):
+        y = (j - 0.5) * row_h
+        theta = math.pi * min(y, diameter_cm) / max(diameter_cm, 1e-9)
+        w = diameter_cm * math.sin(theta)
+        if egg:
+            w *= (1.0 + egg_e * math.cos(theta))
+        st = math.pi * w / gauge.stitch_w_cm
+        targets.append(max(6, int(round(st / 6.0)) * 6))
+    # 相邻圈 |Δ| ≤ 6 钳制（短针平盘极限，不起浪不起褶）
+    clamped = [targets[0]]
+    for t in targets[1:]:
+        prev = clamped[-1]
+        clamped.append(max(prev - 6, min(prev + 6, max(6, t))))
+    rounds: List[Dict[str, Any]] = [{
+        "row": 1, "stitches": clamped[0],
+        "notes": f"魔法环起{clamped[0]}针（X×{clamped[0]}）",
+    }]
+    for i in range(1, len(clamped)):
+        before, cur = clamped[i - 1], clamped[i]
+        if cur == before:
+            note = f"{cur}X（不加不减）"
+        elif cur > before:
+            note = _inc_note_by_before(before)
+        else:
+            note = _dec_note(before)
+        rounds.append({
+            "row": i + 1, "stitches": cur,
+            "increase": 6 if cur > before else 0,
+            "decrease": 6 if cur < before else 0,
+            "notes": note,
+        })
+    rounds = _mark_staggered(rounds)
+    if rounds:
+        last = rounds[-1]
+        last["notes"] = (last.get("notes") or "") + "；断线留10cm，勒紧收口藏线头"
+    # 眼睛：最大围所在圈（蛋形时上移），再往下 1 圈
+    eye_idx = max(range(len(clamped)), key=lambda i: clamped[i])
+    rounds[0]["eye_round"] = min(len(rounds), eye_idx + 2)  # 附带信息，CrochetStitch 会忽略
+    return rounds
+
+
 def _cylinder_rounds(max_stitches: int = 24, body_rounds: int = 15) -> List[Dict[str, Any]]:
     """Generate cylinder: increase to max_stitches, hold, then 2 taper rounds."""
     step = 6
@@ -212,7 +275,9 @@ def _materials(parts: List[Any], part_names: set,
                 gauge: Gauge = DEFAULT_GAUGE) -> List[Dict[str, str]]:
     """材料清单随实际部件生成；parts 元素可为 CrochetPart 或 dict（JSON 修正路径）。"""
     materials: List[Dict[str, str]] = []
-    for group, label in ((_SKIN_PARTS, "肤色系毛线"), (_BODY_PARTS, "主体色毛线")):
+    _skin = _SKIN_PARTS | {_ONE_PIECE_NAME}
+    _body = _BODY_PARTS | {_ONE_PIECE_NAME}
+    for group, label in ((_skin, "肤色系毛线"), (_body, "主体色毛线")):
         group_parts = [p for p in parts if _part_name(p) in group]
         if not group_parts:
             continue
@@ -239,18 +304,23 @@ def refresh_derived(params: dict) -> dict:
     params["estimated_time_minutes"] = max(30, round(total_rounds * MINUTES_PER_ROUND))
     params["total_stitches"] = total_stitches
     params["materials"] = _materials(parts, {_part_name(p) for p in parts})
-    # 装配说明同样是 parts 的函数：删部件后不得残留对应步骤（F5）
-    params["assembly_instructions"] = build_assembly({_part_name(p) for p in parts})
+    # 装配说明同样是 parts 的函数：删部件后不得残留对应步骤（F5）；
+    # 裙子做法按生成时的口径保留
+    params["assembly_instructions"] = build_assembly(
+        {_part_name(p) for p in parts}, params.get("skirt_style", "ring"))
     return params
 
 
-def build_assembly(part_names) -> str:
+def build_assembly(part_names, skirt_style: str = "ring") -> str:
     """装配说明：只提及实际存在的部件（generate 与 refresh_derived 共用）。"""
+    one_piece = _ONE_PIECE_NAME in part_names
     steps: List[str] = ["各部件分别完成并填充棉花"]
-    if "头部" in part_names:
+    if one_piece:
+        steps.append("一体件钩完头部后先填充头部再继续钩身体（分阶段填充）")
+    if "头部" in part_names or one_piece:
         steps.append("头部安装安全眼（第2/3高度处）")
         steps.append("用黑色毛线绣鼻子和嘴巴")
-        if "身体" in part_names:
+        if "身体" in part_names and not one_piece:
             steps.append("用隐形缝合法将头部接合到身体顶部")
     if "手臂" in part_names:
         steps.append("手臂对称缝合到身体两侧上方")
@@ -261,7 +331,10 @@ def build_assembly(part_names) -> str:
     if "帽子" in part_names:
         steps.append("帽口不收口，直接戴在头部（试戴后可缝合固定）")
     if "裙子" in part_names:
-        steps.append("裙筒腰部套入身体后缝合固定（腰部为开口起针）")
+        if skirt_style == "attached":
+            steps.append("裙子已挑后半针钩在身体腰部，无需缝合")
+        else:
+            steps.append("裙筒腰部套入身体后缝合固定（腰部为开口起针）")
     if "尾巴" in part_names:
         steps.append("尾巴缝合在身体后方")
     return "\n".join(f"{i}. {s}" for i, s in enumerate(steps, 1))
@@ -277,6 +350,7 @@ class CrochetParamsGenerator:
         color_bands: Optional[List[Dict]] = None,
         body_profile: Optional[List[float]] = None,
         gauge: Gauge = DEFAULT_GAUGE,
+        style: ShapingStyle = None,
     ) -> Dict[str, Any]:
         """Generate crochet parameters using structure data for dimensions.
 
@@ -287,7 +361,10 @@ class CrochetParamsGenerator:
         body_profile：照片宽度剖面 → 身体筒壁逐圈针数（AmiGo 旋转体范式的
         单图简化；None 时降级为模板圆柱）。
         gauge：小样密度（针宽/行高单一来源，参数与网格层共用）。
+        style：塑形风格（理想球/蛋形头、头身一体、裙子做法、波浪摆）。
         """
+        from .gauge import DEFAULT_STYLE
+        style = style or DEFAULT_STYLE
         struct_parts: Dict[str, Dict] = {
             p["name"]: p for p in structure.get("parts", [])
         }
@@ -310,13 +387,24 @@ class CrochetParamsGenerator:
                 )
                 diameter = sp.get("diameter_cm", fallback_d)
                 max_st = _stitches_for_diameter(diameter, gauge)
-                rounds_raw = _sphere_rounds(max_stitches=max_st)
+                eye_extra = None
+                if is_head and style.sphere_mode in ("ideal", "egg"):
+                    # 理想球/蛋形（M2.6/M2.7）：sinθ 分布 + 几何化眼睛定位
+                    rounds_raw = _ideal_sphere_rounds(
+                        diameter, gauge, egg=(style.sphere_mode == "egg"))
+                    eye_extra = rounds_raw[0].pop("eye_round", None)
+                    max_st = max(r["stitches"] for r in rounds_raw)
+                else:
+                    rounds_raw = _sphere_rounds(max_stitches=max_st)
                 if is_head:
                     color = sp.get("color", "skin")
-                    eye_round = max(2, len(rounds_raw) * 2 // 3)
+                    eye_round = eye_extra or max(2, len(rounds_raw) * 2 // 3)
                     eye_gap = max(4, max_st // 6)
+                    shape_label = {"ideal": "理想球形（sinθ 分布）",
+                                   "egg": "蛋形（下半收窄）"}.get(
+                                       style.sphere_mode, "标准球形")
                     notes = (
-                        f"标准球形，最大 {max_st} 针。"
+                        f"{shape_label}，最大 {max_st} 针。"
                         f"第 {eye_round} 圈安装安全眼（8mm，两眼间隔约 {eye_gap} 针）。"
                         "建议先钩小样测试张力。"
                     )
@@ -360,19 +448,39 @@ class CrochetParamsGenerator:
                         "stitches": hem_st,
                         "notes": f"{hem_st}X（不加不减）",
                     })
+                if style.skirt_style == "attached":
+                    # 挑后半针法：身体腰圈只挑前半针，裙子钩在预留后半针上
+                    rounds_raw[0]["notes"] = (
+                        f"在身体腰部（身体最上 1–2 圈）挑后半针起针{waist_st}X"
+                        "（身体该圈钩时只挑前半针，留后半针给裙子）"
+                    )
+                if style.ruffle_hem:
+                    rounds_raw.append({
+                        "row": len(rounds_raw) + 1,
+                        "stitches": hem_st * 2,
+                        "increase": hem_st,
+                        "notes": f"波浪裙摆：每针放2针（V×{hem_st}）",
+                    })
                 actual_h = round(len(rounds_raw) * gauge.row_h_cm, 1)
+                skirt_notes = (
+                    f"开口裙筒（腰 {waist_st} 针开口起针 → 裙摆 {hem_st} 针），"
+                    f"实际高约 {actual_h}cm。"
+                )
+                if style.skirt_style == "attached":
+                    skirt_notes += "腰部挑后半针钩织，免缝合更服帖。"
+                else:
+                    skirt_notes += "腰部套入身体后缝合固定。"
+                if style.ruffle_hem:
+                    skirt_notes += "末圈波浪裙摆。"
                 part = CrochetPart(
                     name=part_name,
                     type="cup",
                     height_cm=actual_h,
-                    diameter_cm=round(hem_st / STITCHES_PER_CM, 1),
+                    diameter_cm=round(hem_st * gauge.stitch_w_cm / 3.14159, 1),
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
                     magic_ring=False,  # 腰部开口起针，非魔法环
-                    notes=(
-                        f"开口裙筒（腰 {waist_st} 针开口起针 → 裙摆 {hem_st} 针），"
-                        f"实际高约 {actual_h}cm，腰部套入身体后缝合固定。"
-                    ),
+                    notes=skirt_notes,
                 )
 
             elif part_name == "帽子" or shape == "cup":
@@ -479,8 +587,17 @@ class CrochetParamsGenerator:
                 )
 
             sem = _semantic_color(part_name, analysis)
+            _sem_in_table = False
             if sem:
-                # 语义色优先：整段单色 + 说明（模型语义比像素分层可信）
+                from .colors import YARN_COLORS
+                _sem_in_table = sem in {name for _rgb, name in YARN_COLORS}
+            if sem and color_bands and _sem_in_table and part.name in PART_SPAN:
+                # M3.13 融合：分段结构保留，最近段吸附为语义色（红裙白边）
+                CrochetParamsGenerator._apply_color_plan(part, color_bands,
+                                                         snap_color=sem)
+                part.notes = (part.notes or "") + f" 主色按照片语义校正为 {sem}。"
+            elif sem:
+                # 语义色不在色表 / 无色带：整段单色
                 for rd in part.rounds:
                     rd.color = sem
                 part.color = sem
@@ -489,28 +606,134 @@ class CrochetParamsGenerator:
                 CrochetParamsGenerator._apply_color_plan(part, color_bands)
             crochet_parts.append(part)
 
-        return CrochetParamsGenerator._build_result(analysis, crochet_parts, gauge)
+        if style.one_piece:
+            crochet_parts = CrochetParamsGenerator._merge_head_body(
+                crochet_parts, gauge)
+
+        return CrochetParamsGenerator._build_result(
+            analysis, crochet_parts, gauge, style)
 
     @staticmethod
-    def _apply_color_plan(part: CrochetPart, bands: List[Dict]) -> None:
-        """把照片色带按部件纵向占比铺到每一圈（原地），并生成换线说明。"""
+    def _merge_head_body(parts: List[CrochetPart], gauge: Gauge) -> List[CrochetPart]:
+        """头身一体钩（M2.10）：头顶起针→颈部不断线→身体向下→底部收口。
+
+        头部保留到颈围（与身体顶端口径一致的减针链），身体筒壁反转成自顶
+        向下（几何不变，加减针说明按新方向重算），末端补收口圆盘。
+        配色退化为整段单色（一体件的分段配色映射口径复杂，后续再议）。
+        """
+        head = next((p for p in parts if p.name == "头部"), None)
+        body = next((p for p in parts if p.name == "身体"), None)
+        if head is None or body is None:
+            return parts
+
+        body_sts = [r.stitches for r in body.rounds]
+        n_dome = body_sts[0] // 6 if body_sts else 0
+        wall = body_sts[n_dome:]                       # 自底向上
+        neck = wall[-1] if wall else 24                # 身体顶端（近颈）针数
+
+        # 头部保留至减针链中 ≥ neck 的最后一圈，丢弃更小的收口圈
+        head_kept: List[int] = []
+        for r in head.rounds:
+            head_kept.append(r.stitches)
+            if r.stitches >= neck and (r.decrease or 0) > 0:
+                break
+        while len(head_kept) > 1 and head_kept[-1] < neck:
+            head_kept.pop()
+        if head_kept[-1] != neck:
+            head_kept.append(max(6, neck))             # 对齐颈围（≤±6 内）
+
+        # 身体壁自顶向下 = wall 反转，首圈对齐颈围后按 ±6 重钳制
+        top_down = [neck] + list(reversed(wall[:-1])) if len(wall) > 1 else [neck]
+        merged_sts = head_kept[:]
+        for t in top_down[1:]:
+            prev = merged_sts[-1]
+            merged_sts.append(max(prev - 6, min(prev + 6, max(6, t))))
+        # 底部收口：向下递减到 6
+        while merged_sts[-1] > 6:
+            merged_sts.append(max(6, merged_sts[-1] - 6))
+
+        rounds_raw: List[Dict[str, Any]] = []
+        for i, n in enumerate(merged_sts):
+            if i == 0:
+                notes = f"魔法环起{n}针（X×{n}）"
+            else:
+                before = merged_sts[i - 1]
+                if n == before:
+                    notes = f"{n}X（不加不减）"
+                elif n > before:
+                    notes = _inc_note_by_before(before)
+                else:
+                    notes = _dec_note(before)
+                if i == len(head_kept) - 1 and i > 0:
+                    notes += "；此处为颈部，不断线直接钩身体"
+            rounds_raw.append({
+                "row": i + 1, "stitches": n, "notes": notes,
+                "increase": 6 if i and n > merged_sts[i - 1] else 0,
+                "decrease": 6 if i and n < merged_sts[i - 1] else 0,
+            })
+        rounds_raw = _mark_staggered(rounds_raw)
+        last = rounds_raw[-1]
+        last["notes"] = (last.get("notes") or "") + "；断线留10cm，勒紧收口藏线头"
+
+        eye_round = next((i + 1 for i, r in enumerate(rounds_raw)
+                          if r["stitches"] == max(merged_sts)), 2) + 1
+        merged = CrochetPart(
+            name=_ONE_PIECE_NAME,
+            type="onepiece",
+            height_cm=round(len(merged_sts) * gauge.row_h_cm, 1),
+            rounds=[CrochetStitch(**r) for r in rounds_raw],
+            color=head.color,
+            magic_ring=True,
+            notes=(
+                f"头身一体钩（最大 {max(merged_sts)} 针）：头顶起针钩至颈部后"
+                f"不断线直接向下钩身体，末端收口；第 {eye_round} 圈安装安全眼。"
+                "钩完头部先填充再继续。配色为整段单色（一体件分段换线建议自行规划）。"
+            ),
+        )
+        return [merged] + [p for p in parts if p.name not in ("头部", "身体")]
+
+    @staticmethod
+    def _apply_color_plan(part: CrochetPart, bands: List[Dict],
+                          snap_color: Optional[str] = None) -> None:
+        """把照片色带按部件纵向占比铺到每一圈（原地），并生成换线说明。
+
+        snap_color（M3.13 语义融合）：提供时保留色带分段结构，把与该语义色
+        最接近的段"吸附"为语义色本身（红裙白边 → 白边保留、红段吸附为正红）；
+        语义色不在毛线色表中时由调用方退化为整段单色。
+        """
         blocks = color_blocks_for_part(bands, part.name)
         if not blocks:
             return  # 该部件无占比先验（未知部件）→ 保持单色
         span_s, span_e = PART_SPAN.get(part.name, (0.0, 1.0))
         span_len = span_e - span_s
-        colors: List[Optional[str]] = []
-        prev: Optional[str] = None
         n = len(part.rounds)
         # 钩织方向：身体/四肢自端部起针（R1=脚底/手端/胯部=照片低处），
         # 末圈才缝合到躯干——这些部件的照片色带映射必须自底向上。
         bottom_up = part.name in _BOTTOM_UP_PARTS
-        for j, rd in enumerate(part.rounds):
+        colors: List[Optional[str]] = []
+        for j in range(n):
             frac = (span_e - span_len * (j + 0.5) / n) if bottom_up else (
                 span_s + span_len * (j + 0.5) / n
             )
-            c = round_color(frac, blocks)
-            colors.append(c)
+            colors.append(round_color(frac, blocks))
+
+        # 语义吸附：与 snap_color 最接近的既有段 → 替换为语义色
+        if snap_color:
+            from .colors import YARN_COLORS
+
+            rgb_by_name = {name: tuple(rgb) for rgb, name in YARN_COLORS}
+            snap_rgb = rgb_by_name.get(snap_color)
+            if snap_rgb is not None:
+                def _dist2(rgb1, rgb2):
+                    return sum((a - b) ** 2 for a, b in zip(rgb1, rgb2))
+                candidates = {c for c in colors if c in rgb_by_name}
+                if candidates:
+                    nearest = min(
+                        candidates, key=lambda c: _dist2(rgb_by_name[c], snap_rgb))
+                    colors = [snap_color if c == nearest else c for c in colors]
+
+        prev: Optional[str] = None
+        for rd, c in zip(part.rounds, colors):
             rd.color = c
             if prev is not None and c != prev:
                 # jogless 换色：前一针最后一次挂线即改用新色，消除螺旋台阶
@@ -525,13 +748,14 @@ class CrochetParamsGenerator:
 
     @staticmethod
     def _build_result(analysis: ImageAnalysis, parts: List[CrochetPart],
-                      gauge: Gauge = DEFAULT_GAUGE) -> Dict[str, Any]:
+                      gauge: Gauge = DEFAULT_GAUGE,
+                      style: "ShapingStyle" = None) -> Dict[str, Any]:
         """Assemble the result dict: materials / assembly / time scale with parts."""
         part_names = {p.name for p in parts}
         total_rounds = sum(p.rows for p in parts)
         total_stitches = sum(r.stitches for p in parts for r in p.rounds)
 
-        assembly = build_assembly(part_names)
+        assembly = build_assembly(part_names, style.skirt_style)
 
         return {
             "materials": _materials(parts, part_names, gauge),
@@ -540,6 +764,7 @@ class CrochetParamsGenerator:
             "difficulty": analysis.difficulty,
             "estimated_time_minutes": max(30, round(total_rounds * MINUTES_PER_ROUND)),
             "total_stitches": total_stitches,
+            "skirt_style": style.skirt_style,  # refresh_derived 保留裙子做法口径
             "notes": (
                 "螺旋钩法：全程不引拔、不翻转，每圈第一针挂记号扣；"
                 "减针建议用隐形减针（只挑两针目的前半针）更平整。"
