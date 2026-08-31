@@ -24,6 +24,9 @@
   AppTest 统一使用仓库绝对入口，并为双结果冷启动设置合理超时。
 - 新增依赖变更触发和每周定时的 `pip-audit` 工作流；先按 `uv.lock` 同步环境，
   再审计实际安装版本，审计工具不会改写项目锁文件。
+- CI 通过 `UV_PYTHON` 强制使用矩阵声明的解释器，避免 `.python-version` 把
+  3.11–3.14 四个 job 静默收敛为 3.12；pose extra 暂避开 MediaPipe 0.10.30+
+  在 Linux 上的 ctypes Image 绑定回归。
 
 ### Planned
 

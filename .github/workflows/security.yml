@@ -27,6 +27,8 @@ jobs:
   pip-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v4
 

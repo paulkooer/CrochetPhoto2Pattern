@@ -17,6 +17,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # .python-version 只服务本地默认值；远程矩阵必须显式覆盖，否则 uv 会让
+    # 四个 job 都静默使用 3.12，形成“假矩阵”。
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:

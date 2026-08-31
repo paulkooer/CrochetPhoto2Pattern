@@ -14,9 +14,9 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 
 | 检查 | 结果 | 说明 |
 |---|---|---|
-| 核心环境 | 700 passed, 5 skipped | Python 3.12.13；PDF 依赖、姿态运行时及授权真实照片缺失时按设计跳过 |
-| PDF extras | 704 passed, 1 skipped | `[pdf]` 环境实际执行全部 PDF 用例；仅授权真实照片评测跳过 |
-| Pose extras | 700 passed, 5 skipped | `[pose]` 环境全绿；未安装 PDF 及没有授权照片时按设计跳过 |
+| 核心环境 | 701 passed, 5 skipped | Python 3.12.13；PDF 依赖、姿态运行时及授权真实照片缺失时按设计跳过 |
+| PDF extras | 705 passed, 1 skipped | Python 3.11.15；`[pdf]` 实际执行全部 PDF 用例，仅授权真实照片评测跳过 |
+| Pose extras | 701 passed, 5 skipped | Python 3.11.15；固定 MediaPipe 旧绑定后全绿，未安装 PDF/授权照片按设计跳过 |
 | 覆盖率 | 88.11% | 干净核心环境，`pytest --cov=app --cov-fail-under=80` |
 | 静态检查 | 通过 | `ruff check .` |
 | 差异格式 | 通过 | `git diff --check` |
@@ -31,7 +31,7 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **阻断** | 工作区清洁、改动按逻辑审查并提交、版本与变更日志一致 |
+| G1 可复现源码 | **已通过** | 改动已审查并提交，版本、锁文件、变更日志和远程 `main` 一致 |
 | G2 支持版本自动化 | **待远程验证** | Python 3.11–3.14 核心 CI 与可选依赖 CI 全绿 |
 | G3 授权照片基线 | **阻断** | 至少30个分层案例，满足 `docs/evaluation.md` 门槛并保留报告 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |

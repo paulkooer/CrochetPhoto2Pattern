@@ -56,10 +56,11 @@ dev = [
 ]
 # PDF 图解导出（可选，S4）：中文用 Adobe CID 字体，无需额外字体文件
 pdf = ["reportlab>=4.0"]
-# 姿态关键点实测 span（可选，S1）：mediapipe 会带入 opencv-contrib 5.x，
-# 与主依赖 opencv-python-headless<5 冲突——必须保持可选（冲突记录见
-# app/models/pose.py 模块注释与 handoff §18）
-pose = ["mediapipe>=0.10,<1.0"]
+# 姿态关键点实测 span（可选，S1）：0.10.30 起 Python Image 改写为 ctypes，
+# Linux 上已有构造/析构回归（google-ai-edge/mediapipe#6331 同代绑定问题，
+# 本仓远程 extras 复现）；暂固定在最后一个旧绑定版本系列。mediapipe 还会
+# 带入 opencv-contrib，与主依赖 headless 冲突，因此必须保持可选。
+pose = ["mediapipe>=0.10.20,<0.10.30"]
 
 # app/prompts/*.txt 是包内数据（运行时由 image_parser 读取）。
 # pyproject 模式下 setuptools 默认不打包 package data，缺了这一段，

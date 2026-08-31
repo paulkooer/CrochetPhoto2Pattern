@@ -102,6 +102,7 @@ def test_supported_python_matches_ci_and_lock():
     matrix = re.search(r"python-version: \[([^]]+)]", workflow)
     assert matrix is not None
     assert re.findall(r'"([^"]+)"', matrix.group(1)) == ["3.11", "3.12", "3.13", "3.14"]
+    assert "UV_PYTHON: ${{ matrix.python-version }}" in workflow
 
 
 def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
@@ -111,6 +112,11 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
         assert "uv run --locked" in workflow
         assert "pip install -e" not in workflow
 
+    extras = (_REPO / ".github" / "workflows" / "extras.yml").read_text(
+        encoding="utf-8"
+    )
+    assert 'UV_PYTHON: "3.11"' in extras
+
     security = (_REPO / ".github" / "workflows" / "security.yml").read_text(
         encoding="utf-8"
     )
@@ -118,6 +124,11 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
     assert "pip-audit==2.10.1" in security
     assert "pip-audit --local" in security
     assert "schedule:" in security
+
+
+def test_pose_extra_avoids_known_ctypes_binding_regression():
+    pyproject = (_REPO / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'pose = ["mediapipe>=0.10.20,<0.10.30"]' in pyproject
 
 
 def test_lock_contains_current_project_version():

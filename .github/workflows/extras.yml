@@ -17,6 +17,8 @@ jobs:
   optional-extras:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      UV_PYTHON: "3.11"
     strategy:
       fail-fast: false
       matrix:
