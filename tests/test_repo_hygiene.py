@@ -140,8 +140,9 @@ def test_pose_extra_avoids_known_ctypes_binding_regression():
         in pyproject
     )
     assert (
-        '"protobuf>=6.33.5,<8; python_version >= \'3.14\'"' in pyproject
+        '"protobuf>=6.33.5,<8; python_version >= \'3.13\'"' in pyproject
     )
+    assert '"numpy>=2.3; python_version >= \'3.13\'"' in pyproject
 
 
 def test_lock_contains_current_project_version():

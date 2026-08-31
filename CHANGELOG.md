@@ -30,8 +30,9 @@
 - GitHub 官方 Actions 升级到 Node 24 运行时的 `checkout@v7` 与
   `setup-python@v7`，消除 Node 20 弃用告警。
 - MediaPipe pose 明确仅支持其有稳定 wheel 的 Python 3.11–3.12；其
-  `protobuf<5` 约束不再污染 Python 3.13/3.14 核心环境；Python 3.14
-  核心环境显式使用兼容其扩展 ABI 的 Protobuf 6+。
+  `protobuf<5` 约束不再污染 Python 3.13/3.14 核心环境；Python 3.13+
+  核心环境显式使用兼容新解释器 ABI 的 Protobuf 6+，同时
+  使用提供新解释器 wheel 的 NumPy 2.x，避免回退编译 NumPy 1.26 源码。
 
 ### Planned
 
