@@ -1,5 +1,7 @@
 # 系统状态与发布门禁
 
+**简体中文** | [English](system-status.en.md) | [文档索引 / Documentation index](README.md)
+
 > 权威状态快照：2026-08-31。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
@@ -14,10 +16,10 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 
 | 检查 | 结果 | 说明 |
 |---|---|---|
-| 核心环境 | 701 passed, 5 skipped | Python 3.12.13；PDF 依赖、姿态运行时及授权真实照片缺失时按设计跳过 |
-| PDF extras | 705 passed, 1 skipped | Python 3.11.15；`[pdf]` 实际执行全部 PDF 用例，仅授权真实照片评测跳过 |
-| Pose extras | 701 passed, 5 skipped | Python 3.11.15；固定 MediaPipe 旧绑定后全绿，未安装 PDF/授权照片按设计跳过 |
-| 高版本核心 | 701 passed, 5 skipped | Python 3.13.13 与 3.14.4；NumPy 2.5.2 / Protobuf 7.36.0，3.13 无弃用告警 |
+| 核心环境 | 702 passed, 5 skipped | Python 3.12.13；PDF 依赖、姿态运行时及授权真实照片缺失时按设计跳过 |
+| PDF extras | 706 passed, 1 skipped | Python 3.11.15；`[pdf]` 实际执行全部 PDF 用例，仅授权真实照片评测跳过 |
+| Pose extras | 702 passed, 5 skipped | Python 3.11.15；固定 MediaPipe 旧绑定后全绿，未安装 PDF/授权照片按设计跳过 |
+| 高版本核心 | 702 passed, 5 skipped | Python 3.13.13 与 3.14.4；NumPy 2.5.2 / Protobuf 7.36.0，3.13 无弃用告警 |
 | 覆盖率 | 88.11% | 干净核心环境，`pytest --cov=app --cov-fail-under=80` |
 | 静态检查 | 通过 | `ruff check .` |
 | 差异格式 | 通过 | `git diff --check` |

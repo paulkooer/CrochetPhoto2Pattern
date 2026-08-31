@@ -64,8 +64,19 @@ def test_repository_has_public_contribution_and_security_guidance():
     required = (
         "LICENSE",
         "CODE_OF_CONDUCT.md",
+        "CODE_OF_CONDUCT_EN.md",
         "CONTRIBUTING.md",
+        "CONTRIBUTING_EN.md",
         "SECURITY.md",
+        "SECURITY_EN.md",
+        "README_EN.md",
+        "CHANGELOG_EN.md",
+        "docs/README.md",
+        "docs/system-status.en.md",
+        "docs/evaluation.en.md",
+        "docs/physical-trials.en.md",
+        "docs/flow.en.md",
+        "docs/3d-reconstruction-design.en.md",
         ".github/pull_request_template.md",
         ".github/ISSUE_TEMPLATE/bug_report.yml",
         ".github/ISSUE_TEMPLATE/feature_request.yml",
@@ -79,6 +90,33 @@ def test_repository_has_public_contribution_and_security_guidance():
     assert "数据与隐私" in readme
     assert "Security → Advisories" in security
     assert "不要用公开 Issue" in security
+
+
+def test_bilingual_entry_points_cross_link_and_preserve_release_boundaries():
+    pairs = (
+        ("README.md", "README_EN.md"),
+        ("CONTRIBUTING.md", "CONTRIBUTING_EN.md"),
+        ("SECURITY.md", "SECURITY_EN.md"),
+        ("CODE_OF_CONDUCT.md", "CODE_OF_CONDUCT_EN.md"),
+        ("CHANGELOG.md", "CHANGELOG_EN.md"),
+        ("docs/system-status.md", "docs/system-status.en.md"),
+        ("docs/evaluation.md", "docs/evaluation.en.md"),
+        ("docs/physical-trials.md", "docs/physical-trials.en.md"),
+        ("docs/flow.md", "docs/flow.en.md"),
+        ("docs/3d-reconstruction-design.md", "docs/3d-reconstruction-design.en.md"),
+    )
+    for chinese_path, english_path in pairs:
+        chinese = (_REPO / chinese_path).read_text(encoding="utf-8")
+        english = (_REPO / english_path).read_text(encoding="utf-8")
+        assert Path(english_path).name in chinese
+        assert Path(chinese_path).name in english
+
+    english_readme = (_REPO / "README_EN.md").read_text(encoding="utf-8")
+    english_status = (_REPO / "docs/system-status.en.md").read_text(encoding="utf-8")
+    assert "Release status: Beta" in english_readme
+    assert "Data and privacy" in english_readme
+    assert "G3 Authorized-photo baseline" in english_status
+    assert "G4 Physical-trial baseline" in english_status
 
 
 def test_historical_audit_docs_point_to_authoritative_status():

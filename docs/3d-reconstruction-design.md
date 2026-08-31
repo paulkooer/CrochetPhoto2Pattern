@@ -1,5 +1,7 @@
 # 单图 3D 重建 → 图解管线设计（S6，未实施）
 
+**简体中文** | [English](3d-reconstruction-design.en.md) | [文档索引 / Documentation index](README.md)
+
 > 状态：**设计文档**。需要 GPU（TRELLIS ~16GB 显存 / TripoSR 8GB+ 或慢速
 > CPU），无法在当前开发环境验证，不进默认依赖。本文记录选型结论与集成
 > 设计，待有 GPU 环境时按此实施。

@@ -1,5 +1,7 @@
 # 贡献指南
 
+**简体中文** | [English](CONTRIBUTING_EN.md)
+
 感谢你改进 CrochetPhoto2Pattern。项目当前处于 Beta，优先接受能提高图解正确性、
 证据质量、可复现性、隐私或可维护性的改动。
 

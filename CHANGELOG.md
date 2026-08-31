@@ -1,5 +1,7 @@
 # Changelog
 
+**简体中文** | [English](CHANGELOG_EN.md)
+
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 的组织方式，
 版本号采用 [Semantic Versioning](https://semver.org/lang/zh-CN/)。Beta 阶段的备份、
 结构和可编辑工程格式仍可能升级；发生不兼容变化时必须记录迁移方式。
@@ -14,6 +16,8 @@
 - 精选网络试钩证据随 wheel 发布；`external-report --curated` 可直接生成带来源边界的上下文报告。
 - 试钩记录新增向后兼容的 `calibration`/`validation` 分组；候选常数只读取校准集，留出集要求图解哈希完全独立并单独报告偏差。
 - 公开仓库贡献指南、安全策略、行为准则、结构化 Issue 表单和 Pull Request 检查清单。
+- 完整英文项目入口与当前规范文档；Issue / Pull Request 模板改为中英双语，
+  历史审计快照通过双语索引与当前权威状态明确区分。
 
 ### Changed
 

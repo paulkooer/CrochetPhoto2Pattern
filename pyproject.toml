@@ -53,6 +53,8 @@ dependencies = [
 Homepage = "https://github.com/paulkooer/CrochetPhoto2Pattern"
 Repository = "https://github.com/paulkooer/CrochetPhoto2Pattern"
 Issues = "https://github.com/paulkooer/CrochetPhoto2Pattern/issues"
+Documentation = "https://github.com/paulkooer/CrochetPhoto2Pattern/blob/main/docs/README.md"
+Changelog = "https://github.com/paulkooer/CrochetPhoto2Pattern/blob/main/CHANGELOG_EN.md"
 
 [project.optional-dependencies]
 dev = [

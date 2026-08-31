@@ -1,5 +1,7 @@
 # 🧶 CrochetPhoto2Pattern
 
+**简体中文** | [English](README_EN.md)
+
 [![CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml/badge.svg)](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml) [![Version: 0.2.0 beta 1](https://img.shields.io/badge/version-0.2.0--beta.1-orange.svg)](CHANGELOG.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > AI 驱动的 Amigurumi 立体人物钩织图解生成器：从一张照片自动生成完整钩织方法。

@@ -1,5 +1,7 @@
 # 授权真实照片评测
 
+**简体中文** | [English](evaluation.en.md) | [文档索引 / Documentation index](README.md)
+
 真实评测只运行本地视觉路径，不调用 OpenAI、Anthropic 或第三方中转站。照片、
 带识别含义的文件名及报告默认放在 Git 忽略的 `eval_data/`、`eval_outputs/`；
 清单中的授权声明只是审计记录，不能替代适用地区所需的真实同意流程。

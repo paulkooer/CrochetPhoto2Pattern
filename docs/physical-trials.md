@@ -1,5 +1,7 @@
 # 实体试钩记录与校准
 
+**简体中文** | [English](physical-trials.en.md) | [文档索引 / Documentation index](README.md)
+
 试钩工具把“尺寸可能需要调整”变成可追溯数据，但不会自动修改生成器常数。
 原始记录与报告默认放在 Git 忽略的 `trial_data/`、`trial_outputs/`。
 
