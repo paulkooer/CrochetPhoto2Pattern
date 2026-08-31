@@ -63,6 +63,9 @@ def estimate_background(px) -> Tuple[int, int, int]:
 def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
     """把照片纵向切成 n_bands 个横带，返回每带的毛线色（自上而下）。
 
+    主体判定优先 GrabCut 分割（subject.extract_subject，对双色/相近背景
+    更稳）；失败回退四角众数背景 + 颜色距离阈值的启发式。
+
     Returns [{"start": 0.0, "end": 0.1, "color": "浅肤色"}, ...]
     失败（异常图）返回 []，调用方按"无配色"降级。
     """
@@ -77,6 +80,40 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
         h, w = px.shape[:2]
         if h < n_bands or w < 4:
             return []
+        # 主体掩码：GrabCut 优先（掩码与小图对齐），退化/不可用回退阈值法
+        from .subject import extract_subject
+        res = extract_subject(image, max_side=160)
+        mask = None if res is None else res[0]
+        if mask is not None and mask.shape[0] == h:
+            # 每带取主体像素均值；无主体像素的带（纯背景带）不落回整带
+            # 均值——那会把背景色当主体色（实测地板色混进底部带），改为
+            # 延续最近的有主体色带（色彩连续性），全空则按无配色降级。
+            colors: List[Optional[str]] = []
+            for i in range(n_bands):
+                y0, y1 = h * i // n_bands, h * (i + 1) // n_bands
+                block = px[y0:y1].reshape(-1, 3)
+                subject = block[mask[y0:y1].reshape(-1)]
+                colors.append(
+                    nearest_yarn(*(int(v) for v in subject.mean(axis=0)))[0]
+                    if len(subject) else None)
+            filled: List[Optional[str]] = list(colors)
+            last: Optional[str] = None
+            for i, c in enumerate(colors):     # 前向填充
+                if c is not None:
+                    last = c
+                elif last is not None:
+                    filled[i] = last
+            nxt: Optional[str] = None          # 后向填充（顶部空带）
+            for i in range(n_bands - 1, -1, -1):
+                if colors[i] is not None:
+                    nxt = colors[i]
+                elif nxt is not None:
+                    filled[i] = nxt
+            if all(c is None for c in filled):  # 全图无主体
+                return []
+            bands = [{"start": i / n_bands, "end": (i + 1) / n_bands,
+                      "color": filled[i]} for i in range(n_bands)]
+            return _merge_bands(bands)
         bg = np.array(estimate_background(px), dtype=np.int16)
         bands: List[Dict] = []
         subject_total = 0
@@ -99,24 +136,32 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
             })
         if pixel_total and subject_total / pixel_total < 0.05:
             return []
-        # 相邻同色合并
-        merged: List[Dict] = []
-        for b in bands:
-            if merged and merged[-1]["color"] == b["color"]:
-                merged[-1]["end"] = b["end"]
-            else:
-                merged.append(dict(b))
-        return merged
+        return _merge_bands(bands)
     except Exception as e:
         logger.warning("color band extraction failed: %s", e)
         return []
 
 
+def _merge_bands(bands: List[Dict]) -> List[Dict]:
+    """相邻同色带合并（两条提取路径共用的收尾步骤）。"""
+    merged: List[Dict] = []
+    for b in bands:
+        if merged and merged[-1]["color"] == b["color"]:
+            merged[-1]["end"] = b["end"]
+        else:
+            merged.append(dict(b))
+    return merged
+
+
 def color_blocks_for_part(
-    bands: List[Dict], part_name: str
+    bands: List[Dict], part_name: str,
+    spans: Optional[Dict[str, Tuple[float, float]]] = None,
 ) -> List[Tuple[float, float, str]]:
-    """取某部件纵向占比内的色段（合并相邻同色后）。"""
-    span = PART_SPAN.get(part_name)
+    """取某部件纵向占比内的色段（合并相邻同色后）。
+
+    spans（S1）：姿态关键点实测的部件占比；None 时回退 PART_SPAN 先验。
+    """
+    span = (spans or PART_SPAN).get(part_name)
     if not span or not bands:
         return []
     start, end = span

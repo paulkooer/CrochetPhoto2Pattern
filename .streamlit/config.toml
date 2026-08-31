@@ -1,0 +1,7 @@
+# 与 app/ui/design_system.py 的 CSS 变量同源——避免首帧白闪与控件配色漂移
+[theme]
+base = "light"
+primaryColor = "#a85442"
+backgroundColor = "#fffaf2"
+secondaryBackgroundColor = "#fffdf8"
+textColor = "#543f35"

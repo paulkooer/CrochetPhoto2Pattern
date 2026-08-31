@@ -1,0 +1,66 @@
+name: Bug 报告
+description: 报告可复现的软件缺陷（安全漏洞请走 SECURITY.md）
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请移除 API Key、人物原图、分享载荷和个人信息；安全问题不要在这里公开。
+  - type: input
+    id: version
+    attributes:
+      label: 版本或提交
+      description: 例如 0.2.0b1 或 git commit SHA
+      placeholder: 0.2.0b1
+    validations:
+      required: true
+  - type: dropdown
+    id: entry
+    attributes:
+      label: 入口
+      options:
+        - Streamlit 照片模式
+        - Streamlit 手动模式
+        - Streamlit 网格模式
+        - crochet2pattern CLI
+        - evaluation / trials CLI
+        - 安装、构建或 CI
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 环境
+      description: 操作系统、Python 版本、安装方式，以及是否启用 pdf/pose 可选依赖
+      placeholder: macOS 15, Python 3.12, uv sync --locked
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 最小复现步骤
+      description: 使用自制/公开无敏感数据的最小输入；可附脱敏 JSON 或截图
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果与脱敏日志
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已搜索现有 Issue，并确认这不是安全漏洞。
+          required: true
+        - label: 我已移除密钥、私人图片、个人信息和未经授权的数据。
+          required: true

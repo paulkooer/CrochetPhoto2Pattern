@@ -23,6 +23,32 @@ def render_sidebar() -> None:
         st.session_state.openai_key = openai_key
         st.session_state.anthropic_key = anthropic_key
 
+        # 中转站（自定义 API 地址）：UI URL 必须和 UI Key 成对，不能
+        # 回退搭配服务器环境 Key；否则共享部署会把服务器密钥发给用户 URL。
+        with st.expander("🔗 中转站地址（可选）", expanded=False):
+            openai_base = st.text_input(
+                "OpenAI Base URL",
+                value=st.session_state.get("openai_base_url", ""),
+                key="openai_base_url_input",
+                placeholder="https://api.openai.com/v1",
+                help="第三方 API 代理/中转站地址。填写时必须同时在上方输入"
+                     "你自己的 OpenAI Key；留空 = 官方默认",
+            ).strip()
+            anthropic_base = st.text_input(
+                "Anthropic Base URL",
+                value=st.session_state.get("anthropic_base_url", ""),
+                key="anthropic_base_url_input",
+                placeholder="https://api.anthropic.com",
+                help="填写时必须同时在上方输入你自己的 Anthropic Key；"
+                     "留空 = 官方默认",
+            ).strip()
+        if openai_base and not openai_key:
+            st.warning("OpenAI 自定义地址必须同时提供你自己的 OpenAI Key。")
+        if anthropic_base and not anthropic_key:
+            st.warning("Anthropic 自定义地址必须同时提供你自己的 Anthropic Key。")
+        st.session_state.openai_base_url = openai_base or None
+        st.session_state.anthropic_base_url = anthropic_base or None
+
         st.divider()
         st.subheader("🧵 编织密度（小样）")
         preset = st.select_slider(
@@ -71,11 +97,68 @@ def render_sidebar() -> None:
 
         if openai_key or anthropic_key:
             st.success("✅ API Key 已设置")
-            st.caption("输入框内容优先于 .env；清空输入框即回退到 .env（未配置则 Mock）")
+            st.caption("输入框内容优先于 .env；清空输入框即回退到 .env（未配置则进入免费模式）")
         else:
             st.warning("未在输入框设置 API Key")
             st.caption(
-                "若 .env 中配置了 Key 仍会使用（并真实计费）；无 Key 时照片 Tab 默认走本地视觉估算"
-                "（免费、基于照片），也可切换 Mock 演示。"
+                "若 .env 中配置了 Key 仍会使用（并真实计费）；照片 Tab 可在"
+                "「AI 视觉解析 / 本地视觉估算」间选择。输入框与 .env 都无 Key 时"
+                "默认走本地视觉估算（免费、基于照片），也可切换 Mock 演示。"
                 "⚠️ 请勿在多人共享的部署上输入 API Key。"
             )
+
+        # ── 图解历史（S4）：SQLite 本机持久化，跨会话载回 ─────────────────
+        st.divider()
+        with st.expander("🗂 我的图解（历史）", expanded=False):
+            from app.ui.result_renderer import purge_result_state
+            from app.utils import history
+
+            _search = st.text_input("搜索历史", "", key="hist_search",
+                                    placeholder="关键词（体型/部件…）")
+            try:
+                items = history.list_results(query=_search.strip() or None)
+            except Exception as e:  # DB 损坏不阻塞主功能
+                st.caption(f"历史读取失败: {e}")
+                items = []
+            if not items:
+                st.caption("暂无匹配的历史——生成图解后点「存入历史」即可跨会话保留")
+            for it in items:
+                c_h1, c_h2, c_h3 = st.columns([5, 1, 1])
+                # U8/K2：缩略图随行返回（无 N+1 全量读取）；
+                # U25 方案(b)：分享/导入路径无 preview → 占位标记
+                if it.get("preview"):
+                    c_h1.image(it["preview"], width=64)
+                else:
+                    c_h1.markdown("<div style='width:64px;height:44px;"
+                                  "display:flex;align-items:center;"
+                                  "justify-content:center;border:1px dashed #ccc;"
+                                  "border-radius:6px;'>🧶</div>",
+                                  unsafe_allow_html=True)
+                _display = it.get("title") or it["summary"]
+                c_h1.caption(f"{history.format_time(it['created_at'])}\n\n{_display}")
+                if c_h2.button("载入", key=f"hist_load_{it['rid']}"):
+                    data = history.load_result(it["rid"])
+                    if data is None:
+                        st.error("该记录已不存在")
+                    else:
+                        # V5：与备份导入同等待遇——历史记录可能是当初
+                        # 存入的坏结果（JSON 修正改坏后存档），直接入库
+                        # 会崩在渲染层；在此校验并给出 st.error + 删除出路
+                        try:
+                            from app.ui.result_renderer import _validated_backup
+                            analysis, structure = _validated_backup(data)
+                            from app.ui.result_renderer import _rebuild_params
+                            data["params"] = _rebuild_params(dict(data["params"]))
+                            data["analysis"] = analysis
+                            data["structure"] = structure
+                        except Exception as e:
+                            st.error(f"该记录已损坏，无法载入（可点「删」清除）: {e}")
+                            st.stop()
+                        if "result" in st.session_state:
+                            purge_result_state(st.session_state["result"])
+                        data.setdefault("result_id", it["rid"])
+                        st.session_state["result"] = data
+                        st.rerun()
+                if c_h3.button("删", key=f"hist_del_{it['rid']}"):
+                    history.delete_result(it["rid"])
+                    st.rerun()

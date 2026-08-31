@@ -14,7 +14,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, Mapping, Optional
+
+BASE_GRAMS_PER_STITCH = 0.08
+BASE_STITCH_AREA_CM2 = 0.785 * 0.625
 
 
 @dataclass(frozen=True)
@@ -52,6 +55,30 @@ class Gauge:
         return max(1, int(height_cm / self.row_h_cm + 0.5))
 
     @property
+    def shaping_continuous_delta(self) -> float:
+        """Geometric circumference change represented by one row.
+
+        For a locally 45° surface, radius changes by approximately one row
+        height, so ``ΔN = 2π × row_height / stitch_width``.  This is a
+        continuous value; published patterns in this project keep six-way
+        symmetry and therefore need a separate six-stitch quantization.
+        """
+        import math
+        return 2.0 * math.pi * self.row_h_cm / self.stitch_w_cm
+
+    @property
+    def max_shaping_change(self) -> int:
+        """Six-way upper quantization of :attr:`shaping_continuous_delta`.
+
+        Ceiling is intentional: alternating +6/+12 rounds can approximate a
+        continuous rate near 8 while preserving six-sector stitch notation.
+        Classic's 5.1 remains +6; DK/fine's 7.6–7.9 permit up to +12.
+        """
+        import math
+        groups = math.ceil((self.shaping_continuous_delta - 1e-9) / 6.0)
+        return max(6, groups * 6)
+
+    @property
     def hook_yarn_label(self) -> str:
         """按针宽推导钩针/线材标签（替代写死的"2.5mm+中细"）。"""
         w = self.stitch_w_cm
@@ -64,11 +91,56 @@ class Gauge:
         return "4–5mm 钩针 + 特粗/珊瑚绒线"
 
     @property
+    def meters_per_100g(self) -> float:
+        """按针宽分档的纱线米数估算（V6 署名纠正）。
+
+        如实声明：sport≈320、DK≈250、worsted≈200、chunky≈140 是**实务
+        经验估算值**，不是任何标准机构的数据——CYC Standard Yarn Weight
+        System 只规定密度与针号区间，**不含 m/100g**（曾经核实并误署名
+        给 CYC，Opus 5 审查指出）。且同档不同纤维差异大（丝光棉明显短于
+        羊毛）。数值用于材料清单的量级参考，购买请以实际线标为准。
+        """
+        w = self.stitch_w_cm
+        if w < 0.52:
+            return 320.0
+        if w < 0.6:
+            return 250.0
+        if w < 0.7:
+            return 200.0
+        return 140.0
+
+    @property
     def grams_per_stitch(self) -> float:
         """单针克重按织物面积相对默认粗线规格缩放。"""
-        base = 0.08  # 默认规格（0.785×0.625cm²）的单针克重
-        base_area = 0.785 * 0.625
-        return base * (self.stitch_w_cm * self.row_h_cm) / base_area
+        return (
+            BASE_GRAMS_PER_STITCH
+            * (self.stitch_w_cm * self.row_h_cm)
+            / BASE_STITCH_AREA_CM2
+        )
+
+
+def next_shaping_stitch_count(current: int, target: int,
+                              max_change: int) -> int:
+    """Move one feasible six-sector round from ``current`` toward ``target``.
+
+    Besides the gauge-derived cap, increases cannot exceed the number of
+    source stitches (one V per source stitch) and decreases cannot exceed half
+    the source stitches (one A consumes two).  Both endpoints must stay in the
+    project's six-stitch topology.
+    """
+    if current < 6 or target < 6 or current % 6 or target % 6:
+        raise ValueError("current and target must be positive multiples of 6")
+    if current == target:
+        return current
+    cap = max(6, int(max_change) // 6 * 6)
+    distance = abs(target - current)
+    if target > current:
+        feasible = current  # every source stitch may be increased once
+        change = min(distance, cap, feasible)
+        return current + max(6, change // 6 * 6)
+    feasible = (current // 2) // 6 * 6  # A consumes two source stitches
+    change = min(distance, cap, feasible)
+    return current - max(6, change // 6 * 6)
 
 
 # 预设：默认保持既有行为（经典图解锚点 36 针≈9cm 头）
@@ -84,6 +156,22 @@ PRESETS: Dict[str, Gauge] = {
 DEFAULT = PRESETS["classic"]
 
 
+def gauge_from_mapping(raw: Optional[Mapping[str, Any]]) -> Gauge:
+    """Deserialize a gauge payload with the same bounds as the UI.
+
+    Generated results, JSON edits, imports and validation all pass through
+    this function so an invalid payload cannot create a different geometry in
+    each consumer.  Missing or malformed legacy payloads use classic gauge.
+    """
+    data = raw or {}
+    try:
+        stitches = max(6.0, min(40.0, float(data["stitches_per_10cm"])))
+        rows = max(8.0, min(50.0, float(data["rows_per_10cm"])))
+        return Gauge(stitches, rows)
+    except (KeyError, TypeError, ValueError):
+        return DEFAULT
+
+
 def gauge_from_ui(preset: str, stitches: Optional[float],
                   rows: Optional[float]) -> Gauge:
     """侧栏输入 → Gauge；custom 时用数字输入，异常值回退默认。"""
@@ -91,12 +179,10 @@ def gauge_from_ui(preset: str, stitches: Optional[float],
         return PRESETS[preset]
     if not stitches or not rows:
         return DEFAULT  # custom 但没填数 → 默认
-    try:
-        st = max(6.0, min(40.0, float(stitches)))
-        rw = max(8.0, min(50.0, float(rows)))
-        return Gauge(st, rw)
-    except (TypeError, ValueError):
-        return DEFAULT
+    return gauge_from_mapping({
+        "stitches_per_10cm": stitches,
+        "rows_per_10cm": rows,
+    })
 
 
 @dataclass(frozen=True)

@@ -6,10 +6,12 @@
   —— 3D 模型按表面横向切圈，每圈针数 = 该圈周长 ÷ 针宽。
 - 单张正面照没有 3D 网格，但"轮廓剖面 + 圆形截面假设 = 旋转体"，
   信息刚好够用（fable5 方案的本地化）。
-- 每圈针数变化 ≤ ±6 的惯例有几何依据：短针平盘的极限加针率
-  Δ = 2π·(行高/针宽) ≈ 6 针/圈，超过会起浪/起褶。
+- 每圈连续几何变化率 Δ = 2π·(行高/针宽)，再向上量化到六等分针法；
+  经典密度为 5.1→6，DK/fine 为 7.6–7.9→12。实际圈可交替使用较小
+  步长逼近目标，超过量化上限才视为无依据跳变。
 
-生成约束：针数恒为 6 的倍数、相邻圈 |ΔN| ≤ 6、剖面三点平滑。
+生成约束：针数恒为 6 的倍数、相邻圈变化不超过 gauge 动态上限、
+剖面三点平滑。
 模板形状（球/柱/杯）仍作为"无照片"时的降级路径保留。
 """
 from __future__ import annotations
@@ -26,6 +28,21 @@ def _smooth3(values: Sequence[float]) -> List[float]:
         hi = values[min(n - 1, i + 1)]
         out.append((lo + 2.0 * v + hi) / 4.0)
     return out
+
+
+def _sample_at(profile: Sequence[float], frac: float) -> float:
+    """在归一化位置 frac∈[0,1] 处线性插值取样剖面值。
+
+    最近邻采样在墙圈数高于剖面分辨率时产生阶梯伪影（相邻两圈取到同一
+    行、下一圈跳两行）；线性插值给出平滑过渡（动态跳变量化在下游，
+    不受影响）。负值钳到 0。
+    """
+    n = len(profile)
+    x = min(max(frac, 0.0), 1.0) * (n - 1)
+    i0 = int(x)
+    i1 = min(i0 + 1, n - 1)
+    w = x - i0
+    return max(0.0, profile[i0] * (1.0 - w) + profile[i1] * w)
 
 
 def profile_to_rounds(
@@ -48,42 +65,52 @@ def profile_to_rounds(
         direction:    "bottom_up"（R1=照片低处，身体/四肢）或 "top_down"。
 
     Returns:
-        每圈针数（6 的倍数、相邻差 ≤6、≥6），自 R1 起的钩织顺序。
+        每圈针数（6 的倍数、相邻差不超过 gauge 动态上限、≥6），
+        自 R1 起的钩织顺序。
     """
     span_s, span_e = span
     span_len = max(1e-6, span_e - span_s)
-    n = len(profile)
     wall_n = max(min_rounds, gauge.rounds_for_height(height_cm))
 
     # 采样部件区间的剖面（自照片顶部到底部），并按区间峰值归一
-    raw = []
-    for j in range(wall_n):
-        f = (j + 0.5) / wall_n            # 0=区间顶（照片上方）
-        frac = span_s + span_len * f
-        idx = min(n - 1, max(0, int(frac * n)))
-        raw.append(max(0.0, float(profile[idx])))
+    raw = [_sample_at(profile, span_s + span_len * (j + 0.5) / wall_n)
+           for j in range(wall_n)]
     peak = max(raw) or 1.0
     norm = _smooth3([v / peak for v in raw])
 
     # 目标针数 → 6 的倍数量化（锚点 ref 对应区间最宽处）
     targets = [max(6, int(round(v * ref_stitches / 6.0)) * 6) for v in norm]
 
-    # 钩织顺序映射 + 相邻圈 |Δ| ≤ 6 钳制（物理极限：不起浪不起褶）
+    # 钩织顺序映射 + gauge 动态上限（连续几何率的六等分上量化）。
+    from .gauge import next_shaping_stitch_count
     order = list(reversed(targets)) if direction == "bottom_up" else list(targets)
     clamped = [order[0]]
     for t in order[1:]:
         prev = clamped[-1]
-        if t > prev + 6:
-            t = prev + 6
-        elif t < prev - 6:
-            t = prev - 6
-        clamped.append(max(6, t))
+        clamped.append(next_shaping_stitch_count(
+            prev, max(6, t), gauge.max_shaping_change))
     return clamped
+
+
+def strip_dome(stitches: Sequence[int]) -> List[int]:
+    """去掉前缀中的底部圆盘圈，返回筒壁逐圈针数。
+
+    圆盘 = 自 R1 起逐圈 +6 的最长前缀（6,12,…,wall[0]，即
+    crochet_params 里 `_increase_rounds(wall[0])` 构造的逆操作）。
+    渲染层反渲染侧影时用：圆盘是水平圆盘，不贡献筒壁高度。
+    """
+    n_dome = 0
+    for i, s in enumerate(stitches):
+        if s == 6 * (i + 1):
+            n_dome = i + 1
+        else:
+            break
+    return list(stitches[n_dome:])
 
 
 def rounds_to_notes(stitches: Sequence[int]) -> List[str]:
     """逐圈针数 → 标准符号说明（复用通行 (aX,V)/(aX,A) 口径）。"""
-    from .crochet_params import _dec_note, _inc_note_by_before
+    from .crochet_params import _change_note
 
     notes = []
     for i, n in enumerate(stitches):
@@ -91,12 +118,7 @@ def rounds_to_notes(stitches: Sequence[int]) -> List[str]:
             notes.append(f"{n}X（起针圈）")
             continue
         before = stitches[i - 1]
-        if n == before:
-            notes.append(f"{n}X（不加不减）")
-        elif n > before:
-            notes.append(_inc_note_by_before(before))
-        else:
-            notes.append(_dec_note(before))
+        notes.append(_change_note(before, n))
     return notes
 
 
@@ -122,15 +144,18 @@ def render_silhouette_svg(
     pad = 14.0
     usable_w = width_px - 2 * pad
     usable_h = height_px - 2 * pad
-    scale_x = usable_w / (2.0 * max(max_d_cm, 1e-6)) / 2.0  # 半宽比例
+    # 真实尺度：半宽 × scale_x 在最宽圈 = usable_w/2（侧影占满可用宽度）。
+    # 旧版多除一次 2 且生成侧影按"直径"而非"半宽"绘制——只有画布 1/4 宽，
+    # 叠加的照片剖面又按半宽画，两者相差一倍，对比失真。
+    scale_x = usable_w / max(max_d_cm, 1e-6)
     scale_y = usable_h / max(body_h_cm, 1e-6)
     cx = width_px / 2.0
 
     def y_of(j: int) -> float:      # j=0（R1，底部）在图下方
         return pad + usable_h - (j + 0.5) * row_h * scale_y
 
-    # 生成侧影（左右镜像闭合）
-    pts_right = [(cx + s * stitch_w / math.pi * scale_x, y_of(j))
+    # 生成侧影（左右镜像闭合）；s·stitch_w/π = 直径，取半宽定位
+    pts_right = [(cx + s * stitch_w / math.pi / 2.0 * scale_x, y_of(j))
                  for j, s in enumerate(stitches)]
     pts_left = [(2 * cx - x, y) for (x, y) in reversed(pts_right)]
     poly = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts_right + pts_left)
@@ -145,18 +170,19 @@ def render_silhouette_svg(
         f'stroke="#2171b5" stroke-width="1.2"/>',
     ]
 
-    # 照片剖面对照（同一部件区间，按峰值对齐到锚点半宽）
+    # 照片剖面对照（同一部件区间，按区间峰值对齐到锚点半宽——与
+    # profile_to_rounds 的区间归一同口径，剖面峰值与生成侧影最宽处重合）
     if photo_profile and span:
         span_s, span_e = span
-        m = len(photo_profile)
         ref_d_cm = max(s * stitch_w / math.pi for s in stitches)
-        pts = []
+        vals = []
         for j in range(n_rounds):
             f = (j + 0.5) / n_rounds
             frac = span_e - (span_e - span_s) * f   # 自底向上（R1=照片低处）
-            idx = min(m - 1, max(0, int(frac * m)))
-            half = float(photo_profile[idx]) * (ref_d_cm / 2.0) * scale_x
-            pts.append((cx + half, y_of(j)))
+            vals.append(_sample_at(photo_profile, frac))
+        vpeak = max(vals) or 1.0
+        pts = [(cx + v / vpeak * (ref_d_cm / 2.0) * scale_x, y_of(j))
+               for j, v in enumerate(vals)]
         pts += [(2 * cx - x, y) for (x, y) in reversed(pts)]
         poly2 = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
         lines.append(

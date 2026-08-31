@@ -109,12 +109,17 @@ def test_full_pipeline_local_vision_mode(monkeypatch):
     result = orch.run_full_pipeline(_img(), local_vision=True)
     assert set(result.keys()) == {
         "analysis", "structure", "params", "usage", "vision_meta", "gauge",
+        "style", "color_bands", "spans", "spans_measured", "preview",
+        "sizing", "geometry",
     }
     assert result["gauge"]["stitches_per_10cm"] > 0  # gauge 透传（M4.15）
     assert result["analysis"]["body_type"] == "标准"
     assert [p.name for p in result["params"]["parts"]] == ["头部", "身体", "手臂", "腿部"]
     assert result["vision_meta"]["source"] == "opencv-face"
     assert result["usage"] == {}  # 无 LLM 调用
+    assert result["analysis"]["height_cm"] == 18.0
+    assert result["sizing"]["absolute_scale_from_photo"] is False
+    assert result["geometry"]["schema_version"] == "1.0"
 
 
 def test_full_pipeline_llm_mode_has_no_vision_meta():
@@ -152,7 +157,8 @@ def test_silhouette_flare_adds_skirt(monkeypatch):
     monkeypatch.setattr(lv, "_detect_face", lambda _i: None)  # 关闭人脸路径
     analysis, meta = lv.analyze(_person(dress=True))
     assert "裙子" in analysis.parts
-    assert meta["silhouette"]["flare"] is True
+    assert "silhouette" not in meta  # 几何数据已移至独立 geometry IR
+    assert lv._has_bottom_flare(lv._silhouette_profile(_person(dress=True)))
 
 
 def test_straight_silhouette_no_skirt(monkeypatch):
@@ -160,8 +166,7 @@ def test_straight_silhouette_no_skirt(monkeypatch):
     monkeypatch.setattr(lv, "_detect_face", lambda _i: None)
     analysis, meta = lv.analyze(_person(dress=False))
     assert "裙子" not in analysis.parts
-    # 剖面始终透传（M1.1），但无裙摆时不带 flare 标记
-    assert not (meta.get("silhouette") or {}).get("flare")
+    assert "silhouette" not in meta
 
 
 def test_silhouette_profile_normalized():
@@ -185,7 +190,7 @@ def test_color_bands_drive_round_colors():
     head = [p for p in result["params"]["parts"] if p.name == "头部"][0]
     body = [p for p in result["params"]["parts"] if p.name == "身体"][0]
     # 头部圈色来自照片顶部（暗色系），身体来自中段（蓝系）
-    assert head.rounds[0].color in ("黑色", "深棕色")
+    assert head.rounds[0].color in ("黑色", "深棕色", "暗肤色", "深褐肤色", "咖啡肤色")
     assert body.rounds[-1].color == "蓝色"
     # 换线说明出现在颜色变化圈（头部黑→蓝）
     changes = [r for r in head.rounds if r.notes and "换线" in r.notes]
@@ -233,3 +238,23 @@ def test_photo_driven_profile_body_end_to_end():
     assert len(set(wall_st)) > 1, f"剖面驱动身体不应是等粗筒: {wall_st}"
     assert "照片驱动轮廓身体" in body.notes
     assert result["gauge"]["stitches_per_10cm"] > 0
+    assert result["geometry"]["silhouette"]["profile"]
+
+
+def test_flare_detection_composition_invariant():
+    """裙摆悬空（主体不贴图底）时下摆展开仍可检出（O2 配套改进）。
+
+    旧版按整图高度取下摆窗口——主体下方有留白的构图里窗口落到背景，
+    A 字裙漏检。现在窗口取在主体纵向范围内（首/末超阈行之间）。
+    """
+    from PIL import ImageDraw
+
+    from app.models.local_vision import _has_bottom_flare, _silhouette_profile
+    img = Image.new("RGB", (800, 1200), (245, 245, 245))
+    d = ImageDraw.Draw(img)
+    d.ellipse([350, 60, 450, 160], fill=(230, 180, 150))
+    d.rounded_rectangle([360, 170, 440, 330], radius=20, fill=(0, 120, 215))
+    d.polygon([340, 340, 460, 340, 500, 700, 300, 700], fill=(220, 50, 50))
+    prof = _silhouette_profile(img)
+    assert prof is not None
+    assert _has_bottom_flare(prof), "悬空裙摆漏检"

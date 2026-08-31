@@ -40,6 +40,17 @@ def test_crochet_part():
     assert part.name == "头部"
     assert len(part.rounds) == 3
     assert part.magic_ring is True
+    assert part.quantity == 1
+
+
+def test_crochet_part_quantity_is_bounded():
+    rounds = [CrochetStitch(row=1, stitches=6)]
+    assert CrochetPart(
+        name="手臂", type="cylinder", quantity=2,
+        rounds=rounds, color="skin").quantity == 2
+    with pytest.raises(ValidationError):
+        CrochetPart(name="手臂", type="cylinder", quantity=0,
+                    rounds=rounds, color="skin")
 
 
 def test_crochet_part_rows_is_derived_not_stored():

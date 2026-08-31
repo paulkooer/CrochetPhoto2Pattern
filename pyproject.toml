@@ -1,23 +1,29 @@
+[project.scripts]
+crochet2pattern = "app.cli:main"
+crochet2pattern-eval = "app.evaluation:main"
+crochet2pattern-trials = "app.trials:main"
+
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "crochet-photo2pattern"
-version = "0.1.0"
+version = "0.2.0b1"
 description = "AI-powered Amigurumi crochet pattern generator from photos"
 readme = "README.md"
-license = { text = "MIT" }
-requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
 classifiers = [
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Artistic Software",
 ]
+
 dependencies = [
     # 上界 <2.0：Streamlit 大版本常有破坏性 API 变更，升 2.x 需人工验证
     "streamlit>=1.40.0,<2.0",
@@ -31,27 +37,46 @@ dependencies = [
     # 无 LLM 的本地视觉降级（haar 人脸检测）；缺失时自动退纯默认值路径。
     # 上界 <5：OpenCV 5.x 移除了 legacy CascadeClassifier API。
     "opencv-python-headless>=4.8,<5",
+    # color_design / local_vision 直接 import numpy（此前靠 opencv 传递带入；
+    # 显式声明，避免 opencv 一旦改可选时配色静默降级单色）。
+    "numpy>=1.24",
 ]
+
+[project.urls]
+Homepage = "https://github.com/paulkooer/CrochetPhoto2Pattern"
+Repository = "https://github.com/paulkooer/CrochetPhoto2Pattern"
+Issues = "https://github.com/paulkooer/CrochetPhoto2Pattern/issues"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
     "pytest-cov",
     "ruff>=0.4",
+    "hypothesis>=6.100",
 ]
+# PDF 图解导出（可选，S4）：中文用 Adobe CID 字体，无需额外字体文件
+pdf = ["reportlab>=4.0"]
+# 姿态关键点实测 span（可选，S1）：mediapipe 会带入 opencv-contrib 5.x，
+# 与主依赖 opencv-python-headless<5 冲突——必须保持可选（冲突记录见
+# app/models/pose.py 模块注释与 handoff §18）
+pose = ["mediapipe>=0.10,<1.0"]
 
 # app/prompts/*.txt 是包内数据（运行时由 image_parser 读取）。
 # pyproject 模式下 setuptools 默认不打包 package data，缺了这一段，
 # `pip install .`（非 -e）后会静默降级到内置的弱 fallback 提示词。
 [tool.setuptools.package-data]
-app = ["prompts/*.txt"]
+app = ["prompts/*.txt", "data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    "error::UserWarning",
+    "error::DeprecationWarning:app\\..*",
+]
 
 [tool.ruff]
 line-length = 110
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
 # E/W pycodestyle、F pyflakes、I isort、B bugbear（常见隐患）

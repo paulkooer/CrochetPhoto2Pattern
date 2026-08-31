@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "dataset": {
+    "name": "authorized-real-photos",
+    "version": "2026-08-30.1",
+    "rights_basis": "consented",
+    "evaluation_use_approved": true,
+    "contains_personal_data": true,
+    "retention_policy": "Encrypted local storage; delete source photos within 30 days after release validation.",
+    "notes": "Do not commit this manifest after replacing the example with identifying filenames."
+  },
+  "thresholds": {
+    "min_cases": 30,
+    "min_case_part_recall": 0.5,
+    "min_macro_part_f1": 0.6,
+    "min_case_pass_rate": 0.8,
+    "min_flare_accuracy": 0.8,
+    "min_color_top3_accuracy": 0.8,
+    "min_pattern_valid_rate": 1.0
+  },
+  "cases": [
+    {
+      "id": "standing-plain-001",
+      "file": "standing-plain-001.jpg",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "tags": ["full-body", "standing", "plain-background", "no-skirt"],
+      "expected": {
+        "parts": ["头部", "身体", "手臂", "腿部"],
+        "flare": false,
+        "dominant_colors": ["蓝色"]
+      },
+      "notes": "Replace the zero hash with shasum -a 256 output."
+    }
+  ]
+}

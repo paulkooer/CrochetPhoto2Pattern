@@ -1,0 +1,41 @@
+name: extras
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: extras-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  optional-extras:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        extra: ["pdf", "pose"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install uv
+        run: python -m pip install uv==0.11.8
+
+      # 可选依赖安装进同一环境：验证 [pose] 带入的 opencv-contrib 5.x
+      # 覆盖 headless 后应用仍可降级运行（pose.py/subject.py 的防御路径）
+      - name: Sync locked dependencies with extra
+        run: uv sync --locked --extra dev --extra "${{ matrix.extra }}"
+
+      - name: Test
+        run: uv run --locked --extra dev --extra "${{ matrix.extra }}" pytest -q

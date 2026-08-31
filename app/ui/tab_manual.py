@@ -8,6 +8,8 @@ import streamlit as st
 
 from app.models.crochet_params import CrochetParamsGenerator
 from app.models.gauge import gauge_from_ui
+from app.models.geometry import no_photo_geometry
+from app.models.sizing import sizing_meta_for_analysis
 from app.models.structure_designer import StructureDesigner
 from app.schemas import PART_NAMES, ImageAnalysis
 from app.ui.result_renderer import purge_result_state, render_results
@@ -41,15 +43,24 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
     PipelineOrchestrator（那会连带初始化 ImageParser 并加载 prompt 文件）。
     """
     structure = StructureDesigner.design_3d_structure(analysis)
+    style = _style_from_session()
     params = CrochetParamsGenerator.generate_params(
         analysis, structure,
         gauge=gauge_from_ui(*_gauge_values()),
-        style=_style_from_session())
+        style=style)
     return {
         "analysis": analysis.model_dump(),
         "structure": structure,
         "params": params,
         "result_id": uuid.uuid4().hex[:12],
+        # 与照片路径同构：结果页快速调整尺寸时复用（无照片 → 无色带）
+        "style": {"sphere_mode": style.sphere_mode,
+                  "one_piece": style.one_piece,
+                  "skirt_style": style.skirt_style,
+                  "ruffle_hem": style.ruffle_hem},
+        "color_bands": None,
+        "sizing": sizing_meta_for_analysis(analysis, "manual_dimensions"),
+        "geometry": no_photo_geometry().model_dump(),
     }
 
 
@@ -85,7 +96,7 @@ def render_tab_manual() -> None:
         )
 
     if st.button("🚀 生成钩织图解", type="primary",
-                 use_container_width=True, key="btn_manual"):
+                 width="stretch", key="btn_manual"):
         if not m_parts:
             st.warning("请至少选择一个部件。")
         else:

@@ -7,14 +7,23 @@ dist/
 
 # Test / tooling caches
 .pytest_cache/
+.ruff_cache/
+.hypothesis/
+.codegraph/
 .coverage
 htmlcov/
+/test-history-db-*
+/eval_data/
+/eval_outputs/
+/trial_data/
+/trial_outputs/
 
 # Environments & secrets
 .env
 .venv/
 venv/
-.streamlit/secrets.toml
+.streamlit/*
+!.streamlit/config.toml
 
 # OS
 .DS_Store

@@ -5,8 +5,8 @@
 
 能力边界（如实声明）：
 - 比例（身高/头径的倍数）来自照片实际检测 ✓
-- 绝对尺度（头径是多少厘米）单张照片无参照无法得到，按 Amigurumi
-  常见值 9cm 锚定，用户应在局部修正中核对
+- 绝对尺度（头径是多少厘米）单张照片无参照无法得到；这里用 9cm
+  作为内部比例参考，PipelineOrchestrator 随后按用户目标高度重新缩放
 - 部件列表/姿态/难度无法本地语义推断，按规范默认值填充
 """
 from __future__ import annotations
@@ -17,12 +17,13 @@ from typing import Any, Dict, List, Optional, Tuple
 from PIL import Image
 
 from ..schemas import ImageAnalysis
-from .color_design import _BG_DIST_THRESHOLD  # 统一主体判定阈值（单一来源）
+from .geometry import has_bottom_flare as _has_bottom_flare
+from .geometry import silhouette_profile as _silhouette_profile
 from .image_parser import extract_color_palette
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_HEAD_CM = 9.0      # 头径锚点：单张照片无尺度参照
+DEFAULT_HEAD_CM = 9.0      # 内部比例参考；不是照片实测，管线随后按目标高度缩放
 FRAME_FILL_RATIO = 0.9     # 假设主体大致占满画面高度（全身玩偶照常见构图）
 MIN_BODY_RATIO = 2.0       # 身高/头径 的合理区间（大头 Q 版 … 全身成人照）
 MAX_BODY_RATIO = 8.0
@@ -59,50 +60,12 @@ def _detect_face(img: Image.Image) -> Optional[Tuple[int, int, int, int]]:
     return int(x), int(y), int(w), int(h)
 
 
-def _silhouette_profile(image: Image.Image, n_rows: int = 40) -> Optional[List[float]]:
-    """主体宽度剖面（自上而下，0~1 归一化）——让照片轮廓参与形状设计。
-
-    背景 = 四角众数色；每行统计"非背景像素"占比。主体过小时返回 None。
-    """
-    try:
-        import numpy as np
-    except ImportError:
-        return None
-    try:
-        img = image.convert("RGB")
-        img.thumbnail((120, 120))
-        px = np.asarray(img, dtype=np.int16)
-        h, w = px.shape[:2]
-        if h < n_rows or w < 4:
-            return None
-        from .color_design import estimate_background
-        bg = np.array(estimate_background(px), dtype=px.dtype)
-        widths = []
-        for i in range(n_rows):
-            y0, y1 = h * i // n_rows, h * (i + 1) // n_rows
-            row = px[y0:y1].reshape(-1, 3)
-            dist = np.abs(row - bg).sum(axis=1)
-            widths.append(float((dist > _BG_DIST_THRESHOLD).mean()))
-        peak = max(widths)
-        if peak < 0.05:  # 几乎没有主体（纯背景图）
-            return None
-        return [x / peak for x in widths]
-    except Exception as e:
-        logger.debug("silhouette extraction failed: %s", e)
-        return None
-
-
-def _has_bottom_flare(profile: List[float]) -> bool:
-    """下摆展开判定：底部 1/4 的平均宽度明显大于中段（裙摆/A 字轮廓）。"""
-    n = len(profile)
-    lower = profile[int(n * 0.72):int(n * 0.95)]
-    middle = profile[int(n * 0.42):int(n * 0.62)]
-    if not lower or not middle:
-        return False
-    return (sum(lower) / len(lower)) > 1.25 * (sum(middle) / len(middle))
-
-
-def analyze(image: Image.Image, n_colors: int = 5) -> Tuple[ImageAnalysis, Dict[str, Any]]:
+def analyze(
+    image: Image.Image,
+    n_colors: int = 5,
+    geometry_profile: Optional[List[float]] = None,
+    geometry_observed: bool = False,
+) -> Tuple[ImageAnalysis, Dict[str, Any]]:
     """Estimate an ImageAnalysis from the photo without any LLM call.
 
     Returns (analysis, meta)；meta 描述估算来源与依据，供 UI 透明展示。
@@ -111,22 +74,19 @@ def analyze(image: Image.Image, n_colors: int = 5) -> Tuple[ImageAnalysis, Dict[
     H = image.size[1]
     box = _detect_face(image)
     # 轮廓剖面：下摆展开 → 主体是裙形，自动补"裙子"部件
-    profile = _silhouette_profile(image)
+    # Orchestrator 已建立 provider-neutral geometry 时复用同一观测，避免
+    # GrabCut/背景分割做两遍。直接调用 analyze() 仍保持原有独立行为。
+    profile = geometry_profile if geometry_observed else _silhouette_profile(image)
     parts = list(_CANONICAL_PARTS)
-    silhouette: Dict[str, Any] = {}
-    if profile is not None:
-        # M1.1：完整剖面透传下游（此前只消费了一个裙摆布尔——信息漏斗）
-        silhouette = {"profile": [round(v, 3) for v in profile]}
-        if _has_bottom_flare(profile):
-            parts.append("裙子")
-            silhouette["flare"] = True
-            silhouette["note"] = "检测到下摆展开的轮廓，已自动添加裙子部件"
+    # 完整剖面由 provider-neutral geometry 结果持久化；本地语义层
+    # 只消费 flare 来补部件，不再把几何数据塞进 vision_meta。
+    if profile is not None and _has_bottom_flare(profile):
+        parts.append("裙子")
 
     if box is None:
         meta: Dict[str, Any] = {
             "source": "default",
             "note": "未检测到人脸，使用默认 Q 版比例",
-            **({"silhouette": silhouette} if silhouette else {}),
         }
         return ImageAnalysis(
             body_type="标准",
@@ -158,10 +118,9 @@ def analyze(image: Image.Image, n_colors: int = 5) -> Tuple[ImageAnalysis, Dict[
         "body_ratio": round(ratio, 2),
         "head_cm_anchor": DEFAULT_HEAD_CM,
         "note": (
-            "比例来自本地人脸检测，头径按默认 9cm 锚定——"
-            "请核对后在「局部修正」中调整实际头径"
+            "比例来自本地人脸检测；单图没有绝对尺度，"
+            "厘米尺寸由生成时选择的目标高度决定"
         ),
-        **({"silhouette": silhouette} if silhouette else {}),
     }
     features = [f"主色调 {c}" for c in colors[:2]] or ["本地视觉估算"]
     return ImageAnalysis(

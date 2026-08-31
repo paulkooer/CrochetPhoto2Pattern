@@ -22,6 +22,8 @@ def test_full_pipeline_returns_three_stage_result():
         result = orch.run_full_pipeline(Image.new("RGB", (40, 40)))
     assert set(result.keys()) == {
         "analysis", "structure", "params", "usage", "vision_meta", "gauge",
+        "style", "color_bands", "spans", "spans_measured", "preview",
+        "sizing", "geometry",
     }
     assert result["analysis"]["body_type"] == "标准"
     assert len(result["structure"]["parts"]) == 2
@@ -29,6 +31,9 @@ def test_full_pipeline_returns_three_stage_result():
     # parse_image 被 mock → 无真实调用 → usage / vision_meta 均为空 dict
     assert result["usage"] == {}
     assert result["vision_meta"] == {}
+    assert result["sizing"]["source"] == "default_reference"
+    assert result["sizing"]["absolute_scale_from_photo"] is False
+    assert result["geometry"]["schema_version"] == "1.0"
 
 
 def test_full_pipeline_reports_progress():
@@ -50,3 +55,19 @@ def test_full_pipeline_progress_cb_optional():
     with patch.object(ImageParser, "parse_image", return_value=_analysis()):
         result = orch.run_full_pipeline(Image.new("RGB", (40, 40)))
     assert result["analysis"]["parts"] == ["头部", "身体"]
+
+
+def test_full_pipeline_applies_user_target_to_parser_ratio():
+    orch = PipelineOrchestrator()
+    observed = ImageAnalysis(
+        body_type="标准", head_diameter_cm=4.0, height_cm=20.0,
+        main_features=[], pose="站立", difficulty="easy",
+        parts=["头部", "身体"])
+    with patch.object(ImageParser, "parse_image", return_value=observed):
+        result = orch.run_full_pipeline(
+            Image.new("RGB", (40, 40)), target_height_cm=30.0,
+            target_height_source="user_photo_target")
+    assert result["analysis"]["height_cm"] == 30.0
+    assert result["analysis"]["head_diameter_cm"] == 6.0
+    assert result["sizing"]["source"] == "user_photo_target"
+    assert result["sizing"]["photo_head_to_height_ratio"] == 0.2

@@ -42,6 +42,15 @@ def test_export_accepts_dict_parts_after_json_edit():
     assert "## 🧶 头部" in md
 
 
+def test_export_states_symmetric_part_copy_count():
+    params, analysis = _sample_params()
+    arms = next(p for p in params["parts"] if p.name == "手臂")
+    assert arms.quantity == 2
+    md = export_markdown(params, analysis)
+    assert "手臂 × 2 个" in md
+    assert "制作数量**：2 个相同部件" in md
+
+
 def test_export_survives_broken_material_entries():
     """用户在 JSON 编辑器改坏材料结构时，导出降级为 '?' 而非 KeyError。"""
     params, _ = _sample_params()

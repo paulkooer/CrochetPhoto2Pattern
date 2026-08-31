@@ -1,6 +1,13 @@
-"""Tests for gauge（小样密度单一事实来源，M4.15）。"""
+"""Tests for gauge（小样密度与塑形上限的单一事实来源）。"""
 
-from app.models.gauge import DEFAULT, PRESETS, gauge_from_ui
+import pytest
+
+from app.models.gauge import (
+    DEFAULT,
+    PRESETS,
+    gauge_from_ui,
+    next_shaping_stitch_count,
+)
 
 
 def test_classic_preset_preserves_behavior():
@@ -44,3 +51,33 @@ def test_gauge_from_ui_custom_and_fallback():
     assert gauge_from_ui("custom", None, None) is DEFAULT  # 空值回退
     clamped = gauge_from_ui("custom", 999, -5)             # 越界钳制到边界
     assert (clamped.stitches_per_10cm, clamped.rows_per_10cm) == (40.0, 8.0)
+
+
+def test_shaping_limit_is_derived_then_quantized_to_six_sectors():
+    """连续几何值与可发布图解的六等分步长是两个不同概念。"""
+    assert DEFAULT.shaping_continuous_delta == pytest.approx(5.105, abs=0.01)
+    assert PRESETS["dk"].shaping_continuous_delta == pytest.approx(7.63, abs=0.01)
+    assert PRESETS["fine"].shaping_continuous_delta == pytest.approx(7.85, abs=0.01)
+    assert DEFAULT.max_shaping_change == 6
+    assert PRESETS["dk"].max_shaping_change == 12
+    assert PRESETS["fine"].max_shaping_change == 12
+
+
+@pytest.mark.parametrize(
+    ("current", "target", "cap", "expected"),
+    [
+        (6, 24, 12, 12),    # 只有 6 个源针，首圈仍只能每针加一次
+        (12, 30, 12, 24),
+        (24, 6, 12, 12),
+        (18, 6, 12, 12),    # 18 针不能在一圈内合法减掉 12 针
+        (30, 30, 12, 30),
+    ],
+)
+def test_next_shaping_round_respects_cap_and_executable_operations(
+        current, target, cap, expected):
+    assert next_shaping_stitch_count(current, target, cap) == expected
+
+
+def test_next_shaping_round_rejects_non_six_sector_topology():
+    with pytest.raises(ValueError):
+        next_shaping_stitch_count(10, 24, 12)

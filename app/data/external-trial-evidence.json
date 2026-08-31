@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "created_on": "2026-08-30",
+  "sources": [
+    {
+      "source_id": "ma-pelote-amigurumi-time-2026",
+      "title": "How Long Does It Take to Crochet an Amigurumi? (35 Models Timed)",
+      "publisher": "Ma Pelote",
+      "source_url": "https://mapelote.fr/en/blog/how-long-to-crochet-amigurumi",
+      "accessed_on": "2026-08-30",
+      "evidence_kind": "platform_timer_aggregate",
+      "verification": "source_claim",
+      "declared_sample_size": 312,
+      "raw_records_available": false,
+      "methodology_available": true,
+      "reuse_basis": "public_facts_with_attribution",
+      "license_identifier": null,
+      "calibration_allowed": false,
+      "observations": [
+        {
+          "observation_id": "small-octopus-10cm",
+          "project_label": "Small octopus",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 10,
+          "completion_minutes_median": 360,
+          "completion_minutes_min": 240,
+          "completion_minutes_max": 660
+        },
+        {
+          "observation_id": "mini-bear-12cm",
+          "project_label": "Mini bear",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 12,
+          "completion_minutes_median": 480,
+          "completion_minutes_min": 360,
+          "completion_minutes_max": 900
+        },
+        {
+          "observation_id": "classic-bunny-13cm",
+          "project_label": "Classic bunny",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 13,
+          "completion_minutes_median": 600,
+          "completion_minutes_min": 420,
+          "completion_minutes_max": 1080
+        },
+        {
+          "observation_id": "sitting-cat-14cm",
+          "project_label": "Sitting cat",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 14,
+          "completion_minutes_median": 660,
+          "completion_minutes_min": 480,
+          "completion_minutes_max": 1200
+        },
+        {
+          "observation_id": "mini-unicorn-15cm",
+          "project_label": "Mini unicorn",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 15,
+          "completion_minutes_median": 720,
+          "completion_minutes_min": 540,
+          "completion_minutes_max": 1320
+        },
+        {
+          "observation_id": "medium-bear-18cm",
+          "project_label": "Medium bear",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 18,
+          "completion_minutes_median": 840
+        },
+        {
+          "observation_id": "turtle-20cm",
+          "project_label": "Turtle",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 20,
+          "completion_minutes_median": 900
+        },
+        {
+          "observation_id": "dinosaur-22cm",
+          "project_label": "Dinosaur",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 22,
+          "completion_minutes_median": 1020
+        },
+        {
+          "observation_id": "fox-22cm",
+          "project_label": "Fox",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 22,
+          "completion_minutes_median": 1080
+        },
+        {
+          "observation_id": "owl-20cm",
+          "project_label": "Owl",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 20,
+          "completion_minutes_median": 960
+        },
+        {
+          "observation_id": "articulated-doll-25cm",
+          "project_label": "Articulated doll",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 25,
+          "completion_minutes_median": 1380
+        },
+        {
+          "observation_id": "character-22cm",
+          "project_label": "Eared character",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 22,
+          "completion_minutes_median": 1200
+        },
+        {
+          "observation_id": "giant-octopus-50cm",
+          "project_label": "Giant octopus",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 50,
+          "completion_minutes_median": 1800
+        },
+        {
+          "observation_id": "large-bear-40cm",
+          "project_label": "Large bear",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 40,
+          "completion_minutes_median": 2100
+        },
+        {
+          "observation_id": "seated-unicorn-35cm",
+          "project_label": "Seated unicorn",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 35,
+          "completion_minutes_median": 2280
+        },
+        {
+          "observation_id": "dragon-45cm",
+          "project_label": "Dragon",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 45,
+          "completion_minutes_median": 2880
+        },
+        {
+          "observation_id": "giant-doll-50cm",
+          "project_label": "Giant articulated doll",
+          "project_type": "amigurumi",
+          "measurement_scope": "source_aggregate",
+          "finished_height_cm": 50,
+          "completion_minutes_median": 3300
+        }
+      ]
+    },
+    {
+      "source_id": "weekend-folio-booties-2026",
+      "title": "Newborn Crochet Booties Pattern That Stays On",
+      "publisher": "The Weekend Folio",
+      "source_url": "https://theweekendfolio.com/crochet-baby-booties/",
+      "accessed_on": "2026-08-30",
+      "evidence_kind": "author_worked_sample",
+      "verification": "source_claim",
+      "declared_sample_size": 1,
+      "raw_records_available": false,
+      "methodology_available": true,
+      "reuse_basis": "public_facts_with_attribution",
+      "license_identifier": null,
+      "calibration_allowed": false,
+      "observations": [
+        {
+          "observation_id": "newborn-booties-pair",
+          "project_label": "Newborn booties pair",
+          "project_type": "other_crochet",
+          "measurement_scope": "pair",
+          "finished_length_cm": 8,
+          "yarn_used_meters": 50,
+          "completion_minutes_median": 180,
+          "hook_mm": 3.5
+        }
+      ]
+    },
+    {
+      "source_id": "oombawka-gabriella-2023",
+      "title": "Gabriella Crochet Angel Pattern",
+      "publisher": "Oombawka Design Crochet",
+      "source_url": "https://oombawkadesigncrochet.com/gabriella-crochet-angel-pattern/comment-page-1/",
+      "accessed_on": "2026-08-30",
+      "evidence_kind": "author_worked_sample",
+      "verification": "source_claim",
+      "declared_sample_size": 1,
+      "raw_records_available": false,
+      "methodology_available": false,
+      "reuse_basis": "public_facts_with_attribution",
+      "license_identifier": null,
+      "calibration_allowed": false,
+      "observations": [
+        {
+          "observation_id": "gabriella-angel",
+          "project_label": "Gabriella angel",
+          "project_type": "other_crochet",
+          "measurement_scope": "single_item",
+          "finished_height_cm": 19.05,
+          "yarn_used_grams": 43,
+          "yarn_used_meters": 88,
+          "hook_mm": 4
+        }
+      ]
+    },
+    {
+      "source_id": "keep-calm-pocket-chicks-2026",
+      "title": "Pocket Easter Chicks",
+      "publisher": "Keep Calm and Crochet On UK",
+      "source_url": "https://keepcalmandcrochetonuk.com/2026/04/01/free-crochet-pattern-pocket-easter-chicks/",
+      "accessed_on": "2026-08-30",
+      "evidence_kind": "published_pattern_specification",
+      "verification": "source_claim",
+      "declared_sample_size": null,
+      "raw_records_available": false,
+      "methodology_available": false,
+      "reuse_basis": "public_facts_with_attribution",
+      "license_identifier": null,
+      "calibration_allowed": false,
+      "observations": [
+        {
+          "observation_id": "large-pocket-chick",
+          "project_label": "Large pocket chick",
+          "project_type": "amigurumi",
+          "measurement_scope": "single_item",
+          "finished_height_cm": 7,
+          "yarn_used_grams": 10,
+          "yarn_used_meters": 23.2,
+          "stitches_per_10cm": 20,
+          "hook_mm": 3
+        },
+        {
+          "observation_id": "small-pocket-chick",
+          "project_label": "Small pocket chick",
+          "project_type": "amigurumi",
+          "measurement_scope": "single_item",
+          "finished_height_cm": 5.5,
+          "yarn_used_grams": 8,
+          "yarn_used_meters": 18.5,
+          "stitches_per_10cm": 20,
+          "hook_mm": 3
+        }
+      ]
+    }
+  ]
+}
