@@ -18,7 +18,7 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 |---|---|---|
 | 核心环境 | 702 passed, 6 skipped | Python 3.12.13；PDF、姿态运行时及授权真实照片缺失时按设计跳过 |
 | PDF extras | 706 passed, 2 skipped | Python 3.11.15；`[pdf]` 执行全部 PDF 用例，pose 冒烟与授权照片按设计跳过 |
-| Pose extras | 703 passed, 5 skipped | Python 3.11.15；MediaPipe 1.0.1 图像桥接及全部回归通过 |
+| Pose extras | 待远程复核 | MediaPipe 1.0.1；Linux 显式安装 libEGL，缺失时应用必须在构造前安全回退 |
 | 高版本核心 | 702 passed, 6 skipped | Python 3.13.13 与 3.14.4；NumPy 2.5.2 / Protobuf 7.36.0 |
 | 覆盖率 | 88.11% | 干净核心环境，`pytest --cov=app --cov-fail-under=80` |
 | 静态检查 | 通过 | `ruff check .` |

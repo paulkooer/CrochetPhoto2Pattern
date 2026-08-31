@@ -33,7 +33,8 @@ described as validated outcomes.
 - Free local-vision fallback: face-based proportion estimation and silhouette analysis
   without an LLM API key.
 - GrabCut subject segmentation for body-focused palette and profile extraction.
-- Optional pose landmarks on Python 3.11–3.12 for shoulder/hip/knee segment measurement.
+- Optional pose landmarks on Python 3.11–3.12 for shoulder/hip/knee measurement; Linux
+  also requires `libEGL.so.1` and safely falls back when the native runtime is unavailable.
 - Photo-derived yarn palettes, longitudinal color bands, and CIEDE2000 color matching.
 - OpenAI and Anthropic vision providers with structured validation and safe fallback.
 - Versioned template geometry with part instances, mirrored pairs, rotations, attachment
@@ -127,6 +128,10 @@ arithmetic or the active gauge's shaping limit exits with code `2`.
 python -m pip install -e '.[pdf]'   # PDF export
 python -m pip install -e '.[pose]'  # pose landmarks; Python 3.11–3.12 only
 ```
+
+On Linux, install the package that provides `libEGL.so.1` (for example `libegl1` on
+Ubuntu) before using pose landmarks. The application falls back to template spans when
+the native library is unavailable.
 
 ### Docker
 

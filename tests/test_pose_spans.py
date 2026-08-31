@@ -5,13 +5,19 @@ from PIL import Image
 
 from app.models.color_design import PART_SPAN, color_blocks_for_part
 from app.models.crochet_params import CrochetParamsGenerator
-from app.models.pose import measured_spans
+from app.models.pose import (
+    _mediapipe_runtime_available,
+    get_body_landmarks,
+    measured_spans,
+)
 from app.models.structure_designer import StructureDesigner
 from app.schemas import ImageAnalysis
 
 
 def test_mediapipe_image_bridge_when_pose_extra_is_installed():
     """[pose] 必须能构造 Tasks Image；核心环境无 extra 时按设计跳过。"""
+    if not _mediapipe_runtime_available():
+        pytest.skip("MediaPipe Linux wheel requires libEGL.so.1")
     mp = pytest.importorskip("mediapipe")
     np = pytest.importorskip("numpy")
 
@@ -21,6 +27,16 @@ def test_mediapipe_image_bridge_when_pose_extra_is_installed():
     )
     assert image.width == 12
     assert image.height == 8
+
+
+def test_pose_safely_falls_back_before_mediapipe_when_native_runtime_missing(
+    monkeypatch,
+):
+    """缺 libEGL 时不得构造半初始化 Image，更不能由析构异常污染进程。"""
+    monkeypatch.setattr(
+        "app.models.pose._mediapipe_runtime_available", lambda: False
+    )
+    assert get_body_landmarks(Image.new("RGB", (8, 12), "white")) is None
 
 
 def _standing_landmarks():

@@ -22,7 +22,9 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 import urllib.request
+from ctypes.util import find_library
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -46,6 +48,11 @@ _ANKLE_L, _ANKLE_R = 27, 28
 
 # 关键点可见性阈值：被遮挡/置信度低的部位不参与实测
 _MIN_VISIBILITY = 0.5
+
+
+def _mediapipe_runtime_available() -> bool:
+    """Linux wheel 需要 libEGL；缺失时必须在 import/构造前安全降级。"""
+    return not sys.platform.startswith("linux") or find_library("EGL") is not None
 
 
 def _sha256_of(path: Path) -> str:
@@ -96,6 +103,9 @@ def get_body_landmarks(image) -> Optional[Dict[str, Any]]:
              "ankle", "wrist", "points": [(y, visibility), ...]}
     mediapipe 不可用 / 模型缺失 / 未检出人形 → None。
     """
+    if not _mediapipe_runtime_available():
+        logger.info("MediaPipe pose 需要 libEGL.so.1，当前 Linux 环境缺失，回退先验 span")
+        return None
     try:
         import mediapipe as mp
         import numpy as np

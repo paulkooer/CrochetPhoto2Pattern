@@ -35,7 +35,7 @@ uv sync --locked --extra dev --extra pose
 uv run --locked --extra dev --extra pose pytest -q
 ```
 
-The pose extra is supported only on Python 3.11–3.12.
+The pose extra is supported only on Python 3.11–3.12 and requires `libEGL.so.1` on Linux.
 
 ## Design and evidence constraints
 
