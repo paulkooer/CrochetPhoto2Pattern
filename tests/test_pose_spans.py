@@ -1,5 +1,6 @@
 """S1 实测部件 span：姿态关键点 → spans → 配色/剖面接线（可选依赖+回退）。"""
 
+import pytest
 from PIL import Image
 
 from app.models.color_design import PART_SPAN, color_blocks_for_part
@@ -7,6 +8,19 @@ from app.models.crochet_params import CrochetParamsGenerator
 from app.models.pose import measured_spans
 from app.models.structure_designer import StructureDesigner
 from app.schemas import ImageAnalysis
+
+
+def test_mediapipe_image_bridge_when_pose_extra_is_installed():
+    """[pose] 必须能构造 Tasks Image；核心环境无 extra 时按设计跳过。"""
+    mp = pytest.importorskip("mediapipe")
+    np = pytest.importorskip("numpy")
+
+    image = mp.Image(
+        image_format=mp.ImageFormat.SRGB,
+        data=np.zeros((8, 12, 3), dtype=np.uint8),
+    )
+    assert image.width == 12
+    assert image.height == 8
 
 
 def _standing_landmarks():

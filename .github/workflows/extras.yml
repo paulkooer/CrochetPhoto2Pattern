@@ -34,8 +34,8 @@ jobs:
       - name: Install uv
         run: python -m pip install uv==0.11.8
 
-      # 可选依赖安装进同一环境：验证 [pose] 带入的 opencv-contrib 5.x
-      # 覆盖 headless 后应用仍可降级运行（pose.py/subject.py 的防御路径）
+      # 可选依赖安装进同一环境：验证 [pose] 带入 opencv-contrib 后，
+      # 应用仍可运行或安全降级（pose.py/subject.py 的防御路径）。
       - name: Sync locked dependencies with extra
         run: uv sync --locked --extra dev --extra "${{ matrix.extra }}"
 

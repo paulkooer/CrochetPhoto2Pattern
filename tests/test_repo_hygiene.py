@@ -158,7 +158,7 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
     security = (_REPO / ".github" / "workflows" / "security.yml").read_text(
         encoding="utf-8"
     )
-    assert "uv sync --locked --extra dev" in security
+    assert "uv sync --locked --extra dev --extra pdf --extra pose" in security
     assert "pip-audit==2.10.1" in security
     assert "pip-audit --local" in security
     assert "schedule:" in security
@@ -171,16 +171,16 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
         assert "actions/setup-python@v7" in workflow
 
 
-def test_pose_extra_avoids_known_ctypes_binding_regression():
+def test_pose_extra_avoids_vulnerable_protobuf_and_unverified_python_versions():
     pyproject = (_REPO / "pyproject.toml").read_text(encoding="utf-8")
+    lock = (_REPO / "uv.lock").read_text(encoding="utf-8")
     assert (
-        'pose = ["mediapipe>=0.10.20,<0.10.30; python_version < \'3.13\'"]'
+        'pose = ["mediapipe>=1.0.1,<2; python_version < \'3.13\'"]'
         in pyproject
     )
-    assert (
-        '"protobuf>=6.33.5,<8; python_version >= \'3.13\'"' in pyproject
-    )
+    assert '"protobuf>=6.33.5,<8"' in pyproject
     assert '"numpy>=2.3; python_version >= \'3.13\'"' in pyproject
+    assert not re.search(r'name = "protobuf"\nversion = "[0-5]\.', lock)
 
 
 def test_lock_contains_current_project_version():

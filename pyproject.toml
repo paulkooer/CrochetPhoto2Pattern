@@ -40,13 +40,12 @@ dependencies = [
     # color_design / local_vision 直接 import numpy（此前靠 opencv 传递带入；
     # 显式声明，避免 opencv 一旦改可选时配色静默降级单色）。
     "numpy>=1.24",
-    # MediaPipe 0.10.21 仍要求 NumPy <2；3.13+ 不安装 pose，显式使用提供
-    # 新解释器 wheel 的 NumPy 2.x，避免 CI 从源码构建不支持新 ABI 的 1.26。
+    # pose 暂限制在 3.11–3.12；3.13+ 显式使用提供新解释器 wheel 的
+    # NumPy 2.x，避免 CI 从源码构建不支持新 ABI 的 1.26。
     "numpy>=2.3; python_version >= '3.13'",
-    # Protobuf 4 的 C 扩展在 3.13 已产生 tp_new 弃用告警，Python 3.14
-    # 已不再允许；Streamlit 接受 protobuf<8，因此在 3.13+ 核心环境抬高下界。
-    # pose extra 被限制在 3.11–3.12，仍可独立使用 MediaPipe 所需的 protobuf<5。
-    "protobuf>=6.33.5,<8; python_version >= '3.13'",
+    # GHSA-7gcm-g887-7qv7 / CVE-2026-0994 修复线；Streamlit 接受 protobuf<8。
+    # MediaPipe 1.x 已移除旧版 protobuf<5 约束，所有解释器统一使用安全版本。
+    "protobuf>=6.33.5,<8",
 ]
 
 [project.urls]
@@ -65,12 +64,10 @@ dev = [
 ]
 # PDF 图解导出（可选，S4）：中文用 Adobe CID 字体，无需额外字体文件
 pdf = ["reportlab>=4.0"]
-# 姿态关键点实测 span（可选，S1）：0.10.30 起 Python Image 改写为 ctypes，
-# Linux 上已有构造/析构回归（google-ai-edge/mediapipe#6331 同代绑定问题，
-# 本仓远程 extras 复现）；暂固定在最后一个旧绑定版本系列。mediapipe 还会
-# 带入 opencv-contrib 与 protobuf<5，并且 0.10.21 只发布到 Python 3.12，
-# 因此必须保持可选且显式限制解释器，避免污染 3.13/3.14 核心解析。
-pose = ["mediapipe>=0.10.20,<0.10.30; python_version < '3.13'"]
+# 姿态关键点实测 span（可选，S1）：1.0.1 移除 protobuf 依赖，避免旧版
+# protobuf<5 的高危 JSON 递归绕过；仍会带入 opencv-contrib，故保持可选。
+# 当前只在 3.11–3.12 的本地与 Linux extras CI 验证。
+pose = ["mediapipe>=1.0.1,<2; python_version < '3.13'"]
 
 # app/prompts/*.txt 是包内数据（运行时由 image_parser 读取）。
 # pyproject 模式下 setuptools 默认不打包 package data，缺了这一段，

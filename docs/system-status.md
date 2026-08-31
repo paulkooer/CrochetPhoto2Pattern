@@ -16,15 +16,15 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 
 | 检查 | 结果 | 说明 |
 |---|---|---|
-| 核心环境 | 702 passed, 5 skipped | Python 3.12.13；PDF 依赖、姿态运行时及授权真实照片缺失时按设计跳过 |
-| PDF extras | 706 passed, 1 skipped | Python 3.11.15；`[pdf]` 实际执行全部 PDF 用例，仅授权真实照片评测跳过 |
-| Pose extras | 702 passed, 5 skipped | Python 3.11.15；固定 MediaPipe 旧绑定后全绿，未安装 PDF/授权照片按设计跳过 |
-| 高版本核心 | 702 passed, 5 skipped | Python 3.13.13 与 3.14.4；NumPy 2.5.2 / Protobuf 7.36.0，3.13 无弃用告警 |
+| 核心环境 | 702 passed, 6 skipped | Python 3.12.13；PDF、姿态运行时及授权真实照片缺失时按设计跳过 |
+| PDF extras | 706 passed, 2 skipped | Python 3.11.15；`[pdf]` 执行全部 PDF 用例，pose 冒烟与授权照片按设计跳过 |
+| Pose extras | 703 passed, 5 skipped | Python 3.11.15；MediaPipe 1.0.1 图像桥接及全部回归通过 |
+| 高版本核心 | 702 passed, 6 skipped | Python 3.13.13 与 3.14.4；NumPy 2.5.2 / Protobuf 7.36.0 |
 | 覆盖率 | 88.11% | 干净核心环境，`pytest --cov=app --cov-fail-under=80` |
 | 静态检查 | 通过 | `ruff check .` |
 | 差异格式 | 通过 | `git diff --check` |
 | 依赖锁 | 通过 | `uv lock --check`，Python 3.12 解析 |
-| 依赖漏洞 | 通过 | `pip-audit --local` 未发现已知漏洞（2026-08-31） |
+| 依赖漏洞 | 通过 | 核心、PDF 与 pose 联合环境 `pip-audit --local` 无已知漏洞；锁文件无 Protobuf 4/5 |
 | wheel | 通过 | Python 3.12 隔离构建，三项 CLI、许可证、提示词和精选证据均须在包内 |
 
 项目正式支持范围是 Python 3.11–3.14。提交 `84bd80b` 的远程核心矩阵

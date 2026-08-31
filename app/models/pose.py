@@ -5,18 +5,18 @@
 腕(15/16)、鼻(0)、眼(2/5)。作为可选依赖（pip install
 crochet-photo2pattern[pose]），缺失/失败时回退 PART_SPAN 先验。
 
-版本约束 0.10.20–0.10.21（选型与 CI 结论）：1.0.1 在 macOS arm64 上原生
-崩溃（Metal 图初始化 Check failed: service_，强制 CPU 代理同样崩溃）；
-0.10.30 起的 ctypes Image 绑定又在 Linux 出现构造失败后的析构异常。旧绑定
-版本的 Tasks API 满足当前能力，并由 extras CI 固定验证。
+版本约束 1.0.1–<2（选型与 CI 结论）：1.x 移除了会强制带入高危
+protobuf<5 的旧依赖。本模块只请求关键点，不启用或读取 segmentation_masks，
+因此不触达 google-ai-edge/mediapipe#6331 的非连续 float mask numpy_view 路径；
+模型创建/检测由 macOS 隔离冒烟测试与 Linux extras CI 验证。
 
 为什么需要：PART_SPAN 是"常规 Q 版比例"先验，坐姿/特写/仰拍照片的
 部件分段会偏（handoff §4.1 残留）。实测 span 用照片里真实的人体关键点
 （归一化到全图 0..1，与色带坐标同系），先验只兜底。
 
-工程约束（选型实验记录）：新版本 mediapipe 依赖 opencv-contrib-python 5.0，
-与项目 opencv-python-headless<5 冲突——因此 mediapipe 必须保持**可选**，
-主依赖不引入；模型文件（~5.8MB）首次使用时下载缓存，离线/失败 → None。
+工程约束：mediapipe 会带入 opencv-contrib-python，与项目的 headless 发行包
+共享 cv2 命名空间，因此必须保持**可选**，主依赖不引入；模型文件（~5.8MB）
+首次使用时下载缓存，离线/失败 → None。
 """
 from __future__ import annotations
 

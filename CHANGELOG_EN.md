@@ -28,8 +28,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - CI forces each declared interpreter through `UV_PYTHON`, preventing a false matrix that
   silently reused the local default.
 - GitHub Actions use `checkout@v7` and `setup-python@v7`.
-- Pose is limited to Python 3.11–3.12 with MediaPipe 0.10.21. Python 3.13+ uses NumPy 2.x
-  and Protobuf 6+ so old pose constraints cannot pollute the core environment.
+- Pose is limited to Python 3.11–3.12 and upgraded to MediaPipe 1.0.1, removing the old
+  vulnerable `protobuf<5` constraint. Every core environment uses Protobuf 6+; Python
+  3.13+ also uses NumPy 2.x.
+- Dependency security installs and audits core, PDF, and pose extras together.
 
 ### Planned
 

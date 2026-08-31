@@ -16,13 +16,13 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 | Check | Result | Notes |
 |---|---|---|
-| Core | 702 passed, 5 skipped | Python 3.11–3.14 matrix; missing optional/runtime data skips by design |
-| PDF extra | 706 passed, 1 skipped | Python 3.11; all PDF tests execute |
-| Pose extra | 702 passed, 5 skipped | Python 3.11; MediaPipe old binding fixed and isolated |
+| Core | 702 passed, 6 skipped | Python 3.11–3.14 matrix; missing optional/runtime data skips by design |
+| PDF extra | 706 passed, 2 skipped | Python 3.11; PDF tests execute, pose smoke and authorized photos skip by design |
+| Pose extra | 703 passed, 5 skipped | Python 3.11; MediaPipe 1.0.1 image bridge and full regression suite pass |
 | Coverage | 88.11% | clean core environment; threshold is 80% |
 | Static checks | Passed | `ruff check .` and `git diff --check` |
 | Lock | Passed | `uv lock --check` |
-| Dependency audit | Passed | no known vulnerability reported by `pip-audit --local` on 2026-08-31 |
+| Dependency audit | Passed | combined core, PDF, and pose environment has no known finding; no Protobuf 4/5 in lock |
 | Wheel | Passed | metadata, MIT license, three CLIs, prompts, and curated evidence included |
 
 Commit `84bd80b` passed the real Python matrix

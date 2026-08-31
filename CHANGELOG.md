@@ -29,14 +29,14 @@
 - 新增依赖变更触发和每周定时的 `pip-audit` 工作流；先按 `uv.lock` 同步环境，
   再审计实际安装版本，审计工具不会改写项目锁文件。
 - CI 通过 `UV_PYTHON` 强制使用矩阵声明的解释器，避免 `.python-version` 把
-  3.11–3.14 四个 job 静默收敛为 3.12；pose extra 暂避开 MediaPipe 0.10.30+
-  在 Linux 上的 ctypes Image 绑定回归。
+  3.11–3.14 四个 job 静默收敛为 3.12。
 - GitHub 官方 Actions 升级到 Node 24 运行时的 `checkout@v7` 与
   `setup-python@v7`，消除 Node 20 弃用告警。
-- MediaPipe pose 明确仅支持其有稳定 wheel 的 Python 3.11–3.12；其
-  `protobuf<5` 约束不再污染 Python 3.13/3.14 核心环境；Python 3.13+
-  核心环境显式使用兼容新解释器 ABI 的 Protobuf 6+，同时
+- MediaPipe pose 升级到 1.0.1 并明确支持 Python 3.11–3.12；移除旧版
+  `protobuf<5` 高危约束，所有核心环境统一使用 Protobuf 6+。Python 3.13+
+  同时
   使用提供新解释器 wheel 的 NumPy 2.x，避免回退编译 NumPy 1.26 源码。
+- 依赖安全工作流同时安装并审计核心、PDF 与 pose extras。
 
 ### Planned
 
