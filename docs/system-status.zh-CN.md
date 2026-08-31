@@ -27,12 +27,12 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 | 依赖漏洞 | 通过 | 联合环境 `pip-audit --local` 无已知漏洞；Protobuf 高危告警已由更新后的依赖图标记为 fixed |
 | wheel | 通过 | Python 3.12 隔离构建，三项 CLI、许可证、提示词和精选证据均须在包内 |
 
-项目正式支持范围是 Python 3.11–3.14。提交 `f8af7df` 的远程核心矩阵
-([run 33362301107](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301107))、
+项目正式支持范围是 Python 3.11–3.14。提交 `bb24995` 的远程核心矩阵
+([run 33364513189](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33364513189))、
 PDF/pose extras
-([run 33362301109](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301109))
+([run 33364513168](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33364513168))
 与锁定依赖安全审计
-([run 33361428729](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33361428729))
+([run 33364673171](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33364673171))
 均已通过；矩阵通过 `UV_PYTHON` 实际使用 3.11、3.12、3.13、3.14，而非复用本地默认解释器。
 
 ## 发布门禁

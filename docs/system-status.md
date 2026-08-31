@@ -25,12 +25,12 @@ project must not claim validated dimensions, material usage, time, or finished-i
 | Dependency audit | Passed | combined environment has no known finding; GitHub marks the Protobuf high alert fixed |
 | Wheel | Passed | metadata, MIT license, three CLIs, prompts, and curated evidence included |
 
-Commit `f8af7df` passed the real Python matrix
-([run 33362301107](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301107)),
+Commit `bb24995` passed the real Python matrix
+([run 33364513189](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33364513189)),
 PDF/pose extras
-([run 33362301109](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301109)),
+([run 33364513168](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33364513168)),
 and locked dependency audit
-([run 33361428729](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33361428729)).
+([run 33364673171](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33364673171)).
 
 ## Release gates
 
