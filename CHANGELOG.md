@@ -27,12 +27,17 @@
 - CI 通过 `UV_PYTHON` 强制使用矩阵声明的解释器，避免 `.python-version` 把
   3.11–3.14 四个 job 静默收敛为 3.12；pose extra 暂避开 MediaPipe 0.10.30+
   在 Linux 上的 ctypes Image 绑定回归。
+- GitHub 官方 Actions 升级到 Node 24 运行时的 `checkout@v7` 与
+  `setup-python@v7`，消除 Node 20 弃用告警。
+- MediaPipe pose 明确仅支持其有稳定 wheel 的 Python 3.11–3.12；其
+  `protobuf<5` 约束不再污染 Python 3.13/3.14 核心环境；Python 3.14
+  核心环境显式使用兼容其扩展 ABI 的 Protobuf 6+。
 
 ### Planned
 
 - 采集授权真实图片并执行首份评测报告，建立实体试钩基线。
 - 拆分参数生成、结果渲染、网格图案和视觉服务商适配巨型模块。
-- 配置远程仓库后恢复真实 CI 状态徽章并发布首个 Beta 标签。
+- G3 授权照片与 G4 独立实体试钩门禁通过后发布首个 Beta 标签。
 
 ## 0.2.0-beta.1 - 2026-08-30
 

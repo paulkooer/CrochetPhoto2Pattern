@@ -125,10 +125,23 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
     assert "pip-audit --local" in security
     assert "schedule:" in security
 
+    for relative in ("ci.yml", "extras.yml", "security.yml"):
+        workflow = (_REPO / ".github" / "workflows" / relative).read_text(
+            encoding="utf-8"
+        )
+        assert "actions/checkout@v7" in workflow
+        assert "actions/setup-python@v7" in workflow
+
 
 def test_pose_extra_avoids_known_ctypes_binding_regression():
     pyproject = (_REPO / "pyproject.toml").read_text(encoding="utf-8")
-    assert 'pose = ["mediapipe>=0.10.20,<0.10.30"]' in pyproject
+    assert (
+        'pose = ["mediapipe>=0.10.20,<0.10.30; python_version < \'3.13\'"]'
+        in pyproject
+    )
+    assert (
+        '"protobuf>=6.33.5,<8; python_version >= \'3.14\'"' in pyproject
+    )
 
 
 def test_lock_contains_current_project_version():
