@@ -32,7 +32,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
   vulnerable `protobuf<5` constraint. Every core environment uses Protobuf 6+; Python
   3.13+ also uses NumPy 2.x.
 - Dependency security installs and audits core, PDF, and pose extras together.
-- Linux pose checks for `libEGL.so.1` before constructing MediaPipe objects and safely
+- Linux pose checks for EGL/GLESv2 before constructing MediaPipe objects and safely
   falls back when missing; extras CI installs the runtime and exercises the real image bridge.
 
 ### Planned

@@ -37,7 +37,7 @@
   同时
   使用提供新解释器 wheel 的 NumPy 2.x，避免回退编译 NumPy 1.26 源码。
 - 依赖安全工作流同时安装并审计核心、PDF 与 pose extras。
-- Linux pose 在构造 MediaPipe 对象前检查 `libEGL.so.1`，缺失时安全回退；
+- Linux pose 在构造 MediaPipe 对象前检查 EGL/GLESv2，缺失时安全回退；
   extras CI 安装原生运行库并执行真实 `mp.Image` 桥接冒烟测试。
 
 ### Planned

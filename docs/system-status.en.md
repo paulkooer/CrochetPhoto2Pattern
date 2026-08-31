@@ -18,7 +18,7 @@ project must not claim validated dimensions, material usage, time, or finished-i
 |---|---|---|
 | Core | 702 passed, 6 skipped | Python 3.11–3.14 matrix; missing optional/runtime data skips by design |
 | PDF extra | 706 passed, 2 skipped | Python 3.11; PDF tests execute, pose smoke and authorized photos skip by design |
-| Pose extra | Pending remote recheck | MediaPipe 1.0.1; Linux installs libEGL and must fall back before construction when absent |
+| Pose extra | Pending remote recheck | MediaPipe 1.0.1; Linux installs EGL/GLESv2 and must fall back before construction when absent |
 | Coverage | 88.11% | clean core environment; threshold is 80% |
 | Static checks | Passed | `ruff check .` and `git diff --check` |
 | Lock | Passed | `uv lock --check` |

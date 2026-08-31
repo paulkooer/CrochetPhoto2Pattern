@@ -38,7 +38,7 @@ jobs:
         if: matrix.extra == 'pose'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1
+          sudo apt-get install -y libegl1 libgles2
 
       # 可选依赖安装进同一环境：验证 [pose] 带入 opencv-contrib 后，
       # 应用仍可运行或安全降级（pose.py/subject.py 的防御路径）。

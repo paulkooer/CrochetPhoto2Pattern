@@ -33,7 +33,8 @@ uv sync --locked --extra dev --extra pose
 uv run --locked --extra dev --extra pose pytest -q
 ```
 
-`pose` extra 仅支持 Python 3.11–3.12；Linux 还需提供 `libEGL.so.1`（Ubuntu 可安装 `libegl1`）。
+`pose` extra 仅支持 Python 3.11–3.12；Linux 还需提供 `libEGL.so.1` 与
+`libGLESv2.so.2`（Ubuntu 可安装 `libegl1 libgles2`）。
 
 ## 设计与证据约束
 

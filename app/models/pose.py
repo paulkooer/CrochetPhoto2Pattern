@@ -50,9 +50,13 @@ _ANKLE_L, _ANKLE_R = 27, 28
 _MIN_VISIBILITY = 0.5
 
 
+def _linux_mediapipe_libraries_available() -> bool:
+    return all(find_library(name) is not None for name in ("EGL", "GLESv2"))
+
+
 def _mediapipe_runtime_available() -> bool:
-    """Linux wheel 需要 libEGL；缺失时必须在 import/构造前安全降级。"""
-    return not sys.platform.startswith("linux") or find_library("EGL") is not None
+    """Linux wheel 需要 EGL/GLESv2；缺失时必须在 import/构造前安全降级。"""
+    return not sys.platform.startswith("linux") or _linux_mediapipe_libraries_available()
 
 
 def _sha256_of(path: Path) -> str:
@@ -104,7 +108,7 @@ def get_body_landmarks(image) -> Optional[Dict[str, Any]]:
     mediapipe 不可用 / 模型缺失 / 未检出人形 → None。
     """
     if not _mediapipe_runtime_available():
-        logger.info("MediaPipe pose 需要 libEGL.so.1，当前 Linux 环境缺失，回退先验 span")
+        logger.info("MediaPipe pose 需要 EGL/GLESv2，当前 Linux 环境缺失，回退先验 span")
         return None
     try:
         import mediapipe as mp
