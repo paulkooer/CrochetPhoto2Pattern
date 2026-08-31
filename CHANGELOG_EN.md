@@ -21,6 +21,8 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Changed
 
+- English is now the default GitHub and package landing page; complete Chinese docs remain
+  at `README_ZH.md` and `docs/system-status.zh-CN.md`, with compatibility redirects for old links.
 - README now separates structural correctness, photo generalization, and physical crochetability.
 - Secret checks cover staged untracked files and common GitHub, AWS, and private-key patterns.
 - Core tests no longer rely on the optional PDF extra; Streamlit tests use stable absolute paths.

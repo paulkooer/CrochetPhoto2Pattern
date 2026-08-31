@@ -49,14 +49,14 @@ def test_release_metadata_is_consistent():
     release_name = f"{match.group(1)}-beta.{match.group(2)}"
 
     assert f"## {release_name} - " in changelog
-    assert "发布状态：Beta" in readme
+    assert "Release status: Beta" in readme
     assert 'crochet2pattern-eval = "app.evaluation:main"' in pyproject
     assert 'crochet2pattern-trials = "app.trials:main"' in pyproject
     assert 'app = ["prompts/*.txt", "data/*.json"]' in pyproject
     assert (_REPO / "app" / "data" / "external-trial-evidence.json").is_file()
-    assert "系统状态与发布门禁" in readme
-    assert "G3 授权照片基线" in status
-    assert "G4 实体试钩基线" in status
+    assert "System Status and Release Gates" in readme
+    assert "G3 Authorized-photo baseline" in status
+    assert "G4 Physical-trial baseline" in status
     assert "github.com/OWNER" not in readme + changelog
 
 
@@ -70,9 +70,11 @@ def test_repository_has_public_contribution_and_security_guidance():
         "SECURITY.md",
         "SECURITY_EN.md",
         "README_EN.md",
+        "README_ZH.md",
         "CHANGELOG_EN.md",
         "docs/README.md",
         "docs/system-status.en.md",
+        "docs/system-status.zh-CN.md",
         "docs/evaluation.en.md",
         "docs/physical-trials.en.md",
         "docs/flow.en.md",
@@ -87,19 +89,19 @@ def test_repository_has_public_contribution_and_security_guidance():
 
     readme = (_REPO / "README.md").read_text(encoding="utf-8")
     security = (_REPO / "SECURITY.md").read_text(encoding="utf-8")
-    assert "数据与隐私" in readme
+    assert "Data and privacy" in readme
     assert "Security → Advisories" in security
     assert "不要用公开 Issue" in security
 
 
 def test_bilingual_entry_points_cross_link_and_preserve_release_boundaries():
     pairs = (
-        ("README.md", "README_EN.md"),
+        ("README_ZH.md", "README.md"),
         ("CONTRIBUTING.md", "CONTRIBUTING_EN.md"),
         ("SECURITY.md", "SECURITY_EN.md"),
         ("CODE_OF_CONDUCT.md", "CODE_OF_CONDUCT_EN.md"),
         ("CHANGELOG.md", "CHANGELOG_EN.md"),
-        ("docs/system-status.md", "docs/system-status.en.md"),
+        ("docs/system-status.zh-CN.md", "docs/system-status.md"),
         ("docs/evaluation.md", "docs/evaluation.en.md"),
         ("docs/physical-trials.md", "docs/physical-trials.en.md"),
         ("docs/flow.md", "docs/flow.en.md"),
@@ -111,12 +113,17 @@ def test_bilingual_entry_points_cross_link_and_preserve_release_boundaries():
         assert Path(english_path).name in chinese
         assert Path(chinese_path).name in english
 
-    english_readme = (_REPO / "README_EN.md").read_text(encoding="utf-8")
-    english_status = (_REPO / "docs/system-status.en.md").read_text(encoding="utf-8")
+    english_readme = (_REPO / "README.md").read_text(encoding="utf-8")
+    english_status = (_REPO / "docs/system-status.md").read_text(encoding="utf-8")
     assert "Release status: Beta" in english_readme
     assert "Data and privacy" in english_readme
     assert "G3 Authorized-photo baseline" in english_status
     assert "G4 Physical-trial baseline" in english_status
+
+    assert "README.md" in (_REPO / "README_EN.md").read_text(encoding="utf-8")
+    assert "system-status.md" in (
+        _REPO / "docs/system-status.en.md"
+    ).read_text(encoding="utf-8")
 
 
 def test_historical_audit_docs_point_to_authoritative_status():
