@@ -17,6 +17,7 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 | 核心环境 | 701 passed, 5 skipped | Python 3.12.13；PDF 依赖、姿态运行时及授权真实照片缺失时按设计跳过 |
 | PDF extras | 705 passed, 1 skipped | Python 3.11.15；`[pdf]` 实际执行全部 PDF 用例，仅授权真实照片评测跳过 |
 | Pose extras | 701 passed, 5 skipped | Python 3.11.15；固定 MediaPipe 旧绑定后全绿，未安装 PDF/授权照片按设计跳过 |
+| 高版本核心 | 701 passed, 5 skipped | Python 3.13.13 与 3.14.4；NumPy 2.5.2 / Protobuf 7.36.0，3.13 无弃用告警 |
 | 覆盖率 | 88.11% | 干净核心环境，`pytest --cov=app --cov-fail-under=80` |
 | 静态检查 | 通过 | `ruff check .` |
 | 差异格式 | 通过 | `git diff --check` |
@@ -24,15 +25,20 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 | 依赖漏洞 | 通过 | `pip-audit --local` 未发现已知漏洞（2026-08-31） |
 | wheel | 通过 | Python 3.12 隔离构建，三项 CLI、许可证、提示词和精选证据均须在包内 |
 
-上述本地结果使用锁定的 Python 3.12.13 环境执行。项目正式支持范围是 Python
-3.11–3.14；其他三个版本的结果仍必须以远程 CI 为准，不能由单版本本地结果替代。
+项目正式支持范围是 Python 3.11–3.14。提交 `84bd80b` 的远程核心矩阵
+([run 33357650527](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650527))、
+PDF/pose extras
+([run 33357650560](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650560))
+与锁定依赖安全审计
+([run 33357650526](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650526))
+均已通过；矩阵通过 `UV_PYTHON` 实际使用 3.11、3.12、3.13、3.14，而非复用本地默认解释器。
 
 ## 发布门禁
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
 | G1 可复现源码 | **已通过** | 改动已审查并提交，版本、锁文件、变更日志和远程 `main` 一致 |
-| G2 支持版本自动化 | **待远程验证** | Python 3.11–3.14 核心 CI 与可选依赖 CI 全绿 |
+| G2 支持版本自动化 | **已通过** | Python 3.11–3.14 核心 CI、PDF/pose extras 与依赖安全审计全绿 |
 | G3 授权照片基线 | **阻断** | 至少30个分层案例，满足 `docs/evaluation.md` 门槛并保留报告 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
