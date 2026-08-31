@@ -16,21 +16,21 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 | Check | Result | Notes |
 |---|---|---|
-| Core | 702 passed, 6 skipped | Python 3.11–3.14 matrix; missing optional/runtime data skips by design |
-| PDF extra | 706 passed, 2 skipped | Python 3.11; PDF tests execute, pose smoke and authorized photos skip by design |
-| Pose extra | Pending remote recheck | MediaPipe 1.0.1; Linux installs EGL/GLESv2 and must fall back before construction when absent |
-| Coverage | 88.11% | clean core environment; threshold is 80% |
+| Core | 704 passed, 6 skipped | remote Python 3.11–3.14 matrix; missing optional/runtime data skips by design |
+| PDF extra | 708 passed, 2 skipped | Python 3.11; PDF tests execute, pose smoke and authorized photos skip by design |
+| Pose extra | 705 passed, 5 skipped | Python 3.11; MediaPipe 1.0.1, EGL/GLESv2, and the real `mp.Image` bridge pass |
+| Coverage | 88.02% | clean core environment; threshold is 80% |
 | Static checks | Passed | `ruff check .` and `git diff --check` |
 | Lock | Passed | `uv lock --check` |
-| Dependency audit | Passed | combined core, PDF, and pose environment has no known finding; no Protobuf 4/5 in lock |
+| Dependency audit | Passed | combined environment has no known finding; GitHub marks the Protobuf high alert fixed |
 | Wheel | Passed | metadata, MIT license, three CLIs, prompts, and curated evidence included |
 
-Commit `84bd80b` passed the real Python matrix
-([run 33357650527](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650527)),
+Commit `f8af7df` passed the real Python matrix
+([run 33362301107](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301107)),
 PDF/pose extras
-([run 33357650560](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650560)),
+([run 33362301109](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301109)),
 and locked dependency audit
-([run 33357650526](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650526)).
+([run 33361428729](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33361428729)).
 
 ## Release gates
 

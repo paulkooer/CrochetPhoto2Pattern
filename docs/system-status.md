@@ -12,27 +12,27 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 发行包已有较完整的自动化保障，但尚未完成授权真实照片基线与实体试钩基线，因此不得
 描述为“已验证尺寸、材料、工时或成品可钩性”的生产版本。
 
-## 最近一次本地验证
+## 最近一次可复现验证
 
 | 检查 | 结果 | 说明 |
 |---|---|---|
-| 核心环境 | 702 passed, 6 skipped | Python 3.12.13；PDF、姿态运行时及授权真实照片缺失时按设计跳过 |
-| PDF extras | 706 passed, 2 skipped | Python 3.11.15；`[pdf]` 执行全部 PDF 用例，pose 冒烟与授权照片按设计跳过 |
-| Pose extras | 待远程复核 | MediaPipe 1.0.1；Linux 显式安装 EGL/GLESv2，缺失时应用必须在构造前安全回退 |
-| 高版本核心 | 702 passed, 6 skipped | Python 3.13.13 与 3.14.4；NumPy 2.5.2 / Protobuf 7.36.0 |
-| 覆盖率 | 88.11% | 干净核心环境，`pytest --cov=app --cov-fail-under=80` |
+| 核心环境 | 704 passed, 6 skipped | Python 3.11–3.14 远程矩阵；可选运行时及授权真实照片缺失时按设计跳过 |
+| PDF extras | 708 passed, 2 skipped | Python 3.11；`[pdf]` 执行全部 PDF 用例，pose 冒烟与授权照片按设计跳过 |
+| Pose extras | 705 passed, 5 skipped | Python 3.11；MediaPipe 1.0.1、EGL/GLESv2 与真实 `mp.Image` 桥接全部通过 |
+| 高版本核心 | 704 passed, 6 skipped | Python 3.13.15 与 3.14.7；NumPy 2.5.2 / Protobuf 7.36.0 |
+| 覆盖率 | 88.02% | 干净核心环境，`pytest --cov=app --cov-fail-under=80` |
 | 静态检查 | 通过 | `ruff check .` |
 | 差异格式 | 通过 | `git diff --check` |
 | 依赖锁 | 通过 | `uv lock --check`，Python 3.12 解析 |
-| 依赖漏洞 | 通过 | 核心、PDF 与 pose 联合环境 `pip-audit --local` 无已知漏洞；锁文件无 Protobuf 4/5 |
+| 依赖漏洞 | 通过 | 联合环境 `pip-audit --local` 无已知漏洞；Protobuf 高危告警已由更新后的依赖图标记为 fixed |
 | wheel | 通过 | Python 3.12 隔离构建，三项 CLI、许可证、提示词和精选证据均须在包内 |
 
-项目正式支持范围是 Python 3.11–3.14。提交 `84bd80b` 的远程核心矩阵
-([run 33357650527](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650527))、
+项目正式支持范围是 Python 3.11–3.14。提交 `f8af7df` 的远程核心矩阵
+([run 33362301107](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301107))、
 PDF/pose extras
-([run 33357650560](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650560))
+([run 33362301109](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33362301109))
 与锁定依赖安全审计
-([run 33357650526](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33357650526))
+([run 33361428729](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/33361428729))
 均已通过；矩阵通过 `UV_PYTHON` 实际使用 3.11、3.12、3.13、3.14，而非复用本地默认解释器。
 
 ## 发布门禁
