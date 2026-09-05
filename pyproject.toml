@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "crochet-photo2pattern"
-version = "0.2.0b1"
+version = "0.2.0b2"
 description = "AI-powered Amigurumi crochet pattern generator from photos"
 readme = "README.md"
 license = "MIT"

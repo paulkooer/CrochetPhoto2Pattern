@@ -14,12 +14,14 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest verification
 
+> New in 0.2.0-beta.2: CrochetPARADE DSL export (`--parade` / result page) with the second-tier executable-correctness metric `parade_export_rate`, a structure-v2 3D preview, core-contract JSON Schemas (docs/schemas/) and a grid dithering option.
+
 | Check | Result | Notes |
 |---|---|---|
-| Core | 729 passed, 1 skipped | remote Python 3.11–3.14 matrix; missing optional/runtime data skips by design |
-| PDF extra | 731 passed, 1 skipped | Python 3.11; PDF tests execute, pose smoke and authorized photos skip by design |
-| Pose extra | 728 passed, 2 skipped | Python 3.11; MediaPipe 1.0.1, EGL/GLESv2, and the real `mp.Image` bridge pass |
-| Coverage | 90.7% | clean core environment; threshold is 80% |
+| Core | 739 passed, 1 skipped | remote Python 3.11–3.14 matrix; missing optional/runtime data skips by design |
+| PDF extra | 741 passed, 1 skipped | Python 3.11; PDF tests execute, pose smoke and authorized photos skip by design |
+| Pose extra | 738 passed, 2 skipped | Python 3.11; MediaPipe 1.0.1, EGL/GLESv2, and the real `mp.Image` bridge pass |
+| Coverage | 89.9% | clean core environment; threshold is 80% |
 | Static checks | Passed | `ruff check .` and `git diff --check` |
 | Lock | Passed | `uv lock --check` |
 | Dependency audit | Passed | combined environment has no known finding; GitHub marks the Protobuf high alert fixed |

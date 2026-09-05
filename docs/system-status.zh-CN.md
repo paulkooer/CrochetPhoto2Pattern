@@ -14,13 +14,15 @@ CrochetPhoto2Pattern 当前是 **0.2.0b1 工程候选版**：图解代数、输�
 
 ## 最近一次可复现验证
 
+> 0.2.0-beta.2 新增：CrochetPARADE DSL 导出（`--parade`/结果页）与第二层"可执行正确性"评测指标 `parade_export_rate`、结构 v2 3D 预览、核心契约 JSON Schema（docs/schemas/）与网格抖动选项。
+
 | 检查 | 结果 | 说明 |
 |---|---|---|
-| 核心环境 | 729 passed, 1 skipped | Python 3.11–3.14 远程矩阵；可选运行时及授权真实照片缺失时按设计跳过 |
-| PDF extras | 731 passed, 1 skipped | Python 3.11；`[pdf]` 执行全部 PDF 用例，pose 冒烟与授权照片按设计跳过 |
-| Pose extras | 728 passed, 2 skipped | Python 3.11；MediaPipe 1.0.1、EGL/GLESv2 与真实 `mp.Image` 桥接全部通过 |
-| 高版本核心 | 729 passed, 1 skipped | Python 3.13.15 与 3.14.7；NumPy 2.5.2 / Protobuf 7.36.0 |
-| 覆盖率 | 90.7% | 干净核心环境，`pytest --cov=app --cov-fail-under=80`；数字为本提交的本地基线，随 PR 漂移，以 CI 最新运行为准 |
+| 核心环境 | 739 passed, 1 skipped | Python 3.11–3.14 远程矩阵；可选运行时及授权真实照片缺失时按设计跳过 |
+| PDF extras | 741 passed, 1 skipped | Python 3.11；`[pdf]` 执行全部 PDF 用例，pose 冒烟与授权照片按设计跳过 |
+| Pose extras | 738 passed, 2 skipped | Python 3.11；MediaPipe 1.0.1、EGL/GLESv2 与真实 `mp.Image` 桥接全部通过 |
+| 高版本核心 | 739 passed, 1 skipped | Python 3.13.15 与 3.14.7；NumPy 2.5.2 / Protobuf 7.36.0 |
+| 覆盖率 | 89.9% | 干净核心环境，`pytest --cov=app --cov-fail-under=80`；数字为本提交的本地基线，随 PR 漂移，以 CI 最新运行为准 |
 | 静态检查 | 通过 | `ruff check .` |
 | 差异格式 | 通过 | `git diff --check` |
 | 依赖锁 | 通过 | `uv lock --check`，Python 3.12 解析 |

@@ -8,6 +8,8 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+## 0.2.0-beta.2 - 2026-09-05
+
 ### Added
 
 - Versioned real-photo evaluation protocol covering rights, retention, SHA-256, scene

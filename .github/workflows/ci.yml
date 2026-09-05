@@ -100,7 +100,7 @@ jobs:
           assert "app/py.typed" in names
           assert "app/data/external-trial-evidence.json" in names
           assert any(n.endswith(".dist-info/licenses/LICENSE") for n in names)
-          assert "Version: 0.2.0b1" in metadata
+          assert "Version: 0.2.0b2" in metadata
           assert "Requires-Python: >=3.11" in metadata
           assert "License-Expression: MIT" in metadata
           assert "crochet2pattern = app.cli:main" in entries

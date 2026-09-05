@@ -17,21 +17,27 @@ import logging
 
 from PIL import Image
 
+from ..schemas import PART_LABELS_ZH, PartKind
 from .colors import nearest_yarn
 
 logger = logging.getLogger(__name__)
 
-# 部件在主体（照片纵向）上的占比区间（顶部 → 底部），Amigurumi 常规比例先验
-PART_SPAN: dict[str, tuple[float, float]] = {
-    "帽子": (0.00, 0.18),
-    "头部": (0.05, 0.30),
-    "耳朵": (0.18, 0.30),
-    "身体": (0.30, 0.62),
-    "手臂": (0.32, 0.55),
-    "裙子": (0.55, 0.78),
-    "腿部": (0.62, 1.00),
-    "尾巴": (0.45, 0.60),
+# 部件在主体（照片纵向）上的占比区间（顶部 → 底部），Amigurumi 常规比例先验。
+# 单一来源用 PartKind 键（i18n 迁移收口）；PART_SPAN 为派生的中文键视图——
+# 姿态实测（pose.measured_spans）与 result["spans"] 的既有口径仍是中文名，
+# 边界处直接以视图消费，保持旧备份/实测数据完全兼容。
+PART_SPAN_BY_KIND: dict[PartKind, tuple[float, float]] = {
+    PartKind.HAT: (0.00, 0.18),
+    PartKind.HEAD: (0.05, 0.30),
+    PartKind.EARS: (0.18, 0.30),
+    PartKind.BODY: (0.30, 0.62),
+    PartKind.ARMS: (0.32, 0.55),
+    PartKind.SKIRT: (0.55, 0.78),
+    PartKind.LEGS: (0.62, 1.00),
+    PartKind.TAIL: (0.45, 0.60),
 }
+PART_SPAN: dict[str, tuple[float, float]] = {
+    PART_LABELS_ZH[kind]: span for kind, span in PART_SPAN_BY_KIND.items()}
 
 _BG_DIST_THRESHOLD = 48  # 与背景色的欧氏距离超过此值视为主体像素
 

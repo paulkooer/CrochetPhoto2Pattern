@@ -164,6 +164,8 @@ def run_batch(args) -> int:
                                    "md": str(out_dir / f"{stem}.md"),
                                    "pdf": (str(out_dir / f"{stem}.pdf")
                                            if args.pdf else None),
+                                   "parade": (str(out_dir / f"{stem}.parade.txt")
+                                              if args.parade else None),
                                    "batch_dir": None})
         try:
             rc = main(ns)
@@ -197,6 +199,8 @@ def main(argv=None) -> int:
     if args.batch_dir:
         if args.pdf:
             print("--pdf 在批量模式下按每图 <stem>.pdf 导出", file=sys.stderr)
+        if args.parade:
+            print("--parade 在批量模式下按每图 <stem>.parade.txt 导出", file=sys.stderr)
         return run_batch(args)
     try:
         result = run(args)
