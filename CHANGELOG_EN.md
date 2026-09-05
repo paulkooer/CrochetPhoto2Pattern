@@ -86,6 +86,46 @@ formats may still evolve during Beta; incompatible changes must include migratio
   `app.PRODUCT_NAME` source now feeds the page title, hero, footer, and
   Markdown/PDF exports (the UI previously said Photo2Amigurumi while the
   repo and package say CrochetPhoto2Pattern).
+
+### Security
+
+- Second review pass closes the remaining cross-user injection surfaces: share
+  tokens / backup imports carry other people's content, and three spots in
+  `params` still rendered Markdown (part `notes` via `st.info`, the
+  shape/color line via `st.write`, validator issues via `st.warning`). They now
+  go through `md_safe` (strip zero-width/BiDi, backslash-escape `[]` to kill
+  link/image syntax, HTML-escape), as do spans_measured, sizing/vision_meta
+  notes and all exception interpolations.
+- Backup import gains a 2MB paste-size gate (aligned with the share token's
+  2MB decompression cap).
+
+### Fixed
+
+- `st.components.v1.html` passed Streamlit's deprecation deadline (2026-06-01);
+  the four SVG renders (ring chart, symbol strip, silhouette verification, grid
+  canvas) migrate to `st.html`, with fixed height and scrolling provided by an
+  `html_box` wrapper inside the content (st.html has no height/scrolling).
+- Dependabot ecosystem switched from `pip` to `uv` (officially supported since
+  2025-12); the pip ecosystem has a known "updates pyproject without
+  regenerating uv.lock" failure mode for uv projects.
+- History SQLite first-connect DDL is now lock-guarded across Streamlit session
+  threads, and `commit` no longer sits inside a `suppress` block (a fully
+  migrated database — where every ALTER fails — still commits and marks the
+  file initialized; regression test included).
+- History blobs carry `schema_version` and the loader rejects future versions
+  (legacy blobs without a version keep loading).
+- Share tokens are generated on demand (button click, cached in session
+  state) instead of re-compressing the whole result on every rerun.
+
+### Changed
+
+- `py.typed` ships in the wheel (library consumers get type hints); the CI
+  wheel check asserts it.
+- mypy enables `check_untyped_defs` (zero errors across app); tests/ use a
+  documented override checking only module top level and call signatures —
+  tests deliberately poke internals with dicts and fake SDKs.
+- CI gains a `docker` job (build only, no push, GHA-cached) to keep the
+  Dockerfile and dependency graph honest.
 - `params["parts"]` is uniformly dict-shaped in memory (matching disk/share/history):
   the dict/model dual-state branches in `_part_name`, `_part_rounds`,
   `_part_quantity`, `_round_stitches`, the validator, exporters, PDF export, and the

@@ -12,7 +12,7 @@ from app.models.geometry import no_photo_geometry
 from app.models.sizing import sizing_meta_for_analysis
 from app.models.structure_designer import StructureDesigner
 from app.schemas import PART_NAMES, Difficulty, ImageAnalysis, PatternResult
-from app.ui.result_renderer import purge_result_state, render_results
+from app.ui.result_renderer import md_safe, purge_result_state, render_results
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ def render_tab_manual() -> None:
                 st.session_state.manual_result = result
                 st.success("✅ 图解已生成！")
             except Exception as e:
-                st.error(f"生成失败: {e}")
+                st.error(f"生成失败: {md_safe(e)}")
                 logger.exception("Manual pipeline failed")
 
     if "manual_result" in st.session_state:

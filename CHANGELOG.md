@@ -84,6 +84,40 @@
 - 产品显示名统一为 `CrochetPhoto2Pattern`：新增 `app.PRODUCT_NAME`
   单一来源，页面标题、hero、页脚与 Markdown/PDF 导出全部从其读取
   （此前 UI/导出用 Photo2Amigurumi，仓库与包名是 CrochetPhoto2Pattern）。
+
+### Security
+
+- 第二轮审视收口跨用户注入残留面：分享 token / 备份导入是"他人内容"
+  入口，`params` 中仍以 Markdown 渲染的三处（部件 notes 的 `st.info`、
+  形状/颜色行的 `st.write`、自检 issues 的 `st.warning`）改为 `md_safe`
+  转义（剥零宽/BiDi → 反斜杠转义 `[]` 使链接/图片语法失效 → HTML 转义）；
+  spans_measured、sizing/vision_meta 备注与全部异常文案同样转义。
+- 备份导入新增 2MB 粘贴长度门禁（与分享 token 的 2MB 解压上限同源）。
+
+### Fixed
+
+- `st.components.v1.html` 已过 Streamlit 的弃用截止线（2026-06-01），
+  三处 SVG 渲染（环形圈数图、逐圈符号条、轮廓验证、网格画布）迁移到
+  `st.html`；定高与滚动由 `html_box` 写入内容 HTML（st.html 无
+  height/scrolling 参数）。
+- Dependabot 生态从 `pip` 改为 `uv`（官方 2025-12 起支持）：pip 生态
+  对 uv 项目存在"只改 pyproject 不重建 uv.lock"的已知问题。
+- 历史 SQLite 库在多会话线程下的首连 DDL 加锁；`_init_schema` 中
+  commit 不再落入 suppress 块（已迁移库的 ALTER 全部失败时也能正确
+  提交并标记初始化，含回归测试）。
+- 历史 blob 携带 `schema_version`，载入端拒绝未来版本（旧记录照常）。
+- 分享 token 改为按需生成（点击后缓存进 session），不再每次 rerun
+  重复全量 JSON + zlib 压缩。
+
+### Changed
+
+- `py.typed` 随 wheel 发布（库形态使用可获类型提示），CI wheel 检查
+  同步断言。
+- mypy 开启 `check_untyped_defs`（app 全包 0 错误）；tests/ 以 documented
+  override 仅检查模块顶层与调用签名——测试以 dict/SimpleNamespace 直捣
+  内部形态，逐例标注收益低。
+- CI 新增 `docker` job（只构建不推送，GHA 缓存），防止 Dockerfile 与
+  依赖图腐化。
 - `params["parts"]` 在内存中统一为 dict 形态（与落盘/分享/历史一致）：
   `_part_name`/`_part_rounds`/`_part_quantity`/`_round_stitches` 及
   validator、导出、PDF、环形图中的 dict/模型双态分支全部移除，

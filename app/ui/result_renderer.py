@@ -26,9 +26,14 @@ _WIDGET_KEY_PREFIXES = (
     "dl_backup_", "import_", "importbtn_", "sz_head_", "sz_height_", "sz_go_",
     "pdf_", "dl_pdf_", "hist_save_", "pdf_gen_", "sz_", "share_",
     "hist_title_", "struct_edit_", "struct_go_", "struct_",
+    # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
+    "share_token_",
 )
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
+
+# 备份导入的粘贴长度门禁（与 share.py 的 2MB 解压上限同源）
+_MAX_IMPORT_CHARS = 2 << 20
 
 
 # E1：零宽/BiDi 控制符（显示欺骗面——同一字段可从 LLM 输出进来）
@@ -47,6 +52,19 @@ def _plain_text(value) -> str:
     语法，是图片内文字注入的展示面。
     """
     return _strip_invisible(str(value))
+
+
+def md_safe(value) -> str:
+    """他人备份/模型可控文本 → 可安全放进 Markdown 渲染的字符串。
+
+    st.info/st.warning/st.write 会渲染 Markdown：链接、图片与内联 HTML
+    都能生效（fable5.1 第二轮审视：分享 token/备份导入是"他人内容"
+    入口）。三道处理：剥零宽/BiDi → 反斜杠转义 [ ]（链接/图片语法
+    失效）→ HTML 转义（<script> 等字面显示）。
+    """
+    text = _strip_invisible(str(value))
+    text = text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+    return html.escape(text)
 
 
 def _yarn_chip_html(name: str) -> str:
@@ -118,33 +136,35 @@ def _render_part_progress(
         f"  —  ✅ {n_done}/{physical_rounds} 圈次"
     )
     with st.expander(label_exp):
-        st.write(f"**形状**: {part_data['type']} | **颜色**: {part_data['color']}")
+        st.write(f"**形状**: {md_safe(part_data['type'])} | "
+                 f"**颜色**: {md_safe(part_data['color'])}")
         if quantity > 1:
             st.info(f"此圈序需制作 {quantity} 份相同部件；总针数、材料和工时已按 {quantity} 份计算。")
         # T8：环形圈数图（球/一体件的顶视图；勾选列表上方的直观总览）
         if part_data.get("type") in ("sphere", "onepiece"):
             with st.expander("⭕ 顶视图（环形圈数图）", expanded=False):
                 try:
-                    import streamlit.components.v1 as _components2
+                    from app.models.ring_chart import (
+                        render_ring_svg,
+                        render_symbol_strip,
+                    )
+                    from app.ui.design_system import html_box
 
-                    from app.models.ring_chart import render_ring_svg, render_symbol_strip
                     _sw = (result.get("gauge") or params.get("gauge") or {})
                     _sw_cm = 10.0 / max(float(_sw.get(
                         "stitches_per_10cm", 13.0)), 1e-6)
-                    _components2.html(
-                        render_ring_svg(part, stitch_w_cm=_sw_cm),
-                        height=330, scrolling=False)
+                    st.html(html_box(
+                        render_ring_svg(part, stitch_w_cm=_sw_cm), 330))
                     _strip = render_symbol_strip(part)
                     if _strip:
                         st.markdown("**逐圈符号条**（×=X · V=加针 · A=减针）")
-                        _components2.html(_strip, height=min(
+                        st.html(html_box(_strip, min(
                             30 + 16 * min(len(part.get("rounds", [])), 24)
-                            + 10, 560),
-                            scrolling=True)
+                            + 10, 560), scroll=True))
                 except Exception as e:  # 可视化失败不影响主流程
-                    st.caption(f"顶视图不可用: {e}")
+                    st.caption(f"顶视图不可用: {md_safe(e)}")
         if part_data.get("notes"):
-            st.info(part_data["notes"])
+            st.info(md_safe(part_data["notes"]))
         st.progress(
             pct, text=f"钩织进度 {pct}%  ({n_done}/{physical_rounds} 圈次)")
         st.markdown("**逐圈进度** — 勾选已完成的圈：")
@@ -209,7 +229,7 @@ def render_results(result: dict, slot: str) -> None:
             f"📏 照片头径/身高比例约 {ratio:.3f}{clamp_note}；"
             "照片不提供绝对厘米尺度，以上尺寸来自生成时选择的目标高度。")
     elif sizing.get("note"):
-        st.caption(f"📏 {sizing['note']}")
+        st.caption(f"📏 {md_safe(sizing['note'])}")
     geometry = result.get("geometry") or {}
     silhouette = geometry.get("silhouette") or {}
     if silhouette:
@@ -252,13 +272,14 @@ def render_results(result: dict, slot: str) -> None:
         }.get(source, f"解析来源：{source}")
         ratio = vmeta.get("body_ratio")
         ratio_str = f"，身高/头径 ≈ {ratio}" if ratio else ""
-        st.caption(f"{label}{ratio_str} — {vmeta.get('note', '')}")
+        st.caption(f"{label}{ratio_str} — {md_safe(vmeta.get('note', ''))}")
 
     # S1/F15：分段来源诚实标注——实测覆盖的部件逐一列出，其余为先验
     measured = result.get("spans_measured") or []
     if measured:
-        st.caption(f"📐 部件分段：{('、'.join(measured))} 来自姿态关键点实测；"
-                   "其余按常规比例先验")
+        st.caption("📐 部件分段："
+                   + "、".join(md_safe(m) for m in measured)
+                   + " 来自姿态关键点实测；其余按常规比例先验")
     elif result.get("spans"):
         st.caption("📐 部件分段按常规比例先验（未检出姿态关键点）")
 
@@ -286,11 +307,10 @@ def render_results(result: dict, slot: str) -> None:
     if profile_parts:
         with st.expander("📐 轮廓对应验证（生成侧影 vs 照片剖面）", expanded=False):
             try:
-                import streamlit.components.v1 as _components
-
                 from app.models.color_design import PART_SPAN as _SPAN
                 from app.models.gauge import Gauge as _G
                 from app.models.profile_shaping import render_silhouette_svg, strip_dome
+                from app.ui.design_system import html_box
 
                 # gauge 优先取 result 层（生成时写入）；导入的旧备份没有
                 # result["gauge"]，回退 params 里随备份保存的 gauge
@@ -303,15 +323,13 @@ def render_results(result: dict, slot: str) -> None:
                     _wall = [r.stitches for r in _pp.rounds]
                     # 跳过底部圆盘（水平圆盘不计筒壁；旧版误用
                     # _wall[0]//6——魔法环首圈 6 针 → 恒只跳 1 圈）
-                    _components.html(
+                    st.html(html_box(
                         render_silhouette_svg(
                             strip_dome(_wall), _gauge, _photo,
-                            _spans.get("身体")),
-                        height=320, scrolling=False,
-                    )
+                            _spans.get("身体")), 320))
                     st.caption(f"{_pp.name}：逐圈针数反渲染的侧影（蓝）与照片剖面（橙虚线）")
             except Exception as e:  # 可视化失败不影响主流程
-                st.caption(f"轮廓可视化不可用：{e}")
+                st.caption(f"轮廓可视化不可用：{md_safe(e)}")
     rows = []
     id_to_name = {
         part.get("part_id"): part.get("name", "?")
@@ -405,7 +423,7 @@ def render_results(result: dict, slot: str) -> None:
         st.caption("该检查不等同于成品形状、部件连接或实际可钩性验证。")
     else:
         st.warning("⚠️ 图解自检发现问题（可在局部修正中修复）：\n"
-                   + "\n".join(_v["issues"]))
+                   + "\n".join(md_safe(issue) for issue in _v["issues"]))
     st.caption(
         f"塑形口径：当前密度的连续几何变化率约 "
         f"{_v['shaping_continuous_delta']:.2f} 针/圈，按六等分针法向上量化为 "
@@ -527,7 +545,7 @@ def render_results(result: dict, slot: str) -> None:
                 st.session_state[f"sz_{_new_rid}_ok"] = True
                 st.rerun()
             except Exception as e:
-                st.error(f"尺寸重生成失败: {e}")
+                st.error(f"尺寸重生成失败: {md_safe(e)}")
 
     # ── StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI ──────
     with st.expander("🧩 调整部件结构（高级）", expanded=False):
@@ -555,7 +573,7 @@ def render_results(result: dict, slot: str) -> None:
                 st.session_state[f"struct_{new_result_id}_ok"] = True
                 st.rerun()
             except Exception as e:
-                st.error(f"结构校验或重生成失败: {e}")
+                st.error(f"结构校验或重生成失败: {md_safe(e)}")
 
     serializable_params = json.loads(
         json.dumps(params, default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o),
@@ -579,7 +597,7 @@ def render_results(result: dict, slot: str) -> None:
                 st.session_state[_ok_flag] = True
                 st.rerun()
             except Exception as e:
-                st.error(f"解析/应用失败: {e}")
+                st.error(f"解析/应用失败: {md_safe(e)}")
     with col_btn2:
         st.download_button(
             "📥 下载 JSON",
@@ -627,7 +645,7 @@ def render_results(result: dict, slot: str) -> None:
                 st.caption("PDF 导出需安装 reportlab："
                            "pip install crochet-photo2pattern[pdf]")
             except Exception as e:
-                st.error(f"PDF 生成失败: {e}")
+                st.error(f"PDF 生成失败: {md_safe(e)}")
         _pdf_bytes = st.session_state.get(f"pdf_{result_key}")
         if _pdf_bytes:
             st.download_button("📄 下载 PDF", _pdf_bytes,
@@ -639,17 +657,23 @@ def render_results(result: dict, slot: str) -> None:
                       value=result.get("title") or "",
                       key=f"hist_title_{result_key}",
                       placeholder="给这份图解起个名字", label_visibility="collapsed")
-        # F23：分享入口（U8 实现接收侧时因编辑脚本损坏从未落地发送侧）
+        # F23：分享入口。token 计算含全量 JSON + zlib，按需生成并缓存进
+        # session——不再每次 rerun 都压缩；编辑图解后需重新生成。
         from app.utils.share import encode_result
-        _share_token = encode_result({
-            **{k: result.get(k) for k in _BACKUP_KEYS
-               if k not in ("params", "preview")},
-            "params": serializable_params})
+        _share_state = f"share_token_{result_key}"
+        if st.button("🔗 生成分享链接", key=f"share_{result_key}"):
+            st.session_state[_share_state] = encode_result({
+                **{k: result.get(k) for k in _BACKUP_KEYS
+                   if k not in ("params", "preview")},
+                "params": serializable_params})
+        _share_token = st.session_state.get(_share_state)
         if _share_token is None:
-            st.caption("🔗 图解较大，分享请用「备份完整结果」文件")
+            st.caption("🔗 点「生成分享链接」得到可分享的 URL 参数；"
+                       "图解过大时会提示改用「备份完整结果」文件")
         else:
             st.caption(f"🔗 分享链接（{len(_share_token)}/6000 字符，"
-                       f"复制下面整行拼到本应用域名后打开即载入）：")
+                       f"复制下面整行拼到本应用域名后打开即载入；"
+                       f"修改图解后请重新生成）：")
             with st.expander("📎 展开分享链接", expanded=False):
                 st.code(f"?p={_share_token}", language=None)
         # 历史持久化（S4）：SQLite 单文件，跨会话在侧栏"我的图解"恢复
@@ -664,13 +688,17 @@ def render_results(result: dict, slot: str) -> None:
                 history.save_result(saved, title=_title)
                 st.success("✅ 已存入历史（左侧栏「我的图解」可载回）")
             except Exception as e:
-                st.error(f"存入历史失败: {e}")
+                st.error(f"存入历史失败: {md_safe(e)}")
         with st.expander("📂 导入结果备份"):
             pasted = st.text_area(
                 "粘贴备份 JSON 内容", height=120, key=f"import_{result_key}"
             )
             if st.button("导入并替换当前结果", key=f"importbtn_{result_key}"):
                 try:
+                    if len(pasted) > _MAX_IMPORT_CHARS:
+                        raise ValueError(
+                            f"粘贴内容超过 {_MAX_IMPORT_CHARS // (1024 * 1024)}MB "
+                            "上限，请分卷导入或改用历史/分享链接")
                     # 校验 + 回填在 result_logic（纯函数，与历史载入同口径）
                     imported = result_logic.import_backup(
                         json.loads(pasted), uuid.uuid4().hex[:12])
@@ -680,7 +708,7 @@ def render_results(result: dict, slot: str) -> None:
                     st.session_state[slot] = imported
                     st.rerun()
                 except Exception as e:
-                    st.error(f"导入失败: {e}")
+                    st.error(f"导入失败: {md_safe(e)}")
 
     # Inline Markdown preview
     with st.expander("📋 预览 Markdown 图解", expanded=False):

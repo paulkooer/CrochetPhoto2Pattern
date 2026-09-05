@@ -9,7 +9,7 @@ import streamlit as st
 from app.models.gauge import gauge_from_ui
 from app.models.image_parser import env_api_key
 from app.models.orchestrator import PipelineOrchestrator
-from app.ui.result_renderer import purge_result_state, render_results
+from app.ui.result_renderer import md_safe, purge_result_state, render_results
 from app.utils.images import load_uploaded_image_cached
 
 logger = logging.getLogger(__name__)
@@ -156,7 +156,7 @@ def render_tab_photo() -> None:
                     progress.empty()
                 except Exception as e:
                     progress.empty()  # 失败时移除进度条，避免"40% + 报错"同屏矛盾
-                    st.error(f"生成失败: {e}")
+                    st.error(f"生成失败: {md_safe(e)}")
                     logger.exception("Pipeline failed")
 
     # Render outside the `if uploaded_file` block so the last result stays

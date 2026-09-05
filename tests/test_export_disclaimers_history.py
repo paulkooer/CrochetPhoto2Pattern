@@ -171,3 +171,27 @@ def test_history_title_and_migration(tmp_path, monkeypatch):
                         title="蓝色小兔")
     hits = history.list_results(query="蓝色小兔")
     assert len(hits) == 1 and hits[0]["title"] == "蓝色小兔"
+
+
+def test_history_fully_migrated_schema_reconnects(tmp_path, monkeypatch):
+    """库已含全部列（旧 ALTER 全部失败）→ 首连仍须 commit 并标记初始化。"""
+    import sqlite3
+
+    from app.utils import history
+    db = tmp_path / "full.db"
+    monkeypatch.setenv("CROCHET_HISTORY_DB", str(db))
+    conn = sqlite3.connect(db)
+    conn.execute("CREATE TABLE patterns (rid TEXT PRIMARY KEY, created_at REAL,"
+                 " summary TEXT, blob TEXT, preview TEXT, title TEXT)")
+    conn.commit()
+    conn.close()
+    # 首次访问即触发 ALTER（全部失败被抑制）→ commit + 初始化标记
+    assert history.list_results() == []
+    a = ImageAnalysis(body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
+                      main_features=[], pose="站立", difficulty="easy",
+                      parts=["头部"])
+    p = _params()
+    rid = history.save_result({"result_id": "full-1",
+                               "analysis": a.model_dump(),
+                               "structure": {"parts": []}, "params": p})
+    assert rid == "full-1"

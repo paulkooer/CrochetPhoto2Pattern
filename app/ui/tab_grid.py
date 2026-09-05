@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 from app.models.gauge import gauge_from_ui
 from app.models.grid_pattern import (
@@ -22,6 +21,7 @@ from app.models.grid_pattern import (
     render_svg,
     render_text_chart,
 )
+from app.ui.design_system import html_box
 from app.utils.images import load_uploaded_image_cached
 
 _GRID_HISTORY_LIMIT = 5
@@ -342,10 +342,10 @@ def render_tab_grid() -> None:
         col_v1, col_v2 = st.columns([3, 1])
         with col_v1:
             st.subheader("🖼️ 彩色网格预览")
-            # components.html 比 st.markdown(unsafe_allow_html=True) 对 <svg>
-            # 的渲染更稳定（markdown 管线对内联 SVG 的 sanitize 行为随版本波动），
-            # 且 iframe 自带滚动，大网格无需外层 div。
-            components.html(view["svg"], height=600, scrolling=True)
+            # st.html 比 st.markdown(unsafe_allow_html=True) 对 <svg> 的渲染
+            # 更稳定（markdown 管线对内联 SVG 的 sanitize 行为随版本波动）。
+            # components.v1.html 已过弃用线；定高与滚动由 html_box 写进内容。
+            st.html(html_box(view["svg"], 600, scroll=True))
         with col_v2:
             st.subheader("📋 颜色图例")
             # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown

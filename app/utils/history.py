@@ -14,13 +14,14 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
 import time
 from collections.abc import Iterator
 from contextlib import closing, contextmanager, suppress
 from pathlib import Path
 from typing import Any
 
-from ..schemas import PatternResult
+from ..schemas import SCHEMA_VERSION, PatternResult
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS patterns (
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS patterns (
 # 建表 + 旧库迁移只需对同一文件跑一次（进程内缓存）。按解析后的路径
 # 记录：测试通过 CROCHET_HISTORY_DB 指向不同文件，各自初始化。
 _INITIALIZED: set = set()
+_INIT_LOCK = threading.Lock()
 
 
 def _db_path() -> Path:
@@ -50,6 +52,13 @@ def _connect() -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
     key = str(path.resolve())
+    # Streamlit 每会话一个脚本线程：加锁避免并发首连时的重复 DDL
+    with _INIT_LOCK:
+        _init_schema(conn, key)
+    return conn
+
+
+def _init_schema(conn: sqlite3.Connection, key: str) -> None:
     if key not in _INITIALIZED:
         conn.execute(_SCHEMA)
         # 旧库迁移（K2/U26）：已有表缺列逐一补齐（幂等）
@@ -59,7 +68,6 @@ def _connect() -> sqlite3.Connection:
             conn.execute("ALTER TABLE patterns ADD COLUMN title TEXT")
         conn.commit()
         _INITIALIZED.add(key)
-    return conn
 
 
 @contextmanager
@@ -98,7 +106,10 @@ def save_result(result: dict[str, Any], title: str | None = None) -> str:
     params = record.params
     if not isinstance(params.get("parts"), list):
         raise ValueError("result 缺少有效的 params.parts")
-    blob = json.dumps(record.to_result_dict(), ensure_ascii=False)
+    # blob 携带 schema_version：后续版本升级历史记录时可识别
+    blob = json.dumps({**record.to_result_dict(),
+                       "schema_version": record.schema_version},
+                      ensure_ascii=False)
     preview = result.get("preview")
     with _connection() as conn:
         conn.execute(
@@ -171,6 +182,14 @@ def load_result(rid: str) -> dict[str, Any] | None:
     except (json.JSONDecodeError, UnicodeDecodeError) as e:
         import logging
         logging.getLogger(__name__).warning("历史记录 %s 损坏: %s", rid, e)
+        return None
+    # 未来 schema 版本的历史记录不猜测兼容性；旧记录（无版本键）照常载入
+    version = data.get("schema_version")
+    if version is not None and version != SCHEMA_VERSION:
+        import logging
+        logging.getLogger(__name__).warning(
+            "历史记录 %s 的 schema 版本 %s 高于当前 %s，拒绝载入",
+            rid, version, SCHEMA_VERSION)
         return None
     if row[1]:
         data["title"] = row[1]

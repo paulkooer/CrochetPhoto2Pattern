@@ -52,7 +52,8 @@ def test_release_metadata_is_consistent():
     assert "Release status: Beta" in readme
     assert 'crochet2pattern-eval = "app.evaluation:main"' in pyproject
     assert 'crochet2pattern-trials = "app.trials:main"' in pyproject
-    assert 'app = ["prompts/*.txt", "data/*.json"]' in pyproject
+    assert 'app = ["prompts/*.txt", "data/*.json", "py.typed"]' in pyproject
+    assert (_REPO / "app" / "py.typed").is_file()
     assert (_REPO / "app" / "data" / "external-trial-evidence.json").is_file()
     assert "System Status and Release Gates" in readme
     assert "G3 Authorized-photo baseline" in status

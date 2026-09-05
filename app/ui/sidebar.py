@@ -110,7 +110,7 @@ def render_sidebar() -> None:
         # ── 图解历史（S4）：SQLite 本机持久化，跨会话载回 ─────────────────
         st.divider()
         with st.expander("🗂 我的图解（历史）", expanded=False):
-            from app.ui.result_renderer import purge_result_state
+            from app.ui.result_renderer import md_safe, purge_result_state
             from app.utils import history
 
             _search = st.text_input("搜索历史", "", key="hist_search",
@@ -118,7 +118,7 @@ def render_sidebar() -> None:
             try:
                 items = history.list_results(query=_search.strip() or None)
             except Exception as e:  # DB 损坏不阻塞主功能
-                st.caption(f"历史读取失败: {e}")
+                st.caption(f"历史读取失败: {md_safe(e)}")
                 items = []
             if not items:
                 st.caption("暂无匹配的历史——生成图解后点「存入历史」即可跨会话保留")
@@ -154,7 +154,7 @@ def render_sidebar() -> None:
                             data["analysis"] = analysis
                             data["structure"] = structure
                         except Exception as e:
-                            st.error(f"该记录已损坏，无法载入（可点「删」清除）: {e}")
+                            st.error(f"该记录已损坏，无法载入（可点「删」清除）: {md_safe(e)}")
                             st.stop()
                         if "result" in st.session_state:
                             purge_result_state(st.session_state["result"])

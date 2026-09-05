@@ -1,10 +1,11 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
+  # uv 生态自 2025-12 起官方支持：同时更新 pyproject.toml 与 uv.lock
+  # （pip 生态对 uv 项目存在"改 pyproject 不重建 lock"的已知问题）
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
-    # uv.lock 是唯一事实来源；Dependabot 会同时更新 pyproject 与 lock
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

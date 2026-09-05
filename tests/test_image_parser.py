@@ -3,6 +3,7 @@ import io
 import json
 import sys
 import types
+from typing import Any
 
 import pytest
 from PIL import Image
@@ -194,7 +195,7 @@ def _img() -> Image.Image:
 
 def _analysis(**over) -> ImageAnalysis:
     """内部模型形态（含厘米字段），供旧形态解析路径与断言使用。"""
-    base = dict(
+    base: dict[str, Any] = dict(
         body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
         main_features=["大眼睛"], pose="站立", difficulty="easy",
         parts=["头部", "身体"],
@@ -205,7 +206,7 @@ def _analysis(**over) -> ImageAnalysis:
 
 def _vision(**over) -> "VisionOutput":
     """VisionOutput 形态（比例字段），模拟结构化输出 SDK 的 parsed 返回值。"""
-    base = dict(
+    base: dict[str, Any] = dict(
         body_type="标准", head_to_height_ratio=0.5,
         main_features=["大眼睛"], pose="站立", difficulty="easy",
         parts=["头部", "身体"],

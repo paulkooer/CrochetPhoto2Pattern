@@ -6,6 +6,18 @@ import streamlit as st
 from app import PRODUCT_NAME
 
 
+def html_box(content: str, height: int, scroll: bool = False) -> str:
+    """定高/滚动写入内容 HTML 的包装器（st.html 无 height/scrolling 参数）。
+
+    st.components.v1.html 已于 2026-06-01 到达弃用截止日，其替代 API
+    st.html 只支持 width；环形图/符号条/轮廓 SVG 的固定高度与滚动行为
+    由这里的外层 div 承接。
+    """
+    overflow = "auto" if scroll else "hidden"
+    return (f'<div style="height:{height}px;overflow:{overflow};'
+            f'border:none;">{content}</div>')
+
+
 def apply_design_system() -> None:
     """Apply the shared visual theme without changing application behavior."""
     st.markdown(

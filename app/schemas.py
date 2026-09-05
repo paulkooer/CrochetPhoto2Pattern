@@ -143,6 +143,8 @@ class VisionOutput(BaseModel):
     """
 
     body_type: Literal["瘦", "标准", "胖"]
+    # 注意：结构化输出的 strict 模式只约束"结构"（字段/类型），数值区间
+    # 由客户端校验——越界会触发 OpenAI 路径的带反馈重试或 provider 回退
     head_to_height_ratio: float = Field(
         gt=0, lt=1,
         description="photo head diameter divided by full visible height")
