@@ -153,6 +153,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
   pick-up legs are documented as beyond the aggregate model). The export
   legend gains the CN-standard W (3 sc in one st) and M (sc3tog)
   symbols.
+- **C2C written rows upgraded to the professional format** (aligned
+  with Juniper & Oakes and peers): every diagonal row now carries a
+  direction arrow (odd rows ↗ / even rows ↙) and a right-side/wrong-side
+  label alternating with the turns; the header states the convention's
+  provenance.
 
 - **Validator domain confusion (found by the calibration, two instances)**:
   real patterns contain 22/16/9/14-stitch rounds that are perfectly

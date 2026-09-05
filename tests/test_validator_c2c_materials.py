@@ -71,10 +71,10 @@ def test_c2c_row_structure_rectangle():
     pat = generate_grid_pattern(Image.new("RGB", (30, 20), (255, 0, 0)),
                                 grid_width=3, n_colors=1)
     chart = render_c2c_chart(pat)
-    assert "对角行 1（1 格，增行）" in chart
-    assert "对角行 2（2 格，增行）" in chart
-    assert "对角行 3（2 格，平行）" in chart
-    assert "对角行 4（1 格，减行）" in chart
+    assert "↗ 对角行 1（1 格，增行，正面）" in chart
+    assert "↙ 对角行 2（2 格，增行，反面）" in chart
+    assert "↗ 对角行 3（2 格，平行，正面）" in chart
+    assert "↙ 对角行 4（1 格，减行，反面）" in chart
     assert "螃蟹针" in chart
 
 
@@ -86,7 +86,7 @@ def test_c2c_colors_follow_grid():
             img.putpixel((x, y), (0, 120, 215))
     pat = generate_grid_pattern(img, grid_width=6, n_colors=2)
     chart = render_c2c_chart(pat)
-    rows = [ln for ln in chart.split("\n") if ln.startswith("对角行")]
+    rows = [ln for ln in chart.split("\n") if "对角行" in ln]
     assert any("蓝色" in ln for ln in rows)
     assert "红色" in rows[0]
 
@@ -101,7 +101,7 @@ def test_c2c_really_starts_at_bottom_left_and_ends_top_right():
     pattern = GridPattern(
         width=2, height=2, cells=cells, palette=[], symbol_map={})
     rows = [line for line in render_c2c_chart(pattern).splitlines()
-            if line.startswith("对角行")]
+            if "对角行" in line]
     assert rows[0].endswith("BL")
     assert rows[-1].endswith("TR")
 
