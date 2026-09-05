@@ -10,20 +10,27 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
-- **Reference-pattern verification tests** (`tests/test_reference_patterns.py`):
-  external calibration against free community patterns — Clover's official
-  AKIHIRO doll (22-st legs / 16-st arms / 9-st tail / 14-st ears), the
-  community sphere formula (6-sc ring start, +6 per round) and the Lovable
-  Loops cherry mini C2C chart (9x9, full written block rows).
+- **Reference-pattern verification tests** (`tests/test_reference_patterns.py`,
+  10 items): external calibration against professional/community patterns —
+  Clover's official AKIHIRO doll (22-st legs / 16-st arms / 9-st tail /
+  14-st ears), the community sphere formula (6-sc ring start, +6 per round),
+  the Lovable Loops cherry mini C2C chart (9x9, full written block rows),
+  Spin a Yarn Crochet's 8-stitch ring start (8->16->24 doubling), a
+  sin-profile property verification of Ms Premise-Conclusion's "The Ideal
+  Crochet Sphere" (per-row comparison against independently recomputed
+  N=C/s values) including its craft-warning handling, and Craft Yarn
+  Council abbreviation alignment (sc2tog).
 
 ### Fixed
 
-- **Validator domain confusion (found by the calibration)**: real patterns
-  contain 22/16/9/14-stitch rounds that are perfectly crochetable; the old
-  validator hard-failed any non-multiple-of-6 count — conflating the
-  generator's six-section prior with crochetability. Non-6-multiple counts
-  now become `notes` (algebra, V/A executability and gauge jump checks
-  unchanged); the result page shows them as info captions.
+- **Validator domain confusion (found by the calibration, two instances)**:
+  real patterns contain 22/16/9/14-stitch rounds that are perfectly
+  crochetable, and professional designers' 8->16 doubling rounds (one
+  increase per stitch, always executable) were rejected by the +-6 smooth-
+  shaping cap. Both downgrade to `notes` — executability is guaranteed by
+  inc<=prev / dec<=prev/2 (kept as hard checks); six-section topology and
+  smooth-shaping cadence are generator priors, not crochetability
+  requirements. The result page shows notes as info captions.
 - **Grid pipeline externally verified**: the cherry chart (white 57 / red 18 /
   green 6) maps through nearest sampling with each cluster landing on a
   single yarn color, cluster sizes exactly matching the published chart.

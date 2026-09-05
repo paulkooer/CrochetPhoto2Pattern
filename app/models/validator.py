@@ -95,13 +95,17 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
                     issues.append(
                         f"{name} 第 {i} 圈：减针 {dec} 超过上圈 "
                         f"{prev_stitches} 针可组成的 A 数量")
-                # V2：物理边界（显式白名单豁免——波浪裙摆等装饰工艺）
+                # V2 → 印证修正：|Δ| 上限是本生成器的平滑度先验而非
+                # 可执行性边界（真实图解的 8→16 倍增圈常见且完全可钩，
+                # 可执行性已由 inc≤prev / dec≤prev/2 保证）。超限降级为
+                # notes；allow_wide_jump 白名单标志继续接受（生成器仍
+                # 对波浪裙摆等装饰工艺显式置位）。
                 if abs(st - prev_stitches) > max_change and not rd.get(
                         "allow_wide_jump", False):
-                    issues.append(
+                    notes.append(
                         f"{name} 第 {i} 圈：相邻圈跳变 {prev_stitches}→{st} "
-                        f"超过当前密度塑形上限 ±{max_change} "
-                        "且未声明 allow_wide_jump")
+                        f"超过本生成器的平滑塑形节奏 ±{max_change}——"
+                        "确认为有意工艺（如倍增圈）即可照钩")
             prev_stitches = st
 
     return {"ok": not issues, "issues": issues, "notes": notes,

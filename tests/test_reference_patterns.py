@@ -191,3 +191,82 @@ def test_chart_image_through_exporter_roundtrip_unaffected():
     r = {"params": {"parts": _akihiro_parts()}}
     text = export_parade_dsl(r)
     assert lint_parade_dsl(text) == []
+
+
+# ── Ms Premise-Conclusion《The Ideal Crochet Sphere》理想球方法印证 ─────────
+# 原文（2010，本系统 M2.6 的引用出处）："dividing the circumference (C) by the
+# size of a single stitch (s): N = C/s"，圆周按 sin(θ) 分布；实测样例含
+# 39/16 等非 6 倍数圈（再次佐证校验器降级为 notes 的决定）。
+# https://mspremiseconclusion.wordpress.com/2010/03/14/the-ideal-crochet-sphere/
+
+def test_ideal_sphere_follows_source_sin_profile():
+    """理想球的 sin 轮廓性质：先升后降、峰在赤道、上下对称（量化/钳制容差）、
+    全部圈可执行。"""
+    import math
+
+    from app.models.crochet_params import _ideal_sphere_rounds
+    from app.models.gauge import Gauge
+
+    gauge = Gauge(13.0, 16.0)
+    diameter = 9.0
+    rounds = _ideal_sphere_rounds(diameter, gauge)
+    seq = [r["stitches"] for r in rounds]
+    n = len(seq)
+    assert n == int(diameter / gauge.row_h_cm + 0.5)
+
+    peak = seq.index(max(seq))
+    assert abs(peak - (n - 1) / 2) <= max(2, n // 6)   # 峰在赤道附近
+    assert seq[: peak + 1] == sorted(seq[: peak + 1])   # 升
+    assert seq[peak:] == sorted(seq[peak:], reverse=True)  # 降
+    for j in range(n // 2):                             # sin 对称（±1 档容差）
+        assert abs(seq[j] - seq[n - 1 - j]) <= 6
+
+    # 理论 sin 目标 N = π·D·sin(π·y/D)/s（原文 N = C/s），本输出落在其
+    # 6 等分量化 + 动态钳制的可行域内
+    for j, st in enumerate(seq, 1):
+        y = (j - 0.5) * gauge.row_h_cm
+        theta = math.pi * min(y, diameter) / diameter
+        raw = math.pi * diameter * math.sin(theta) / gauge.stitch_w_cm
+        assert abs(st - raw) <= 6 + 6, (j, st, raw)
+
+    result = validate_pattern({"parts": [{"name": "头部", "rounds": rounds}]})
+    assert result["ok"], result["issues"]
+
+
+def test_ideal_sphere_honors_source_craft_warning():
+    """原文工艺警告（勿收针到 6 针，穿线勒紧收口）落实在收尾圈备注。"""
+    from app.models.crochet_params import _ideal_sphere_rounds
+    from app.models.gauge import Gauge
+
+    rounds = _ideal_sphere_rounds(9.0, Gauge(13.0, 16.0))
+    assert "勒紧收口" in (rounds[-1].get("notes") or "")
+
+
+def test_parade_tokens_align_with_cyc_abbreviations():
+    """Craft Yarn Council 缩写规范（行业权威）中 `sc2tog` 是标准减针缩写；
+    CrochetPARADE 的增针形式 sc2inc 与之对称。导出 token 与规范同源。
+    https://www.craftyarncouncil.com/standards/crochet-abbreviations"""
+    part = {"name": "头部", "type": "sphere", "color": "肤色",
+            "magic_ring": True, "rounds": _sphere_rounds(max_stitches=36)}
+    text = export_parade_dsl({"params": {"parts": [part]}})
+    assert "sc2tog" in text   # CYC 官方缩写
+    assert "sc2inc" in text   # CrochetPARADE 对称增针
+
+
+# ── Spin a Yarn Crochet（专业设计师 Jillian Hewitt）8 针起环印证 ────────────
+# 其免费图解（Rudolph Ornament 等）的首圈形如 "Rnd 1: Work 8 hdc into a
+# magic ring (8 sts)"——专业设计师同样使用非 6 起针。
+# https://spinayarncrochet.com/rudolph-ornament-free-crochet-pattern/
+
+def test_professional_eight_stitch_ring_start_passes_validation():
+    """8 hdc 起环的专业图解通过校验（非 6 倍数 → notes 而非错误）。"""
+    head = {"name": "头部", "type": "sphere", "color": "棕色", "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 8},
+                {"row": 2, "stitches": 16, "increase": 8},
+                {"row": 3, "stitches": 24, "increase": 8},
+                {"row": 4, "stitches": 24},
+            ]}
+    result = validate_pattern({"parts": [head]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in note for note in result["notes"])

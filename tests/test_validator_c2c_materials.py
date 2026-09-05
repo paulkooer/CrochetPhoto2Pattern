@@ -149,10 +149,11 @@ def test_validator_uses_gauge_derived_dynamic_shaping_limit():
 
     pattern["gauge"] = {"stitches_per_10cm": 13.0, "rows_per_10cm": 16.0}
     classic = validate_pattern(pattern)
-    assert not classic["ok"]
+    # 印证修正：12→24 倍增圈可执行（每针加一针），超出生成器平滑节奏
+    # 仅产生 notes；gauge 派生的上限仍如实上报
+    assert classic["ok"]
     assert classic["max_stitch_change"] == 6
-    assert any("超过当前密度塑形上限 ±6" in issue
-               for issue in classic["issues"])
+    assert any("平滑塑形节奏 ±6" in note for note in classic["notes"])
 
 
 def test_validator_does_not_trust_editable_shaping_metadata():
@@ -168,8 +169,11 @@ def test_validator_does_not_trust_editable_shaping_metadata():
         }],
     }
     result = validate_pattern(pattern)
-    assert not result["ok"]
+    # 可编辑的 shaping 元数据不被信任：上限始终从 gauge 派生（note 里
+    # 是 ±6 而非 ±999），倍增圈本身可执行 → ok
+    assert result["ok"]
     assert result["max_stitch_change"] == 6
+    assert any("平滑塑形节奏 ±6" in note for note in result["notes"])
 
 
 def test_validator_rejects_incapable_v_or_a_even_within_dynamic_cap():
