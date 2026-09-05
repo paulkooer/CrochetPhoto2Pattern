@@ -126,17 +126,21 @@ class Gauge:
 
     @property
     def meters_per_100g(self) -> float:
-        """按针宽分档的纱线米数估算（V6 署名纠正）。
+        """按针宽分档的纱线米数估算（V6 署名纠正 + 印证校准）。
 
-        如实声明：sport≈320、DK≈250、worsted≈200、chunky≈140 是**实务
-        经验估算值**，不是任何标准机构的数据——CYC Standard Yarn Weight
-        System 只规定密度与针号区间，**不含 m/100g**（曾经核实并误署名
-        给 CYC，Opus 5 审查指出）。且同档不同纤维差异大（丝光棉明显短于
-        羊毛）。数值用于材料清单的量级参考，购买请以实际线标为准。
+        如实声明：这些是**经验估算值**，不是任何标准机构的数据——CYC
+        Standard Yarn Weight System 只规定密度与针号区间，**不含 m/100g**
+        （曾经核实并误署名给 CYC，Opus 5 审查指出）。同档不同纤维差异
+        大，而玩偶主力是棉线：最细档已按外部印证校准为棉线口径——
+        Supergurumi "The Chubby Bee" 所用 Schachenmayr Catania（100% 棉、
+        125m/50g = 250m/100g、标注 Sport/Fine(2)、2.5mm 钩）正是本档
+        标签描述的"2.0–2.5mm + 中细棉线"配置（旧值 320 是毛线 sport
+        口径，偏高约 28%）。其余三档仍为经验值，待实体试钩（G4）校准。
+        数值用于材料清单的量级参考，购买请以实际线标为准。
         """
         w = self.stitch_w_cm
         if w < 0.52:
-            return 320.0
+            return 250.0
         if w < 0.6:
             return 250.0
         if w < 0.7:

@@ -11,23 +11,29 @@ formats may still evolve during Beta; incompatible changes must include migratio
 ### Added
 
 - **Reference-pattern verification tests** (`tests/test_reference_patterns.py`,
-  13 items): external calibration against professional/community patterns —
+  24 items): external calibration against professional/community patterns —
   Clover's official AKIHIRO doll (22-st legs / 16-st arms / 9-st tail /
   14-st ears), the community sphere formula (6-sc ring start, +6 per round),
   the Lovable Loops cherry mini C2C chart (9x9, full written block rows),
   Spin a Yarn Crochet's 8-stitch ring start (8->16->24 doubling), a
   sin-profile property verification of Ms Premise-Conclusion's "The Ideal
   Crochet Sphere" (per-row comparison against independently recomputed
-  N=C/s values) including its craft-warning handling, Craft Yarn
-  Council abbreviation alignment (sc2tog), and DROPS Design Children 23-60
-  passes the validator and the CrochetPARADE export lints clean), and
-  StringyDingDing's kangaroo + joey (a widely used free pattern: the head
-  works one plain round right after the ring before increasing, the
-  one-piece joey contains asymmetric shaping and odd 21/15-stitch rounds,
-  the ears use a 4-increase round; the mamma leg R5 is another published
-  typo — an increase instruction against a (24) count — which the faithful
-  transcription turns into an algebra catch and an honest exporter skip,
-  passing once corrected).
+  N=C/s values) including its craft-warning handling, Craft Yarn Council
+  abbreviation alignment (sc2tog), DROPS Design Children 23-60 apple toy
+  (Garnstudio professional pattern: 7-st ring start, +7 increase rounds,
+  9 plain rounds, symmetric decreases to 6, 4-st chain-start stem; its
+  R17 errata history — a decrease once misprinted as an increase in 2012 —
+  forms the first "published errata" fixture), StringyDingDing's kangaroo +
+  joey (a plain round right after the ring, one-piece asymmetric shaping
+  with odd 21/15-stitch rounds, a 4-increase ear round; the mamma leg R5
+  increase-instruction-vs-(24)-count contradiction is the second), and
+  Supergurumi's "The Chubby Bee" (a German professional design studio:
+  55-round one-piece body peaking at 66 stitches, per-round yellow/black
+  stripe color changes, BLO ridge rounds, "1 single crochet" spiral shift
+  rounds, staggered shaping repeats, and an odd-count 3-decrease tail
+  sequence 33->...->9->6; all 55 rounds mechanically verified, fully
+  passing the validator and translating to CrochetPARADE including COLOR
+  stripe directives).
 - **Difficulty labels aligned with CYC Project Levels** (`app/schemas.py`):
   the official four levels Basic/Easy/Intermediate/Complex (fetched and
   quoted verbatim 2026-09) map onto our easy/medium/hard — the generator
@@ -50,6 +56,23 @@ formats may still evolve during Beta; incompatible changes must include migratio
   the standard block construction (ch 6, dc beginning in the 4th ch from
   hook, 3 dcs total, turn) — identical across two independent tutorial
   sources (Craftematics and Crochet.com).
+- **"Stitch notation" column in the rounds table** (Markdown export):
+  aggregate counts (+6/-6) are now also rendered in the legend's X/V/A
+  repeat notation (e.g. (4X,V)x6), matching how professional patterns
+  write "[4 sc, 1 inc] repeat" (Supergurumi, DROPS). Non-uniform rounds,
+  single-increment rounds, inconsistent aggregates, or JSON-corrupted
+  rows degrade to a dash.
+- **CrochetPARADE color-stream cleanup**: consecutive same-color rounds
+  no longer repeat the COLOR directive (striped pieces drop from one
+  directive per round to one per stripe boundary, bee 23->6), and each
+  quantity copy resets to the part color instead of inheriting the
+  previous copy's ending color.
+- **Finest-gauge yarn meterage recalibrated to cotton** (fine bucket
+  320->250 m/100g): anchored on Schachenmayr Catania used by the bee
+  pattern (100% cotton, 125 m/50 g, labeled Sport/Fine(2), 2.5 mm hook) —
+  exactly the bucket's "2.0-2.5 mm + fine cotton" configuration; the old
+  320 was a wool-sport figure ~28% high. The other three buckets await
+  physical-trial (G4) calibration; purchase per actual yarn label.
 
 ### Fixed
 

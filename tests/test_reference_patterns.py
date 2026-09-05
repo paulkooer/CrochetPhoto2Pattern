@@ -25,6 +25,12 @@
 - CYC Project Levels（官方难度四级 Basic/Easy/Intermediate/Complex）：
   difficulty 显示标签（DIFFICULTY_LABELS_*）按其定义对齐。
   https://www.craftyarncouncil.com/standards/skill-levels
+- Supergurumi「The Chubby Bee」蜜蜂玩偶（德国专业设计工作室）：55 圈
+  头身一体（66 针峰值）、黄黑条纹逐圈换色、BLO 脊线圈、"1 短针"螺旋
+  移位圈、错位增减圈、3 针递减奇数收尾序列（33→…→9→6）；纱线
+  Schachenmayr Catania（125m/50g=250m/100g、Sport/Fine(2)）校准
+  fine 档米数估算。
+  https://www.supergurumi.com/amigurumi-crochet-bee-pattern
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -468,3 +474,144 @@ def test_validator_catches_published_kangaroo_leg_round5_contradiction():
 
     dsl = export_parade_dsl({"params": {"parts": [legs_bad]}})
     assert "超出可译子集" in dsl and lint_parade_dsl(dsl) == []
+
+
+# ── Supergurumi（德国专业设计工作室）"The Chubby Bee" 印证 ──────────────────
+# 55 圈头身一体（66 针峰值）、Schachenmayr Catania 棉线（125m/50g =
+# 250m/100g，标注 Sport/Fine(2)）、2.5mm 钩。专业结构全收录：黄黑条纹
+# 逐圈换色（R19/25/31/37/44 五条边界）、BLO（前半针）脊线圈、"仅钩 1 短针"
+# 的螺旋移位圈、错位（staggered）增减圈、收尾 3 针递减的奇数圈序列
+# （33→30→27→24→21→18→15→12→9→6）。每圈代数经机械核对全部自洽。
+# https://www.supergurumi.com/amigurumi-crochet-bee-pattern
+
+def _bee_body_rounds() -> list[dict]:
+    """头身一体 55 圈（逐字转录为聚合计数；黄色=Dandelion 黑色=Black）。
+
+    BLO 圈与"1 短针移位圈"以 notes 记录：校验器只看聚合计数；移位圈
+    不改变围长，按同针数转录（我们的圈=围长采样模型）。
+    """
+    yellow, black = "黄色", "黑色"
+    return [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 12, "increase": 6},
+        {"row": 3, "stitches": 16, "increase": 4},
+        {"row": 4, "stitches": 16},
+        {"row": 5, "stitches": 16},
+        {"row": 6, "stitches": 20, "increase": 4,
+         "notes": "前半针（BLO）：完整一圈只挑前半针——鼻线分界"},
+        {"row": 7, "stitches": 24, "increase": 4},
+        {"row": 8, "stitches": 30, "increase": 6},
+        {"row": 9, "stitches": 36, "increase": 6},
+        {"row": 10, "stitches": 42, "increase": 6},
+        *({"row": r, "stitches": 42} for r in range(11, 18)),
+        {"row": 18, "stitches": 36, "decrease": 6},
+        {"row": 19, "stitches": 42, "increase": 6, "color": black,
+         "notes": "换色至黑色 + 前半针（BLO）——第一条条纹分界"},
+        {"row": 20, "stitches": 48, "increase": 6, "color": black},
+        {"row": 21, "stitches": 54, "increase": 6, "color": black},
+        {"row": 22, "stitches": 60, "increase": 6, "color": black},
+        {"row": 23, "stitches": 66, "increase": 6, "color": black},
+        {"row": 24, "stitches": 66, "color": black,
+         "notes": "仅钩 1 短针——螺旋起点重对齐（移位圈，围长不变）"},
+        *({"row": r, "stitches": 66, "color": yellow} for r in range(25, 30)),
+        {"row": 30, "stitches": 66, "color": yellow,
+         "notes": "仅钩 1 短针——移位圈"},
+        *({"row": r, "stitches": 66, "color": black} for r in range(31, 36)),
+        {"row": 36, "stitches": 66, "color": black,
+         "notes": "仅钩 1 短针——移位圈"},
+        {"row": 37, "stitches": 66, "color": yellow},
+        {"row": 38, "stitches": 66, "color": yellow},
+        {"row": 39, "stitches": 66, "color": yellow,
+         "notes": "仅钩 1 短针——移位圈"},
+        {"row": 40, "stitches": 60, "decrease": 6, "color": yellow},
+        {"row": 41, "stitches": 54, "decrease": 6, "color": yellow},
+        {"row": 42, "stitches": 48, "decrease": 6, "color": yellow},
+        {"row": 43, "stitches": 48, "color": yellow,
+         "notes": "仅钩 1 短针——移位圈"},
+        {"row": 44, "stitches": 42, "decrease": 6, "color": black,
+         "notes": "换色至黑色"},
+        {"row": 45, "stitches": 36, "decrease": 6, "color": black},
+        {"row": 46, "stitches": 33, "decrease": 3, "color": black},
+        {"row": 47, "stitches": 30, "decrease": 3, "color": black},
+        {"row": 48, "stitches": 27, "decrease": 3, "color": black},
+        {"row": 49, "stitches": 24, "decrease": 3, "color": black},
+        {"row": 50, "stitches": 21, "decrease": 3, "color": black},
+        {"row": 51, "stitches": 18, "decrease": 3, "color": black},
+        {"row": 52, "stitches": 15, "decrease": 3, "color": black},
+        {"row": 53, "stitches": 12, "decrease": 3, "color": black},
+        {"row": 54, "stitches": 9, "decrease": 3, "color": black},
+        {"row": 55, "stitches": 6, "decrease": 3, "color": black},
+    ]
+
+
+def _bee_body_part() -> dict:
+    return {"name": "头身", "type": "sphere", "color": "黄色",
+            "magic_ring": True, "one_piece": True,
+            "rounds": _bee_body_rounds()}
+
+
+def test_published_bee_body_full_55_rounds_pass_validation():
+    """蜜蜂头身 55 圈逐圈代数全过；16/20/33/27/21/15/9 等圈走 notes。"""
+    result = validate_pattern({"parts": [_bee_body_part()]})
+    assert result["ok"], result["issues"]
+    notes = "\n".join(result["notes"])
+    assert "16" in notes and "33" in notes   # 非 6 倍数圈提示
+
+
+def test_bee_color_bands_export_as_parade_color_directives():
+    """五条条纹边界在 DSL 中以 COLOR 指令表达（黄 #ffff00 / 黑 #1e1e1e）。"""
+    dsl = export_parade_dsl({"params": {"parts": [_bee_body_part()]}})
+    assert lint_parade_dsl(dsl) == []
+    assert "#ffff00" in dsl and "#1e1e1e" in dsl
+    # 部件级 1 条 + 边界 5 条——连续同色圈去重后不再逐圈重复
+    assert dsl.count("COLOR:") == 6
+
+
+def test_bee_body_translates_fully_to_parade():
+    """55 圈全部可译（含 BLO 圈 R6：16→20 inc-4）——零诚实降级。"""
+    dsl = export_parade_dsl({"params": {"parts": [_bee_body_part()]}})
+    assert "超出可译子集" not in dsl
+    assert "4[3sc,sc2inc]" in dsl    # 16→20（BLO 圈的聚合翻译）
+    assert "6[10sc,sc2tog]" in dsl   # 66→60（错位圈的聚合翻译）
+    assert "3[2sc,sc2tog]" in dsl    # 9→6 收尾
+    assert lint_parade_dsl(dsl) == []
+
+
+def test_bee_legs_and_eyes_pass_with_quantity():
+    """腿（15/9 针圈、6 并减收口）与眼（12→16 inc-4）+ quantity 复制。"""
+    legs = {"name": "腿部", "type": "cylinder", "color": "黑色",
+            "magic_ring": True, "quantity": 6,
+            "rounds": [
+                {"row": 1, "stitches": 6},
+                {"row": 2, "stitches": 12, "increase": 6},
+                {"row": 3, "stitches": 15, "increase": 3},
+                {"row": 4, "stitches": 15},
+                {"row": 5, "stitches": 12, "decrease": 3},
+                {"row": 6, "stitches": 6, "decrease": 6},
+                {"row": 7, "stitches": 6, "notes": "前半针（BLO）"},
+                {"row": 8, "stitches": 9, "increase": 3},
+                {"row": 9, "stitches": 12, "increase": 3},
+            ]}
+    eyes = {"name": "眼睛", "type": "sphere", "color": "白色",
+            "magic_ring": True, "quantity": 2,
+            "rounds": [
+                {"row": 1, "stitches": 6},
+                {"row": 2, "stitches": 12, "increase": 6},
+                {"row": 3, "stitches": 16, "increase": 4},
+                {"row": 4, "stitches": 16},
+            ]}
+    result = validate_pattern({"parts": [legs, eyes]})
+    assert result["ok"], result["issues"]
+    dsl = export_parade_dsl({"params": {"parts": [legs, eyes]}})
+    assert lint_parade_dsl(dsl) == []
+    assert dsl.count("start_anew") >= 6
+    # 每份拷贝都重置为部件色（不继承上一份结尾色）
+    assert dsl.count("COLOR: #1e1e1e") == 6
+
+
+def test_bee_anchor_cites_catania_cotton_meterage():
+    """Catania 棉线（125m/50g=250m/100g、Sport(2)、2.5mm）校准 fine 档
+    米数估算——材料清单最常用纤维从毛线口径改为棉线口径。"""
+    from app.models.gauge import PRESETS, Gauge
+    assert PRESETS["fine"].meters_per_100g == 250.0
+    assert Gauge(18.0, 20.0).meters_per_100g == 250.0

@@ -27,6 +27,34 @@ def _md_cell(value) -> str:
         "\r\n", " ").replace("\n", " ").replace("\r", " ")
 
 
+def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
+    """聚合计数 → 专业图解的重复写法（如 (4X,V)×6）；非均匀形态返回 None。
+
+    专业图解（Supergurumi/DROPS 等）以 "[4 sc, 1 inc] repeat" 表达均匀
+    分组圈，X/V/A 记号约定见导出图例；均匀分组前提与 parade 导出器的
+    _round_tokens 一致。单针增量无重复语义，同样返回 None。
+    """
+    if (inc and dec) or (not inc and not dec):
+        return None
+    groups = inc or dec
+    if groups < 2 or prev % groups:
+        return None
+    base = prev // groups - 1
+    if base < 0:
+        return None
+    produced = groups * (base + 2 if inc else base)
+    if produced != st:
+        return None
+    if base == 0:
+        head = ""
+    elif base == 1:
+        head = "X,"   # 与 parade 发射器 base==1 → "sc" 的约定一致
+    else:
+        head = f"{base}X,"
+    op = "V" if inc else "A"
+    return f"({head}{op})×{groups}"
+
+
 def export_markdown(params: dict, analysis: dict | None = None) -> str:
     """Convert crochet params dict to a printable Markdown pattern."""
     lines: list[str] = []
@@ -126,16 +154,30 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         # Rounds table
         rounds = pd.get("rounds", [])
         if rounds:
-            lines.append("| 圈数 | 针数 | 加针 | 减针 | 配色 | 说明 |")
-            lines.append("|:----:|:----:|:----:|:----:|:----:|------|")
+            lines.append("| 圈数 | 针数 | 加针 | 减针 | 针法写法 | 配色 | 说明 |")
+            lines.append("|:----:|:----:|:----:|:----:|:----:|:----:|------|")
+            prev_st: int | None = None
             for r in rounds:
                 rd = r
-                inc = f"+{rd['increase']}" if rd.get("increase") else "—"
-                dec = f"-{rd['decrease']}" if rd.get("decrease") else "—"
+                try:
+                    st_n = int(rd.get("stitches") or 0)
+                    inc_n = int(rd.get("increase") or 0)
+                    dec_n = int(rd.get("decrease") or 0)
+                except (TypeError, ValueError):
+                    st_n = inc_n = dec_n = 0
+                inc = f"+{inc_n}" if inc_n else "—"
+                dec = f"-{dec_n}" if dec_n else "—"
+                # 专业写法列：聚合数翻译为图例约定的重复记号（均匀分组时）；
+                # JSON 改坏/非均匀形态降级为 '—'
+                rep = "—"
+                if prev_st is not None and st_n and (inc_n or dec_n):
+                    rep = _repeat_notation(st_n, prev_st, inc_n, dec_n) or "—"
                 lines.append(
                     f"| {_md_cell(rd.get('row',''))} | {_md_cell(rd.get('stitches',''))} | "
-                    f"{_md_cell(inc)} | {_md_cell(dec)} | {_md_cell(rd.get('color') or '—')} | "
+                    f"{_md_cell(inc)} | {_md_cell(dec)} | {_md_cell(rep)} | "
+                    f"{_md_cell(rd.get('color') or '—')} | "
                     f"{_md_cell(rd.get('notes', ''))} |")
+                prev_st = st_n or None
         lines.append("")
         lines.append("---")
 

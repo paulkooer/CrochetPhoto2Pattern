@@ -80,3 +80,24 @@ def test_difficulty_label_fallback_keeps_legacy_values():
     assert difficulty_label("easy", zh=False) == "Easy (CYC Basic)"
     assert difficulty_label("mystery") == "mystery"
     assert difficulty_label("—") == "—"
+
+
+def test_repeat_notation_uniform_and_uneven():
+    """聚合计数 → 专业重复写法；非均匀/不自洽/单针增量返回 None。"""
+    from app.utils.exporters import _repeat_notation
+    assert _repeat_notation(18, 12, 6, 0) == "(X,V)×6"
+    assert _repeat_notation(12, 6, 6, 0) == "(V)×6"       # 环起首圈全增
+    assert _repeat_notation(6, 12, 0, 6) == "(X,A)×6"     # 收口
+    assert _repeat_notation(21, 18, 3, 0) == "(5X,V)×3"   # 非 6 等分组
+    assert _repeat_notation(16, 12, 4, 0) == "(2X,V)×4"
+    assert _repeat_notation(24, 24, 0, 0) is None          # 平针圈无重复语义
+    assert _repeat_notation(13, 12, 1, 0) is None          # 单针增量
+    assert _repeat_notation(25, 24, 6, 0) is None          # 聚合不自洽
+
+
+def test_round_table_shows_professional_repeat_column():
+    """圈表新增"针法写法"列——聚合数翻译为图例约定的重复记号。"""
+    params, analysis = _sample_params()
+    md = export_markdown(params, analysis)
+    assert "| 圈数 | 针数 | 加针 | 减针 | 针法写法 | 配色 | 说明 |" in md
+    assert "(V)×6" in md and "(X,V)×6" in md

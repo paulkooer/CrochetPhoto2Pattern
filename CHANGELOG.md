@@ -10,17 +10,22 @@
 
 ### Added
 
-- **真实图解印证测试**（`tests/test_reference_patterns.py`，13 项）：以
+- **真实图解印证测试**（`tests/test_reference_patterns.py`，24 项）：以
   专业/社区公开图解外部校准系统——Clover 官方 AKIHIRO 玩偶（22 针腿/
   16 针臂/9 针尾/14 针耳）、社区通用球体公式（6 起针、每圈 +6）、
   Lovable Loops 樱桃迷你 C2C 图表（9×9 逐行色块全文）、Spin a Yarn
   Crochet 的 8 针起环（8→16→24 倍增）、Ms Premise-Conclusion《The Ideal
   Crochet Sphere》的 sin 轮廓性质验证（逐圈对照独立重算的 N=C/s 理论值）
-  逐圈代数全过校验且 CrochetPARADE 导出 lint 全净）、StringyDingDing
-  袋鼠 + 小袋鼠（高人气免费图解：头部环起后先平钩一圈再增、一体钩
-  非均匀增减与 21/15 奇数圈、耳朵 inc-4；腿部 R5 为又一处已发布印刷
-  矛盾——加针指令 vs (24) 计数，忠实转录后代数自检捕获、导出器诚实
-  拒译，修正后通过）。
+  与原工艺警告落实检查、Craft Yarn Council 缩写规范一致性（sc2tog）、
+  DROPS Design Children 23-60 苹果玩偶（Garnstudio 专业图解：7 针起环、
+  +7 增圈、9 圈平针、对称减到 6、4 针锁针起点果柄；R17 勘误史——2012 年
+  曾把减针误印为加针——构成首例"已发布出版错误"夹具）、StringyDingDing
+  袋鼠 + 小袋鼠（头部环起后先平钩一圈再增、一体钩非均匀增减与 21/15
+  奇数圈、耳朵 inc-4；腿部 R5 加针指令 vs (24) 计数的印刷矛盾为第二例）、
+  Supergurumi「The Chubby Bee」蜜蜂（德国专业设计工作室：55 圈头身一体、
+  66 针峰值、黄黑条纹逐圈换色、BLO 脊线圈、"1 短针"螺旋移位圈、错位
+  增减圈、3 针递减奇数收尾序列 33→…→9→6；55 圈经机械核对逐圈自洽，
+  校验器全过、CrochetPARADE 全圈可译含 COLOR 条纹指令）。
 - **难度标签对齐 CYC Project Levels**（`app/schemas.py`）：官方四级
   Basic/Easy/Intermediate/Complex 定义（2026-09 抓取逐字核对）——本系统
   只生成短针玩偶，easy/medium/hard 分别对齐 Basic/Easy/Intermediate，
@@ -37,6 +42,18 @@
 - **C2C 起格约定**：网格导出的 C2C 逐行指令补充标准起格写法（锁 6 针，
   从钩针端第 4 针起每针钩 1 长针，共 3 长针，翻面）——Craftematics 与
   Crochet.com 两个独立教程来源一致。
+- **圈表新增"针法写法"列**（Markdown 导出）：聚合数（+6/-6）按图例
+  约定的 X/V/A 记号翻译为专业重复写法（如 (4X,V)×6）——对齐
+  Supergurumi/DROPS 等图解的 "[4 sc, 1 inc] repeat" 表达；非均匀圈、
+  单针增量、聚合不自洽或 JSON 改坏时降级为"—"。
+- **CrochetPARADE 导出颜色流优化**：连续同色圈不再逐圈重复 COLOR 指令
+  （条纹件从逐圈重复降为每边界一条，蜜蜂 23→6 条）；多份拷贝
+  （quantity>1）每份都以部件色重置，不再继承上一份的结尾色。
+- **材料米数最细档校准为棉线口径**（fine 档 320→250 m/100g）：依据
+  Supergurumi 蜜蜂所用 Schachenmayr Catania（100% 棉、125m/50g、
+  Sport/Fine(2)、2.5mm 钩）——正是该档标签"2.0–2.5mm + 中细棉线"的
+  配置；旧值 320 为毛线 sport 口径偏高约 28%。其余三档待实体试钩（G4）
+  校准，购买仍以实际线标为准。
 
 ### Fixed
 

@@ -98,8 +98,11 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
     for copy in range(quantity):
         if copy:
             lines.append("start_anew")
-        if copy == 0 and hex_color:
+        if hex_color:
+            # 每份实体都重置为部件色——多份拷贝不能继承上一份的结尾色
+            #（条纹部件 ×N 时尤其重要）
             lines.append(f"COLOR: {hex_color}")
+        last_color = hex_color
         # 魔法环行 + 首圈（首圈全部针目放入环：scNinc）
         first = rounds[0]
         n_first = int(first.get("stitches", 0))
@@ -119,8 +122,11 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
                 prev = int(rd.get("stitches", prev))
                 continue
             color_hex = _hex_of(rd.get("color"))
-            if color_hex and color_hex != hex_color:
+            # 仅在换色边界输出指令（连续同色圈不重复）——条纹件（如
+            # Supergurumi 蜜蜂 55 圈 6 条条纹）从逐圈重复降为每边界一条
+            if color_hex and color_hex != last_color:
                 lines.append(f"COLOR: {color_hex}")
+                last_color = color_hex
             lines.extend(tokens)
             prev = int(rd.get("stitches", prev))
     return lines
