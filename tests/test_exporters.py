@@ -101,3 +101,16 @@ def test_round_table_shows_professional_repeat_column():
     md = export_markdown(params, analysis)
     assert "| 圈数 | 针数 | 加针 | 减针 | 针法写法 | 配色 | 说明 |" in md
     assert "(V)×6" in md and "(X,V)×6" in md
+
+
+def test_markdown_preamble_includes_ring_start_alternative():
+    """工艺前言补环起替代法（Supergurumi ch-4 引拔成环 / 社区 ch-2 写法）。
+
+    来源：Supergurumi 蜜蜂图解 "Chain 4, sl st into the first ch to form
+    a ring"；Hobbii《Easy Alternative to the Magic Ring》与 r/Amigurumi
+    常见建议的 ch-2 变体。
+    """
+    params, analysis = _sample_params()
+    md = export_markdown(params, analysis)
+    assert "环起困难的替代法" in md
+    assert "锁 4 针引拔成环" in md and "锁 2 针" in md

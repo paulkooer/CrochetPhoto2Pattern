@@ -401,6 +401,27 @@ def structure_connection_plan(structure: dict[str, Any]) -> dict[str, Any] | Non
     }
 
 
+def _safety_eye_mm(head_diameter_cm: float | None) -> int:
+    """头径 → 安全眼直径分档（mm）——对齐社区口径与专业图解锚点。
+
+    r/Amigurumi 眼睛 wiki（2026-09 抓取）：迷你件 5–6mm、常规玩偶
+    （15–25cm）8–12mm、大型件（30cm+）14–20mm+。专业锚点：约 10cm 头径
+    均配 12mm 安全眼（Supergurumi 蜜蜂 12.6in/32cm、StringyDingDing
+    袋鼠 9in/23cm）——本分档取社区区间中值偏保守，待 G4 实体试钩校准。
+    """
+    if head_diameter_cm is None:
+        return 8
+    if head_diameter_cm < 5:
+        return 6
+    if head_diameter_cm < 8:
+        return 8
+    if head_diameter_cm < 11:
+        return 10
+    if head_diameter_cm < 14:
+        return 12
+    return 14
+
+
 def _materials(parts: list[dict[str, Any]], part_names: set,
                 gauge: Gauge = DEFAULT_GAUGE) -> list[dict[str, str]]:
     """材料清单随实际部件生成（parts 为 dict 形态，见 _build_result）。
@@ -447,7 +468,16 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         materials.append({"item": item, "quantity": f"约 {grams}g（≈{meters}m）",
                           "color": c})
     if "头部" in part_names:
-        materials.append({"item": "安全眼", "quantity": "一对 (8mm)"})
+        # 安全眼尺寸随头径分档（固定 8mm 在大/小头径下失真——社区与
+        # 专业图解都按玩偶大小配眼）；无头径数据的旧结果兜底 8mm
+        head = next((p for p in parts if _part_name(p) == "头部"), None)
+        diameter = head.get("diameter_cm") if isinstance(head, dict) else None
+        try:
+            diameter = float(diameter) if diameter is not None else None
+        except (TypeError, ValueError):
+            diameter = None
+        materials.append({"item": "安全眼",
+                          "quantity": f"一对 ({_safety_eye_mm(diameter)}mm)"})
     materials.append({"item": "填充棉", "quantity": "适量"})
     # CYC 分档是"密度→档位"参考（见 Gauge.cyc_label）：前者是玩偶紧钩
     # 惯例的钩针建议，后者是同密度的 CYC 标准钩针区间——并列展示而非混淆。

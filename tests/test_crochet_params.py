@@ -719,3 +719,42 @@ def test_semantic_snap_targets_dominant_segment_not_nearest():
     # 主色段（蓝，占 70%）整体吸附为红；白边段保留
     assert colors.count("红色") == 3 and colors.count("白色") == 2
     assert "蓝色" not in colors
+
+
+# ── 安全眼尺寸随头径分档（r/Amigurumi 社区口径 + 专业图解锚点）──────────────
+
+def test_safety_eye_mm_follows_community_ladder():
+    """r/Amigurumi eyes wiki：迷你 5–6mm / 常规 8–12mm / 大型 14–20mm+。"""
+    from app.models.crochet_params import _safety_eye_mm
+    assert _safety_eye_mm(4.0) == 6      # 迷你件
+    assert _safety_eye_mm(6.5) == 8
+    assert _safety_eye_mm(9.0) == 10     # 默认头径——常规玩偶区间中值
+    assert _safety_eye_mm(12.0) == 12    # 蜜蜂/袋鼠 ~10cm 头配 12mm 的档位
+    assert _safety_eye_mm(16.0) == 14    # 大型件
+    assert _safety_eye_mm(None) == 8     # 旧数据无头径 → 原值兜底
+    # 非法头径由 _materials 调用层 try/except 兜底，不进本函数
+
+
+def test_materials_safety_eye_scales_with_head_diameter():
+    """材料清单安全眼必须随头径变化——15cm 头 14mm、9cm 头 10mm。"""
+    from app.models.crochet_params import _materials
+    head_big = {"name": "头部", "rounds": [{"row": 1, "stitches": 6}],
+                "diameter_cm": 15.0}
+    eye = next(m for m in _materials([head_big], {"头部"})
+               if m["item"] == "安全眼")
+    assert "(14mm)" in eye["quantity"]
+    head_small = dict(head_big, diameter_cm=9.0)
+    eye = next(m for m in _materials([head_small], {"头部"})
+               if m["item"] == "安全眼")
+    assert "(10mm)" in eye["quantity"]
+    head_legacy = {"name": "头部", "rounds": [{"row": 1, "stitches": 6}]}
+    eye = next(m for m in _materials([head_legacy], {"头部"})
+               if m["item"] == "安全眼")
+    assert "(8mm)" in eye["quantity"]   # 无头径 → 原固定值兜底
+
+
+def test_generated_params_eye_size_tracks_head_slider():
+    """生成链路端到端：头径滑条 15cm → 材料清单安全眼 14mm。"""
+    params = _params_for(["头部", "身体"], head_d=15.0)
+    eye = next(m for m in params["materials"] if m["item"] == "安全眼")
+    assert "(14mm)" in eye["quantity"]

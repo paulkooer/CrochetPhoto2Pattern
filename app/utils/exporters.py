@@ -110,6 +110,12 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         "减针建议用隐形减针（只挑两针目的前半针）"
     )
     lines.append(">")
+    lines.append(
+        "> 环起困难的替代法：锁 4 针引拔成环，首圈针数全部钩入环心后拉紧"
+        "（Supergurumi 图解写法）；或锁 2 针、在第 2 针内钩入首圈针数"
+        "（社区通行）"
+    )
+    lines.append(">")
     lines.append(_LEGEND_BILINGUAL)
     lines.append("")
     lines.append("## 🧵 所需材料")

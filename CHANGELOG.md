@@ -54,6 +54,15 @@
   Sport/Fine(2)、2.5mm 钩）——正是该档标签"2.0–2.5mm + 中细棉线"的
   配置；旧值 320 为毛线 sport 口径偏高约 28%。其余三档待实体试钩（G4）
   校准，购买仍以实际线标为准。
+- **安全眼尺寸随头径分档**（`_safety_eye_mm`，材料清单）：旧实现固定
+  "8mm" 不随玩偶大小变化——16cm 大头径配 8mm 明显失真。新分档对齐
+  r/Amigurumi 眼睛 wiki 社区口径（迷你 5–6mm / 常规 8–12mm / 大型
+  14–20mm+，2026-09 抓取），专业锚点：约 10cm 头径配 12mm（Supergurumi
+  蜜蜂 32cm 与 StringyDingDing 袋鼠 23cm 均为 12mm 安全眼）。默认 9cm
+  头 8→10mm；无头径数据的旧结果兜底 8mm。
+- **导出前言补环起替代法**：魔法环钩不好时的两种通行替代——锁 4 针
+  引拔成环（Supergurumi 图解原文写法）与锁 2 针在第 2 针内钩入首圈
+  （社区通行，Hobbii《Easy Alternative to the Magic Ring》）。
 
 ### Fixed
 

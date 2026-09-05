@@ -73,6 +73,19 @@ formats may still evolve during Beta; incompatible changes must include migratio
   exactly the bucket's "2.0-2.5 mm + fine cotton" configuration; the old
   320 was a wool-sport figure ~28% high. The other three buckets await
   physical-trial (G4) calibration; purchase per actual yarn label.
+- **Safety-eye size now scales with head diameter** (`_safety_eye_mm`,
+  materials list): the old fixed "8 mm" ignored doll size — an 8 mm pair
+  is clearly off on a 16 cm head. The new ladder aligns with the
+  r/Amigurumi eyes wiki community ranges (mini 5-6 mm / regular 8-12 mm /
+  large 14-20 mm+, fetched 2026-09); professional anchors: ~10 cm heads
+  with 12 mm eyes (Supergurumi bee 32 cm and StringyDingDing kangaroo
+  23 cm both use 12 mm). The default 9 cm head moves 8 -> 10 mm; legacy
+  results without a head diameter fall back to 8 mm.
+- **Ring-start alternative in the export preamble**: two common
+  substitutes for crocheters struggling with the magic ring — chain 4,
+  sl st into a ring (Supergurumi's written form) and chain 2, work the
+  first round into the 2nd ch (community standard, Hobbii's "Easy
+  Alternative to the Magic Ring").
 
 ### Fixed
 
