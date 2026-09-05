@@ -81,3 +81,35 @@ def test_next_shaping_round_respects_cap_and_executable_operations(
 def test_next_shaping_round_rejects_non_six_sector_topology():
     with pytest.raises(ValueError):
         next_shaping_stitch_count(10, 24, 12)
+
+
+# ── CYC（Craft Yarn Council）官方密度档映射 ────────────────────────────────
+# 依据：craftyarncouncil.com/standards/yarn-weight-system（2026-09 抓取），
+# 官方钩织密度按"短针/4 英寸"分档；本项目 10cm 口径阈值 ×0.984 换算。
+
+def test_cyc_mapping_hits_each_official_category():
+    from app.models.gauge import Gauge
+    assert "#1 super fine" in Gauge(22.0, 16.0).cyc_label   # 22.3/4″ ≥ 21
+    assert "#2 fine" in Gauge(17.0, 14.0).cyc_label         # 17.3/4″ ∈ 16–20
+    assert "#3 light" in PRESETS["classic"].cyc_label       # 13.2/4″ ∈ 12–17
+    assert "#4 medium" in Gauge(11.5, 9.0).cyc_label        # 11.7/4″ ∈ 11–14
+    assert "#5 bulky" in Gauge(8.5, 8.0).cyc_label          # 8.6/4″ ∈ 8–11
+    assert "#6 super bulky" in Gauge(7.5, 8.0).cyc_label    # 7.6/4″ ∈ 7–9
+    assert "#7 jumbo" in Gauge(6.0, 8.0).cyc_label          # 6.1/4″ ≤ 6
+
+
+def test_cyc_mapping_boundaries_after_10cm_conversion():
+    """换算阈值：CYC #1 下限 21/4″ → 20.7/10cm；#2 上缘 20/10cm 仍属 #2。"""
+    from app.models.gauge import Gauge
+    assert "#2 fine" in Gauge(20.0, 16.0).cyc_label   # 20.3/4″ < 21 → #2 上缘
+    assert "#1 super fine" in Gauge(20.7, 16.0).cyc_label
+    assert "#3 light" in Gauge(15.7, 16.0).cyc_label  # 15.9/4″ < 16 → #3
+
+
+def test_drops_apple_gauge_lands_in_cyc_fine_with_matching_hook():
+    """交叉验证：DROPS 23-60（18 短针/10cm、4.5mm）→ CYC #2 fine，
+    且 4.5mm 恰为其官方钩针区间（3.5–4.5mm）上限——专业图解与官方标准吻合。"""
+    from app.models.gauge import Gauge
+    label = Gauge(18.0, 20.0).cyc_label   # 20 圈/10cm 同取自 DROPS 官方密度
+    assert "#2 fine" in label
+    assert "3.5–4.5" in label

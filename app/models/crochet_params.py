@@ -449,7 +449,12 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
     if "头部" in part_names:
         materials.append({"item": "安全眼", "quantity": "一对 (8mm)"})
     materials.append({"item": "填充棉", "quantity": "适量"})
-    materials.append({"item": gauge.hook_yarn_label, "quantity": "1 把"})
+    # CYC 分档是"密度→档位"参考（见 Gauge.cyc_label）：前者是玩偶紧钩
+    # 惯例的钩针建议，后者是同密度的 CYC 标准钩针区间——并列展示而非混淆。
+    materials.append({
+        "item": f"{gauge.hook_yarn_label}（{gauge.cyc_label}）",
+        "quantity": "1 把",
+    })
     materials.append({"item": "缝合针", "quantity": "1 根"})
     return materials
 

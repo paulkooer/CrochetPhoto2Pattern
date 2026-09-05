@@ -565,6 +565,11 @@ def render_c2c_chart(pattern: GridPattern) -> str:
     C2C 以"格子块"（tile，3 长针的方块）沿对角线编织：对角行 k 含
     min(k, W, H, W+H-k) 个 tile（增→平→减）。本图从**左下角**开始，
     每行给出工作顺序的 tile 颜色序列，相邻行按 C2C 惯例反向返回。
+
+    起格写法核对自两个独立教程来源（一致）：Craftematics——"Ch 6,
+    beginning with the 4th ch from hook, work 1 dc into each remaining
+    ch (3 dcs), turn"；Crochet.com——"Ch 6. DC in 4th ch from hook.
+    DC in next 2 ch"。
     """
     W, H = pattern.width, pattern.height
     total_rows = W + H - 1
@@ -572,6 +577,9 @@ def render_c2c_chart(pattern: GridPattern) -> str:
         f"C2C 逐行指令（{W}×{H} 格，共 {total_rows} 行对角）",
         "每格 = 1 个格子块（3 长针）。从左下角开始，行方向来回交替；",
         "增行 = 本行比上一行多 1 格，减行 = 少 1 格；减到 1 格后收工。",
+        "起格（通行教程约定，Craftematics/Crochet.com 一致）：",
+        "锁 6 针，从钩针端第 4 针起每针钩 1 长针（共 3 长针），翻面；",
+        "后续每格同法钩成，再与前行格子的锁针空间引拔相连。",
         "",
     ]
     for k in range(1, total_rows + 1):

@@ -10,13 +10,23 @@
 
 ### Added
 
-- **真实图解印证测试**（`tests/test_reference_patterns.py`，10 项）：以
+- **真实图解印证测试**（`tests/test_reference_patterns.py`，13 项）：以
   专业/社区公开图解外部校准系统——Clover 官方 AKIHIRO 玩偶（22 针腿/
   16 针臂/9 针尾/14 针耳）、社区通用球体公式（6 起针、每圈 +6）、
   Lovable Loops 樱桃迷你 C2C 图表（9×9 逐行色块全文）、Spin a Yarn
   Crochet 的 8 针起环（8→16→24 倍增）、Ms Premise-Conclusion《The Ideal
   Crochet Sphere》的 sin 轮廓性质验证（逐圈对照独立重算的 N=C/s 理论值）
-  与原工艺警告落实检查、Craft Yarn Council 缩写规范一致性（sc2tog）。
+  逐圈代数全过校验且 CrochetPARADE 导出 lint 全净）。
+- **CYC 纱线重量档映射**（`Gauge.cyc_label`）：按 Craft Yarn Council
+  Standard Yarn Weight System（官方"短针/4 英寸"密度分档，2026-09 抓取
+  核对）把密度映射到官方档位并附该档标准钩针区间；材料清单钩针行并列
+  展示"玩偶紧钩建议 + CYC 标准档"。明示口径：这是"密度→档位"映射，
+  不是"线材→档位"（紧钩玩偶同一密度可来自更粗的线）。交叉验证：DROPS
+  Children 23-60（18 短针/10cm、4.5mm）恰落 CYC #2 fine，4.5mm 为该档
+  官方钩针区间（3.5–4.5mm）上限。
+- **C2C 起格约定**：网格导出的 C2C 逐行指令补充标准起格写法（锁 6 针，
+  从钩针端第 4 针起每针钩 1 长针，共 3 长针，翻面）——Craftematics 与
+  Crochet.com 两个独立教程来源一致。
 
 ### Fixed
 

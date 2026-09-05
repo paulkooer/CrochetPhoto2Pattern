@@ -11,15 +11,30 @@ formats may still evolve during Beta; incompatible changes must include migratio
 ### Added
 
 - **Reference-pattern verification tests** (`tests/test_reference_patterns.py`,
-  10 items): external calibration against professional/community patterns —
+  13 items): external calibration against professional/community patterns —
   Clover's official AKIHIRO doll (22-st legs / 16-st arms / 9-st tail /
   14-st ears), the community sphere formula (6-sc ring start, +6 per round),
   the Lovable Loops cherry mini C2C chart (9x9, full written block rows),
   Spin a Yarn Crochet's 8-stitch ring start (8->16->24 doubling), a
   sin-profile property verification of Ms Premise-Conclusion's "The Ideal
   Crochet Sphere" (per-row comparison against independently recomputed
-  N=C/s values) including its craft-warning handling, and Craft Yarn
-  Council abbreviation alignment (sc2tog).
+  N=C/s values) including its craft-warning handling, Craft Yarn
+  Council abbreviation alignment (sc2tog), and DROPS Design Children 23-60
+  passes the validator and the CrochetPARADE export lints clean).
+- **CYC yarn-weight category mapping** (`Gauge.cyc_label`): maps stitch
+  density onto the Craft Yarn Council Standard Yarn Weight System (official
+  "single crochet per 4 inch" categories, fetched and cross-checked 2026-09)
+  and reports each category's standard hook range; the materials list shows
+  the amigurumi-tight hook advice next to the CYC standard category. The
+  scope is explicit: this is a "density -> category" mapping, not a
+  "yarn -> category" one (tight-gauge amigurumi can reach the same density
+  with a thicker yarn). Cross-validation: DROPS Children 23-60
+  (18 sc/10 cm, 4.5 mm hook) lands exactly on CYC #2 fine, with 4.5 mm at
+  the top of that category's official 3.5-4.5 mm hook range.
+- **C2C starting convention**: the grid export's written C2C rows now state
+  the standard block construction (ch 6, dc beginning in the 4th ch from
+  hook, 3 dcs total, turn) — identical across two independent tutorial
+  sources (Craftematics and Crochet.com).
 
 ### Fixed
 

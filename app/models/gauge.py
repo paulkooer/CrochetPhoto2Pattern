@@ -20,6 +20,26 @@ from typing import Any
 BASE_GRAMS_PER_STITCH = 0.08
 BASE_STITCH_AREA_CM2 = 0.785 * 0.625
 
+# CYC Standard Yarn Weight System（Craft Yarn Council 官方标准，
+# craftyarncouncil.com/standards/yarn-weight-system，2026-09 抓取核对）：
+# 钩织密度档按"每 4 英寸（10.16cm）短针数"划分，官方标注 GUIDELINES ONLY。
+# 本项目密度按 10cm 记录，阈值按 ×10/10.16≈0.984 换算保留一位小数；
+# 官方区间互相重叠（#3 light 12–17 与 #4 medium 11–14 在 12–14 重叠），
+# 取更细一档（紧钩玩偶取向）。#0 lace 的官方钩织密度口径是长针而非短针，
+# 玩偶场景不适用——不纳入。交叉验证：DROPS Children 23-60 玩偶
+# （4.5mm、18 短针=10cm）换算 18.3/4″ → 落 #2 fine（16–20），其 4.5mm
+# 恰为 CYC #2 官方钩针区间（3.5–4.5mm）上限。
+_CYC_CATEGORIES: tuple[tuple[float, str, str], ...] = (
+    # (短针/10cm 下限, CYC 分类, 该档官方推荐钩针 mm 区间)
+    (20.7, "CYC #1 super fine", "2.25–3.5"),
+    (15.8, "CYC #2 fine", "3.5–4.5"),
+    (11.8, "CYC #3 light", "4.5–5.5"),
+    (10.8, "CYC #4 medium", "5.5–6.5"),
+    (7.9, "CYC #5 bulky", "6.5–9"),
+    (6.9, "CYC #6 super bulky", "9–15"),
+    (0.0, "CYC #7 jumbo", "15 以上"),
+)
+
 
 @dataclass(frozen=True)
 class Gauge:
@@ -90,6 +110,19 @@ class Gauge:
         if w < 0.7:
             return "3.5–4mm 钩针 + 粗线"
         return "4–5mm 钩针 + 特粗/珊瑚绒线"
+
+    @property
+    def cyc_label(self) -> str:
+        """按短针密度映射 CYC 纱线重量档（附该档官方推荐钩针区间）。
+
+        注意这是"密度→档位"而非"线材→档位"：玩偶惯例用比线标推荐更小
+        的钩针紧钩，同一密度可以来自比 CYC 档位更粗的线（如 classic 预设
+        的粗线紧钩）。换算与重叠区取档口径见 _CYC_CATEGORIES 注释。
+        """
+        for lower, name, hooks in _CYC_CATEGORIES:
+            if self.stitches_per_10cm >= lower:
+                return f"{name} · 标准钩针 {hooks}mm"
+        return _CYC_CATEGORIES[-1][1]
 
     @property
     def meters_per_100g(self) -> float:

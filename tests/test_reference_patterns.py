@@ -9,6 +9,14 @@
   https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-a-magic-ring/
 - Lovable Loops 樱桃迷你 C2C 图表（9×9，逐行色块文字版全文）：
   https://lovableloops.com/cherry-square-mini-c2c-crochet-pattern/
+- DROPS Design（Garnstudio，欧洲最大免费图解库）Children 23-60 苹果玩偶：
+  环形起针 7 针、7/14/21/28/35/42 对称增、9 圈平针、对称减到 6；4.5mm、
+  官方密度 18 短针 = 10cm（柄为 4 针锁针起点小筒）。按 DROPS 版权声明
+  仅取针数代数。
+  https://www.garnstudio.com/pattern.php?id=5888&cid=17
+- CYC（Craft Yarn Council）Standard Yarn Weight System：官方密度分档
+  （短针/4 英寸）——gauge 层 cyc_label 映射以此核对。
+  https://www.craftyarncouncil.com/standards/yarn-weight-system
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -270,3 +278,67 @@ def test_professional_eight_stitch_ring_start_passes_validation():
     result = validate_pattern({"parts": [head]})
     assert result["ok"], result["issues"]
     assert any("非 6 的倍数" in note for note in result["notes"])
+
+
+# ── DROPS Design / Garnstudio（欧洲最大免费图解库，专业级）──────────────────
+# DROPS Children 23-60「Ambrosia」苹果玩偶：DROPS Paris 棉线、4.5mm 钩针、
+# 官方密度 18 短针 × 20 圈 = 10×10cm。环形起针 7 针、7/14/21/28/35/42
+# 对称增、9 圈平针（42）、R17–R22 对称减 42→36→30→24→18→12→6；
+# 果柄 = 锁针起点 4 短针 × 4 圈（非魔法环）。按 DROPS 版权声明仅取
+# 针数代数，不复制图解文本。
+# https://www.garnstudio.com/pattern.php?id=5888&cid=17
+# （历史注脚：该图解 2012-12 曾把 R17 的减针误印为加针并官方更正——
+#   出版图解也有代数错，正是本系统逐圈自检的价值所在。）
+
+def _drops_apple_parts() -> list[dict]:
+    apple = {"name": "苹果", "type": "sphere", "color": "红色", "magic_ring": True,
+             "rounds": [
+                 {"row": 1, "stitches": 7},   # DROPS 7 针环形起针（非 6 针体系）
+                 {"row": 2, "stitches": 14, "increase": 7},
+                 {"row": 3, "stitches": 21, "increase": 7},
+                 {"row": 4, "stitches": 28, "increase": 7},
+                 {"row": 5, "stitches": 35, "increase": 7},
+                 {"row": 6, "stitches": 35},
+                 {"row": 7, "stitches": 42, "increase": 7},
+                 *({"row": r, "stitches": 42} for r in range(8, 17)),
+                 {"row": 17, "stitches": 36, "decrease": 6},
+                 {"row": 18, "stitches": 30, "decrease": 6},
+                 {"row": 19, "stitches": 24, "decrease": 6},
+                 {"row": 20, "stitches": 18, "decrease": 6},
+                 {"row": 21, "stitches": 12, "decrease": 6},
+                 {"row": 22, "stitches": 6, "decrease": 6},
+             ]}
+    stem = {"name": "果柄", "type": "cylinder", "color": "棕色",
+            "magic_ring": False,
+            "rounds": [{"row": r, "stitches": 4} for r in range(1, 5)]}
+    return [apple, stem]
+
+
+def test_published_drops_apple_passes_validation():
+    """DROPS 苹果（7 针起环、+7 增圈、非 6 倍数平针）必须通过校验。
+
+    默认 gauge（classic）的平滑上限 ±6：+7 圈与 7/14/21/28/35 非等分圈
+    都应降级为 notes；可执行性硬检查（代数/inc≤prev/dec≤prev/2）全过。
+    """
+    result = validate_pattern({"parts": _drops_apple_parts()})
+    assert result["ok"], result["issues"]
+    notes = "\n".join(result["notes"])
+    assert "非 6 的倍数" in notes           # 7/14/21/28/35/…/4 针圈
+    assert "相邻圈跳变" in notes            # 35→42 等 +7 圈（超 ±6 平滑先验）
+
+
+def test_drops_apple_exports_clean_parade_dsl():
+    """专业图解 → CrochetPARADE DSL 全圈可译且过 emitter lint。"""
+    dsl = export_parade_dsl({"params": {"parts": _drops_apple_parts()}})
+    assert lint_parade_dsl(dsl) == []
+    assert "sc7inc" in dsl            # 7 针环形起针（scNinc 形式）
+    assert "7[sc,sc2inc]" in dsl      # 14→21：base=1 对齐官方示例写法
+    assert "6[sc,sc2tog]" in dsl      # 12→6 收口（sc2tog 与 CYC 缩写一致）
+
+
+def test_drops_stem_chain_start_exports_with_honest_warning():
+    """果柄 4 针锁针起点（非魔法环）：可导出但带人工核对提示。"""
+    stem = _drops_apple_parts()[1]
+    dsl = export_parade_dsl({"params": {"parts": [stem]}})
+    assert lint_parade_dsl(dsl) == []
+    assert "非魔法环" in dsl and "sc4inc" in dsl
