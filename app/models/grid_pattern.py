@@ -578,7 +578,8 @@ def render_c2c_chart(pattern: GridPattern) -> str:
         "每格 = 1 个格子块（3 长针）。从左下角开始，行方向来回交替；",
         "增行 = 本行比上一行多 1 格，减行 = 少 1 格；减到 1 格后收工。",
         "行首箭头/正反面标注按专业 written 指令惯例"
-        "（Juniper & Oakes 等）：奇数行正面 ↗、偶数行反面 ↙。",
+        "（Juniper & Oakes、Lovable Loops 一致）："
+        "奇数行正面 ↙、偶数行反面 ↗。",
         "起格（通行教程约定，Craftematics/Crochet.com 一致）：",
         "锁 6 针，从钩针端第 4 针起每针钩 1 长针（共 3 长针），翻面；",
         "后续每格同法钩成，再与前行格子的锁针空间引拔相连。",
@@ -601,7 +602,7 @@ def render_c2c_chart(pattern: GridPattern) -> str:
         # 正反面随翻面交替（奇数行 RS、偶数行 WS，对齐专业 written 格式）
         ordered = tiles if k % 2 == 1 else list(reversed(tiles))
         side = "正面" if k % 2 == 1 else "反面"
-        arrow = "↗" if k % 2 == 1 else "↙"
+        arrow = "↙" if k % 2 == 1 else "↗"
         seq = "、".join(name for name, _rgb, _i in ordered)
         lines.append(f"{arrow} 对角行 {k}（{n} 格，{phase}，{side}）：{seq}")
     lines.append("")

@@ -71,10 +71,10 @@ def test_c2c_row_structure_rectangle():
     pat = generate_grid_pattern(Image.new("RGB", (30, 20), (255, 0, 0)),
                                 grid_width=3, n_colors=1)
     chart = render_c2c_chart(pat)
-    assert "↗ 对角行 1（1 格，增行，正面）" in chart
-    assert "↙ 对角行 2（2 格，增行，反面）" in chart
-    assert "↗ 对角行 3（2 格，平行，正面）" in chart
-    assert "↙ 对角行 4（1 格，减行，反面）" in chart
+    assert "↙ 对角行 1（1 格，增行，正面）" in chart
+    assert "↗ 对角行 2（2 格，增行，反面）" in chart
+    assert "↙ 对角行 3（2 格，平行，正面）" in chart
+    assert "↗ 对角行 4（1 格，减行，反面）" in chart
     assert "螃蟹针" in chart
 
 

@@ -773,7 +773,10 @@ def test_assembly_mentions_opening_stitch_counts():
     assert "头部接合到身体顶部（开口" not in asm
     arms = next(p for p in params["parts"] if p["name"] == "手臂")
     last_n = arms["rounds"][-1]["stitches"]
-    assert f"（开口 {last_n} 针）" in asm   # 与末圈针数一致
+    assert f"（开口 {last_n} 针" in asm   # 与末圈针数一致
+    # ≤6 针的小开口附捏扁缝合建议（垂耳兔等社区图解惯例）
+    if last_n <= 6:
+        assert "小开口可捏扁缝合" in asm
 
 
 def test_assembly_hat_skirt_report_opening_counts():

@@ -155,9 +155,20 @@ formats may still evolve during Beta; incompatible changes must include migratio
   symbols.
 - **C2C written rows upgraded to the professional format** (aligned
   with Juniper & Oakes and peers): every diagonal row now carries a
-  direction arrow (odd rows ↗ / even rows ↙) and a right-side/wrong-side
-  label alternating with the turns; the header states the convention's
-  provenance.
+  direction arrow (odd rows ↙ on the right side / even rows ↗ on the
+  wrong side) and a right-side/wrong-side label alternating with the
+  turns; the header states the convention's provenance. The direction
+  was cross-checked line-by-line against two independent sources
+  (Juniper & Oakes, Lovable Loops) — the first implementation had it
+  inverted and the heart chart's asymmetric rows caught it.
+- **Second published grid-chart fixture (Lovable Loops heart 9x9)**:
+  its 17 written color rows were transcribed into a grid, rendered
+  through this system's C2C writer, and reproduced row for row
+  (including asymmetric rows 7/8/9) — complementing the cherry fixture's
+  cluster-count check by pinning the in-row color reading direction.
+- **Flat-seam hint for tiny openings in assembly text**: limb steps with
+  an opening of 6 stitches or fewer now add "small openings can be
+  flattened and sewn" (community practice, e.g. the lop-rabbit arms).
 
 - **Validator domain confusion (found by the calibration, two instances)**:
   real patterns contain 22/16/9/14-stitch rounds that are perfectly

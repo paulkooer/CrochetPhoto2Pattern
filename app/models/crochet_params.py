@@ -610,7 +610,11 @@ def build_assembly(part_names, skirt_style: str = "ring",
 
     def opening_note(name: str) -> str:
         n = openings.get(name)
-        return f"（开口 {n} 针）" if n else ""
+        if not n:
+            return ""
+        # 垂耳兔等社区图解惯例：极小开口捏扁缝合（可免填充）
+        flat = "，小开口可捏扁缝合" if n <= 6 else ""
+        return f"（开口 {n} 针{flat}）"
 
     def placement(name: str, paired: str, single: str, many: str) -> str:
         quantity = max(1, int(quantities.get(name, 1)))
