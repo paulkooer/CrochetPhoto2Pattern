@@ -566,15 +566,40 @@ def refresh_derived(params: dict) -> dict:
     quantities = {_part_name(p): _part_quantity(p) for p in parts}
     params["assembly_instructions"] = build_assembly(
         set(quantities), params.get("skirt_style", "ring"), quantities,
-        params.get("assembly_plan"))
+        params.get("assembly_plan"), openings=_openings_by_part(parts))
     return params
+
+
+def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
+    """各部件的开口针数（末圈针数）——完全收口的部件不计入。
+
+    专业图解装配段的通行惯例：缝合前先报开口针数（"sew the remaining
+    12 sts to the body"）。球体头部以"勒紧收口"完全闭合，无开口；
+    圆柱四肢以"断线留15cm用于缝合"收尾留口；帽/裙明确不收口。
+    """
+    openings: dict[str, int] = {}
+    for p in parts:
+        rounds = _part_rounds(p)
+        if not rounds:
+            continue
+        last = rounds[-1]
+        if "收口" in str(last.get("notes") or ""):
+            continue
+        openings[_part_name(p)] = _round_stitches(last)
+    return openings
 
 
 def build_assembly(part_names, skirt_style: str = "ring",
                    quantities: dict[str, int] | None = None,
-                   assembly_plan: dict[str, Any] | None = None) -> str:
+                   assembly_plan: dict[str, Any] | None = None,
+                   openings: dict[str, int] | None = None) -> str:
     """Build assembly text from the v2 graph, with a legacy name fallback."""
     quantities = quantities or {}
+    openings = openings or {}
+
+    def opening_note(name: str) -> str:
+        n = openings.get(name)
+        return f"（开口 {n} 针）" if n else ""
 
     def placement(name: str, paired: str, single: str, many: str) -> str:
         quantity = max(1, int(quantities.get(name, 1)))
@@ -599,23 +624,30 @@ def build_assembly(part_names, skirt_style: str = "ring",
             steps.append("用隐形缝合法将头部接合到身体顶部")
         if "手臂" in part_names:
             steps.append(placement(
-                "手臂", "手臂对称缝合到身体两侧上方",
-                "手臂缝合到身体一侧上方", "均匀缝合到身体上部"))
+                "手臂", f"手臂对称缝合到身体两侧上方{opening_note('手臂')}",
+                f"手臂缝合到身体一侧上方{opening_note('手臂')}",
+                f"均匀缝合到身体上部{opening_note('手臂')}"))
         if "腿部" in part_names:
             steps.append(placement(
-                "腿部", "腿部对称缝合到身体底部",
-                "腿部缝合到身体底部", "均匀缝合到身体底部"))
+                "腿部", f"腿部对称缝合到身体底部{opening_note('腿部')}",
+                f"腿部缝合到身体底部{opening_note('腿部')}",
+                f"均匀缝合到身体底部{opening_note('腿部')}"))
         if "耳朵" in part_names:
             steps.append(placement(
                 "耳朵", "耳朵对称缝合在头部两侧",
                 "耳朵缝合在头部一侧", "均匀缝合在头部周围"))
         if "帽子" in part_names:
-            steps.append("帽口不收口，直接戴在头部（试戴后可缝合固定）")
+            hat_n = openings.get("帽子")
+            hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
+            steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
         if "裙子" in part_names:
             if skirt_style == "attached":
                 steps.append("裙子已挑后半针钩在身体腰部，无需缝合")
             else:
-                steps.append("裙筒腰部套入身体后缝合固定（腰部为开口起针）")
+                skirt_n = openings.get("裙子")
+                skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
+                steps.append(f"裙筒腰部{skirt_open}套入身体后缝合固定"
+                             "（腰部为开口起针）")
         if "尾巴" in part_names:
             steps.append("尾巴缝合在身体后方")
         return "\n".join(f"{i}. {s}" for i, s in enumerate(steps, 1))
@@ -653,25 +685,30 @@ def build_assembly(part_names, skirt_style: str = "ring",
             steps.append("用隐形缝合法将头部接合到身体顶部")
         elif source == "手臂" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(placement(
-                "手臂", f"手臂对称缝合到{target_label}两侧上方",
-                f"手臂缝合到{target_label}一侧上方",
-                f"均匀缝合到{target_label}上部"))
+                "手臂", f"手臂对称缝合到{target_label}两侧上方{opening_note('手臂')}",
+                f"手臂缝合到{target_label}一侧上方{opening_note('手臂')}",
+                f"均匀缝合到{target_label}上部{opening_note('手臂')}"))
         elif source == "腿部" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(placement(
-                "腿部", f"腿部对称缝合到{target_label}底部",
-                f"腿部缝合到{target_label}底部",
-                f"均匀缝合到{target_label}底部"))
+                "腿部", f"腿部对称缝合到{target_label}底部{opening_note('腿部')}",
+                f"腿部缝合到{target_label}底部{opening_note('腿部')}",
+                f"均匀缝合到{target_label}底部{opening_note('腿部')}"))
         elif source == "耳朵" and target in ("头部", _ONE_PIECE_NAME):
             steps.append(placement(
                 "耳朵", "耳朵对称缝合在头部两侧",
                 "耳朵缝合在头部一侧", "均匀缝合在头部周围"))
         elif source == "帽子" and target in ("头部", _ONE_PIECE_NAME):
-            steps.append("帽口不收口，直接戴在头部（试戴后可缝合固定）")
+            hat_n = openings.get("帽子")
+            hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
+            steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
         elif source == "裙子" and target in ("身体", _ONE_PIECE_NAME):
             if skirt_style == "attached":
                 steps.append(f"裙子已挑后半针钩在{target_label}腰部，无需缝合")
             else:
-                steps.append(f"裙筒腰部套入{target_label}后缝合固定（腰部为开口起针）")
+                skirt_n = openings.get("裙子")
+                skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
+                steps.append(f"裙筒腰部{skirt_open}套入{target_label}后缝合固定"
+                             "（腰部为开口起针）")
         elif source == "尾巴" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(f"尾巴缝合在{target_label}后方")
         else:
@@ -1162,7 +1199,8 @@ class CrochetParamsGenerator:
         quantities = {p["name"]: _part_quantity(p) for p in part_dicts}
         assembly_plan = structure_connection_plan(structure or {})
         assembly = build_assembly(
-            part_names, style.skirt_style, quantities, assembly_plan)
+            part_names, style.skirt_style, quantities, assembly_plan,
+            openings=_openings_by_part(part_dicts))
 
         # F13 生成门禁：生成器自己产出的图解必须通过自检，代数矛盾
         # 在此处拦截（而不是等到结果页才显示警告）

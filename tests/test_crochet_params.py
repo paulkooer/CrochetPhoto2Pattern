@@ -758,3 +758,41 @@ def test_generated_params_eye_size_tracks_head_slider():
     params = _params_for(["头部", "身体"], head_d=15.0)
     eye = next(m for m in params["materials"] if m["item"] == "安全眼")
     assert "(14mm)" in eye["quantity"]
+
+
+# ── 装配说明开口针数（专业图解惯例：缝合前先报开口针数）─────────────────────
+
+def test_assembly_mentions_opening_stitch_counts():
+    """四肢末圈开口针数进入装配文案；完全收口的头部不报开口。"""
+    params = _params_for(["头部", "身体", "手臂", "腿部"])
+    asm = params["assembly_instructions"]
+    assert "手臂对称缝合到身体两侧上方（开口" in asm
+    assert "腿部对称缝合到身体底部（开口" in asm
+    # 球体头部勒紧收口（末圈 6 针带收口注记）——无开口可言
+    assert "头部接合到身体顶部" in asm
+    assert "头部接合到身体顶部（开口" not in asm
+    arms = next(p for p in params["parts"] if p["name"] == "手臂")
+    last_n = arms["rounds"][-1]["stitches"]
+    assert f"（开口 {last_n} 针）" in asm   # 与末圈针数一致
+
+
+def test_assembly_hat_skirt_report_opening_counts():
+    """帽口/裙腰为明确开口部件——装配文案报针数（不收口部件的缝合边）。"""
+    params = _params_for(["头部", "帽子"])
+    asm = params["assembly_instructions"]
+    hat = next(p for p in params["parts"] if p["name"] == "帽子")
+    assert f"帽口 {hat['rounds'][-1]['stitches']} 针不收口" in asm
+    params = _params_for(["头部", "身体", "裙子"])
+    asm = params["assembly_instructions"]
+    skirt = next(p for p in params["parts"] if p["name"] == "裙子")
+    assert f"（{skirt['rounds'][-1]['stitches']} 针开口）" in asm
+
+
+def test_refresh_derived_rebuilds_opening_counts_from_edited_parts():
+    """JSON 修正（删手臂）后装配重算：开口注记不再残留被删部件。"""
+    from app.models.crochet_params import refresh_derived
+    params = _params_for(["头部", "身体", "手臂"])
+    edited = {**{k: v for k, v in params.items() if k != "parts"},
+              "parts": [p for p in params["parts"] if p["name"] != "手臂"]}
+    out = refresh_derived(edited)
+    assert "手臂" not in out["assembly_instructions"]

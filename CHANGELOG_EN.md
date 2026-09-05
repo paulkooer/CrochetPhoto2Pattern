@@ -92,6 +92,14 @@ formats may still evolve during Beta; incompatible changes must include migratio
   community standard in another language; the same site's big teddy head
   uses ВПП (lifting chain) joined rounds, whose aggregate counts are
   identical to spiral work, so the validator needs no distinction.
+- **Opening stitch counts flow into the assembly text** (`build_assembly`
+  gains an `openings` parameter): professional assembly sections state
+  the opening size before sewing ("sew the remaining 12 sts"). Limb
+  steps now read "sew ... (opening: N sts)" with N = the part's last
+  round; hat brims and skirt waists report their exact stitch counts;
+  the fully cinched sphere head honestly reports none. Recomputed by
+  refresh_derived after JSON edits; callers without the parameter keep
+  the previous wording.
 
 ### Fixed
 
