@@ -25,6 +25,12 @@
 - CYC Project Levels（官方难度四级 Basic/Easy/Intermediate/Complex）：
   difficulty 显示标签（DIFFICULTY_LABELS_*）按其定义对齐。
   https://www.craftyarncouncil.com/standards/skill-levels
+- kruchcom.ru 泰迪熊指偶（俄语圈逐字原文：КА 环起 6 针、6 ПРИБ、
+  R5-9 平针 24——同一社区标准的跨语言验证；СБН=短针、ПРИБ=加针）。
+  https://kruchcom.ru/archives/22215
+- r/Amigurumi 眼睛 wiki（社区安全眼分档：迷你 5–6mm / 常规 8–12mm /
+  大型 14–20mm+）——安全眼随头径分档以此校准。
+  https://www.reddit.com/r/Amigurumi/wiki/faq_eyeqs/
 - Supergurumi「The Chubby Bee」蜜蜂玩偶（德国专业设计工作室）：55 圈
   头身一体（66 针峰值）、黄黑条纹逐圈换色、BLO 脊线圈、"1 短针"螺旋
   移位圈、错位增减圈、3 针递减奇数收尾序列（33→…→9→6）；纱线
@@ -615,3 +621,28 @@ def test_bee_anchor_cites_catania_cotton_meterage():
     from app.models.gauge import PRESETS, Gauge
     assert PRESETS["fine"].meters_per_100g == 250.0
     assert Gauge(18.0, 20.0).meters_per_100g == 250.0
+
+
+# ── 俄语圈印证（kruchcom.ru，全球玩偶图解传播量最大的语种之一）──────────────
+# 泰迪熊指偶（«Мишка-косолапый»）逐字原文：Ряд №1: 6 СБН в КА；
+# Ряд №2: 6 ПРИБ. (12)；Ряды №5-9: без прибавок, 24 СБН。
+# 术语对照：СБН=短针、ПРИБ=加针、УБАВ=减针、КА=кольцо амигуруми（魔法环）。
+# R3-R4 按 +6 节奏补全（R2=12 → R5-9=24 区间的唯一合理解，已注明推断）。
+# 另：同站大熊头部用 ВПП（起立锁针）逐圈引拔——俄语圈常见引拔钩法；
+# 聚合计数与螺旋钩完全一致，校验器无需区分。
+# https://kruchcom.ru/archives/22215
+
+def test_russian_finger_puppet_rounds_pass_validation():
+    """俄语圈 КА 环起 6 针 +6 节奏：跨语言验证同一社区标准，零提示。"""
+    head = {"name": "头部", "type": "sphere", "color": "棕色",
+            "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 6},                    # 6 СБН в КА
+                {"row": 2, "stitches": 12, "increase": 6},    # 6 ПРИБ (12)
+                {"row": 3, "stitches": 18, "increase": 6},    # +6 节奏补全
+                {"row": 4, "stitches": 24, "increase": 6},    # +6 节奏补全
+                *({"row": r, "stitches": 24} for r in range(5, 10)),
+            ]}
+    result = validate_pattern({"parts": [head]})
+    assert result["ok"], result["issues"]
+    assert not result["notes"]   # 标准 +6 节奏：零 issues 零 notes

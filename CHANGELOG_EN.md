@@ -86,6 +86,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
   sl st into a ring (Supergurumi's written form) and chain 2, work the
   first round into the 2nd ch (community standard, Hobbii's "Easy
   Alternative to the Magic Ring").
+- **Cross-language verification from the Russian tradition**
+  (kruchcom.ru teddy finger puppet, verbatim): КА (amigurumi ring)
+  6-stitch start, 6 ПРИБ (increases), plain 24-st rounds — the same
+  community standard in another language; the same site's big teddy head
+  uses ВПП (lifting chain) joined rounds, whose aggregate counts are
+  identical to spiral work, so the validator needs no distinction.
 
 ### Fixed
 
