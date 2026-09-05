@@ -13,22 +13,17 @@ correctness checking 理念：把"代数自洽"从测试层暴露给用户。
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .gauge import gauge_from_mapping
 
 
-def _rounds_of(part: Any) -> List[Dict[str, Any]]:
-    rounds = part.get("rounds", []) if isinstance(part, dict) else getattr(
-        part, "rounds", [])
-    out = []
-    for r in rounds:
-        out.append(r if isinstance(r, dict) else (
-            r.model_dump() if hasattr(r, "model_dump") else {}))
-    return out
+def _rounds_of(part: dict[str, Any]) -> list[dict[str, Any]]:
+    """parts 已统一为 dict 形态（见 crochet_params._build_result 双态收敛）。"""
+    return list(part.get("rounds", []))
 
 
-def shaping_policy_for_pattern(params: Dict[str, Any]) -> Dict[str, Any]:
+def shaping_policy_for_pattern(params: dict[str, Any]) -> dict[str, Any]:
     """Derive trusted shaping policy from gauge, never editable metadata."""
     gauge = gauge_from_mapping(params.get("gauge"))
     return {
@@ -38,12 +33,12 @@ def shaping_policy_for_pattern(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def shaping_limit_for_pattern(params: Dict[str, Any]) -> int:
+def shaping_limit_for_pattern(params: dict[str, Any]) -> int:
     """Compatibility helper returning the trusted per-round stitch cap."""
     return int(shaping_policy_for_pattern(params)["max_stitch_change"])
 
 
-def validate_pattern(params: Dict[str, Any]) -> Dict[str, Any]:
+def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
     """校验图解代数自洽 + 物理边界。返回 {"ok", "issues", "checked"}。
 
     两类检查解耦（V2）：
@@ -54,13 +49,12 @@ def validate_pattern(params: Dict[str, Any]) -> Dict[str, Any]:
       CrochetStitch.allow_wide_jump 显式置位豁免（如波浪裙摆
       "每针放2针"），否则视为生成器缺陷。
     """
-    issues: List[str] = []
+    issues: list[str] = []
     checked = 0
     shaping_policy = shaping_policy_for_pattern(params)
     max_change = int(shaping_policy["max_stitch_change"])
     for part in params.get("parts", []):
-        name = (part.get("name") if isinstance(part, dict)
-                else getattr(part, "name", "?"))
+        name = part.get("name", "?")
         rounds = _rounds_of(part)
         if not rounds:
             issues.append(f"{name}: 没有任何圈")

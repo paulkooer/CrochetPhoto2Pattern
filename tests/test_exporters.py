@@ -24,11 +24,11 @@ def test_export_rounds_table_rows_match_len_rounds():
     """部件标题圈数 = len(rounds)（rows 派生后的渲染一致性）。"""
     params, _ = _sample_params()
     md = export_markdown(params)
-    head = [p for p in params["parts"] if p.name == "头部"][0]
-    assert f"## 🧶 头部 ({len(head.rounds)} 圈)" in md
+    head = [p for p in params["parts"] if p["name"] == "头部"][0]
+    assert f"## 🧶 头部 ({len(head['rounds'])} 圈)" in md
     # 表格行数 = 圈数（表头 2 行除外）
     table_rows = [ln for ln in md.splitlines() if ln.startswith("|")]
-    assert len(table_rows) >= sum(len(p.rounds) for p in params["parts"]) + 2 * len(params["parts"])
+    assert len(table_rows) >= sum(len(p["rounds"]) for p in params["parts"]) + 2 * len(params["parts"])
 
 
 def test_export_accepts_dict_parts_after_json_edit():
@@ -36,7 +36,7 @@ def test_export_accepts_dict_parts_after_json_edit():
     params, analysis = _sample_params()
     edited = {
         **{k: v for k, v in params.items() if k != "parts"},
-        "parts": [p.model_dump() for p in params["parts"]],
+        "parts": list(params["parts"]),
     }
     md = export_markdown(edited, analysis)
     assert "## 🧶 头部" in md
@@ -44,8 +44,8 @@ def test_export_accepts_dict_parts_after_json_edit():
 
 def test_export_states_symmetric_part_copy_count():
     params, analysis = _sample_params()
-    arms = next(p for p in params["parts"] if p.name == "手臂")
-    assert arms.quantity == 2
+    arms = next(p for p in params["parts"] if p["name"] == "手臂")
+    assert arms["quantity"] == 2
     md = export_markdown(params, analysis)
     assert "手臂 × 2 个" in md
     assert "制作数量**：2 个相同部件" in md

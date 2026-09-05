@@ -42,6 +42,63 @@
 - Linux pose 在构造 MediaPipe 对象前检查 EGL/GLESv2，缺失时安全回退；
   extras CI 安装原生运行库并执行真实 `mp.Image` 桥接冒烟测试。
 
+### Fixed
+
+- 共享部署上用户 API Key 不再可能被服务器环境的 `OPENAI_BASE_URL` /
+  `ANTHROPIC_BASE_URL` 静默接管：用户 Key 未填 Base URL 时显式配对官方
+  默认端点（SDK 不再回落读取环境变量）。
+- 上传图片资源上限真正生效：`.streamlit/config.toml` 增加
+  `server.maxUploadSize = 20`，解码后立即降采样到 2048px 再合成白底与
+  缓存，JPEG 按 draft 比例解码——39.7MP 合法 PNG 的 +650MB 解码/合成
+  峰值不再出现，结果页预览不再全尺寸传输。
+- Mock 演示模式标注诚实化：UI、CLI 与 `vision_meta` 一致改为
+  "体型与部件为固定演示值，配色与分段参考照片"（旧文案"与照片内容
+  无关"与实际行为不符）。
+- 解析模式改为显式三态 `vision_mode`（ai / local / mock）：库层不再靠
+  "有没有 Key"隐式推导，Mock 与 Key 状态完全解耦且绝不发起 API 调用；
+  `.env.example` 占位 Key（`sk-your-key-here`）不再被视为已配置。
+- 模型可控自由文本（主要特征、识别部件、装配说明、材料清单回退行）
+  改为纯文本渲染或转义输出，图片内文字注入无法再借 Markdown 链接/
+  图片语法进入页面。
+- SQLite 历史库连接用 `contextlib.closing` 确保关闭（消除 Python 3.13+
+  ResourceWarning），建表与旧库迁移每个文件只执行一次。
+
+### Changed
+
+- 新增 `PatternResult` pydantic 模型作为结果字典的单一契约：orchestrator、
+  CLI 两个分支、手动输入、快速调尺寸、备份导入共 6 处手写字典全部收口；
+  备份与分享 token 携带 `schema_version`，分享解码拒绝未来版本。
+- Vision 结构化输出改用独立的 `VisionOutput` 契约（与内部 `ImageAnalysis`
+  分离）：枚举字段用 `Literal` 约束，不再携带模型无权填写的
+  `recommended_colors`，并直接索取 `head_to_height_ratio`（替代"固定
+  18.0 画布"的间接比例换算）；旧 prompt 厘米形态仅在无 schema 回退
+  路径容忍转换。
+- 新增 `PartKind` `StrEnum` 与中英显示标签表：部件的英文领域主键
+  （= 结构 v2 part_id）与中文规范名从此单一来源派生，为 i18n 迁移
+  铺路；`PART_NAMES` 数值保持不变。
+- CI 新增 `type-check` job：`mypy` 纳入 dev 依赖，app 全包 37 文件
+  0 错误为基线（配置见 `[tool.mypy]`），防止类型回归。
+- `params["parts"]` 在内存中统一为 dict 形态（与落盘/分享/历史一致）：
+  `_part_name`/`_part_rounds`/`_part_quantity`/`_round_stitches` 及
+  validator、导出、PDF、环形图中的 dict/模型双态分支全部移除，
+  CrochetPart/CrochetStitch 仅作校验与构造层。
+- Vision SDK 超时预算收敛：60s×3 次重试 → 40s×1（两家 provider 回退后
+  最坏 ≈2.7 分钟，此前接近 8 分钟）；`openai` 增加上界 `<4`，
+  `anthropic` 增加上界 `<1`（1.x 是 httpx2 底座的破坏性升级）。
+- Dockerfile 改为多阶段构建：依赖按 `uv.lock` 精确安装（不再
+  `pip install .` 现场解析最新版）、依赖层缓存、非 root 用户运行、
+  内置 `/_stcore/health` HEALTHCHECK。
+- CI 三个 workflow 统一迁移到 `astral-sh/setup-uv@v7` 并开启缓存
+  （`setup-python` 的 pip 缓存对 uv 管理的环境无效）；新增 Dependabot
+  （pip + github-actions 每周）；ruff 启用 UP / SIM 规则集并清理
+  全部存量（typing 现代化 + 可简化分支）。
+- 历史审查快照（audit-brief*、handoff-review、optimization-brief、audits）
+  移入 `docs/archive/`；按审查轮次命名的测试文件改为按覆盖范围命名
+  （test_round12/14/15 → test_validator_c2c_materials /
+  test_exports_share_cli / test_export_disclaimers_history）。
+- 测试历史库改用每用例独立 `tmp_path`，并行/多用户环境不再共享
+  `/tmp` 固定路径。
+
 ### Planned
 
 - 采集授权真实图片并执行首份评测报告，建立实体试钩基线。

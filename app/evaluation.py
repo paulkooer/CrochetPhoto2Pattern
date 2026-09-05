@@ -13,10 +13,10 @@ import platform
 import re
 import sys
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -26,7 +26,7 @@ from app.schemas import PART_NAMES
 from app.utils.images import MAX_UPLOAD_MB, load_image_file
 
 MANIFEST_NAME = "eval_manifest.json"
-MANIFEST_SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = Literal[1]
 REPORT_SCHEMA_VERSION = 1
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
@@ -50,12 +50,12 @@ class DatasetMetadata(_StrictModel):
     evaluation_use_approved: Literal[True]
     contains_personal_data: bool
     retention_policy: str = Field(min_length=1, max_length=500)
-    notes: Optional[str] = Field(default=None, max_length=1000)
+    notes: str | None = Field(default=None, max_length=1000)
 
 
 class ExpectedLabels(_StrictModel):
     parts: list[str] = Field(min_length=1, max_length=len(PART_NAMES))
-    flare: Optional[bool] = None
+    flare: bool | None = None
     dominant_colors: list[str] = Field(default_factory=list, max_length=3)
 
     @field_validator("parts")
@@ -86,7 +86,7 @@ class EvaluationCase(_StrictModel):
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     expected: ExpectedLabels
     tags: list[str] = Field(min_length=1, max_length=12)
-    notes: Optional[str] = Field(default=None, max_length=500)
+    notes: str | None = Field(default=None, max_length=500)
 
     @field_validator("file")
     @classmethod
@@ -126,7 +126,7 @@ class EvaluationManifest(_StrictModel):
     cases: list[EvaluationCase] = Field(min_length=1, max_length=MAX_CASES)
 
     @model_validator(mode="after")
-    def _unique_case_identity(self) -> "EvaluationManifest":
+    def _unique_case_identity(self) -> EvaluationManifest:
         ids = [case.id for case in self.cases]
         files = [case.file for case in self.cases]
         if len(set(ids)) != len(ids):
@@ -212,7 +212,7 @@ def _default_local_runner() -> EvaluationRunner:
     def _run(image: Image.Image) -> dict[str, Any]:
         return orchestrator.run_full_pipeline(
             image,
-            local_vision=True,
+            vision_mode="local",
             target_height_cm=18.0,
             target_height_source="evaluation_reference",
         )
@@ -228,7 +228,7 @@ def _part_metrics(expected: set[str], actual: set[str]) -> tuple[float, float, f
     return precision, recall, f1
 
 
-def _mean(values: list[float]) -> Optional[float]:
+def _mean(values: list[float]) -> float | None:
     return round(sum(values) / len(values), 4) if values else None
 
 
@@ -242,7 +242,7 @@ def _application_version() -> str:
 def evaluate_dataset(
     dataset_dir: str | Path,
     *,
-    runner: Optional[EvaluationRunner] = None,
+    runner: EvaluationRunner | None = None,
 ) -> dict[str, Any]:
     """Evaluate every frozen case and return a report without hiding failures."""
     _root, manifest, prepared = load_evaluation_dataset(dataset_dir)
@@ -382,7 +382,7 @@ def evaluate_dataset(
     )
     return {
         "report_schema_version": REPORT_SCHEMA_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "application_version": _application_version(),
         "evaluator": {
             "mode": "local_vision",
@@ -430,7 +430,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         report = evaluate_dataset(args.dataset)

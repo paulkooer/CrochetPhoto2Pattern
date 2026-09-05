@@ -15,7 +15,7 @@ import streamlit as st
 from app.models.colors import YARN_COLORS
 from app.models.crochet_params import refresh_derived
 from app.models.geometry import normalize_structure
-from app.schemas import PART_NAMES, CrochetPart, CrochetStitch, ImageAnalysis
+from app.schemas import PART_NAMES, CrochetPart, CrochetStitch, ImageAnalysis, PatternResult
 from app.utils.exporters import export_markdown
 from app.utils.share import _BACKUP_KEYS
 
@@ -37,6 +37,16 @@ _INVISIBLE_RE = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
 def _strip_invisible(text: str) -> str:
     return _INVISIBLE_RE.sub("", text)
+
+
+def _plain_text(value) -> str:
+    """模型可控文本 → 安全展示字符串（去零宽/BiDi 控制符）。
+
+    凡是 LLM/结构 JSON 可写的自由文本，一律经 st.text 纯文本渲染或
+    html.escape 后才进入输出——st.write/st.markdown 会渲染链接与图片
+    语法，是图片内文字注入的展示面。
+    """
+    return _strip_invisible(str(value))
 
 
 def _result_profile(result: dict):
@@ -74,7 +84,11 @@ def _yarn_chip_html(name: str) -> str:
 
 
 def _rebuild_params(corrected: dict) -> dict:
-    """把用户 JSON 中的 parts 重建为 CrochetPart 并重算派生量（regen/导入共用）。"""
+    """把用户 JSON 中的 parts 重建为 CrochetPart 并重算派生量（regen/导入共用）。
+
+    CrochetPart 只作校验器：重建后立即 dump 回 dict——params["parts"]
+    的内存形态与落盘/分享/历史形态一致（双态收敛，见 _build_result）。
+    """
     rebuilt_parts = []
     for p in corrected.get("parts", []):
         p = dict(p)  # 不原地改动用户输入
@@ -82,7 +96,7 @@ def _rebuild_params(corrected: dict) -> dict:
         # rows 由 len(rounds) 派生（schema 已无该字段），丢弃过期值防失同步。
         p.pop("rows", None)
         rounds = [CrochetStitch(**r) for r in raw_rounds]
-        rebuilt_parts.append(CrochetPart(rounds=rounds, **p))
+        rebuilt_parts.append(CrochetPart(rounds=rounds, **p).model_dump())
     corrected["parts"] = rebuilt_parts
     # 时长/总针数/材料克数是 parts 的派生量，必须随编辑重算。
     refresh_derived(corrected)
@@ -99,7 +113,7 @@ def purge_result_state(result: dict) -> None:
     if not rid:
         return
     for key in list(st.session_state.keys()):
-        if key.startswith(tuple(p + rid for p in _WIDGET_KEY_PREFIXES)):
+        if str(key).startswith(tuple(p + rid for p in _WIDGET_KEY_PREFIXES)):
             del st.session_state[key]
 
 
@@ -159,14 +173,18 @@ def render_results(result: dict, slot: str) -> None:
         st.caption(
             f"📐 单图轮廓观测 · 置信度 {float(silhouette.get('confidence', 0)):.0%}"
             "；深度按旋转体假设补充，可在尺寸与结构区继续修正。")
-    st.write("**主要特征**:", ", ".join(analysis["main_features"]))
-    st.write("**识别部件**:", ", ".join(analysis["parts"]))
+    st.text("主要特征: "
+            + ", ".join(_plain_text(f) for f in analysis["main_features"]))
+    st.text("识别部件: "
+            + ", ".join(_plain_text(p) for p in analysis["parts"]))
 
     # 规范名之外的部件会被降级为小球处理——只在日志里提示用户看不见，
-    # 这里补一条 UI 内提示
+    # 这里补一条 UI 内提示（部件名模型可写，caption 前先转义）
     unknown = [p for p in analysis.get("parts", []) if p not in PART_NAMES]
     if unknown:
-        st.caption(f"⚠️ 未识别的部件 {('、'.join(unknown))} 将按小配件（球）处理")
+        st.caption("⚠️ 未识别的部件 "
+                   + "、".join(html.escape(_plain_text(p)) for p in unknown)
+                   + " 将按小配件（球）处理")
 
     # Vision 调用的 token 用量（仅照片 Tab 的真实解析路径会有值）
     usage = result.get("usage") or {}
@@ -179,7 +197,8 @@ def render_results(result: dict, slot: str) -> None:
     # 解析来源透明展示：AI（LLM）/ 本地估算 / Mock 三类（vision_meta）
     vmeta = result.get("vision_meta") or {}
     if vmeta.get("source") == "mock":
-        st.caption("🎬 Mock 演示数据（与照片内容无关，仅供体验流程）")
+        st.caption("🎬 Mock 演示数据（体型与部件为固定演示值，"
+                   "配色与分段参考照片，仅供体验流程）")
     elif vmeta.get("source"):
         source = vmeta["source"]
         label = {
@@ -313,8 +332,7 @@ def render_results(result: dict, slot: str) -> None:
         "螺旋钩法（不引拔不翻转），每圈第一针挂记号扣；减针建议隐形减针（只挑前半针）"
     )
     physical_parts = sum(
-        max(1, int((part.model_dump() if hasattr(part, "model_dump") else part).get(
-            "quantity", 1)))
+        max(1, int(part.get("quantity", 1)))
         for part in params.get("parts", []))
     estimated_minutes = max(0, int(params.get("estimated_time_minutes") or 0))
     summary_a, summary_b, summary_c = st.columns(3)
@@ -365,15 +383,15 @@ def render_results(result: dict, slot: str) -> None:
                       f"{html.escape(qty)}</span>",
                     unsafe_allow_html=True)
             else:
-                st.write(f"  - {item}: {qty}")
+                st.text(f"  - {item}: {qty}")
         else:
-            st.write(f"  - {mat}")
+            st.text(f"  - {mat}")
 
     # 同名部件（历史坏结果/JSON 编辑复制部件）会生成冲突 widget key → 整页
     # 崩溃；重名时追加序号后缀。正常结果首个部件不带后缀，key 保持稳定。
     seen_names: dict = {}
     for part in params.get("parts", []):
-        part_data = part.model_dump() if hasattr(part, "model_dump") else part
+        part_data = part
         name = part_data.get("name", "?")
         seen_names[name] = seen_names.get(name, 0) + 1
         suffix = "" if seen_names[name] == 1 else f"_{seen_names[name]}"
@@ -442,9 +460,8 @@ def render_results(result: dict, slot: str) -> None:
                         if _strip:
                             st.markdown("**逐圈符号条**（×=X · V=加针 · A=减针）")
                             _components2.html(_strip, height=min(
-                                30 + 16 * min(len(part.get("rounds", [])
-                                              if isinstance(part, dict)
-                                              else part.rounds), 24) + 10, 560),
+                                30 + 16 * min(len(part.get("rounds", [])), 24)
+                                + 10, 560),
                                 scrolling=True)
                     except Exception as e:  # 可视化失败不影响主流程
                         st.caption(f"顶视图不可用: {e}")
@@ -468,8 +485,7 @@ def render_results(result: dict, slot: str) -> None:
                 if quantity > 1:
                     st.markdown(f"**第 {copy} 个 {part_data['name']}**")
                 for i, r in enumerate(rounds_list):
-                    rd = (r if isinstance(r, dict) else r.model_dump()
-                          if hasattr(r, "model_dump") else {})
+                    rd = r
                     inc_str = f"+{rd['increase']}" if rd.get("increase") else ""
                     dec_str = f"-{rd['decrease']}" if rd.get("decrease") else ""
                     change = f" ({inc_str}{dec_str})" if (inc_str or dec_str) else ""
@@ -482,8 +498,10 @@ def render_results(result: dict, slot: str) -> None:
 
     # Section 4: Assembly
     st.subheader("4️⃣ 装配说明")
+    # 装配文本内嵌部件名（模型/结构 JSON 可写）——纯文本渲染，
+    # 不经 Markdown（链接/图片语法不生效）
     asm = params.get("assembly_instructions") or ""
-    st.markdown(asm if isinstance(asm, str) else str(asm))
+    st.text(asm if isinstance(asm, str) else str(asm))
 
     # Section 5: Edit & Re-generate
     st.subheader("5️⃣ 局部修正")
@@ -548,22 +566,23 @@ def render_results(result: dict, slot: str) -> None:
                 if slot in st.session_state:
                     purge_result_state(st.session_state[slot])
                 _new_rid = uuid.uuid4().hex[:12]
-                st.session_state[slot] = {
-                    "analysis": _new_analysis.model_dump(),
-                    "structure": _structure,
-                    "params": _new_params,
-                    "result_id": _new_rid,
-                    "usage": result.get("usage") or {},
-                    "vision_meta": result.get("vision_meta") or {},
-                    "gauge": result.get("gauge") or {},
-                    "style": result.get("style") or _st_def,
-                    "color_bands": result.get("color_bands"),
-                    "spans": result.get("spans"),
-                    "spans_measured": result.get("spans_measured") or [],
-                    "preview": result.get("preview"),
-                    "sizing": _new_sizing,
-                    "geometry": result.get("geometry"),
-                }
+                # 键集走 PatternResult 契约（schemas.py），不再手抄
+                st.session_state[slot] = PatternResult(
+                    analysis=_new_analysis.model_dump(),
+                    structure=_structure,
+                    params=_new_params,
+                    result_id=_new_rid,
+                    usage=result.get("usage") or {},
+                    vision_meta=result.get("vision_meta") or {},
+                    gauge=result.get("gauge") or {},
+                    style=result.get("style") or _st_def,
+                    color_bands=result.get("color_bands"),
+                    spans=result.get("spans"),
+                    spans_measured=result.get("spans_measured") or [],
+                    preview=result.get("preview"),
+                    sizing=_new_sizing,
+                    geometry=result.get("geometry"),
+                ).to_result_dict()
                 # 成功标志必须以"新" result_id 为键：rerun 后 render_results
                 # 按新 rid 组键弹出（旧 rid 已被替换，旧键永远弹不出来）
                 st.session_state[f"sz_{_new_rid}_ok"] = True
@@ -747,19 +766,16 @@ def render_results(result: dict, slot: str) -> None:
                     # 只替换当前槽位；另一个 Tab 的结果不受影响
                     if slot in st.session_state:
                         purge_result_state(st.session_state[slot])
-                    imported = {
+                    # F24/G1：非重建键按 _BACKUP_KEYS 从备份数据回填——
+                    # 旧版 setdefault(k, None) 把 style/gauge 等全写 None。
+                    # 键集由 PatternResult 契约定义（旧格式缺键 → None 兜底）。
+                    imported = PatternResult.from_result({
+                        **data,
                         "analysis": restored_analysis,
                         "structure": restored_structure,
                         "params": restored_params,
                         "result_id": uuid.uuid4().hex[:12],
-                    }
-                    # F24/G1：按 _BACKUP_KEYS 从备份数据回填其余键——
-                    # 旧版 setdefault(k, None) 把 style/gauge 等全写 None。
-                    # analysis/structure/params 已在上面校验/重建，此处
-                    # 不覆盖（旧格式备份缺键 → None 兜底）。
-                    for k in _BACKUP_KEYS:
-                        if k not in ("analysis", "structure", "params"):
-                            imported[k] = data.get(k)
+                    }).to_result_dict()
                     st.session_state[slot] = imported
                     st.rerun()
                 except Exception as e:

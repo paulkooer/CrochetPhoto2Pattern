@@ -51,13 +51,13 @@ def test_generation_invariants_hold(head, height, gauge, mode, one, parts,
     v = validate_pattern(params)
     assert v["ok"], v["issues"]
     for part in params["parts"]:
-        for r in part.rounds:
-            assert r.stitches % 6 == 0            # 6 的倍数
-            assert r.stitches >= 6
-        sts = [r.stitches for r in part.rounds]
+        for r in part["rounds"]:
+            assert r["stitches"] % 6 == 0            # 6 的倍数
+            assert r["stitches"] >= 6
+        sts = [r["stitches"] for r in part["rounds"]]
         for a_, b, _prev_r, cur_r in zip(  # noqa: B905 - adjacent pairs truncate by design
                 sts, sts[1:],
-                part.rounds, part.rounds[1:]):
+                part["rounds"], part["rounds"][1:]):
             if not (getattr(cur_r, "allow_wide_jump", False)
                     or (isinstance(cur_r, dict) and cur_r.get("allow_wide_jump"))):
                 assert abs(b - a_) <= gauge.max_shaping_change

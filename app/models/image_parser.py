@@ -6,16 +6,43 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from PIL import Image
 
-from ..schemas import ImageAnalysis
+from ..schemas import ImageAnalysis, VisionOutput
 from .colors import nearest_yarn
 
 logger = logging.getLogger(__name__)
+
+# 官方默认 API 地址：用户 Key 未配 Base URL 时必须显式传入，而不是留空
+# 让 SDK 自己读 OPENAI_BASE_URL / ANTHROPIC_BASE_URL 环境变量——否则共享
+# 部署上运营者配置的中转站会静默接收用户的官方 Key（与 README 承诺相反）。
+OFFICIAL_OPENAI_BASE_URL = "https://api.openai.com/v1"
+OFFICIAL_ANTHROPIC_BASE_URL = "https://api.anthropic.com"
+
+# .env.example 里的占位 Key：用户复制模板后没改值时，不能当作"已配置"
+# （否则应用会带着占位符发真实请求并静默落进 Mock/报错路径）。
+_PLACEHOLDER_KEYS = frozenset({
+    "sk-your-key-here", "sk-ant-your-key-here",
+    "your-key-here", "your-api-key-here", "your-api-key",
+})
+
+# 交互路径预算：40s × (max_retries+1) × 2 家 provider ≈ 最坏 2.7 分钟，
+# 且 SDK 重试仅覆盖 429/5xx。旧值 60s×3 在 UI 进度条上不可接受。
+VISION_TIMEOUT_SECONDS = 40.0
+VISION_MAX_RETRIES = 1
+
+
+def env_api_key(name: str) -> str | None:
+    """Read an API key env var; empty strings and .env.example placeholders
+    count as "not configured"."""
+    value = (os.getenv(name) or "").strip()
+    if not value or value in _PLACEHOLDER_KEYS:
+        return None
+    return value
+
 
 # Load prompt template
 _PROMPT_DIR = Path(__file__).resolve().parent.parent / "prompts"
@@ -23,9 +50,10 @@ _PROMPT_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
 # Hardcoded fallback in case prompt file is missing
 _FALLBACK_VISION_PROMPT = """分析这张照片中的人物，输出严格 JSON 格式（不要输出任何其他文字）：
-{"body_type": "标准", "head_diameter_cm": 9.0, "height_cm": 18.0,
+{"body_type": "标准", "head_to_height_ratio": 0.25,
  "main_features": ["..."], "pose": "站立", "difficulty": "easy",
- "parts": ["头部", "身体", ...]}"""
+ "parts": ["头部", "身体", ...]}
+其中 head_to_height_ratio = 头部直径 ÷ 画面中的完整身高（0 到 1 之间）。"""
 
 
 def _load_prompt(name: str) -> str:
@@ -37,7 +65,7 @@ def _load_prompt(name: str) -> str:
     return _FALLBACK_VISION_PROMPT
 
 
-def _sanitize_secrets(text: str, *keys: Optional[str]) -> str:
+def _sanitize_secrets(text: str, *keys: str | None) -> str:
     """异常/日志文本脱敏（F14/F32）。
 
     依次替换当前实例持有的 Key（含前后缀级——服务端 401 回显常用
@@ -90,16 +118,22 @@ def _validate_user_base_url(value: str, provider: str) -> str:
 
 def _provider_config(
     provider: str,
-    supplied_key: Optional[str],
-    supplied_base_url: Optional[str],
+    supplied_key: str | None,
+    supplied_base_url: str | None,
     key_env: str,
     base_url_env: str,
-) -> tuple[Optional[str], Optional[str]]:
+    official_base_url: str,
+) -> tuple[str | None, str | None]:
     """Resolve one provider without mixing credentials from different sources.
 
     A user-controlled URL paired with a server environment key would send the
     server secret to that URL.  Keep UI/library credentials and endpoints as one
     pair; otherwise use the admin-controlled environment pair.
+
+    用户 Key 未配 Base URL 时显式传官方默认地址——留空会让 SDK 回落读取
+    OPENAI_BASE_URL/ANTHROPIC_BASE_URL 环境变量，把用户 Key 发往运营者的
+    中转站。环境 Key 未配 URL 时保持 None（管理员本来就可用官方环境变量
+    指向私有网关，那是一对同来源配置）。
     """
     user_key = (supplied_key or "").strip() or None
     user_base_url = (supplied_base_url or "").strip() or None
@@ -110,10 +144,10 @@ def _provider_config(
         )
     if user_key:
         validated = (_validate_user_base_url(user_base_url, provider)
-                     if user_base_url else None)
+                     if user_base_url else official_base_url)
         return user_key, validated
 
-    env_key = (os.getenv(key_env) or "").strip() or None
+    env_key = env_api_key(key_env)
     env_base_url = (os.getenv(base_url_env) or "").strip() or None
     return env_key, env_base_url
 
@@ -188,19 +222,20 @@ class ImageParser:
 
     def __init__(
         self,
-        openai_key: Optional[str] = None,
-        anthropic_key: Optional[str] = None,
-        openai_base_url: Optional[str] = None,
-        anthropic_base_url: Optional[str] = None,
+        openai_key: str | None = None,
+        anthropic_key: str | None = None,
+        openai_base_url: str | None = None,
+        anthropic_base_url: str | None = None,
     ):
         # 以库形式使用时 main.py 可能尚未执行 load_dotenv()；此处幂等补一次。
         load_dotenv()
         self.openai_key, self.openai_base_url = _provider_config(
             "OpenAI", openai_key, openai_base_url,
-            "OPENAI_API_KEY", "OPENAI_BASE_URL")
+            "OPENAI_API_KEY", "OPENAI_BASE_URL", OFFICIAL_OPENAI_BASE_URL)
         self.anthropic_key, self.anthropic_base_url = _provider_config(
             "Anthropic", anthropic_key, anthropic_base_url,
-            "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL")
+            "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL",
+            OFFICIAL_ANTHROPIC_BASE_URL)
         self.anthropic_model = os.getenv("ANTHROPIC_VISION_MODEL", self.DEFAULT_ANTHROPIC_MODEL)
         self.openai_model = os.getenv("OPENAI_VISION_MODEL", self.DEFAULT_OPENAI_MODEL)
         # 最近一次成功调用的 token 用量（供 UI 展示/成本估算）
@@ -208,7 +243,7 @@ class ImageParser:
         # 最近一次本地视觉估算的 meta（无 LLM 路径）
         self.last_local_meta: dict = {}
         self._prompt = _load_prompt("vision_parser.txt")
-        self._span_hints: Optional[str] = None
+        self._span_hints: str | None = None
 
     def _sanitize(self, text: str) -> str:
         return _sanitize_secrets(text, self.openai_key, self.anthropic_key)
@@ -222,7 +257,7 @@ class ImageParser:
     def parse_image_local(
         self,
         image: Image.Image,
-        geometry_profile: Optional[list[float]] = None,
+        geometry_profile: list[float] | None = None,
         geometry_observed: bool = False,
     ) -> ImageAnalysis:
         """Local no-LLM analysis: face detection + proportion estimation.
@@ -241,8 +276,22 @@ class ImageParser:
         self.last_local_meta = meta
         return analysis
 
+    def parse_image_mock(self) -> ImageAnalysis:
+        """显式 Mock 模式：不发起任何 API 调用，返回固定演示数据。
+
+        旧设计中 Mock 只是"无 Key"的隐式副作用（库层无法显式选择），
+        环境里任何非空 Key 都会把请求切换进计费路径。现在编排层用
+        vision_mode="mock" 显式进入本路径，Key 是否存在不再影响行为。
+        """
+        self.last_local_meta = {
+            "source": "mock",
+            "note": "Mock 演示数据：体型与部件为固定演示值，"
+                    "配色与分段参考照片（仅供体验流程）",
+        }
+        return self._mock_analysis()
+
     def parse_image(self, image: Image.Image,
-                    span_hints: Optional[str] = None) -> ImageAnalysis:
+                    span_hints: str | None = None) -> ImageAnalysis:
         """Parse an image and return structured analysis.
 
         Tries Anthropic first; if that call fails, falls back to OpenAI.
@@ -258,8 +307,8 @@ class ImageParser:
         img_b64 = _image_to_base64(image)
         colors = extract_color_palette(image)
 
-        result: Optional[ImageAnalysis] = None
-        provider: Optional[str] = None
+        result: ImageAnalysis | None = None
+        provider: str | None = None
         errors: list[str] = []
         if self.anthropic_key:
             try:
@@ -289,10 +338,13 @@ class ImageParser:
                     + self._sanitize(" | ".join(errors))
                 )
             logger.warning("No API key provided, returning mock analysis")
-            # Mock 水印：渲染/导出/备份链路都能看出这是演示数据（F9）
+            # Mock 水印（F9）：渲染/导出/备份链路都能看出这是演示数据。
+            # 诚实标注：体型/部件/特征是固定演示值，但配色与分段实测
+            # 仍来自照片——不能写成"与照片内容无关"。
             self.last_local_meta = {
                 "source": "mock",
-                "note": "Mock 演示数据，与照片内容无关（仅供体验流程）",
+                "note": "Mock 演示数据：体型与部件为固定演示值，"
+                        "配色与分段参考照片（仅供体验流程）",
             }
             result = self._mock_analysis()
 
@@ -305,15 +357,18 @@ class ImageParser:
     def _parse_with_openai(self, img_b64: str) -> ImageAnalysis:
         """Call OpenAI Vision with strict structured outputs (S2).
 
-        `chat.completions.parse` 把 pydantic 模型转成 strict json_schema，
-        服务端保证输出符合 ImageAnalysis——与 Anthropic `messages.parse`
-        路径对称。失败时带错误反馈重试一次（让模型自修，而非盲目重掷）。
-        旧版 SDK 无 parse 时回退 json_object 路径（_parse_with_openai_legacy）。
+        `chat.completions.parse` 把 VisionOutput 转成 strict json_schema，
+        服务端保证输出符合该契约（Literal 枚举、无 recommended_colors、
+        直接索取头身比例），再由 to_analysis() 换算为内部 ImageAnalysis——
+        与 Anthropic `messages.parse` 路径对称。失败时带错误反馈重试一次
+        （让模型自修，而非盲目重掷）。旧版 SDK 无 parse 时回退 json_object
+        路径（_parse_with_openai_legacy）。
         """
         from openai import OpenAI
 
         client = OpenAI(api_key=self.openai_key, base_url=self.openai_base_url,
-                        timeout=60.0, max_retries=3)
+                        timeout=VISION_TIMEOUT_SECONDS,
+                        max_retries=VISION_MAX_RETRIES)
         try:
             if not hasattr(client.chat.completions, "parse"):
                 return self._parse_with_openai_legacy(client, img_b64)
@@ -330,12 +385,16 @@ class ImageParser:
             messages = base_messages
             last_err: Exception = RuntimeError("unreachable")
             for attempt in range(2):
+                # SDK 的 messages TypedDict 联合过窄：重试路径带动态反馈
+                # 文案，无法逐字面匹配其参数类型
                 response = client.chat.completions.parse(
                     model=self.openai_model,
-                    messages=messages,
+                    # SDK 的 messages TypedDict 联合过窄：重试路径带动态反馈
+                    # 文案，无法逐字面匹配其参数类型
+                    messages=messages,  # type: ignore[arg-type]
                     max_tokens=2000,
                     temperature=0.2,
-                    response_format=ImageAnalysis,
+                    response_format=VisionOutput,
                 )
                 usage = getattr(response, "usage", None)
                 if usage is not None:
@@ -351,10 +410,10 @@ class ImageParser:
                                        f"{self._sanitize(str(refusal))}")
                 parsed = getattr(message, "parsed", None)
                 if parsed is not None:
-                    return parsed
+                    return parsed.to_analysis()
                 # 服务端 strict 校验仍失败（极少数：长度截断等）→ 带反馈重试
                 last_err = RuntimeError(
-                    f"响应未能解析为 ImageAnalysis（原始内容前 200 字: "
+                    f"响应未能解析为 VisionOutput（原始内容前 200 字: "
                     f"{(message.content or '')[:200]}）")
                 logger.warning("OpenAI parse attempt %d failed: %s", attempt + 1, last_err)
                 messages = base_messages + [
@@ -409,15 +468,16 @@ class ImageParser:
     def _parse_with_anthropic(self, img_b64: str) -> ImageAnalysis:
         """Call Anthropic Claude vision with structured outputs.
 
-        `messages.parse` enforces the ImageAnalysis JSON schema server-side
-        and validates client-side, so no manual JSON extraction is needed.
-        429/5xx are retried by the SDK itself (max_retries).
+        `messages.parse` enforces the VisionOutput JSON schema server-side
+        and validates client-side, so no manual JSON extraction is needed;
+        the ratio-based contract converts to the internal ImageAnalysis via
+        to_analysis(). 429/5xx are retried by the SDK itself (max_retries).
         """
         import anthropic
 
         client = anthropic.Anthropic(
             api_key=self.anthropic_key, base_url=self.anthropic_base_url,
-            timeout=60.0, max_retries=3
+            timeout=VISION_TIMEOUT_SECONDS, max_retries=VISION_MAX_RETRIES
         )
         try:
             response = client.messages.parse(
@@ -426,7 +486,7 @@ class ImageParser:
                 # caps thinking + answer together, so leave headroom.
                 max_tokens=4000,
                 output_config={"effort": "low"},
-                output_format=ImageAnalysis,
+                output_format=VisionOutput,
                 messages=[{
                     "role": "user",
                     "content": [
@@ -445,7 +505,7 @@ class ImageParser:
             if response.stop_reason == "refusal":
                 raise RuntimeError("模型拒绝了该请求 (refusal)")
             if response.parsed_output is None:
-                raise RuntimeError("响应未能解析为 ImageAnalysis 结构")
+                raise RuntimeError("响应未能解析为 VisionOutput 结构")
             usage = getattr(response, "usage", None)
             if usage is not None:
                 self.last_usage = {
@@ -453,7 +513,7 @@ class ImageParser:
                     "input_tokens": getattr(usage, "input_tokens", None),
                     "output_tokens": getattr(usage, "output_tokens", None),
                 }
-            return response.parsed_output
+            return response.parsed_output.to_analysis()
         except Exception as e:
             logger.error("Anthropic Vision API error: %s",
                          self._sanitize(str(e)))
@@ -462,7 +522,11 @@ class ImageParser:
 
     @staticmethod
     def _parse_response(content: str) -> ImageAnalysis:
-        """Parse JSON from LLM response, handling markdown fences and extra text."""
+        """Parse JSON from LLM response, handling markdown fences and extra text.
+
+        走 VisionOutput.from_payload（容忍旧 prompt 的厘米字段形态）再
+        换算为内部 ImageAnalysis。
+        """
         text = content.strip()
 
         # Strategy 1: Strip markdown code fences
@@ -474,7 +538,7 @@ class ImageParser:
         # Strategy 2: Try direct parse first
         try:
             data = json.loads(text)
-            return ImageAnalysis(**data)
+            return VisionOutput.from_payload(data).to_analysis()
         except (json.JSONDecodeError, ValueError):
             pass
 
@@ -490,7 +554,7 @@ class ImageParser:
                 continue
             if isinstance(obj, dict):
                 try:
-                    return ImageAnalysis(**obj)
+                    return VisionOutput.from_payload(obj).to_analysis()
                 except ValueError:
                     continue
 

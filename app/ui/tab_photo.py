@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import logging
-import os
 import uuid
 
 import streamlit as st
 
 from app.models.gauge import gauge_from_ui
+from app.models.image_parser import env_api_key
 from app.models.orchestrator import PipelineOrchestrator
 from app.ui.result_renderer import purge_result_state, render_results
 from app.utils.images import load_uploaded_image_cached
@@ -49,12 +49,14 @@ def _has_effective_keys() -> bool:
     只看输入框会把 .env 用户误判为"无 Key"：ImageParser 的空串 key 会
     回退 os.getenv，旧版在此时选择"Mock 演示数据"实际发起的是真实计费
     调用（Mock 只是"无 key"的隐式副作用），选项与行为完全脱节。
+    .env.example 的占位值（sk-your-key-here）不算已配置——否则应用会
+    带着占位符发真实请求。
     """
     return bool(
         st.session_state.get("openai_key")
         or st.session_state.get("anthropic_key")
-        or os.getenv("OPENAI_API_KEY")
-        or os.getenv("ANTHROPIC_API_KEY")
+        or env_api_key("OPENAI_API_KEY")
+        or env_api_key("ANTHROPIC_API_KEY")
     )
 
 
@@ -88,16 +90,18 @@ def render_tab_photo() -> None:
                        "当前可用结果页的「快速调整尺寸」与姿态实测分段弥补部分场景。")
 
         # 解析模式显式选择（放在上传之前：先选模式再传照片更顺）。
-        # Mock 选项只在"真正无 Key（输入框与 .env 都没有）"时提供——
-        # 它靠"无 key"的隐式副作用生效，有 Key 时选它会变成真实计费调用。
+        # vision_mode 是显式三态（"ai"/"local"/"mock"）：Mock 不再是
+        # "无 Key"的隐式副作用——有 Key 时选 Mock 也绝不发起 API 调用。
         if _has_effective_keys():
-            mode_options = ["🤖 AI 视觉解析", "🧮 本地视觉估算（免费）"]
+            mode_options = ["🤖 AI 视觉解析", "🧮 本地视觉估算（免费）",
+                            "🎬 Mock 演示数据"]
             mode_help = ("AI：视觉模型语义解析（按 token 计费）；"
-                         "本地：人脸检测推算比例，零 API 成本")
+                         "本地：人脸检测推算比例，零 API 成本；"
+                         "Mock：固定演示数据（配色来自照片），零 API 成本")
         else:
             mode_options = ["🧮 本地视觉估算（推荐）", "🎬 Mock 演示数据"]
             mode_help = ("本地估算：人脸检测推算相对头身比例，零 API 成本；"
-                         "Mock：固定演示数据，与照片无关")
+                         "Mock：体型与部件为演示数据，配色来自照片，零 API 成本")
         # options 随 Key 状态切换：残留旧值不在新 options 时先清掉，
         # 让 radio 确定性回到默认（不依赖 Streamlit 的隐式重置行为）
         if st.session_state.get("vision_mode") not in mode_options:
@@ -109,7 +113,7 @@ def render_tab_photo() -> None:
             horizontal=True,
             help=mode_help,
         )
-        use_local = mode.startswith("🧮")
+        vision_mode = {"🤖": "ai", "🧮": "local", "🎬": "mock"}[mode[0]]
 
     with col_preview:
         if uploaded_file is None:
@@ -131,7 +135,8 @@ def render_tab_photo() -> None:
                 progress = st.progress(0, text="准备中...")
                 try:
                     result = orchestrator.run_full_pipeline(
-                        image, progress_cb=progress.progress, local_vision=use_local,
+                        image, progress_cb=progress.progress,
+                        vision_mode=vision_mode,
                         gauge=gauge_from_ui(
                             st.session_state.get("gauge_preset", "classic"),
                             st.session_state.get("gauge_st_input"),

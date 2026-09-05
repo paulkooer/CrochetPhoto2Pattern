@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from PIL import Image
 
@@ -31,7 +31,7 @@ MAX_BODY_RATIO = 8.0
 _CANONICAL_PARTS = ["头部", "身体", "手臂", "腿部"]
 
 
-def _detect_face(img: Image.Image) -> Optional[Tuple[int, int, int, int]]:
+def _detect_face(img: Image.Image) -> tuple[int, int, int, int] | None:
     """Frontal-face detection via OpenCV haar cascade (fully offline).
 
     Returns the largest (x, y, w, h) in pixels, or None
@@ -49,7 +49,8 @@ def _detect_face(img: Image.Image) -> Optional[Tuple[int, int, int, int]]:
     arr = np.array(img.convert("RGB"))[:, :, ::-1]  # RGB → BGR
     gray = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
     cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        cv2.data.haarcascades  # type: ignore[attr-defined]  # opencv 无官方类型桩
+        + "haarcascade_frontalface_default.xml"
     )
     faces = cascade.detectMultiScale(
         gray, scaleFactor=1.1, minNeighbors=5, minSize=(24, 24)
@@ -63,9 +64,9 @@ def _detect_face(img: Image.Image) -> Optional[Tuple[int, int, int, int]]:
 def analyze(
     image: Image.Image,
     n_colors: int = 5,
-    geometry_profile: Optional[List[float]] = None,
+    geometry_profile: list[float] | None = None,
     geometry_observed: bool = False,
-) -> Tuple[ImageAnalysis, Dict[str, Any]]:
+) -> tuple[ImageAnalysis, dict[str, Any]]:
     """Estimate an ImageAnalysis from the photo without any LLM call.
 
     Returns (analysis, meta)；meta 描述估算来源与依据，供 UI 透明展示。
@@ -84,7 +85,7 @@ def analyze(
         parts.append("裙子")
 
     if box is None:
-        meta: Dict[str, Any] = {
+        meta: dict[str, Any] = {
             "source": "default",
             "note": "未检测到人脸，使用默认 Q 版比例",
         }

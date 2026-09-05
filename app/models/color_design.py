@@ -14,7 +14,6 @@ Amigurumi 常规比例的先验。结果可在 UI「局部修正」中逐圈调�
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Tuple
 
 from PIL import Image
 
@@ -23,7 +22,7 @@ from .colors import nearest_yarn
 logger = logging.getLogger(__name__)
 
 # 部件在主体（照片纵向）上的占比区间（顶部 → 底部），Amigurumi 常规比例先验
-PART_SPAN: Dict[str, Tuple[float, float]] = {
+PART_SPAN: dict[str, tuple[float, float]] = {
     "帽子": (0.00, 0.18),
     "头部": (0.05, 0.30),
     "耳朵": (0.18, 0.30),
@@ -37,7 +36,7 @@ PART_SPAN: Dict[str, Tuple[float, float]] = {
 _BG_DIST_THRESHOLD = 48  # 与背景色的欧氏距离超过此值视为主体像素
 
 
-def estimate_background(px) -> Tuple[int, int, int]:
+def estimate_background(px) -> tuple[int, int, int]:
     """四角小块的众数（mode）背景色。
 
     真·众数：量化到 16 级/通道后按出现次数取最大——双色背景（白墙+深色
@@ -60,7 +59,7 @@ def estimate_background(px) -> Tuple[int, int, int]:
     return ((m >> 16) & 255) * 16 + 8, ((m >> 8) & 255) * 16 + 8, (m & 255) * 16 + 8
 
 
-def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
+def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> list[dict]:
     """把照片纵向切成 n_bands 个横带，返回每带的毛线色（自上而下）。
 
     主体判定优先 GrabCut 分割（subject.extract_subject，对双色/相近背景
@@ -88,7 +87,7 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
             # 每带取主体像素均值；无主体像素的带（纯背景带）不落回整带
             # 均值——那会把背景色当主体色（实测地板色混进底部带），改为
             # 延续最近的有主体色带（色彩连续性），全空则按无配色降级。
-            colors: List[Optional[str]] = []
+            colors: list[str | None] = []
             for i in range(n_bands):
                 y0, y1 = h * i // n_bands, h * (i + 1) // n_bands
                 block = px[y0:y1].reshape(-1, 3)
@@ -96,14 +95,14 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
                 colors.append(
                     nearest_yarn(*(int(v) for v in subject.mean(axis=0)))[0]
                     if len(subject) else None)
-            filled: List[Optional[str]] = list(colors)
-            last: Optional[str] = None
+            filled: list[str | None] = list(colors)
+            last: str | None = None
             for i, c in enumerate(colors):     # 前向填充
                 if c is not None:
                     last = c
                 elif last is not None:
                     filled[i] = last
-            nxt: Optional[str] = None          # 后向填充（顶部空带）
+            nxt: str | None = None          # 后向填充（顶部空带）
             for i in range(n_bands - 1, -1, -1):
                 if colors[i] is not None:
                     nxt = colors[i]
@@ -115,7 +114,7 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
                       "color": filled[i]} for i in range(n_bands)]
             return _merge_bands(bands)
         bg = np.array(estimate_background(px), dtype=np.int16)
-        bands: List[Dict] = []
+        bands = []
         subject_total = 0
         pixel_total = 0
         for i in range(n_bands):
@@ -142,9 +141,9 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> List[Dict]:
         return []
 
 
-def _merge_bands(bands: List[Dict]) -> List[Dict]:
+def _merge_bands(bands: list[dict]) -> list[dict]:
     """相邻同色带合并（两条提取路径共用的收尾步骤）。"""
-    merged: List[Dict] = []
+    merged: list[dict] = []
     for b in bands:
         if merged and merged[-1]["color"] == b["color"]:
             merged[-1]["end"] = b["end"]
@@ -154,9 +153,9 @@ def _merge_bands(bands: List[Dict]) -> List[Dict]:
 
 
 def color_blocks_for_part(
-    bands: List[Dict], part_name: str,
-    spans: Optional[Dict[str, Tuple[float, float]]] = None,
-) -> List[Tuple[float, float, str]]:
+    bands: list[dict], part_name: str,
+    spans: dict[str, tuple[float, float]] | None = None,
+) -> list[tuple[float, float, str]]:
     """取某部件纵向占比内的色段（合并相邻同色后）。
 
     spans（S1）：姿态关键点实测的部件占比；None 时回退 PART_SPAN 先验。
@@ -165,7 +164,7 @@ def color_blocks_for_part(
     if not span or not bands:
         return []
     start, end = span
-    blocks: List[Tuple[float, float, str]] = []
+    blocks: list[tuple[float, float, str]] = []
     for b in bands:
         s, e = max(b["start"], start), min(b["end"], end)
         if e - s <= 1e-9:
@@ -177,7 +176,7 @@ def color_blocks_for_part(
     return blocks
 
 
-def round_color(frac: float, blocks: List[Tuple[float, float, str]]) -> Optional[str]:
+def round_color(frac: float, blocks: list[tuple[float, float, str]]) -> str | None:
     """主体纵向位置 frac（0 顶 → 1 底）落在的色段颜色。"""
     for s, e, name in blocks:
         if s <= frac < e:
@@ -185,9 +184,9 @@ def round_color(frac: float, blocks: List[Tuple[float, float, str]]) -> Optional
     return blocks[-1][2] if blocks else None
 
 
-def blocks_summary_text(round_colors: List[Optional[str]]) -> str:
+def blocks_summary_text(round_colors: list[str | None]) -> str:
     """逐圈颜色列表 → "R1–R4 浅肤色；R5–R10 深棕色" 摘要。"""
-    segs: List[str] = []
+    segs: list[str] = []
     i = 0
     while i < len(round_colors):
         j = i

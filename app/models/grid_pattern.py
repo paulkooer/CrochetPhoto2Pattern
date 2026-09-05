@@ -7,8 +7,9 @@ No external dependencies beyond Pillow.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -19,7 +20,7 @@ class GridCell:
     """A single cell in the crochet grid."""
     col_index: int
     color_name: str
-    rgb: Tuple[int, int, int]
+    rgb: tuple[int, int, int]
 
 
 @dataclass
@@ -27,10 +28,10 @@ class GridPattern:
     """Complete 2D grid pattern ready for rendering."""
     width: int
     height: int
-    clamped_from: Optional[int] = None   # F28：行数被钳制前的原始行数
-    cells: List[List[GridCell]] = None
-    palette: List[Tuple[str, Tuple[int, int, int]]] = None
-    symbol_map: Dict[int, str] = None
+    clamped_from: int | None = None   # F28：行数被钳制前的原始行数
+    cells: list[list[GridCell]] = field(default_factory=list)
+    palette: list[tuple[str, tuple[int, int, int]]] = field(default_factory=list)
+    symbol_map: dict[int, str] = field(default_factory=dict)
 
 
 _SYMBOLS = "■▲●◆★✦◉▼⊕①②③④⑤⑥⑦⑧⑨⑩"
@@ -91,7 +92,7 @@ def crop_image_fraction(
     return image.crop((x0, y0, x1, y1))
 
 
-def grid_pattern_to_payload(pattern: GridPattern) -> Dict[str, Any]:
+def grid_pattern_to_payload(pattern: GridPattern) -> dict[str, Any]:
     """Serialize a grid without retaining tens of thousands of cell objects."""
     return {
         "width": pattern.width,
@@ -130,7 +131,7 @@ def grid_pattern_from_payload(payload: Mapping[str, Any]) -> GridPattern:
     yarn_rgb_by_name = {
         yarn_name: yarn_rgb for yarn_rgb, yarn_name in YARN_COLORS
     }
-    palette: List[Tuple[str, Tuple[int, int, int]]] = []
+    palette: list[tuple[str, tuple[int, int, int]]] = []
     seen_names = set()
     for entry in raw_palette:
         if not isinstance(entry, Mapping):
@@ -160,11 +161,11 @@ def grid_pattern_from_payload(payload: Mapping[str, Any]) -> GridPattern:
 
     if not isinstance(raw_cells, list) or len(raw_cells) != height:
         raise ValueError("grid payload row count does not match height")
-    cells: List[List[GridCell]] = []
+    cells: list[list[GridCell]] = []
     for raw_row in raw_cells:
         if not isinstance(raw_row, list) or len(raw_row) != width:
             raise ValueError("grid payload column count does not match width")
-        row: List[GridCell] = []
+        row: list[GridCell] = []
         for raw_index in raw_row:
             try:
                 index = _strict_int(
@@ -340,7 +341,7 @@ def generate_grid_pattern(
     # 例：正方形图片 + 0.75 → 行数 = 列数×0.75，成品因针本身偏高仍为正方形。
     # int(x+0.5) 半步向上取整（Python round 是银行家舍入，.5 偏向偶数）。
     grid_height = max(2, int(grid_width * orig_h / orig_w * aspect_ratio + 0.5))
-    clamped_from: Optional[int] = None
+    clamped_from: int | None = None
     if grid_height > _MAX_CELLS // grid_width:
         clamped_from = grid_height
         grid_height = max(2, _MAX_CELLS // grid_width)
@@ -356,7 +357,7 @@ def generate_grid_pattern(
         img_small, dtype=np.uint8).reshape(-1, 3)]
     palette_rgbs = pick_yarn_palette(pixels, n_colors)
     name_by_rgb = {rgb: name for rgb, name in YARN_COLORS}
-    palette: List[Tuple[str, Tuple[int, int, int]]] = [
+    palette: list[tuple[str, tuple[int, int, int]]] = [
         (name_by_rgb[rgb], rgb) for rgb in palette_rgbs]
 
     symbol_map = {i: _SYMBOLS[i % len(_SYMBOLS)] for i in range(len(palette))}
@@ -367,7 +368,7 @@ def generate_grid_pattern(
     pal_labs = _srgb_to_lab_vec(np.array(palette_rgbs, dtype=np.int32))
     dmat = ciede2000_vec(px_labs, pal_labs, pairwise=False)  # (像素数, 色板数)
     best_idx = dmat.argmin(axis=1)
-    flat: List[GridCell] = []
+    flat: list[GridCell] = []
     if len(best_idx) != len(pixels):
         raise RuntimeError("palette assignment count does not match grid pixels")
     for bi, _px in zip(best_idx, pixels):  # noqa: B905 - length checked above
@@ -423,7 +424,7 @@ def render_legend_markdown(pattern: GridPattern) -> str:
     """Return a Markdown table for the color legend with usage percentages."""
     lines = ["| 符号 | 颜色名称 | 用量估算 |", "|:----:|:--------:|:--------:|"]
     total = pattern.width * pattern.height
-    counts: Dict[int, int] = {}
+    counts: dict[int, int] = {}
     for row in pattern.cells:
         for cell in row:
             counts[cell.col_index] = counts.get(cell.col_index, 0) + 1
@@ -440,9 +441,9 @@ def render_legend_markdown(pattern: GridPattern) -> str:
 def export_grid_markdown(
     pattern: GridPattern,
     *,
-    legend: Optional[str] = None,
-    chart: Optional[str] = None,
-    c2c: Optional[str] = None,
+    legend: str | None = None,
+    chart: str | None = None,
+    c2c: str | None = None,
 ) -> str:
     """Build a self-contained printable chart, not merely a color legend.
 
@@ -490,7 +491,7 @@ def render_legend_html(pattern: GridPattern) -> str:
     import html as _html
 
     total = pattern.width * pattern.height
-    counts: Dict[int, int] = {}
+    counts: dict[int, int] = {}
     for row in pattern.cells:
         for cell in row:
             counts[cell.col_index] = counts.get(cell.col_index, 0) + 1

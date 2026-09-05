@@ -27,10 +27,12 @@ classifiers = [
 dependencies = [
     # 上界 <2.0：Streamlit 大版本常有破坏性 API 变更，升 2.x 需人工验证
     "streamlit>=1.40.0,<2.0",
-    "openai>=1.0.0",
+    # 上界 <4：主版本升级可能有 SDK 行为/依赖底座破坏；升级需人工验证
+    "openai>=1.0.0,<4",
     # 0.95.0 已含 messages.parse(output_format=...)（structured outputs），
     # 已在本地实测；低于此版本不可用。
-    "anthropic>=0.95.0",
+    # 上界 <1：anthropic 1.x 换用 httpx2 底座，是破坏性升级（lock 现为 0.122.x）。
+    "anthropic>=0.95.0,<1",
     "pydantic>=2.0",
     "pillow>=10.0",
     "python-dotenv>=1.0",
@@ -61,6 +63,7 @@ dev = [
     "pytest-cov",
     "ruff>=0.4",
     "hypothesis>=6.100",
+    "mypy>=1.11",
 ]
 # PDF 图解导出（可选，S4）：中文用 Adobe CID 字体，无需额外字体文件
 pdf = ["reportlab>=4.0"]
@@ -87,5 +90,12 @@ line-length = 110
 target-version = "py311"
 
 [tool.ruff.lint]
-# E/W pycodestyle、F pyflakes、I isort、B bugbear（常见隐患）
-select = ["E", "F", "W", "I", "B"]
+# E/W pycodestyle、F pyflakes、I isort、B bugbear（常见隐患）、
+# UP pyupgrade（过时写法）、SIM flake8-simplify（可简化分支）
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+# 渐进式类型检查：当前基线为 app 全包 0 错误（37 文件）。
+# cv2/opencv 无官方类型桩，第三方缺失导入统一忽略。
+python_version = "3.11"
+ignore_missing_imports = true

@@ -17,11 +17,12 @@ _EXTERNAL_ENV = (
 
 
 @pytest.fixture(autouse=True)
-def _hermetic_env(monkeypatch):
+def _hermetic_env(monkeypatch, tmp_path):
     for name in _EXTERNAL_ENV:
         monkeypatch.delenv(name, raising=False)
     # delenv 之后 load_dotenv() 会把 .env 里的 Key 重新灌入——禁用之
     monkeypatch.setattr("app.models.image_parser.load_dotenv",
                         lambda *a, **k: False)
-    # 历史库重定向到临时目录（G5：相对路径会在仓库根产出文件且未 gitignore）
-    monkeypatch.setenv("CROCHET_HISTORY_DB", "/tmp/_c2p_test_history.db")
+    # 历史库重定向到每测试独立的临时目录（G5：相对路径会在仓库根产出
+    # 文件且未 gitignore；固定 /tmp 路径在并行/多用户环境下互相踩踏）
+    monkeypatch.setenv("CROCHET_HISTORY_DB", str(tmp_path / "history.db"))

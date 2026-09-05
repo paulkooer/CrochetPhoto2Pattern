@@ -11,7 +11,7 @@ from app.models.gauge import gauge_from_ui
 from app.models.geometry import no_photo_geometry
 from app.models.sizing import sizing_meta_for_analysis
 from app.models.structure_designer import StructureDesigner
-from app.schemas import PART_NAMES, ImageAnalysis
+from app.schemas import PART_NAMES, Difficulty, ImageAnalysis, PatternResult
 from app.ui.result_renderer import purge_result_state, render_results
 
 logger = logging.getLogger(__name__)
@@ -48,20 +48,20 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
         analysis, structure,
         gauge=gauge_from_ui(*_gauge_values()),
         style=style)
-    return {
-        "analysis": analysis.model_dump(),
-        "structure": structure,
-        "params": params,
-        "result_id": uuid.uuid4().hex[:12],
-        # 与照片路径同构：结果页快速调整尺寸时复用（无照片 → 无色带）
-        "style": {"sphere_mode": style.sphere_mode,
-                  "one_piece": style.one_piece,
-                  "skirt_style": style.skirt_style,
-                  "ruffle_hem": style.ruffle_hem},
-        "color_bands": None,
-        "sizing": sizing_meta_for_analysis(analysis, "manual_dimensions"),
-        "geometry": no_photo_geometry().model_dump(),
-    }
+    # 键集走 PatternResult 单一契约（与照片路径同构；无照片 → 无色带）
+    return PatternResult(
+        analysis=analysis.model_dump(),
+        structure=structure,
+        params=params,
+        result_id=uuid.uuid4().hex[:12],
+        style={"sphere_mode": style.sphere_mode,
+               "one_piece": style.one_piece,
+               "skirt_style": style.skirt_style,
+               "ruffle_hem": style.ruffle_hem},
+        spans_measured=[],
+        sizing=sizing_meta_for_analysis(analysis, "manual_dimensions"),
+        geometry=no_photo_geometry().model_dump(),
+    ).to_result_dict()
 
 
 def render_tab_manual() -> None:
@@ -77,8 +77,9 @@ def render_tab_manual() -> None:
         m_body_type = st.selectbox("体型", ["标准", "瘦", "胖"], key="m_body_type")
         m_head_d = st.slider("头部直径 (cm)", 4.0, 20.0, 9.0, 0.5, key="m_head_d")
         m_height = st.slider("整体高度 (cm)", 10.0, 60.0, 18.0, 0.5, key="m_height")
+        difficulty_options: tuple[Difficulty, ...] = ("easy", "medium", "hard")
         m_difficulty = st.select_slider(
-            "难度", options=["easy", "medium", "hard"], value="easy", key="m_difficulty"
+            "难度", options=difficulty_options, value="easy", key="m_difficulty"
         )
 
     with col_m2:

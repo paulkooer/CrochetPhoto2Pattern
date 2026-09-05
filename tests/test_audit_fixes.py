@@ -50,10 +50,10 @@ def test_parameter_matrix_valid_and_bounded(gauge_name, mode, one_piece,
     v = validate_pattern_ok(params)
     assert v, v
     for part in params["parts"]:
-        sts = [r.stitches for r in part.rounds]
+        sts = [r["stitches"] for r in part["rounds"]]
         adjacent = zip(sts, sts[1:])  # noqa: B905 - adjacent pairs truncate by design
         assert all(abs(b - a) <= gauge.max_shaping_change for a, b in adjacent), (
-            f"{part.name} 出现跨圈跳变: {sts}"
+            f"{part['name']} 出现跨圈跳变: {sts}"
         )
 
 
@@ -101,9 +101,9 @@ def test_provider_exception_never_leaks_keys(monkeypatch, caplog):
                         lambda *a, **k: False)
 
     parser = ImageParser(anthropic_key=real)
-    with caplog.at_level(logging.WARNING, logger="app.models.image_parser"):
-        with pytest.raises(RuntimeError) as exc:
-            parser.parse_image(Image.new("RGB", (32, 32)))
+    with (caplog.at_level(logging.WARNING, logger="app.models.image_parser"),
+          pytest.raises(RuntimeError) as exc):
+        parser.parse_image(Image.new("RGB", (32, 32)))
     assert real not in str(exc.value)
     assert relay not in str(exc.value)
     assert real not in caplog.text and relay not in caplog.text
@@ -140,8 +140,8 @@ def test_effective_spans_fill_missing_parts_from_prior(monkeypatch):
     assert result["spans"]["腿部"] is not None       # 回退先验
     assert "腿部" not in result["spans_measured"]    # 且诚实标注非实测
     assert "身体" in result["spans_measured"]
-    body = [p for p in result["params"]["parts"] if p.name == "身体"][0]
-    assert any(r.color for r in body.rounds)          # 配色仍然存在
+    body = [p for p in result["params"]["parts"] if p["name"] == "身体"][0]
+    assert any(r["color"] for r in body["rounds"])          # 配色仍然存在
 
 
 def test_full_pose_overrides_prior(monkeypatch):
@@ -165,12 +165,12 @@ def test_full_pose_overrides_prior(monkeypatch):
 def test_one_piece_height_excludes_closure_disc():
     """F16：一体件高度 = 头部到颈 + 筒壁轴向，不含底部径向收口盘。"""
     params = _gen(one_piece=True)
-    one = [p for p in params["parts"] if p.type == "onepiece"][0]
-    sts = [r.stitches for r in one.rounds]
+    one = [p for p in params["parts"] if p["type"] == "onepiece"][0]
+    sts = [r["stitches"] for r in one["rounds"]]
     # 默认 ladder 配置的确定口径：axial = 头部到颈 14 圈 + 筒壁 8 圈 = 22；
     # 总 27 圈末尾的收口盘（径向）不计高
-    assert (len(sts), one.height_cm) == (27, 13.8)
-    assert one.height_cm < len(sts) * 0.625
+    assert (len(sts), one["height_cm"]) == (27, 13.8)
+    assert one["height_cm"] < len(sts) * 0.625
 
 
 def test_profile_body_open_finish_note():
@@ -187,21 +187,21 @@ def test_profile_body_open_finish_note():
                 main_features=[], pose="站立", difficulty="easy",
                 parts=["头部", "身体"])),
         body_profile=[0.5, 0.8, 1.0, 0.8, 0.5] * 4)
-    body = [p for p in params["parts"] if p.name == "身体"][0]
-    assert body.rounds[-1].decrease == 0              # 末圈保持开口
-    assert "开口" in body.notes and "缝合" in body.notes
-    assert "收针前填充" not in body.notes             # 旧误导文案移除
+    body = [p for p in params["parts"] if p["name"] == "身体"][0]
+    assert body["rounds"][-1]["decrease"] == 0              # 末圈保持开口
+    assert "开口" in body.get("notes") and "缝合" in body.get("notes")
+    assert "收针前填充" not in body.get("notes")             # 旧误导文案移除
 
 
 @pytest.mark.parametrize("gauge_name", ["classic", "dk", "fine"])
 def test_hat_has_wearable_wall(gauge_name):
     """F18：三密度下帽子侧壁 ≥3 圈（可佩戴下限）。"""
     params = _gen(parts=("帽子",), gauge=PRESETS[gauge_name])
-    hat = [p for p in params["parts"] if p.name == "帽子"][0]
-    max_st = max(r.stitches for r in hat.rounds)
+    hat = [p for p in params["parts"] if p["name"] == "帽子"][0]
+    max_st = max(r["stitches"] for r in hat["rounds"])
     n_up = max_st // 6
-    assert len(hat.rounds) - n_up >= 3
-    assert "筒深" in hat.notes
+    assert len(hat["rounds"]) - n_up >= 3
+    assert "筒深" in hat.get("notes")
 
 
 # ── F19/F20：展示与状态治理 ──────────────────────────────────────────────
@@ -286,7 +286,7 @@ def test_matrix_extended_color_profile_spans(gauge_name, mode, with_bands,
     v = validate_pattern(params)
     assert v["ok"], v["issues"]
     for part in params["parts"]:
-        sts = [r.stitches for r in part.rounds]
+        sts = [r["stitches"] for r in part["rounds"]]
         assert all(abs(b - a) <= gauge.max_shaping_change
                    for a, b in zip(sts, sts[1:]))  # noqa: B905 - adjacent pairs truncate by design
 

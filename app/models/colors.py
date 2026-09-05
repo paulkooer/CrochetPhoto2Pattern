@@ -12,14 +12,13 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-RGB = Tuple[int, int, int]
-LAB = Tuple[float, float, float]
+RGB = tuple[int, int, int]
+LAB = tuple[float, float, float]
 
-YARN_COLORS: List[Tuple[RGB, str]] = [
+YARN_COLORS: list[tuple[RGB, str]] = [
     ((255, 228, 196), "米色"),
     ((255, 218, 185), "桃肤色"),
     ((246, 237, 228), "白皙肤色"),
@@ -146,7 +145,7 @@ def ciede2000(lab1: LAB, lab2: LAB, kl: float = 1.0, kc: float = 1.0,
                      + rt * sc_term * sh_term)
 
 
-def _srgb_to_lab_vec(rgb: "np.ndarray") -> "np.ndarray":
+def _srgb_to_lab_vec(rgb: np.ndarray) -> np.ndarray:
     """srgb_to_lab 的向量化版：(N,3) uint8/float → (N,3) Lab。数值一致。"""
     c = rgb.astype(np.float64) / 255.0
     lin = np.where(c > 0.04045, ((c + 0.055) / 1.055) ** 2.4, c / 12.92)
@@ -162,8 +161,8 @@ def _srgb_to_lab_vec(rgb: "np.ndarray") -> "np.ndarray":
                     axis=1)
 
 
-def ciede2000_vec(lab1: "np.ndarray", lab2: "np.ndarray",
-                  pairwise: Optional[bool] = None) -> "np.ndarray":
+def ciede2000_vec(lab1: np.ndarray, lab2: np.ndarray,
+                  pairwise: bool | None = None) -> np.ndarray:
     """ciede2000 的向量化版（K1）。
 
     lab1: (N,3)；lab2: (N,3) 或 (M,3)。pairwise=None 自动判（lab2 行数
@@ -234,7 +233,7 @@ def ciede2000_vec(lab1: "np.ndarray", lab2: "np.ndarray",
     return np.sqrt(sl_t ** 2 + sc_t ** 2 + sh_t ** 2 + rt * sc_t * sh_t)
 
 
-def nearest_yarn_batch(rgbs: "np.ndarray") -> Tuple[List[str], List[RGB]]:
+def nearest_yarn_batch(rgbs: np.ndarray) -> tuple[list[str], list[RGB]]:
     """最近邻匹配的批量版（K1）：(N,3) RGB → (色名列表, 色表 RGB 列表)。
 
     与逐像素调用 nearest_yarn 结果一致（等价测试锁定）；网格/色板等
@@ -251,7 +250,7 @@ def nearest_yarn_batch(rgbs: "np.ndarray") -> Tuple[List[str], List[RGB]]:
 
 
 # Precomputed Lab values for the table (module import time, 24 entries)
-_YARN_LAB: List[Tuple[LAB, str, RGB]] = [
+_YARN_LAB: list[tuple[LAB, str, RGB]] = [
     (srgb_to_lab(*rgb), name, rgb) for rgb, name in YARN_COLORS
 ]
 
@@ -260,7 +259,7 @@ _YARN_LAB: List[Tuple[LAB, str, RGB]] = [
 # （来源：scheepjes.com 官方与 woolwarehouse.co.uk 等零售商商品页，2026-08
 # 核实）。毛线界无 DMC 级统一标准，未收录的色名不提供色号（宁缺毋错），
 # 购买请以实物色卡为准。
-BRAND_CODES: Dict[str, str] = {
+BRAND_CODES: dict[str, str] = {
     "黑色": "Catona 110 (Jet Black)",
     "白色": "Catona 106 (Snow White)",
     "橙色": "Catona 189 (Royal Orange)",
@@ -272,7 +271,7 @@ BRAND_CODES: Dict[str, str] = {
 }
 
 
-def brand_code(name: str) -> Optional[str]:
+def brand_code(name: str) -> str | None:
     """毛线色名 → 品牌参考色号；未收录返回 None（不编造）。"""
     return BRAND_CODES.get(name)
 
@@ -282,7 +281,7 @@ def color_distance(rgb1: RGB, rgb2: RGB) -> float:
     return ciede2000(srgb_to_lab(*rgb1), srgb_to_lab(*rgb2))
 
 
-def pick_yarn_palette(pixels, n_colors: int) -> List[RGB]:
+def pick_yarn_palette(pixels, n_colors: int) -> list[RGB]:
     """像素集合 → 覆盖率最高的 n_colors 种毛线色（S3 直量化）。
 
     旧路径"RGB 中位切分出任意色 → 再映射毛线表"是双重量化：切分中心
@@ -337,7 +336,7 @@ def pick_yarn_palette(pixels, n_colors: int) -> List[RGB]:
         chosen_rgb[final_cover.most_common(1)[0][0]]]
 
 
-def nearest_yarn(r: int, g: int, b: int) -> Tuple[str, RGB]:
+def nearest_yarn(r: int, g: int, b: int) -> tuple[str, RGB]:
     """Return (yarn name, table RGB) perceptually nearest to the given color."""
     lab1 = srgb_to_lab(r, g, b)
     best_name, best_rgb, best_dist = "未知色", (r, g, b), float("inf")

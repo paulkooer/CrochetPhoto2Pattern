@@ -40,25 +40,25 @@ def test_generate_params_returns_required_keys(sample_analysis, sample_structure
 def test_stitch_counts_are_reasonable(sample_analysis, sample_structure):
     params = CrochetParamsGenerator.generate_params(sample_analysis, sample_structure)
     for part in params["parts"]:
-        for stitch in part.rounds:
-            assert 1 <= stitch.stitches <= 48, (
-                f"Part '{part.name}' row {stitch.row} has {stitch.stitches} stitches, "
+        for stitch in part["rounds"]:
+            assert 1 <= stitch["stitches"] <= 48, (
+                f"Part '{part['name']}' row {stitch['row']} has {stitch['stitches']} stitches, "
                 f"which is outside the reasonable Amigurumi range (1-48)"
             )
 
 
 def test_head_starts_with_magic_ring(sample_analysis, sample_structure):
     params = CrochetParamsGenerator.generate_params(sample_analysis, sample_structure)
-    head = [p for p in params["parts"] if p.name == "头部"][0]
-    assert head.magic_ring is True
-    assert head.rounds[0].stitches == 6
+    head = [p for p in params["parts"] if p["name"] == "头部"][0]
+    assert head["magic_ring"] is True
+    assert head["rounds"][0]["stitches"] == 6
 
 
 def test_head_sphere_increase_decrease(sample_analysis, sample_structure):
     """Verify head rounds increase then stay constant then decrease."""
     params = CrochetParamsGenerator.generate_params(sample_analysis, sample_structure)
-    head = [p for p in params["parts"] if p.name == "头部"][0]
-    stitch_counts = [r.stitches for r in head.rounds]
+    head = [p for p in params["parts"] if p["name"] == "头部"][0]
+    stitch_counts = [r["stitches"] for r in head["rounds"]]
 
     # Should start at 6, increase to 36, stay at 36, then decrease back
     assert stitch_counts[0] == 6
@@ -83,10 +83,10 @@ def test_accessory_parts_stay_smaller_than_body():
     )
     structure = StructureDesigner.design_3d_structure(analysis)
     params = CrochetParamsGenerator.generate_params(analysis, structure)
-    by_name = {p.name: p for p in params["parts"]}
-    body_max = max(r.stitches for r in by_name["身体"].rounds)
+    by_name = {p["name"]: p for p in params["parts"]}
+    body_max = max(r["stitches"] for r in by_name["身体"]["rounds"])
     for acc in ("耳朵", "尾巴"):
-        acc_max = max(r.stitches for r in by_name[acc].rounds)
+        acc_max = max(r["stitches"] for r in by_name[acc]["rounds"])
         assert acc_max < body_max, (
             f"{acc} 最大针数 {acc_max} 不应达到身体级别 {body_max}"
         )
@@ -143,7 +143,7 @@ def test_assembly_wording_follows_edited_physical_quantity():
     from app.models.crochet_params import refresh_derived
 
     params = _params_for(["身体", "手臂"])
-    params["parts"] = [part.model_dump() for part in params["parts"]]
+    params["parts"] = list(params["parts"])
     arms = next(part for part in params["parts"] if part["name"] == "手臂")
     arms["quantity"] = 1
     refresh_derived(params)
@@ -214,11 +214,11 @@ def test_symmetric_part_quantity_is_included_in_all_derived_totals():
     """一份手臂圈序代表左右两件；总针数与工时必须按两份计算。"""
     params = _params_for(["身体", "手臂"])
     body, arms = params["parts"]
-    assert body.quantity == 1
-    assert arms.quantity == 2
+    assert body["quantity"] == 1
+    assert arms["quantity"] == 2
     expected = (
-        sum(row.stitches for row in body.rounds)
-        + 2 * sum(row.stitches for row in arms.rounds)
+        sum(row["stitches"] for row in body["rounds"])
+        + 2 * sum(row["stitches"] for row in arms["rounds"])
     )
     assert params["total_stitches"] == expected
 
@@ -227,16 +227,16 @@ def test_legacy_structure_without_count_defaults_to_one_copy(
         sample_analysis, sample_structure):
     """旧备份没有 count/quantity 时不能被误判为成对部件。"""
     params = CrochetParamsGenerator.generate_params(sample_analysis, sample_structure)
-    assert all(part.quantity == 1 for part in params["parts"])
+    assert all(part["quantity"] == 1 for part in params["parts"])
     assert params["total_stitches"] == sum(
-        row.stitches for part in params["parts"] for row in part.rounds)
+        row["stitches"] for part in params["parts"] for row in part["rounds"])
 
 
 def test_refresh_derived_respects_edited_quantity():
     from app.models.crochet_params import refresh_derived
 
     params = _params_for(["手臂"])
-    edited = {**params, "parts": [params["parts"][0].model_dump()]}
+    edited = {**params, "parts": [dict(params["parts"][0])]}
     edited["parts"][0]["quantity"] = 3
     single = sum(row["stitches"] for row in edited["parts"][0]["rounds"])
     refresh_derived(edited)
@@ -246,7 +246,9 @@ def test_refresh_derived_respects_edited_quantity():
 def test_rows_always_matches_rounds():
     params = _params_for(["头部", "身体"])
     for part in params["parts"]:
-        assert part.rows == len(part.rounds)
+        # rows 不再是存储字段：圈数一律由 len(rounds) 派生
+        assert "rows" not in part
+        assert part["rounds"]
 
 
 # ── 加减针说明：按真实发布图解的通行规范锁定 ────────────────────────────────
@@ -349,36 +351,36 @@ def test_hat_is_open_cup_larger_than_head():
     """帽子必须开口（末圈=最大针数、无减针）且帽围>头围。"""
     params = _params_for(["头部", "帽子"])
     head, hat = params["parts"][0], params["parts"][1]
-    assert hat.type == "cup"
-    assert hat.rounds[-1].decrease == 0
-    assert hat.rounds[-1].stitches == max(r.stitches for r in hat.rounds)
-    assert hat.diameter_cm > head.diameter_cm
-    assert max(r.stitches for r in hat.rounds) > max(r.stitches for r in head.rounds)
-    assert "不收口" in hat.notes
+    assert hat["type"] == "cup"
+    assert hat["rounds"][-1]["decrease"] == 0
+    assert hat["rounds"][-1]["stitches"] == max(r["stitches"] for r in hat["rounds"])
+    assert hat["diameter_cm"] > head["diameter_cm"]
+    assert max(r["stitches"] for r in hat["rounds"]) > max(r["stitches"] for r in head["rounds"])
+    assert "不收口" in hat.get("notes")
     # F36 最终口径：height_cm 只计轴向筒壁（与圆柱同判——径向盘不计高）；
     # 帽顶圈数仍含在 rounds 里（钩织时需要），但标注高度=筒深
     from app.models.crochet_params import HAT_DEPTH_RATIO
     from app.models.gauge import DEFAULT
-    max_st = max(r.stitches for r in hat.rounds)
+    max_st = max(r["stitches"] for r in hat["rounds"])
     n_up = max_st // 6
-    wall_rounds = max(3, DEFAULT.rounds_for_height(hat.diameter_cm * HAT_DEPTH_RATIO))
-    assert len(hat.rounds) == n_up + wall_rounds
-    assert hat.height_cm == round(wall_rounds * DEFAULT.row_h_cm, 1)
-    assert "筒深" in hat.notes and "不计入筒深" in hat.notes
+    wall_rounds = max(3, DEFAULT.rounds_for_height(hat["diameter_cm"] * HAT_DEPTH_RATIO))
+    assert len(hat["rounds"]) == n_up + wall_rounds
+    assert hat["height_cm"] == round(wall_rounds * DEFAULT.row_h_cm, 1)
+    assert "筒深" in hat.get("notes") and "不计入筒深" in hat.get("notes")
 
 
 def test_stitches_scale_with_head_diameter():
     """身体/四肢针数随头径缩放（回归：旧硬编码 24/12 针）。"""
     big = _params_for(["头部", "身体", "手臂"], head_d=20.0, height=45.0)
-    by_name = {p.name: p for p in big["parts"]}
+    by_name = {p["name"]: p for p in big["parts"]}
     # 20cm 头 → 默认 gauge（0.769cm/针）下 84 针（旧 0.785 锚点为 78）
-    assert max(r.stitches for r in by_name["身体"].rounds) == 84
-    assert 18 <= max(r.stitches for r in by_name["手臂"].rounds) <= 30  # 6.6cm 直径
+    assert max(r["stitches"] for r in by_name["身体"]["rounds"]) == 84
+    assert 18 <= max(r["stitches"] for r in by_name["手臂"]["rounds"]) <= 30  # 6.6cm 直径
 
     small = _params_for(["头部", "身体", "手臂"], head_d=5.0, height=12.0)
-    by_name = {p.name: p for p in small["parts"]}
-    assert max(r.stitches for r in by_name["身体"].rounds) == 18  # 5cm 头 → 缩小
-    assert max(r.stitches for r in by_name["手臂"].rounds) >= 6
+    by_name = {p["name"]: p for p in small["parts"]}
+    assert max(r["stitches"] for r in by_name["身体"]["rounds"]) == 18  # 5cm 头 → 缩小
+    assert max(r["stitches"] for r in by_name["手臂"]["rounds"]) >= 6
 
 
 def test_annotated_height_excludes_base_dome():
@@ -394,25 +396,25 @@ def test_annotated_height_excludes_base_dome():
         _stitches_for_diameter,
     )
     params = _params_for(["头部", "身体", "手臂", "帽子"])
-    by_name = {p.name: p for p in params["parts"]}
+    by_name = {p["name"]: p for p in params["parts"]}
     body = by_name["身体"]
     n_dome = _stitches_for_diameter(9.0 * BODY_HEAD_RATIO) // 6
     # 四肢与身体统一行高（旧 1.2/1.6 差异已取消——行高是纱线属性）
-    assert body.height_cm == round(
-        (len(body.rounds) - n_dome) * DEFAULT_GAUGE.row_h_cm, 1)
+    assert body["height_cm"] == round(
+        (len(body["rounds"]) - n_dome) * DEFAULT_GAUGE.row_h_cm, 1)
     arm = by_name["手臂"]
     n_dome_arm = _stitches_for_diameter(9.0 * LIMB_HEAD_RATIO) // 6
-    assert arm.height_cm == round(
-        (len(arm.rounds) - n_dome_arm) * DEFAULT_GAUGE.row_h_cm, 1)
+    assert arm["height_cm"] == round(
+        (len(arm["rounds"]) - n_dome_arm) * DEFAULT_GAUGE.row_h_cm, 1)
     hat = by_name["帽子"]
     # F36：帽子与圆柱统一——径向盘（帽顶）不计入筒深标注；
     # 帽子 dome 用帽子自身最大针数推导（帽径 > 头径，dome 圈数不同）
-    hat_dome = max(r.stitches for r in hat.rounds) // 6
-    assert abs(hat.height_cm - (len(hat.rounds) - hat_dome) * DEFAULT_GAUGE.row_h_cm) < 0.06
+    hat_dome = max(r["stitches"] for r in hat["rounds"]) // 6
+    assert abs(hat["height_cm"] - (len(hat["rounds"]) - hat_dome) * DEFAULT_GAUGE.row_h_cm) < 0.06
     # 头+身体标注不超过输入总高（旧版 9 + 9.4 > 18）
-    assert 9.0 + body.height_cm <= 18.0 + 0.5
+    assert 9.0 + body["height_cm"] <= 18.0 + 0.5
     # 身体 notes 明示"另含底部圆盘"
-    assert "底部圆盘" in body.notes
+    assert "底部圆盘" in body.get("notes")
 
 
 def test_finishing_notes_present():
@@ -427,14 +429,14 @@ def test_skirt_is_open_and_wider_than_body():
     from app.models.crochet_params import BODY_HEAD_RATIO, _stitches_for_diameter
     params = _params_for(["身体", "裙子"])
     body, skirt = params["parts"]
-    assert skirt.type == "cup"
+    assert skirt["type"] == "cup"
     waist = _stitches_for_diameter(9.0 * BODY_HEAD_RATIO)
-    assert skirt.rounds[0].stitches == waist          # R1 = 腰围开口（非魔法环 6 针）
-    assert skirt.magic_ring is False
-    assert "腰部环形起针" in skirt.rounds[0].notes
-    assert skirt.rounds[-1].decrease == 0             # 裙摆不收口
-    assert max(r.stitches for r in skirt.rounds) > max(r.stitches for r in body.rounds)
-    assert "套入身体" in skirt.notes
+    assert skirt["rounds"][0]["stitches"] == waist          # R1 = 腰围开口（非魔法环 6 针）
+    assert skirt["magic_ring"] is False
+    assert "腰部环形起针" in (skirt["rounds"][0].get("notes") or "")
+    assert skirt["rounds"][-1]["decrease"] == 0             # 裙摆不收口
+    assert max(r["stitches"] for r in skirt["rounds"]) > max(r["stitches"] for r in body["rounds"])
+    assert "套入身体" in skirt.get("notes")
 
 
 # ── refresh_derived（局部修正后的派生量重算）────────────────────────────────
@@ -443,7 +445,7 @@ def test_refresh_derived_recomputes_after_edit():
     params = _params_for(["头部"])
     before_time = params["estimated_time_minutes"]
     edited = {**{k: v for k, v in params.items() if k != "parts"},
-              "parts": [p.model_dump() for p in params["parts"]]}
+              "parts": list(params["parts"])}
     edited["parts"][0]["rounds"] = edited["parts"][0]["rounds"] * 3  # 圈数×3
     from app.models.crochet_params import refresh_derived
     out = refresh_derived(edited)
@@ -488,7 +490,7 @@ def test_refresh_derived_preserves_generation_gauge():
     assert any("2.0–2.5mm" in h for h in hook_labels)  # fine 密度的正确标签
 
     edited = {**{k: v for k, v in params.items() if k != "parts"},
-              "parts": [p.model_dump() for p in params["parts"]]}
+              "parts": list(params["parts"])}
     out = refresh_derived(edited)
     assert out["materials"] == params["materials"], \
         "JSON 修正后材料清单不得随默认密度漂移"
@@ -500,7 +502,7 @@ def test_refresh_derived_clamps_bad_gauge_values():
 
     params = _params_for(["头部"])
     edited = {**{k: v for k, v in params.items() if k != "parts"},
-              "parts": [p.model_dump() for p in params["parts"]],
+              "parts": list(params["parts"]),
               "gauge": {"stitches_per_10cm": 999.0, "rows_per_10cm": 1.0}}
     out = refresh_derived(edited)
     assert out["materials"]  # 钳制后正常算出材料
@@ -524,21 +526,21 @@ def test_color_direction_bottom_up_for_limbs_and_body():
                       parts=["腿部", "身体", "头部"])
     params = CrochetParamsGenerator.generate_params(
         a, StructureDesigner.design_3d_structure(a), color_bands=bands)
-    by = {p.name: p for p in params["parts"]}
-    leg_colors = [r.color for r in by["腿部"].rounds]
+    by = {p["name"]: p for p in params["parts"]}
+    leg_colors = [r["color"] for r in by["腿部"]["rounds"]]
     assert leg_colors[0] == "黑色", f"脚底应取鞋色，实际 {leg_colors}"
     assert leg_colors[-1] == "蓝色"
-    body_colors = [r.color for r in by["身体"].rounds]
+    body_colors = [r["color"] for r in by["身体"]["rounds"]]
     assert body_colors[0] != body_colors[-1] or all(c == "蓝色" for c in body_colors)
     # 头部自顶起针：R1 仍取照片顶部色（蓝）
-    assert by["头部"].rounds[0].color == "蓝色"
+    assert by["头部"]["rounds"][0]["color"] == "蓝色"
 
 
 def test_assembly_rebuilt_after_json_edit():
     """refresh_derived 删掉帽子后装配说明不得残留帽子步骤（fable5 F5）。"""
     params = _params_for(["头部", "身体", "帽子"])
     edited = {**{k: v for k, v in params.items() if k != "parts"},
-              "parts": [p.model_dump() for p in params["parts"] if p.name != "帽子"]}
+              "parts": [p for p in params["parts"] if p["name"] != "帽子"]}
     from app.models.crochet_params import refresh_derived
     out = refresh_derived(edited)
     assert "帽" not in out["assembly_instructions"]
@@ -557,11 +559,11 @@ def test_semantic_color_overrides_bands():
                       hair_color="深棕色", top_color="蓝色")
     params = CrochetParamsGenerator.generate_params(
         a, StructureDesigner.design_3d_structure(a), color_bands=bands)
-    by = {p.name: p for p in params["parts"]}
-    assert {r.color for r in by["头部"].rounds} == {"深棕色"}
-    assert {r.color for r in by["身体"].rounds} == {"蓝色"}
-    assert "照片语义" in by["头部"].notes
-    assert "换线" not in (by["头部"].notes or "")
+    by = {p["name"]: p for p in params["parts"]}
+    assert {r["color"] for r in by["头部"]["rounds"]} == {"深棕色"}
+    assert {r["color"] for r in by["身体"]["rounds"]} == {"蓝色"}
+    assert "照片语义" in (by["头部"].get("notes") or "")
+    assert "换线" not in (by["头部"].get("notes") or "")
 
 
 def test_no_semantic_falls_back_to_bands():
@@ -572,8 +574,8 @@ def test_no_semantic_falls_back_to_bands():
     bands = [{"start": 0.0, "end": 1.0, "color": "蓝色"}]
     params = CrochetParamsGenerator.generate_params(
         a, StructureDesigner.design_3d_structure(a), color_bands=bands)
-    assert {r.color for r in params["parts"][0].rounds} == {"蓝色"}
-    assert "照片语义" not in (params["parts"][0].notes or "")
+    assert {r["color"] for r in params["parts"][0]["rounds"]} == {"蓝色"}
+    assert "照片语义" not in (params["parts"][0].get("notes") or "")
 
 
 def test_structure_added_skirt_reaches_params():
@@ -586,10 +588,10 @@ def test_structure_added_skirt_reaches_params():
                       bottom_color="红色")
     params = CrochetParamsGenerator.generate_params(
         a, StructureDesigner.design_3d_structure(a))
-    names = [p.name for p in params["parts"]]
+    names = [p["name"] for p in params["parts"]]
     assert names == ["头部", "身体", "裙子"]
     skirt = params["parts"][-1]
-    assert skirt.rounds[0].stitches == 36  # 腰部开口起针
+    assert skirt["rounds"][0]["stitches"] == 36  # 腰部开口起针
     assert "裙" in params["assembly_instructions"]
 
 
@@ -634,10 +636,10 @@ def test_head_mode_ideal_via_style():
     params = CrochetParamsGenerator.generate_params(
         *_sd(["头部"]), style=ShapingStyle(sphere_mode="ideal"))
     head = params["parts"][0]
-    assert "理想球形" in head.notes
+    assert "理想球形" in head.get("notes")
     params2 = CrochetParamsGenerator.generate_params(
         *_sd(["头部"]), style=ShapingStyle(sphere_mode="egg"))
-    assert "蛋形" in params2["parts"][0].notes
+    assert "蛋形" in (params2["parts"][0].get("notes") or "")
 
 
 def _sd(parts, **kw):
@@ -654,16 +656,16 @@ def test_one_piece_merge():
     from app.models.gauge import ShapingStyle
     params = CrochetParamsGenerator.generate_params(
         *_sd(["头部", "身体", "手臂"]), style=ShapingStyle(one_piece=True))
-    names = [p.name for p in params["parts"]]
+    names = [p["name"] for p in params["parts"]]
     assert "头身（一体）" in names and "头部" not in names and "身体" not in names
-    op = [p for p in params["parts"] if p.name == "头身（一体）"][0]
-    sts = [r.stitches for r in op.rounds]
+    op = [p for p in params["parts"] if p["name"] == "头身（一体）"][0]
+    sts = [r["stitches"] for r in op["rounds"]]
     assert sts[0] == 6                                  # 头顶起针
     assert sts[-1] == 6                                 # 底部收口
     assert max(sts) >= 30                               # 含头部最宽圈
-    notes = "".join(r.notes or "" for r in op.rounds)
+    notes = "".join(r.get("notes") or "" for r in op["rounds"])
     assert "颈部" in notes and "勒紧收口" in notes
-    assert any("错开半组" in (r.notes or "") for r in op.rounds)
+    assert any("错开半组" in (r.get("notes") or "") for r in op["rounds"])
     # 装配：一体件有分阶段填充，且无头身缝合步骤
     asm = params["assembly_instructions"]
     assert "分阶段填充" in asm and "接合到身体顶部" not in asm
@@ -678,11 +680,11 @@ def test_skirt_attached_style_and_ruffle():
     params = CrochetParamsGenerator.generate_params(
         *_sd(["身体", "裙子"]),
         style=ShapingStyle(skirt_style="attached", ruffle_hem=True))
-    skirt = [p for p in params["parts"] if p.name == "裙子"][0]
-    assert "后半针" in skirt.rounds[0].notes
-    last = skirt.rounds[-1]
-    assert last.stitches == skirt.rounds[-2].stitches * 2    # 波浪摆翻倍
-    assert "波浪裙摆" in (last.notes or "") and "免缝合" in skirt.notes
+    skirt = [p for p in params["parts"] if p["name"] == "裙子"][0]
+    assert "后半针" in (skirt["rounds"][0].get("notes") or "")
+    last = skirt["rounds"][-1]
+    assert last["stitches"] == skirt["rounds"][-2]["stitches"] * 2    # 波浪摆翻倍
+    assert "波浪裙摆" in (last.get("notes") or "") and "免缝合" in skirt.get("notes")
 
 
 # ── M3.13 语义色与色带融合 ────────────────────────────────────────────────
@@ -695,11 +697,11 @@ def test_semantic_color_snaps_nearest_band_segment():
     params = CrochetParamsGenerator.generate_params(
         a, struct, color_bands=bands)
     skirt = params["parts"][0]
-    colors = [r.color for r in skirt.rounds]
+    colors = [r["color"] for r in skirt["rounds"]]
     assert "红色" in colors and "白色" in colors     # 分段保留
     assert "蓝色" not in colors                       # 主色段被吸附
-    assert any("换线" in (r.notes or "") for r in skirt.rounds)
-    assert "校正" in (skirt.notes or "")
+    assert any("换线" in (r.get("notes") or "") for r in skirt["rounds"])
+    assert "校正" in (skirt.get("notes") or "")
 
 
 def test_semantic_snap_targets_dominant_segment_not_nearest():
@@ -713,7 +715,7 @@ def test_semantic_snap_targets_dominant_segment_not_nearest():
              {"start": 0.7, "end": 1.0, "color": "白色"}]
     a, struct = _sd(["裙子"], bottom_color="红色")
     params = CrochetParamsGenerator.generate_params(a, struct, color_bands=bands)
-    colors = [r.color for r in params["parts"][0].rounds]
+    colors = [r["color"] for r in params["parts"][0]["rounds"]]
     # 主色段（蓝，占 70%）整体吸附为红；白边段保留
     assert colors.count("红色") == 3 and colors.count("白色") == 2
     assert "蓝色" not in colors

@@ -1,4 +1,6 @@
-"""第十二轮：逐色材料 / C2C / 自检器 / span hints / 环形图。"""
+"""逐色材料 / C2C 网格 / 图解自检器 / span hints / 环形圈数图（原 test_round12.py）。"""
+from contextlib import suppress
+
 from PIL import Image
 
 from app.models.crochet_params import CrochetParamsGenerator
@@ -41,11 +43,11 @@ def test_materials_include_per_color_entries():
     # 色表外颜色同样给量（LLM 语义色场景）
     params2 = _params(bands=_two_bands())
     for p in params2["parts"]:
-        p.color = "酒红色"
-        for r in p.rounds:
-            r.color = "酒红色"
+        p["color"] = "酒红色"
+        for r in p["rounds"]:
+            r["color"] = "酒红色"
     from app.models.crochet_params import _materials
-    materials = _materials(params2["parts"], {p.name for p in params2["parts"]})
+    materials = _materials(params2["parts"], {p["name"] for p in params2["parts"]})
     assert any(m["item"] == "毛线 · 酒红色" for m in materials)
 
 
@@ -114,8 +116,8 @@ def test_validator_passes_generated_pattern():
 def test_validator_flags_broken_algebra():
     params = _params()
     pd = params["parts"][0]
-    rd = pd.rounds[5]
-    rd.stitches = rd.stitches + 13  # 破坏代数
+    rd = pd["rounds"][5]
+    rd["stitches"] = rd["stitches"] + 13  # 破坏代数
     v = validate_pattern(params)
     assert not v["ok"]
     assert any("第 6 圈" in i for i in v["issues"])
@@ -124,8 +126,8 @@ def test_validator_flags_broken_algebra():
 def test_validator_flags_inc_and_dec_together():
     params = _params()
     pd = params["parts"][0]
-    pd.rounds[8].increase = 6
-    pd.rounds[8].decrease = 6
+    pd["rounds"][8]["increase"] = 6
+    pd["rounds"][8]["decrease"] = 6
     v = validate_pattern(params)
     assert any("同时加针" in i for i in v["issues"])
 
@@ -225,10 +227,8 @@ def test_span_hints_reach_prompt(monkeypatch):
                         lambda *a, **k: False)
     parser = ImageParser(anthropic_key="k")
     parser._span_hints = hints
-    try:
+    with suppress(RuntimeError):  # 无真实 Key：解析在 prompt 捕获后即失败
         parser.parse_image(Image.new("RGB", (32, 32)), span_hints=hints)
-    except RuntimeError:
-        pass
     assert hints in recorded["prompt"]
     # 无 hints 时 prompt 不含几何参考
     parser2 = ImageParser(anthropic_key="k")
@@ -266,13 +266,13 @@ def test_ring_svg_draws_one_circle_per_round():
     params = _params(bands=_two_bands())
     head = params["parts"][0]
     svg = render_ring_svg(head)
-    n = len(head.rounds)
+    n = len(head["rounds"])
     assert svg.count("<circle") == n
-    assert "顶视图" in svg and f"{head.name}" in svg
+    assert "顶视图" in svg and f"{head['name']}" in svg
 
 
 def test_ring_svg_colored_rounds_use_yarn_hex():
     params = _params(bands=_two_bands())
-    body = [p for p in params["parts"] if p.name == "身体"][0]
+    body = [p for p in params["parts"] if p["name"] == "身体"][0]
     svg = render_ring_svg(body)
     assert "#0000ff" in svg or "#008000" in svg or "#000080" in svg or "fill=\"#" in svg

@@ -13,8 +13,9 @@
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Dict, Mapping, Optional
+from typing import Any
 
 BASE_GRAMS_PER_STITCH = 0.08
 BASE_STITCH_AREA_CM2 = 0.785 * 0.625
@@ -147,7 +148,7 @@ def next_shaping_stitch_count(current: int, target: int,
 # 短针高>宽（w/h≈0.67–0.83，外部实务）⇒ 针数/10cm > 行数/10cm。
 # classic 是已发布图解的隐含几何（w/h≈1.23，超物理区间）——保留作默认
 # 以维持 36针=9cm头 的经典锚点，属"图解惯例 vs 物理"的已知取舍。
-PRESETS: Dict[str, Gauge] = {
+PRESETS: dict[str, Gauge] = {
     "classic": Gauge(13.0, 16.0),   # 经典图解（粗线）：w 0.77 × h 0.63（w/h 1.23）
     "dk":      Gauge(17.0, 14.0),   # DK 中粗（≈3mm）：w 0.59 × h 0.71（w/h 0.82）
     "fine":    Gauge(20.0, 16.0),   # 紧密玩偶（2.5mm+中细）：w 0.50 × h 0.63（w/h 0.79）
@@ -156,7 +157,7 @@ PRESETS: Dict[str, Gauge] = {
 DEFAULT = PRESETS["classic"]
 
 
-def gauge_from_mapping(raw: Optional[Mapping[str, Any]]) -> Gauge:
+def gauge_from_mapping(raw: Mapping[str, Any] | None) -> Gauge:
     """Deserialize a gauge payload with the same bounds as the UI.
 
     Generated results, JSON edits, imports and validation all pass through
@@ -172,8 +173,8 @@ def gauge_from_mapping(raw: Optional[Mapping[str, Any]]) -> Gauge:
         return DEFAULT
 
 
-def gauge_from_ui(preset: str, stitches: Optional[float],
-                  rows: Optional[float]) -> Gauge:
+def gauge_from_ui(preset: str, stitches: float | None,
+                  rows: float | None) -> Gauge:
     """侧栏输入 → Gauge；custom 时用数字输入，异常值回退默认。"""
     if preset in PRESETS and preset != "custom":
         return PRESETS[preset]

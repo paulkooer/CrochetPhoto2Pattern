@@ -63,7 +63,7 @@ def _reset_grid_editor_state() -> None:
         "grid_edit_mode", "grid_region_",
     )
     for key in list(st.session_state):
-        if key.startswith(prefixes):
+        if str(key).startswith(prefixes):
             del st.session_state[key]
     st.session_state.grid_undo_stack = []
     st.session_state.grid_redo_stack = []

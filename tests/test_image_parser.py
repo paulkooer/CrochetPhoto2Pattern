@@ -9,13 +9,15 @@ from PIL import Image
 
 from app.models.colors import nearest_yarn
 from app.models.image_parser import (
+    OFFICIAL_ANTHROPIC_BASE_URL,
+    OFFICIAL_OPENAI_BASE_URL,
     ImageParser,
     _image_to_base64,
     _load_prompt,
     extract_color_palette,
 )
 from app.models.orchestrator import PipelineOrchestrator
-from app.schemas import ImageAnalysis
+from app.schemas import ImageAnalysis, VisionOutput
 
 # ── _image_to_base64 ────────────────────────────────────────────────────────
 
@@ -191,6 +193,7 @@ def _img() -> Image.Image:
 
 
 def _analysis(**over) -> ImageAnalysis:
+    """内部模型形态（含厘米字段），供旧形态解析路径与断言使用。"""
     base = dict(
         body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
         main_features=["大眼睛"], pose="站立", difficulty="easy",
@@ -198,6 +201,17 @@ def _analysis(**over) -> ImageAnalysis:
     )
     base.update(over)
     return ImageAnalysis(**base)
+
+
+def _vision(**over) -> "VisionOutput":
+    """VisionOutput 形态（比例字段），模拟结构化输出 SDK 的 parsed 返回值。"""
+    base = dict(
+        body_type="标准", head_to_height_ratio=0.5,
+        main_features=["大眼睛"], pose="站立", difficulty="easy",
+        parts=["头部", "身体"],
+    )
+    base.update(over)
+    return VisionOutput(**base)
 
 
 def test_no_keys_uses_mock_and_attaches_local_palette(monkeypatch):
@@ -314,7 +328,7 @@ def test_anthropic_success_records_usage(monkeypatch):
 
     class _Resp:
         stop_reason = "end_turn"
-        parsed_output = _analysis()
+        parsed_output = _vision()
         usage = _Usage()
 
     class _Messages:
@@ -380,7 +394,9 @@ def test_mock_path_sets_watermark_meta(monkeypatch):
     parser = ImageParser()
     parser.parse_image(_img())
     assert parser.last_local_meta["source"] == "mock"
-    assert "与照片内容无关" in parser.last_local_meta["note"]
+    # 诚实标注：体型/部件为演示值，配色与分段仍来自照片
+    assert "配色与分段参考照片" in parser.last_local_meta["note"]
+    assert "体型与部件为固定演示值" in parser.last_local_meta["note"]
 
 
 def test_installed_anthropic_sdk_contract():
@@ -466,8 +482,8 @@ def test_openai_client_receives_relay_base_url(monkeypatch):
     assert recorded_init["api_key"] == "k"
 
 
-def test_openai_base_url_defaults_to_none(monkeypatch):
-    """未填中转站（空串/None）→ 构造器收到 base_url=None（官方默认）。"""
+def test_openai_base_url_defaults_to_official_endpoint(monkeypatch):
+    """用户 Key 未填中转站 → 显式传官方端点，SDK 不得回落环境 relay。"""
     fake_mod = types.ModuleType("openai")
     recorded_init = {}
 
@@ -499,7 +515,7 @@ def test_openai_base_url_defaults_to_none(monkeypatch):
 
     parser = ImageParser(openai_key="k", openai_base_url="")
     parser._parse_with_openai("b64")
-    assert recorded_init["base_url"] is None
+    assert recorded_init["base_url"] == OFFICIAL_OPENAI_BASE_URL
 
 
 def test_base_url_env_fallback(monkeypatch):
@@ -517,8 +533,10 @@ def test_base_url_env_fallback(monkeypatch):
     monkeypatch.delenv("OPENAI_BASE_URL")
     monkeypatch.delenv("ANTHROPIC_BASE_URL")
     parser2 = ImageParser(openai_key="k", anthropic_key="k")
-    assert parser2.openai_base_url is None
-    assert parser2.anthropic_base_url is None
+    # 用户 Key 未配 URL → 显式官方端点（不是 None——None 会让 SDK 回落
+    # 读取环境 relay，把用户 Key 发往运营者中转站）
+    assert parser2.openai_base_url == OFFICIAL_OPENAI_BASE_URL
+    assert parser2.anthropic_base_url == OFFICIAL_ANTHROPIC_BASE_URL
 
 
 def test_user_key_and_base_url_override_environment_pair(monkeypatch):
@@ -532,11 +550,17 @@ def test_user_key_and_base_url_override_environment_pair(monkeypatch):
 
 
 def test_user_key_without_base_url_ignores_environment_relay(monkeypatch):
-    """用户 Key 默认只发官方端点，不能被服务器环境 relay 静默接管。"""
+    """回归：用户 Key 必须显式配对官方端点，环境 relay 不得静默接管。
+
+    旧行为（缺陷）：用户 Key + 无 URL → base_url=None → SDK 读
+    OPENAI_BASE_URL 环境变量 → 用户 Key 被发往运营者的中转站。
+    """
     monkeypatch.setenv("OPENAI_BASE_URL", "https://env.example/v1")
-    parser = ImageParser(openai_key="user-key")
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://env.example")
+    parser = ImageParser(openai_key="user-key", anthropic_key="user-ant-key")
     assert parser.openai_key == "user-key"
-    assert parser.openai_base_url is None
+    assert parser.openai_base_url == OFFICIAL_OPENAI_BASE_URL
+    assert parser.anthropic_base_url == OFFICIAL_ANTHROPIC_BASE_URL
 
 
 def test_user_base_url_cannot_borrow_environment_key(monkeypatch):
@@ -599,11 +623,11 @@ def _make_openai_fake(parse_fn=None, create_fn=None):
 
 
 def test_openai_strict_parse_used_when_available(monkeypatch):
-    """SDK 有 parse 时走严格结构化路径（S2），response_format 传 pydantic 类。"""
-    from app.schemas import ImageAnalysis as IA
+    """SDK 有 parse 时走严格结构化路径（S2），response_format 传 VisionOutput。"""
+    from app.schemas import VisionOutput
 
     def parse_ok(_kw):
-        msg = types.SimpleNamespace(parsed=IA(**VALID_JSON), refusal=None,
+        msg = types.SimpleNamespace(parsed=_vision(), refusal=None,
                                     content=None)
         resp = types.SimpleNamespace(
             choices=[types.SimpleNamespace(message=msg)],
@@ -616,22 +640,21 @@ def test_openai_strict_parse_used_when_available(monkeypatch):
 
     parser = ImageParser(openai_key="k")
     result = parser._parse_with_openai("b64")
-    assert isinstance(result, IA)
+    assert isinstance(result, ImageAnalysis)
     assert len(calls["parse"]) == 1
-    assert calls["parse"][0]["response_format"] is IA  # pydantic 类 → strict schema
+    assert calls["parse"][0]["response_format"] is VisionOutput  # pydantic 类 → strict schema
     assert calls["create"] == []                       # 不再走 json_object
     assert parser.last_usage["provider"] == "openai"
 
 
 def test_openai_strict_parse_retries_with_feedback(monkeypatch):
     """首次 parse 失败 → 带错误反馈重试一次（S2 重试回路）。"""
-    from app.schemas import ImageAnalysis as IA
     state = {"n": 0}
 
     def parse_fail_then_ok(_kw):
         state["n"] += 1
         content = "部分截断的坏输出" if state["n"] == 1 else "{}"
-        msg = types.SimpleNamespace(parsed=None if state["n"] == 1 else IA(**VALID_JSON),
+        msg = types.SimpleNamespace(parsed=None if state["n"] == 1 else _vision(),
                                     refusal=None, content=content)
         return types.SimpleNamespace(
             choices=[types.SimpleNamespace(message=msg)],
@@ -642,7 +665,7 @@ def test_openai_strict_parse_retries_with_feedback(monkeypatch):
 
     parser = ImageParser(openai_key="k")
     result = parser._parse_with_openai("b64")
-    assert isinstance(result, IA)
+    assert isinstance(result, ImageAnalysis)
     assert state["n"] == 2                       # 恰好重试一次
     # 重试消息包含错误反馈 + 上一次 assistant 输出
     retry_messages = calls["parse"][1]["messages"]
@@ -673,3 +696,22 @@ def test_openai_contract_parse_exists():
     client = openai.OpenAI(api_key="test")
     assert hasattr(client.chat.completions, "parse"), \
         "openai>=1.40 的 chat.completions.parse 是 S2 严格结构化输出的前提"
+
+
+def test_placeholder_env_keys_not_configured(monkeypatch):
+    """.env.example 占位值不视为已配置——否则应用带着占位符发真实请求。"""
+    monkeypatch.setattr("app.models.image_parser.load_dotenv", lambda *a, **k: False)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-your-key-here")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-your-key-here")
+    parser = ImageParser()
+    assert parser.openai_key is None
+    assert parser.anthropic_key is None
+
+
+def test_explicit_mock_parse_never_calls_api(monkeypatch):
+    """parse_image_mock 与 Key 状态无关，返回固定演示数据。"""
+    parser = ImageParser(openai_key="sk-user-key-1234567890")
+    analysis = parser.parse_image_mock()
+    assert analysis.body_type == "标准"
+    assert parser.last_usage == {}
+    assert parser.last_local_meta["source"] == "mock"

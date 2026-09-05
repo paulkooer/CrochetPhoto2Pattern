@@ -122,9 +122,9 @@ def test_eval_end_to_end_stability():
     struct = StructureDesigner.design_3d_structure(a)
     p1 = CrochetParamsGenerator.generate_params(a, struct, gauge=DEFAULT)
     p2 = CrochetParamsGenerator.generate_params(a, struct, gauge=DEFAULT)
-    dump1 = [(p.name, p.type, [(r.stitches, r.color) for r in p.rounds])
+    dump1 = [(p["name"], p["type"], [(r["stitches"], r["color"]) for r in p["rounds"]])
              for p in p1["parts"]]
-    dump2 = [(p.name, p.type, [(r.stitches, r.color) for r in p.rounds])
+    dump2 = [(p["name"], p["type"], [(r["stitches"], r["color"]) for r in p["rounds"]])
              for p in p2["parts"]]
     assert dump1 == dump2
 
@@ -144,7 +144,7 @@ def test_eval_gauge_consistency():
         params = CrochetParamsGenerator.generate_params(
             a, StructureDesigner.design_3d_structure(a), gauge=g)
         head = params["parts"][0]
-        max_st = max(r.stitches for r in head.rounds)
+        max_st = max(r["stitches"] for r in head["rounds"])
         physical_d = max_st * g.stitch_w_cm / math.pi
         # 容差 = 6 的倍数量化的半步（领域惯例的固有精度下限）
         tol = 6 * g.stitch_w_cm / math.pi / 2 + 0.02

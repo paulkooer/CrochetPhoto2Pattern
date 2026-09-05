@@ -127,7 +127,8 @@ def test_bilingual_entry_points_cross_link_and_preserve_release_boundaries():
 
 
 def test_historical_audit_docs_point_to_authoritative_status():
-    for relative in ("docs/optimization-brief.md", "docs/handoff-review.md"):
+    for relative in ("docs/archive/optimization-brief.md",
+                     "docs/archive/handoff-review.md"):
         text = (_REPO / relative).read_text(encoding="utf-8")
         assert "system-status.md" in text
         assert "历史" in text[:400]
@@ -175,7 +176,11 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
             encoding="utf-8"
         )
         assert "actions/checkout@v7" in workflow
-        assert "actions/setup-python@v7" in workflow
+        # setup-python(cache: pip) 对 uv 管理的 .venv 无效——统一走
+        # setup-uv 并开启缓存
+        assert "astral-sh/setup-uv@v7" in workflow
+        assert "enable-cache: true" in workflow
+        assert "actions/setup-python" not in workflow
 
 
 def test_pose_extra_avoids_vulnerable_protobuf_and_unverified_python_versions():

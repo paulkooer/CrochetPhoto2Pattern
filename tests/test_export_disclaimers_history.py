@@ -1,4 +1,4 @@
-"""第十五轮（Opus 5 第二部分）回归：V6/U23升级/U24升级/U30/V5/U26。"""
+"""导出免责声明 / 时长估算 / 历史库校验与迁移回归（原 test_round15.py）。"""
 import sqlite3
 
 import pytest
@@ -73,7 +73,7 @@ def test_estimate_minutes_shared_by_both_paths():
     """refresh_derived 与 _build_result 共用 _estimate_minutes（防失同步）。"""
     params = _params()
     edited = {**{k: v for k, v in params.items() if k != "parts"},
-              "parts": [p.model_dump() for p in params["parts"]]}
+              "parts": list(params["parts"])}
     edited["parts"][0]["rounds"] = edited["parts"][0]["rounds"] * 2
     from app.models.crochet_params import refresh_derived
     out = refresh_derived(edited)
@@ -167,6 +167,7 @@ def test_history_title_and_migration(tmp_path, monkeypatch):
                       parts=["头部"])
     p = _params()
     history.save_result({"result_id": "t1", "analysis": a.model_dump(),
-                         "params": p}, title="蓝色小兔")
+                         "structure": {"parts": []}, "params": p},
+                        title="蓝色小兔")
     hits = history.list_results(query="蓝色小兔")
     assert len(hits) == 1 and hits[0]["title"] == "蓝色小兔"

@@ -83,14 +83,14 @@ def test_symmetric_pair_progress_tracks_both_physical_copies():
 
     arms = next(
         part for part in at.session_state["result"]["params"]["parts"]
-        if part.name == "手臂")
+        if part["name"] == "手臂")
     at.button(key="all_smoke-pair-progress_手臂").click().run()
     arm_checks = [
         checkbox for checkbox in at.checkbox
         if checkbox.key and checkbox.key.startswith(
             "chk_smoke-pair-progress_手臂_")
     ]
-    assert len(arm_checks) == len(arms.rounds) * 2
+    assert len(arm_checks) == len(arms["rounds"]) * 2
     assert any("_copy2_" in checkbox.key for checkbox in arm_checks)
     assert all(checkbox.value for checkbox in arm_checks)
 
@@ -119,7 +119,7 @@ def test_manual_regenerate_applies_edited_json():
     edited = {
         **{k: v for k, v in params.items() if k != "parts"},
         # 残留一个过期的 rows=999，头部删到只剩前 3 圈
-        "parts": [{**p.model_dump(), "rows": 999} for p in params["parts"]],
+        "parts": [{**p, "rows": 999} for p in params["parts"]],
     }
     edited["parts"][0]["rounds"] = edited["parts"][0]["rounds"][:3]
 
@@ -131,14 +131,15 @@ def test_manual_regenerate_applies_edited_json():
     assert not at.exception
 
     head = [p for p in at.session_state["manual_result"]["params"]["parts"]
-            if p.name == "头部"][0]
-    assert len(head.rounds) == 3
-    assert head.rows == 3  # 过期的 rows=999 不得复活
+            if p["name"] == "头部"][0]
+    assert len(head["rounds"]) == 3
+    # 过期的 rows=999 不得复活：rows 不再是存储字段（由 len(rounds) 派生）
+    assert "rows" not in head
     # A5 回归：成功提示通过 session 标志在 rerun 后真实可见
     assert any("已根据修正" in str(s.value) for s in at.success)
     # C2 回归：派生量已按编辑后的圈数重算（3 圈 → 时长为下限 30 分钟）
     assert at.session_state["manual_result"]["params"]["estimated_time_minutes"] <= 30 + 2.5 * (
-        sum(len(p.rounds) for p in at.session_state["manual_result"]["params"]["parts"]) - 3
+        sum(len(p["rounds"]) for p in at.session_state["manual_result"]["params"]["parts"]) - 3
     )
 
 
@@ -278,8 +279,11 @@ def test_nokey_mode_radio_renders(monkeypatch):
     assert any("Mock" in o for o in radio.options)
 
 
-def test_env_keys_default_to_ai_and_hide_mock(monkeypatch):
-    """.env（环境变量）有 Key 而输入框为空时：默认 AI 解析、不提供 Mock。
+def test_env_keys_default_to_ai_with_explicit_mock(monkeypatch):
+    """.env（环境变量）有 Key 而输入框为空时：默认 AI 解析，Mock 仍显式可选。
+
+    vision_mode 三态化后 Mock 不再是"无 Key"的隐式副作用——无论 Key
+    是否存在，选 Mock 都不会发起任何 API 调用，因此始终提供该选项。
 
     回归（N1）：旧版只看输入框判定"无 Key"，.env 用户选"Mock 演示数据"
     时空串 key 回退 env → 实际发起真实计费调用，选项与行为完全脱节。
@@ -292,7 +296,7 @@ def test_env_keys_default_to_ai_and_hide_mock(monkeypatch):
     radio = at.radio(key="vision_mode")
     assert radio is not None
     assert radio.value.startswith("🤖")          # 默认 AI
-    assert not any("Mock" in o for o in radio.options)  # Mock 只在真正无 Key 时提供
+    assert any("Mock" in o for o in radio.options)      # Mock 常驻可选（显式三态）
     assert any("本地" in o for o in radio.options)      # 免费的本地模式仍可选
 
 
@@ -308,16 +312,20 @@ def test_env_keys_offer_local_mode_for_free(monkeypatch):
 
 
 def test_vision_mode_resets_when_keys_appear(monkeypatch):
-    """无 Key 时选了 Mock，随后配了 Key → radio 确定性回到 AI 默认且不异常。"""
+    """无 Key 时选了"本地估算（推荐）"，配 Key 后旧选项不复存在 → 确定性回到 AI 默认。
+
+    Mock 选项跨 Key 状态常驻，选择会被保留（且永不发起 API 调用）；
+    只有带"（推荐）"后缀的无 Key 专属标签才会触发重置。
+    """
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     at = AppTest.from_file(_APP, default_timeout=30)
     at.run()
-    at.radio(key="vision_mode").set_value("🎬 Mock 演示数据").run()
-    assert at.radio(key="vision_mode").value.startswith("🎬")
+    at.radio(key="vision_mode").set_value("🧮 本地视觉估算（推荐）").run()
+    assert at.radio(key="vision_mode").value.startswith("🧮")
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-only")
-    at.run()  # options 已切换（残留的 Mock 不在新 options 中）
+    at.run()  # options 已切换（"（推荐）"标签不在新 options 中）
     assert not at.exception
     assert at.radio(key="vision_mode").value.startswith("🤖")
 
@@ -422,7 +430,7 @@ def test_backup_import_restores_result():
         "analysis": src["analysis"],
         "structure": src["structure"],
         "params": {**{k: v for k, v in src["params"].items() if k != "parts"},
-                   "parts": [p.model_dump() for p in src["params"]["parts"]]},
+                   "parts": list(src["params"]["parts"])},
     }, ensure_ascii=False)
 
     at2 = AppTest.from_file(_APP, default_timeout=30)  # 全新会话（无历史状态）
@@ -436,7 +444,7 @@ def test_backup_import_restores_result():
 
     restored = at2.session_state["manual_result"]
     assert restored["result_id"] not in (rid_seed, rid1)
-    assert [p.name for p in restored["params"]["parts"]] == ["头部", "身体"]
+    assert [p["name"] for p in restored["params"]["parts"]] == ["头部", "身体"]
     assert restored["params"]["estimated_time_minutes"] > 0
     # 旧 seed 的 widget 状态已被清理
     assert f"import_{rid_seed}" not in at2.session_state
@@ -461,7 +469,7 @@ def test_backup_import_rejects_malformed_backup():
         "analysis": src["analysis"],
         "structure": ["头部", "身体"],
         "params": {**{k: v for k, v in src["params"].items() if k != "parts"},
-                   "parts": [p.model_dump() for p in src["params"]["parts"]]},
+                   "parts": list(src["params"]["parts"])},
     }, ensure_ascii=False)
     at.text_area(key=f"import_{rid}").set_value(bad).run()
     at.button(key=f"importbtn_{rid}").click().run()
@@ -524,8 +532,8 @@ def test_structure_json_edit_regenerates_locally():
 
     result = at.session_state["result"]
     old_arm = next(part for part in result["params"]["parts"]
-                   if part.name == "手臂")
-    old_height = old_arm.height_cm
+                   if part["name"] == "手臂")
+    old_height = old_arm["height_cm"]
     edited = _json.loads(_json.dumps(result["structure"], ensure_ascii=False))
     arm_structure = next(part for part in edited["parts"]
                          if part["name"] == "手臂")
@@ -539,9 +547,9 @@ def test_structure_json_edit_regenerates_locally():
     regenerated = at.session_state["result"]
     assert regenerated["result_id"] != "structure-edit-1"
     new_arm = next(part for part in regenerated["params"]["parts"]
-                   if part.name == "手臂")
-    assert new_arm.height_cm > old_height
-    assert new_arm.quantity == 2
+                   if part["name"] == "手臂")
+    assert new_arm["height_cm"] > old_height
+    assert new_arm["quantity"] == 2
     assert any("修正后的部件结构" in str(item.value) for item in at.success)
 
 
@@ -587,14 +595,14 @@ def test_quick_size_regen_without_ai():
     assert new_result["result_id"] != rid
     assert new_result["analysis"]["head_diameter_cm"] == 12.0
     assert new_result["analysis"]["height_cm"] == 24.0
-    assert [p.name for p in new_result["params"]["parts"]] == ["头部", "身体"]
+    assert [p["name"] for p in new_result["params"]["parts"]] == ["头部", "身体"]
     assert new_result["style"] == old_style           # 塑形选项透传
     assert new_result["color_bands"] is None          # 无照片路径
     assert new_result["sizing"]["source"] == "user_resize"
     assert new_result["geometry"] == old_geometry
     # 头部实际变大：最大针数应高于 9cm 头的 36 针
-    head = [p for p in new_result["params"]["parts"] if p.name == "头部"][0]
-    assert max(r.stitches for r in head.rounds) > 36
+    head = [p for p in new_result["params"]["parts"] if p["name"] == "头部"][0]
+    assert max(r["stitches"] for r in head["rounds"]) > 36
     # 成功提示可见
     assert any("新尺寸" in str(s.value) for s in at.success)
 

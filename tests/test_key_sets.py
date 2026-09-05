@@ -104,3 +104,55 @@ def test_backup_validation_accepts_legacy_structure_but_checks_v2_graph():
     with pytest.raises(ValueError):
         _validated_backup({
             "analysis": analysis.model_dump(), "structure": invalid_v2})
+
+
+def test_backup_carries_schema_version_and_session_dict_does_not():
+    """备份/分享序列化携带 schema_version；会话内 result dict 保持既有键集。"""
+    from PIL import Image
+
+    from app.models.orchestrator import PipelineOrchestrator
+    from app.schemas import SCHEMA_VERSION, PatternResult
+
+    result = PipelineOrchestrator().run_full_pipeline(
+        Image.new("RGB", (40, 40)), local_vision=True)
+    assert "schema_version" not in result
+    backup = PatternResult.from_result(result).to_backup()
+    assert backup["schema_version"] == SCHEMA_VERSION
+    # 备份键集 = 会话键集 + schema_version，无缺漏
+    assert set(backup) == set(result) | {"schema_version"}
+
+
+def test_decode_rejects_future_schema_version():
+    """分享 token 声明更高 schema 版本时拒绝载入（不猜测兼容性）。"""
+    import base64
+    import json as _json
+    import zlib as _zlib
+
+    from app.utils import share
+
+    blob = _json.dumps({
+        "analysis": {"body_type": "标准"}, "structure": {"parts": []},
+        "params": {"parts": []}, "schema_version": "999",
+    }, ensure_ascii=False)
+    token = base64.urlsafe_b64encode(
+        _zlib.compress(blob.encode("utf-8"), 9)).decode()
+    assert share.decode_result(token) is None
+
+
+def test_from_result_tolerates_legacy_backup_without_new_keys():
+    """旧备份（缺 style/gauge/preview 等键）仍可经 PatternResult 载入。"""
+    from PIL import Image
+
+    from app.models.orchestrator import PipelineOrchestrator
+    from app.schemas import PatternResult
+
+    result = PipelineOrchestrator().run_full_pipeline(
+        Image.new("RGB", (40, 40)), local_vision=True)
+    legacy = {k: result[k] for k in ("analysis", "structure", "params")}
+    legacy["result_id"] = "legacy-1"
+    restored = PatternResult.from_result(legacy).to_result_dict()
+    assert restored["result_id"] == "legacy-1"
+    assert restored["style"] is None
+    assert restored["vision_meta"] == {}
+    # 三必带键之外的缺失键与 orchestrator 键集一致（不丢不增）
+    assert set(restored) == set(result) | {"result_id"}

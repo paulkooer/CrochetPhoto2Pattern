@@ -1,9 +1,13 @@
 import logging
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 from PIL import Image
 
-from ..schemas import ImageAnalysis  # noqa: F401 – kept for re-export convenience
+from ..schemas import (  # noqa: F401 – ImageAnalysis kept for re-export convenience
+    ImageAnalysis,
+    PatternResult,
+)
 from .crochet_params import CrochetParamsGenerator
 from .geometry import mock_geometry, observe_geometry
 from .image_parser import ImageParser
@@ -12,8 +16,13 @@ from .structure_designer import StructureDesigner
 
 logger = logging.getLogger(__name__)
 
-# 进度回调：(percent, text)，直接对接 st.progress(...).progress
-ProgressCB = Callable[..., None]
+# 进度回调：(percent, text)，直接对接 st.progress(...).progress；
+# 返回值（DeltaGenerator）被丢弃，故用 Callable[..., Any]
+ProgressCB = Callable[..., Any]
+
+# 显式三态解析模式：库层不再靠"有没有 Key"隐式推导（环境里任何非空
+# Key 都会静默切进计费路径）。"mock" 无论 Key 是否存在都不发起 API 调用。
+VISION_MODES = ("ai", "local", "mock")
 
 
 class PipelineOrchestrator:
@@ -21,10 +30,10 @@ class PipelineOrchestrator:
 
     def __init__(
         self,
-        openai_key: Optional[str] = None,
-        anthropic_key: Optional[str] = None,
-        openai_base_url: Optional[str] = None,
-        anthropic_base_url: Optional[str] = None,
+        openai_key: str | None = None,
+        anthropic_key: str | None = None,
+        openai_base_url: str | None = None,
+        anthropic_base_url: str | None = None,
     ):
         self.parser = ImageParser(
             openai_key=openai_key,
@@ -38,38 +47,49 @@ class PipelineOrchestrator:
     def run_full_pipeline(
         self,
         image: Image.Image,
-        progress_cb: Optional[ProgressCB] = None,
-        local_vision: bool = False,
+        progress_cb: ProgressCB | None = None,
+        local_vision: bool | None = None,
         gauge=None,
         style=None,
         target_height_cm: float = 18.0,
         target_height_source: str = "default_reference",
-    ) -> Dict[str, Any]:
+        vision_mode: str = "ai",
+    ) -> dict[str, Any]:
         """Run the complete pipeline: parse → design → generate params.
 
         Args:
             image:        PIL Image to analyze
             progress_cb:  optional callback invoked as progress_cb(percent, text)
                           after each stage (UI 进度条由调用方注入，模型层不依赖 Streamlit)
-            local_vision: True 时第一步改走无 LLM 的本地视觉估算
-                          （人脸检测 + 比例推算），其余阶段不变
+            local_vision: 旧签名兼容参数；True 等价 vision_mode="local"。
+                          新代码请用 vision_mode。
+            vision_mode:  显式三态："ai"（Vision 模型，计费）/"local"
+                          （本地人脸检测估算，免费）/"mock"（固定演示数据，
+                          不发起任何 API 调用）
             target_height_cm: 用户选择的成品目标高度；照片仅提供头身比例
 
         Returns:
             Dict with 'analysis', 'structure', 'params', 'usage' and
-            'vision_meta' keys
+            'vision_meta' keys（PatternResult 契约，见 schemas.py）
         """
+        if vision_mode not in VISION_MODES:
+            raise ValueError(
+                f"vision_mode 必须是 {'/'.join(VISION_MODES)}，得到 {vision_mode!r}")
+        if local_vision is True:
+            vision_mode = "local"
 
         def _report(pct: int, text: str) -> None:
             if progress_cb is not None:
                 progress_cb(pct, text=text)
 
-        logger.info("Pipeline started (local_vision=%s)", local_vision)
+        logger.info("Pipeline started (vision_mode=%s)", vision_mode)
 
-        # 真正的 AI/本地照片路径先做一次 provider-neutral 几何观测；明确
-        # 无 Key 的 Mock 路径跳过，保证演示数据不消费照片几何且不浪费分割。
+        # 真正的 AI/本地照片路径先做一次 provider-neutral 几何观测；Mock
+        # 路径跳过，保证演示数据不消费照片几何且不浪费分割。
         geometry_observation = None
-        if local_vision or self.parser.openai_key or self.parser.anthropic_key:
+        if vision_mode != "mock" and (
+                vision_mode == "local"
+                or self.parser.openai_key or self.parser.anthropic_key):
             geometry_observation = observe_geometry(image)
 
         # S1：姿态关键点实测部件 span（可选能力，失败回退 PART_SPAN 先验）。
@@ -94,13 +114,17 @@ class PipelineOrchestrator:
         except Exception as e:
             logger.debug("pose spans unavailable: %s", e)
 
-        if local_vision:
+        if vision_mode == "local":
             _report(10, "Step 1/3: 本地视觉估算中（无 LLM）...")
             profile = (geometry_observation.silhouette.profile
                        if geometry_observation is not None
                        and geometry_observation.silhouette is not None else None)
             analysis = self.parser.parse_image_local(
                 image, geometry_profile=profile, geometry_observed=True)
+            self.parser.last_usage = {}
+        elif vision_mode == "mock":
+            _report(10, "Step 1/3: Mock 演示数据生成中（不调用 API）...")
+            analysis = self.parser.parse_image_mock()
             self.parser.last_usage = {}
         else:
             _report(10, "Step 1/3: AI 视觉解析中...")
@@ -156,31 +180,24 @@ class PipelineOrchestrator:
                     len(params.get("parts", [])), params.get("difficulty"),
                     len(color_bands))
 
-        return {
-            "analysis": analysis.model_dump(),
-            "structure": structure,
-            "params": params,
-            # 最近一次 Vision 调用的 token 用量（无 key/Mock/本地路径为空 dict）
-            "usage": self.parser.last_usage,
-            # 本地视觉估算的依据（LLM 路径为空 dict）
-            "vision_meta": self.parser.last_local_meta,
-            # 本次使用的 gauge（渲染轮廓 SVG 时需要针宽/行高）
-            "gauge": {"stitches_per_10cm": gauge.stitches_per_10cm,
-                      "rows_per_10cm": gauge.rows_per_10cm},
-            # 本次使用的塑形选项与照片色带：结果页"快速调整尺寸"重生成
-            # 参数时复用（不重新调用 AI，配色/塑形行为与首次一致）
-            "style": {"sphere_mode": style.sphere_mode,
-                      "one_piece": style.one_piece,
-                      "skirt_style": style.skirt_style,
-                      "ruffle_hem": style.ruffle_hem},
-            "color_bands": color_bands or None,
-            "preview": preview,
-            # S1 实测部件 span（None = 回退先验）；配色映射与快速调尺寸共用。
-            # spans 是"先验 ∪ 实测"的完整有效集；spans_measured 记录哪些
-            # 来自关键点实测（UI 诚实标注，不把先验误称为实测）
-            "spans": spans,
-            "spans_measured": spans_measured,
-            # 单图只测相对比例；厘米目标的来源与变换必须随结果持久化。
-            "sizing": sizing,
-            "geometry": geometry_observation.model_dump(),
-        }
+        # 单一契约出口：键集由 PatternResult 定义（schemas.py），
+        # 5 处手写字典的失同步问题在此收口。
+        return PatternResult(
+            analysis=analysis.model_dump(),
+            structure=structure,
+            params=params,
+            usage=self.parser.last_usage,
+            vision_meta=self.parser.last_local_meta,
+            gauge={"stitches_per_10cm": gauge.stitches_per_10cm,
+                   "rows_per_10cm": gauge.rows_per_10cm},
+            style={"sphere_mode": style.sphere_mode,
+                   "one_piece": style.one_piece,
+                   "skirt_style": style.skirt_style,
+                   "ruffle_hem": style.ruffle_hem},
+            color_bands=color_bands or None,
+            preview=preview,
+            spans=spans,
+            spans_measured=spans_measured,
+            sizing=sizing,
+            geometry=geometry_observation.model_dump(),
+        ).to_result_dict()

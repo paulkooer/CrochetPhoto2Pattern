@@ -79,7 +79,9 @@ cp .env.example .env
 
 Key precedence is **sidebar input > `.env`**. Clearing the sidebar field does not disable
 an `.env` key; the provider may still be called and billed. With no key in either place,
-the Photo tab uses local vision or mock mode.
+the Photo tab uses local vision or mock mode. Mock demo mode is always explicitly
+selectable regardless of keys and never calls any API; its body/parts are fixed demo
+values while colors and spans come from the photo.
 
 For a third-party API relay, enter your own key and matching Base URL together in the
 sidebar. Deployments may pair `OPENAI_API_KEY` with `OPENAI_BASE_URL`, or

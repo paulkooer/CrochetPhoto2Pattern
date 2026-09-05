@@ -23,10 +23,12 @@ Root-level user and community documents are also bilingual:
 
 ## Historical review material / 历史审查材料
 
-`audit-brief*.md`, `handoff-review.md`, and `optimization-brief.md` are immutable
-snapshots of earlier review rounds, not current operating instructions. They remain in
-their original Chinese; use `system-status.md` for current conclusions.
+`archive/audit-brief*.md`, `archive/handoff-review.md`, and
+`archive/optimization-brief.md` are immutable snapshots of earlier review rounds,
+not current operating instructions. They remain in their original Chinese; use
+`system-status.md` for current conclusions.
 
-`audit-brief*.md`、`handoff-review.md` 和 `optimization-brief.md` 是早期审查轮次的
-不可变事实快照，不是当前操作说明。它们保留原始中文，当前结论应以
-`system-status.md` / `system-status.zh-CN.md` 为准。
+`archive/audit-brief*.md`、`archive/handoff-review.md` 和
+`archive/optimization-brief.md` 是早期审查轮次的不可变事实快照，不是当前操作
+说明。它们保留原始中文，当前结论应以 `system-status.md` /
+`system-status.zh-CN.md` 为准。

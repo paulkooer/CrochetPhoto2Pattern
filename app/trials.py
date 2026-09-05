@@ -13,20 +13,20 @@ import json
 import statistics
 import sys
 from collections.abc import Iterable
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from importlib.metadata import PackageNotFoundError, version
 from importlib.resources import files as resource_files
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.crochet_params import SECONDS_PER_ROUND_OVERHEAD, SECONDS_PER_STITCH
 from app.models.gauge import BASE_GRAMS_PER_STITCH, BASE_STITCH_AREA_CM2
 
-TRIAL_SCHEMA_VERSION = 2
+TRIAL_SCHEMA_VERSION = Literal[2]
 TRIAL_REPORT_SCHEMA_VERSION = 3
-EXTERNAL_EVIDENCE_SCHEMA_VERSION = 1
+EXTERNAL_EVIDENCE_SCHEMA_VERSION = Literal[1]
 MAX_PATTERN_BYTES = 20 * 1024 * 1024
 MAX_TRIAL_BYTES = 512 * 1024
 MAX_EXTERNAL_EVIDENCE_BYTES = 1024 * 1024
@@ -67,23 +67,23 @@ class SwatchMeasurement(_StrictModel):
     measured: bool = False
     stitches_per_10cm: float = Field(ge=6.0, le=40.0)
     rows_per_10cm: float = Field(ge=8.0, le=50.0)
-    hook_mm: Optional[float] = Field(default=None, gt=0.0, le=20.0)
-    yarn_brand: Optional[str] = Field(default=None, max_length=100)
-    yarn_line: Optional[str] = Field(default=None, max_length=100)
-    yarn_lot: Optional[str] = Field(default=None, max_length=100)
-    fiber: Optional[str] = Field(default=None, max_length=200)
+    hook_mm: float | None = Field(default=None, gt=0.0, le=20.0)
+    yarn_brand: str | None = Field(default=None, max_length=100)
+    yarn_line: str | None = Field(default=None, max_length=100)
+    yarn_lot: str | None = Field(default=None, max_length=100)
+    fiber: str | None = Field(default=None, max_length=200)
 
 
 class TrialObservation(_StrictModel):
     completed_on: date
     overall_height_cm: float = Field(gt=0.0, le=300.0)
     yarn_used_grams: float = Field(gt=0.0, le=5000.0)
-    yarn_used_meters: Optional[float] = Field(default=None, gt=0.0, le=100_000.0)
+    yarn_used_meters: float | None = Field(default=None, gt=0.0, le=100_000.0)
     active_minutes: int = Field(gt=0, le=100_000)
     time_scope: Literal["round_crochet_baseline", "full_project"]
     pattern_modified: bool
     modifications: list[str] = Field(default_factory=list, max_length=50)
-    notes: Optional[str] = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=2000)
 
     @field_validator("completed_on")
     @classmethod
@@ -93,7 +93,7 @@ class TrialObservation(_StrictModel):
         return value
 
     @model_validator(mode="after")
-    def _modification_details(self) -> "TrialObservation":
+    def _modification_details(self) -> TrialObservation:
         if self.pattern_modified and not self.modifications:
             raise ValueError("modified trials must describe at least one modification")
         if not self.pattern_modified and self.modifications:
@@ -109,10 +109,10 @@ class TrialRecord(_StrictModel):
     cohort: Literal["calibration", "validation"] = "calibration"
     pattern: PatternSource
     swatch: SwatchMeasurement
-    observation: Optional[TrialObservation] = None
+    observation: TrialObservation | None = None
 
     @model_validator(mode="after")
-    def _completed_contract(self) -> "TrialRecord":
+    def _completed_contract(self) -> TrialRecord:
         if self.status == "completed":
             if self.observation is None:
                 raise ValueError("completed trials require observation")
@@ -135,18 +135,18 @@ class ExternalObservation(_StrictModel):
     project_label: str = Field(min_length=1, max_length=120)
     project_type: Literal["amigurumi", "other_crochet"]
     measurement_scope: Literal["single_item", "pair", "source_aggregate"]
-    finished_height_cm: Optional[float] = Field(default=None, gt=0.0, le=300.0)
-    finished_length_cm: Optional[float] = Field(default=None, gt=0.0, le=300.0)
-    yarn_used_grams: Optional[float] = Field(default=None, gt=0.0, le=5000.0)
-    yarn_used_meters: Optional[float] = Field(default=None, gt=0.0, le=100_000.0)
-    completion_minutes_median: Optional[int] = Field(default=None, gt=0, le=100_000)
-    completion_minutes_min: Optional[int] = Field(default=None, gt=0, le=100_000)
-    completion_minutes_max: Optional[int] = Field(default=None, gt=0, le=100_000)
-    stitches_per_10cm: Optional[float] = Field(default=None, ge=1.0, le=100.0)
-    hook_mm: Optional[float] = Field(default=None, gt=0.0, le=30.0)
+    finished_height_cm: float | None = Field(default=None, gt=0.0, le=300.0)
+    finished_length_cm: float | None = Field(default=None, gt=0.0, le=300.0)
+    yarn_used_grams: float | None = Field(default=None, gt=0.0, le=5000.0)
+    yarn_used_meters: float | None = Field(default=None, gt=0.0, le=100_000.0)
+    completion_minutes_median: int | None = Field(default=None, gt=0, le=100_000)
+    completion_minutes_min: int | None = Field(default=None, gt=0, le=100_000)
+    completion_minutes_max: int | None = Field(default=None, gt=0, le=100_000)
+    stitches_per_10cm: float | None = Field(default=None, ge=1.0, le=100.0)
+    hook_mm: float | None = Field(default=None, gt=0.0, le=30.0)
 
     @model_validator(mode="after")
-    def _measurement_contract(self) -> "ExternalObservation":
+    def _measurement_contract(self) -> ExternalObservation:
         measurements = (
             self.finished_height_cm,
             self.finished_length_cm,
@@ -186,7 +186,7 @@ class ExternalEvidenceSource(_StrictModel):
         "published_pattern_specification",
     ]
     verification: Literal["source_claim", "raw_records_reviewed", "user_authorized_export"]
-    declared_sample_size: Optional[int] = Field(default=None, gt=0, le=1_000_000)
+    declared_sample_size: int | None = Field(default=None, gt=0, le=1_000_000)
     raw_records_available: bool
     methodology_available: bool
     reuse_basis: Literal[
@@ -194,7 +194,7 @@ class ExternalEvidenceSource(_StrictModel):
         "open_license",
         "user_authorized_export",
     ]
-    license_identifier: Optional[str] = Field(default=None, max_length=100)
+    license_identifier: str | None = Field(default=None, max_length=100)
     calibration_allowed: Literal[False] = False
     observations: list[ExternalObservation] = Field(min_length=1, max_length=100)
 
@@ -206,7 +206,7 @@ class ExternalEvidenceSource(_StrictModel):
         return value
 
     @model_validator(mode="after")
-    def _source_contract(self) -> "ExternalEvidenceSource":
+    def _source_contract(self) -> ExternalEvidenceSource:
         if self.reuse_basis == "open_license" and not self.license_identifier:
             raise ValueError("open-license evidence requires license_identifier")
         ids = [observation.observation_id for observation in self.observations]
@@ -228,7 +228,7 @@ class ExternalEvidenceBundle(_StrictModel):
         return value
 
     @model_validator(mode="after")
-    def _unique_sources(self) -> "ExternalEvidenceBundle":
+    def _unique_sources(self) -> ExternalEvidenceBundle:
         ids = [source.source_id for source in self.sources]
         if len(ids) != len(set(ids)):
             raise ValueError("source_id values must be unique")
@@ -336,7 +336,7 @@ def create_trial_draft(
             estimated_time_minutes=int(params["estimated_time_minutes"]),
         )
         draft = TrialRecord(
-            schema_version=TRIAL_SCHEMA_VERSION,
+            schema_version=2,  # == TRIAL_SCHEMA_VERSION
             trial_id=trial_id,
             maker_id=maker_id,
             status="draft",
@@ -505,19 +505,19 @@ def summarize_external_evidence(bundle: ExternalEvidenceBundle) -> dict[str, Any
     }
 
 
-def _median(values: Iterable[float]) -> Optional[float]:
+def _median(values: Iterable[float]) -> float | None:
     data = list(values)
     return round(float(statistics.median(data)), 6) if data else None
 
 
-def _median_absolute_deviation(values: list[float]) -> Optional[float]:
+def _median_absolute_deviation(values: list[float]) -> float | None:
     if not values:
         return None
     center = statistics.median(values)
     return round(float(statistics.median(abs(value - center) for value in values)), 6)
 
 
-def _distribution(values: list[float]) -> dict[str, Optional[float] | int]:
+def _distribution(values: list[float]) -> dict[str, float | None | int]:
     return {
         "count": len(values),
         "median": _median(values),
@@ -529,7 +529,7 @@ def _distribution(values: list[float]) -> dict[str, Optional[float] | int]:
 
 def analyze_trials(
     records: list[TrialRecord],
-    external_evidence: Optional[ExternalEvidenceBundle] = None,
+    external_evidence: ExternalEvidenceBundle | None = None,
 ) -> dict[str, Any]:
     completed = [record for record in records if record.status == "completed"]
     unmodified = [
@@ -675,7 +675,7 @@ def analyze_trials(
             validation_record_eligible
             and observation.time_scope == "round_crochet_baseline"
         )
-        normalized_grams: Optional[float] = None
+        normalized_grams: float | None = None
         if unmodified_eligible:
             stitch_area = (
                 10.0 / record.swatch.stitches_per_10cm
@@ -695,7 +695,7 @@ def analyze_trials(
             validation_height_ratios.append(height_ratio)
             validation_normalized_base_grams.append(normalized_grams)
 
-        implied_seconds: Optional[float] = None
+        implied_seconds: float | None = None
         if time_calibration_eligible or time_validation_eligible:
             residual_seconds = (
                 observation.active_minutes * 60
@@ -761,7 +761,7 @@ def analyze_trials(
     )
     return {
         "report_schema_version": TRIAL_REPORT_SCHEMA_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "application_version": _application_version(),
         "summary": {
             "records": len(records),
@@ -864,7 +864,7 @@ def analyze_trials(
 
 def analyze_trial_directory(
     records_dir: str | Path,
-    external_evidence_path: Optional[str | Path] = None,
+    external_evidence_path: str | Path | None = None,
     *,
     curated_external_evidence: bool = False,
 ) -> dict[str, Any]:
@@ -942,7 +942,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "init":

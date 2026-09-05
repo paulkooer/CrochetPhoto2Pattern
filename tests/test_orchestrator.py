@@ -27,7 +27,7 @@ def test_full_pipeline_returns_three_stage_result():
     }
     assert result["analysis"]["body_type"] == "标准"
     assert len(result["structure"]["parts"]) == 2
-    assert [p.name for p in result["params"]["parts"]] == ["头部", "身体"]
+    assert [p["name"] for p in result["params"]["parts"]] == ["头部", "身体"]
     # parse_image 被 mock → 无真实调用 → usage / vision_meta 均为空 dict
     assert result["usage"] == {}
     assert result["vision_meta"] == {}
@@ -71,3 +71,29 @@ def test_full_pipeline_applies_user_target_to_parser_ratio():
     assert result["analysis"]["head_diameter_cm"] == 6.0
     assert result["sizing"]["source"] == "user_photo_target"
     assert result["sizing"]["photo_head_to_height_ratio"] == 0.2
+
+
+def test_explicit_mock_mode_skips_api_and_photo_geometry():
+    """vision_mode="mock"：即使配置了 Key 也不发起 API 调用、不读照片几何。
+
+    旧设计里 Mock 只是"无 Key"的隐式副作用；显式三态后选择与行为一致。
+    """
+    from PIL import Image
+
+    orch = PipelineOrchestrator(openai_key="sk-user-key-1234567890")
+    result = orch.run_full_pipeline(Image.new("RGB", (40, 40)),
+                                    vision_mode="mock")
+    assert result["vision_meta"]["source"] == "mock"
+    assert result["usage"] == {}
+    assert result["geometry"]["silhouette"] is None
+    assert result["geometry"]["used_for_generation"] is False
+
+
+def test_invalid_vision_mode_rejected():
+    """非三态值直接拒绝，不允许隐式回退。"""
+    import pytest
+    from PIL import Image
+
+    orch = PipelineOrchestrator()
+    with pytest.raises(ValueError, match="vision_mode"):
+        orch.run_full_pipeline(Image.new("RGB", (40, 40)), vision_mode="yolo")

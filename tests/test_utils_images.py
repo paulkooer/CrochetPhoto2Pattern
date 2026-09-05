@@ -152,3 +152,28 @@ def test_palette_png_with_transparency_flattened():
     assert out is not None
     assert out.mode == "RGB"
     assert out.getpixel((0, 0)) == (255, 255, 255)
+
+
+def test_large_image_downsampled_to_max_side():
+    """解码后立即降采样：39.7MP 级输入不再以全尺寸进缓存/预览/合成。"""
+    from app.utils.images import MAX_DECODED_SIDE
+
+    data = _png_bytes(size=(3000, 2000))
+    out = load_uploaded_image(_FakeUpload(data, size=len(data)))
+    assert out is not None
+    assert max(out.size) <= MAX_DECODED_SIDE
+    # 纵横比保留（3000×2000 → 2048×1365±1）
+    assert out.size[0] == 2048
+    assert abs(out.size[1] - 1365) <= 1
+
+
+def test_jpeg_draft_decodes_directly_at_scale():
+    """JPEG 走 draft 比例解码：6000×4500 直接按 1/2 档解出 3000×2250，
+    不再全量解出 27MP 像素缓冲（draft 条件：两维半档均 ≥ 目标边长）。"""
+    from app.utils.images import _apply_jpeg_draft
+
+    buf = io.BytesIO()
+    Image.new("RGB", (6000, 4500), (10, 120, 30)).save(buf, format="JPEG")
+    im = Image.open(buf)
+    im = _apply_jpeg_draft(im)
+    assert im.size == (3000, 2250)

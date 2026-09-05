@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from PIL import Image
 
@@ -42,7 +42,7 @@ _T_CEIL = 96
 _FGD_FLOOR = 144
 
 
-def _otsu_threshold(values) -> Optional[int]:
+def _otsu_threshold(values) -> int | None:
     """Otsu (1979) 自动阈值：类间方差最大的距离分割点。
 
     依据：Nobuyuki Otsu, "A Threshold Selection Method from Gray-Level
@@ -92,7 +92,7 @@ def _face_box(small: Image.Image):
 
 def extract_subject(
     image: Image.Image, max_side: int = 160
-) -> Optional[Tuple["np.ndarray", Image.Image]]:
+) -> tuple[np.ndarray, Image.Image] | None:
     """GrabCut 主体分割。
 
     Args:
@@ -168,10 +168,8 @@ def extract_subject(
         #   > T   弱不可解释 → 可能前景（给 GMM 的前景候选带）
         #   ≤ T   背景色可解释 → 可能背景
         t_otsu = _otsu_threshold(px_min_dist)
-        if t_otsu is None:
-            t_seed = _BG_DIST_THRESHOLD
-        else:
-            t_seed = min(_T_CEIL, max(_T_FLOOR, t_otsu))
+        t_seed = (_BG_DIST_THRESHOLD if t_otsu is None
+                  else min(_T_CEIL, max(_T_FLOOR, t_otsu)))
         mask = np.full((h, w), cv2.GC_PR_BGD, np.uint8)
         _fgd_t = max(1.5 * t_seed, _FGD_FLOOR)
         mask[px_min_dist > _fgd_t] = cv2.GC_FGD
@@ -192,7 +190,8 @@ def extract_subject(
         mask[:, w - ks:] = cv2.GC_BGD
         bgd = np.zeros((1, 65), np.float64)
         fgd = np.zeros((1, 65), np.float64)
-        cv2.grabCut(arr, mask, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)
+        # rect=None 在 GC_INIT_WITH_MASK 模式下合法；opencv 无官方类型桩
+        cv2.grabCut(arr, mask, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)  # type: ignore[call-overload]
         subject = (mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD)
         # 腐蚀 1px：thumbnail 重采样的主体边界是前景/背景混色（1–2px），
         # 是全图最不可靠的像素——会污染窄带的颜色均值。均匀内缩对剖面

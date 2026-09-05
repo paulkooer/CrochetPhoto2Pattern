@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from ..schemas import ImageAnalysis
 
@@ -16,9 +16,9 @@ def sizing_meta_for_analysis(
     analysis: ImageAnalysis,
     source: str,
     *,
-    photo_head_to_height_ratio: Optional[float] = None,
+    photo_head_to_height_ratio: float | None = None,
     ratio_clamped: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build serializable provenance for dimensions used by the generators."""
     applied_ratio = analysis.head_diameter_cm / analysis.height_cm
     return {
@@ -45,7 +45,7 @@ def scale_analysis_to_target_height(
     target_height_cm: float,
     *,
     source: str,
-) -> Tuple[ImageAnalysis, Dict[str, Any]]:
+) -> tuple[ImageAnalysis, dict[str, Any]]:
     """Apply a target height while retaining only the parser's head/body ratio.
 
     The parser fields use a reference scale because a single photo has no metric

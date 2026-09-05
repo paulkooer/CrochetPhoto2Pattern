@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import Optional
 
 import streamlit as st
 from PIL import Image, ImageOps
@@ -13,6 +12,10 @@ logger = logging.getLogger(__name__)
 MAX_UPLOAD_MB = 20
 MAX_UPLOAD_PIXELS = 40_000_000
 MAX_UPLOAD_SIDE = 16_384
+# 解码后立即降采样到此边长：管线实际消费 ≤1024px（Vision API/网格/配色），
+# 更大的像素只会在缓存（最多 4 张）、st.image 全帧传输和白底合成时放大
+# 内存——39.7MP RGBA 合成实测峰值 +650MB。2048 给预览留一档余量。
+MAX_DECODED_SIDE = 2048
 
 
 def _validate_upload_dimensions(image: Image.Image) -> None:
@@ -28,6 +31,31 @@ def _validate_upload_dimensions(image: Image.Image) -> None:
         raise ValueError(
             f"图片像素过多（{width}×{height}，共 {pixels:,} 像素），"
             f"上限为 {MAX_UPLOAD_PIXELS:,} 像素")
+
+
+def _apply_jpeg_draft(image: Image.Image) -> Image.Image:
+    """JPEG 按 2 的幂降采样解码（其余格式 no-op）。
+
+    必须在 exif_transpose 之前调用：transpose 会强制解码并返回丢失
+    format 属性的副本，之后再 draft 已太晚。39.7MP 的 JPEG 不再全量
+    解出 650MB 像素缓冲再缩到 2048。
+    """
+    if image.format == "JPEG":
+        image.draft("RGB", (MAX_DECODED_SIDE, MAX_DECODED_SIDE))
+    return image
+
+
+def _downsample(image: Image.Image) -> Image.Image:
+    """解码后立即降采样到 MAX_DECODED_SIDE。
+
+    先于白底合成执行：全尺寸 RGBA 合成是超清抠图 PNG 的主要内存尖峰
+    （合成需整幅 RGBA×2 副本）。LANCZOS 直采样 RGBA 会在透明边缘混入
+    底层 RGB，对配色量化/网格取色无感，换 40× 的内存峰值值得。
+    """
+    if max(image.size) > MAX_DECODED_SIDE:
+        image.thumbnail((MAX_DECODED_SIDE, MAX_DECODED_SIDE),
+                        Image.Resampling.LANCZOS)
+    return image
 
 
 def _flatten_alpha(image: Image.Image) -> Image.Image:
@@ -48,7 +76,7 @@ def _has_transparency(image: Image.Image) -> bool:
     return image.mode == "P" and "transparency" in image.info
 
 
-def load_image_file(path) -> Optional[Image.Image]:
+def load_image_file(path) -> Image.Image | None:
     """从磁盘路径加载图片（CLI/无头模式用）。
 
     与 load_uploaded_image 同一套防线：文件大小、像素/边长、解压炸弹、
@@ -64,9 +92,11 @@ def load_image_file(path) -> Optional[Image.Image]:
             raise ValueError(f"图片超过 {MAX_UPLOAD_MB}MB 上限")
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            image = Image.open(path)
+            image: Image.Image = Image.open(path)
         _validate_upload_dimensions(image)
+        image = _apply_jpeg_draft(image)
         image = ImageOps.exif_transpose(image)
+        image = _downsample(image)
         if _has_transparency(image):
             image = _flatten_alpha(image)
         image.load()
@@ -76,7 +106,7 @@ def load_image_file(path) -> Optional[Image.Image]:
         return None
 
 
-def load_uploaded_image(uploaded_file) -> Optional[Image.Image]:
+def load_uploaded_image(uploaded_file) -> Image.Image | None:
     """Decode an upload eagerly; surface corrupt/oversized files with a
     friendly message instead of a raw traceback mid-pipeline.
 
@@ -97,9 +127,11 @@ def load_uploaded_image(uploaded_file) -> Optional[Image.Image]:
         # 分配内存。先将其警告升级为异常，再执行更严格的产品像素上限。
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            image = Image.open(uploaded_file)
+            image: Image.Image = Image.open(uploaded_file)
         _validate_upload_dimensions(image)
+        image = _apply_jpeg_draft(image)
         image = ImageOps.exif_transpose(image)
+        image = _downsample(image)
         if _has_transparency(image):
             image = _flatten_alpha(image)
         image.load()  # 强制立即解码，损坏/截断文件在此暴露而非流水线中途
@@ -118,7 +150,7 @@ def _upload_cache_key(uploaded_file) -> tuple:
             getattr(uploaded_file, "type", ""))
 
 
-def load_uploaded_image_cached(uploaded_file) -> Optional[Image.Image]:
+def load_uploaded_image_cached(uploaded_file) -> Image.Image | None:
     """Same as load_uploaded_image, but decode once per uploaded file.
 
     Streamlit 每次 rerun（拖滑块、勾 checkbox）都会重新执行脚本，若不缓存，

@@ -9,7 +9,7 @@ SVG 结构：配色圆 + 右侧引线标注（圈号 · 针数 · 颜色名）�
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, List
+from typing import Any
 
 _SVG_W, _SVG_H = 320, 320
 
@@ -17,19 +17,14 @@ _SVG_W, _SVG_H = 320, 320
 def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
     """部件 → 环形圈数图 SVG 字符串。
 
-    part 可为 CrochetPart 或 dict（JSON 修正路径）；无配色圈退化为灰环。
+    part 为 dict 形态（见 crochet_params._build_result 双态收敛）；
+    无配色圈退化为灰环。
     """
-    rounds_raw = (part.get("rounds", []) if isinstance(part, dict)
-                  else getattr(part, "rounds", []))
-    rounds: List[Dict[str, Any]] = []
-    for r in rounds_raw:
-        rounds.append(r if isinstance(r, dict) else (
-            r.model_dump() if hasattr(r, "model_dump") else {}))
+    rounds: list[dict[str, Any]] = list(part.get("rounds", []))
     if not rounds:
         return ""
 
-    name = (part.get("name") if isinstance(part, dict)
-            else getattr(part, "name", "?"))
+    name = part.get("name", "?")
     hex_of = _rgb_hex_lookup()
 
     # 物理半径：r = N·针宽 / 2π；最外圈占满可用区
@@ -52,11 +47,11 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
     # F19：只标注"变化圈"——首圈、末圈、以及配色或加/减针相位相对
     # 上一圈发生变化的位置。逐圈标注在 >14 圈时标签必然重叠（旧实现
     # (i%14)*18 造成 R1/R15 同坐标）；完整信息在旁边的逐圈表格里。
-    def _phase(rd: Dict[str, Any]) -> Any:
+    def _phase(rd: dict[str, Any]) -> Any:
         return (int(rd.get("increase") or 0) > 0,
                 int(rd.get("decrease") or 0) > 0)
 
-    labeled: List[int] = []
+    labeled: list[int] = []
     for i, rd in enumerate(rounds):
         if i == 0 or i == len(rounds) - 1:
             labeled.append(i)
@@ -77,7 +72,7 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
                 f'fill="{fill}" fill-opacity="0.55" stroke="{stroke}" '
                 f'stroke-width="1"/>')
 
-    label_ys: List[float] = []
+    label_ys: list[float] = []
     for i in labeled:
         rd = rounds[i]
         c = rd.get("color")
@@ -95,10 +90,10 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
     return "\n".join(lines)
 
 
-_HEX_CACHE: Dict[str, str] = {}
+_HEX_CACHE: dict[str, str] = {}
 
 
-def _rgb_hex_lookup() -> Dict[str, str]:
+def _rgb_hex_lookup() -> dict[str, str]:
     """毛线色名 → hex（模块级缓存）。"""
     if not _HEX_CACHE:
         from .colors import YARN_COLORS
@@ -107,7 +102,7 @@ def _rgb_hex_lookup() -> Dict[str, str]:
     return _HEX_CACHE
 
 
-def _spread_operations(total: int, special: int, symbol: str) -> List[str]:
+def _spread_operations(total: int, special: int, symbol: str) -> list[str]:
     """Distribute increases/decreases evenly across crochet operations."""
     total = max(0, int(total))
     special = max(0, min(int(special), total))
@@ -121,7 +116,7 @@ def _spread_operations(total: int, special: int, symbol: str) -> List[str]:
     ]
 
 
-def _round_operation_sequence(rounds: List[Dict[str, Any]], index: int) -> List[str]:
+def _round_operation_sequence(rounds: list[dict[str, Any]], index: int) -> list[str]:
     """Compile aggregate round counts into operations on the previous round.
 
     V consumes one stitch and produces two; A consumes two and produces one.
@@ -154,16 +149,10 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
     每行最多画 max_marks 个记号，超出以 "+N" 截断；行数超过 max_rounds
     时只显示末 max_rounds 行（起针圈在最上，向下递增）。
     """
-    rounds_raw = (part.get("rounds", []) if isinstance(part, dict)
-                  else getattr(part, "rounds", []))
-    rounds: List[Dict[str, Any]] = []
-    for r in rounds_raw:
-        rounds.append(r if isinstance(r, dict) else (
-            r.model_dump() if hasattr(r, "model_dump") else {}))
+    rounds: list[dict[str, Any]] = list(part.get("rounds", []))
     if not rounds:
         return ""
-    name = (part.get("name") if isinstance(part, dict)
-            else getattr(part, "name", "?"))
+    name = part.get("name", "?")
     all_rounds = rounds
     start_row = max(0, len(all_rounds) - max_rounds)
     rounds = all_rounds[start_row:]

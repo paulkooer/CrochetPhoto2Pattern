@@ -114,7 +114,7 @@ def test_full_pipeline_local_vision_mode(monkeypatch):
     }
     assert result["gauge"]["stitches_per_10cm"] > 0  # gauge 透传（M4.15）
     assert result["analysis"]["body_type"] == "标准"
-    assert [p.name for p in result["params"]["parts"]] == ["头部", "身体", "手臂", "腿部"]
+    assert [p["name"] for p in result["params"]["parts"]] == ["头部", "身体", "手臂", "腿部"]
     assert result["vision_meta"]["source"] == "opencv-face"
     assert result["usage"] == {}  # 无 LLM 调用
     assert result["analysis"]["height_cm"] == 18.0
@@ -187,16 +187,16 @@ def test_color_bands_drive_round_colors():
     img = _two_tone_image()
     orch = Orch()
     result = orch.run_full_pipeline(img, local_vision=True)
-    head = [p for p in result["params"]["parts"] if p.name == "头部"][0]
-    body = [p for p in result["params"]["parts"] if p.name == "身体"][0]
+    head = [p for p in result["params"]["parts"] if p["name"] == "头部"][0]
+    body = [p for p in result["params"]["parts"] if p["name"] == "身体"][0]
     # 头部圈色来自照片顶部（暗色系），身体来自中段（蓝系）
-    assert head.rounds[0].color in ("黑色", "深棕色", "暗肤色", "深褐肤色", "咖啡肤色")
-    assert body.rounds[-1].color == "蓝色"
+    assert head["rounds"][0]["color"] in ("黑色", "深棕色", "暗肤色", "深褐肤色", "咖啡肤色")
+    assert body["rounds"][-1]["color"] == "蓝色"
     # 换线说明出现在颜色变化圈（头部黑→蓝）
-    changes = [r for r in head.rounds if r.notes and "换线" in r.notes]
+    changes = [r for r in head["rounds"] if r.get("notes") and "换线" in r.get("notes")]
     assert changes, "头部应有换线圈"
     # 部件 notes 带配色摘要（多色部件才有）
-    assert "配色" in (head.notes or "")
+    assert "配色" in (head.get("notes") or "")
 
 
 def test_no_image_no_colorwork():
@@ -212,8 +212,8 @@ def test_no_image_no_colorwork():
         # 纯色 40x40 无主体 → bands 空 → 降级
         result = orch.run_full_pipeline(Image.new("RGB", (40, 40), (255, 255, 255)))
     head = result["params"]["parts"][0]
-    assert all(r.color is None for r in head.rounds)
-    assert "换线" not in (head.notes or "")
+    assert all(r["color"] is None for r in head["rounds"])
+    assert "换线" not in (head.get("notes") or "")
 
 
 def test_photo_driven_profile_body_end_to_end():
@@ -230,13 +230,13 @@ def test_photo_driven_profile_body_end_to_end():
     d.rounded_rectangle([55, 255, 90, 395], radius=12, fill=(70, 130, 180))
     d.rounded_rectangle([110, 255, 145, 395], radius=12, fill=(70, 130, 180))
     result = Orch().run_full_pipeline(img, local_vision=True)
-    body = [p for p in result["params"]["parts"] if p.name == "身体"][0]
-    assert body.type == "profile"
-    wall = [r.stitches for r in body.rounds]
+    body = [p for p in result["params"]["parts"] if p["name"] == "身体"][0]
+    assert body["type"] == "profile"
+    wall = [r["stitches"] for r in body["rounds"]]
     n_dome = wall[0] // 6
     wall_st = wall[n_dome:]
     assert len(set(wall_st)) > 1, f"剖面驱动身体不应是等粗筒: {wall_st}"
-    assert "照片驱动轮廓身体" in body.notes
+    assert "照片驱动轮廓身体" in body.get("notes")
     assert result["gauge"]["stitches_per_10cm"] > 0
     assert result["geometry"]["silhouette"]["profile"]
 

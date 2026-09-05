@@ -1,8 +1,8 @@
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any, Literal
 
-from ..schemas import PART_NAMES, ImageAnalysis
+from ..schemas import PART_LABELS_ZH, PART_NAMES, ImageAnalysis
 from .geometry import (
     AttachmentSpec,
     EulerRotation,
@@ -23,16 +23,9 @@ class StructureDesigner:
     editable, but they are not measurements recovered from a single photo.
     """
 
-    _PART_IDS = {
-        "头部": "head",
-        "身体": "body",
-        "手臂": "arms",
-        "腿部": "legs",
-        "尾巴": "tail",
-        "耳朵": "ears",
-        "帽子": "hat",
-        "裙子": "skirt",
-    }
+    # 中文规范名 → 结构 v2 英文 part_id：从 PartKind 标签表派生
+    # （schemas.PART_LABELS_ZH 是单一来源；新增部件只改枚举与标签）
+    _PART_IDS = {zh: kind.value for kind, zh in PART_LABELS_ZH.items()}
 
     @staticmethod
     def _safe_part_id(name: str, index: int) -> str:
@@ -53,8 +46,8 @@ class StructureDesigner:
         target: str,
         target_anchor: str,
         self_anchor: str,
-        method: str = "sewn",
-    ) -> List[AttachmentSpec]:
+        method: Literal["sewn", "worn", "crocheted_or_sewn"] = "sewn",
+    ) -> list[AttachmentSpec]:
         """Return no edge rather than emitting a dangling graph reference."""
         if target not in available:
             return []
@@ -66,7 +59,7 @@ class StructureDesigner:
         )]
 
     @staticmethod
-    def _instances(part_id: str, available: set) -> Dict[str, Any]:
+    def _instances(part_id: str, available: set) -> dict[str, Any]:
         """Template-space placement and attachment defaults for one logical part."""
         p = NormalizedPosition
         r = EulerRotation
@@ -140,7 +133,7 @@ class StructureDesigner:
         )]}
 
     @staticmethod
-    def design_3d_structure(analysis: ImageAnalysis) -> Dict[str, Any]:
+    def design_3d_structure(analysis: ImageAnalysis) -> dict[str, Any]:
         """Convert image analysis to 3D part specifications.
 
         Maps each identified part to a basic 3D shape with
@@ -156,7 +149,7 @@ class StructureDesigner:
         body_h = max(total_h - head_d, 0.1)  # protect against zero/negative
 
         dim = StructureDesigner._dimension
-        shape_map = {
+        shape_map: dict[str, dict[str, Any]] = {
             "头部": {"shape": "sphere", "diameter_cm": head_d, "color": "skin"},
             "身体": {"shape": "cylinder", "height_cm": dim(body_h * 0.5), "color": "body"},
             "手臂": {"shape": "cylinder", "length_cm": dim(body_h * 0.35), "color": "skin"},
@@ -173,23 +166,23 @@ class StructureDesigner:
         part_names = list(analysis.parts)
 
         # 语义服装：LLM 判定穿裙但 parts 漏了裙子 → 按身体比例补上
-        if getattr(analysis, "clothing_type", None) in ("裙子", "连衣裙"):
-            if "裙子" not in part_names:
-                part_names.append("裙子")
-                logger.info("Added 裙子 part from clothing_type=%s", analysis.clothing_type)
+        if (getattr(analysis, "clothing_type", None) in ("裙子", "连衣裙")
+                and "裙子" not in part_names):
+            part_names.append("裙子")
+            logger.info("Added 裙子 part from clothing_type=%s", analysis.clothing_type)
 
         part_ids = [StructureDesigner._safe_part_id(name, i)
                     for i, name in enumerate(part_names)]
         # Unknown names can normalize to the same slug; suffix only collisions so
         # attachments and backup validation still have stable unique identifiers.
-        seen_ids: Dict[str, int] = {}
+        seen_ids: dict[str, int] = {}
         for i, part_id in enumerate(part_ids):
             seen_ids[part_id] = seen_ids.get(part_id, 0) + 1
             if seen_ids[part_id] > 1:
                 part_ids[i] = f"{part_id}_{seen_ids[part_id]}"
         available = set(part_ids)
 
-        parts: List[PartGeometry] = []
+        parts: list[PartGeometry] = []
         if len(part_names) != len(part_ids):
             raise RuntimeError("part identifier count does not match part names")
         for part_name, part_id in zip(part_names, part_ids):  # noqa: B905 - length checked above

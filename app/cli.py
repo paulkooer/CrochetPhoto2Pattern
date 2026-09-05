@@ -22,7 +22,7 @@ from app.models.geometry import mock_geometry, no_photo_geometry
 from app.models.orchestrator import PipelineOrchestrator
 from app.models.sizing import scale_analysis_to_target_height, sizing_meta_for_analysis
 from app.models.structure_designer import StructureDesigner
-from app.schemas import PART_NAMES, ImageAnalysis
+from app.schemas import PART_NAMES, ImageAnalysis, PatternResult
 from app.utils.exporters import export_markdown
 from app.utils.images import load_image_file
 
@@ -33,7 +33,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="照片 → Amigurumi 钩织图解（无头模式）")
     src = parser.add_mutually_exclusive_group()
     src.add_argument("--image", help="照片路径（省略则用手动参数）")
-    src.add_argument("--mock", action="store_true", help="演示数据（与照片无关）")
+    src.add_argument("--mock", action="store_true",
+                     help="演示数据（CLI 无照片参与，配色为默认值）")
     src.add_argument("--batch-dir", help="批量模式：目录内所有 jpg/png 逐个生成")
     parser.add_argument("--local", action="store_true",
                         help="强制本地视觉估算（免费，默认无 Key 时自动启用）")
@@ -72,31 +73,35 @@ def run(args: argparse.Namespace) -> dict:
     orch = PipelineOrchestrator()  # Key 从环境变量读取
 
     if args.mock:
-        analysis = orch.parser._mock_analysis()
+        analysis = orch.parser.parse_image_mock()
         analysis, sizing = scale_analysis_to_target_height(
             analysis, args.height, source="cli_target")
         structure = StructureDesigner.design_3d_structure(analysis)
         params = CrochetParamsGenerator.generate_params(
             analysis, structure, gauge=gauge, style=style)
-        result = {
-            "analysis": analysis.model_dump(), "structure": structure,
-            "params": params, "usage": {},
-            "vision_meta": {"source": "mock", "note": "Mock 演示数据，与照片无关"},
-            "gauge": {"stitches_per_10cm": gauge.stitches_per_10cm,
-                      "rows_per_10cm": gauge.rows_per_10cm},
-            "style": {"sphere_mode": style.sphere_mode, "one_piece": style.one_piece,
-                      "skirt_style": style.skirt_style, "ruffle_hem": style.ruffle_hem},
-            "color_bands": None, "spans": None, "spans_measured": [],
-            "sizing": sizing,
-            "geometry": mock_geometry().model_dump(),
-        }
+        result = PatternResult(
+            analysis=analysis.model_dump(), structure=structure,
+            params=params,
+            # CLI --mock 无照片参与：配色为生成器默认值（与照片路径的
+            # "配色来自照片"标注不同，诚实区分）
+            vision_meta={"source": "mock",
+                         "note": "Mock 演示数据（CLI 无照片参与，配色为默认值）"},
+            gauge={"stitches_per_10cm": gauge.stitches_per_10cm,
+                   "rows_per_10cm": gauge.rows_per_10cm},
+            style={"sphere_mode": style.sphere_mode, "one_piece": style.one_piece,
+                   "skirt_style": style.skirt_style, "ruffle_hem": style.ruffle_hem},
+            spans_measured=[],
+            sizing=sizing,
+            geometry=mock_geometry().model_dump(),
+        ).to_result_dict()
     elif args.image:
         image = load_image_file(args.image)
         if image is None:
             raise SystemExit(f"无法读取图片: {args.image}")
         use_local = args.local or not (
             orch.parser.openai_key or orch.parser.anthropic_key)
-        result = orch.run_full_pipeline(image, local_vision=use_local,
+        result = orch.run_full_pipeline(image,
+                                        vision_mode="local" if use_local else "ai",
                                         gauge=gauge, style=style,
                                         target_height_cm=args.height,
                                         target_height_source="cli_target")
@@ -107,17 +112,17 @@ def run(args: argparse.Namespace) -> dict:
         structure = StructureDesigner.design_3d_structure(analysis)
         params = CrochetParamsGenerator.generate_params(
             analysis, structure, gauge=gauge, style=style)
-        result = {
-            "analysis": analysis.model_dump(), "structure": structure,
-            "params": params, "usage": {}, "vision_meta": {},
-            "gauge": {"stitches_per_10cm": gauge.stitches_per_10cm,
-                      "rows_per_10cm": gauge.rows_per_10cm},
-            "style": {"sphere_mode": style.sphere_mode, "one_piece": style.one_piece,
-                      "skirt_style": style.skirt_style, "ruffle_hem": style.ruffle_hem},
-            "color_bands": None, "spans": None, "spans_measured": [],
-            "sizing": sizing_meta_for_analysis(analysis, "manual_dimensions"),
-            "geometry": no_photo_geometry().model_dump(),
-        }
+        result = PatternResult(
+            analysis=analysis.model_dump(), structure=structure,
+            params=params, vision_meta={},
+            gauge={"stitches_per_10cm": gauge.stitches_per_10cm,
+                   "rows_per_10cm": gauge.rows_per_10cm},
+            style={"sphere_mode": style.sphere_mode, "one_piece": style.one_piece,
+                   "skirt_style": style.skirt_style, "ruffle_hem": style.ruffle_hem},
+            spans_measured=[],
+            sizing=sizing_meta_for_analysis(analysis, "manual_dimensions"),
+            geometry=no_photo_geometry().model_dump(),
+        ).to_result_dict()
 
     from app.models.validator import validate_pattern
     v = validate_pattern(result["params"])
@@ -185,10 +190,8 @@ def run_batch(args) -> int:
 
 def main(argv=None) -> int:
     # argv 可为参数列表或已构造的 Namespace（run_batch 内部复用）
-    if isinstance(argv, argparse.Namespace):
-        args = argv
-    else:
-        args = build_parser().parse_args(argv)
+    args = (argv if isinstance(argv, argparse.Namespace)
+            else build_parser().parse_args(argv))
     if args.batch_dir:
         if args.pdf:
             print("--pdf 在批量模式下按每图 <stem>.pdf 导出", file=sys.stderr)

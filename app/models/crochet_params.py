@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis
 from .color_design import (
@@ -9,6 +9,7 @@ from .color_design import (
 )
 from .gauge import DEFAULT as DEFAULT_GAUGE
 from .gauge import (
+    DEFAULT_STYLE,
     Gauge,
     ShapingStyle,
     gauge_from_mapping,
@@ -54,7 +55,7 @@ _BOTTOM_UP_PARTS = frozenset({"身体", "手臂", "腿部"})
 _ONE_PIECE_NAME = "头身（一体）"
 
 
-def _semantic_color(part_name: str, analysis) -> Optional[str]:
+def _semantic_color(part_name: str, analysis) -> str | None:
     """LLM 语义色 → 部件基准色（发色/上衣/下装）。
 
     有语义色时整段单色（色带近似让位：模型说"红裙"比像素分层更可信）；
@@ -144,7 +145,7 @@ def _change_note(before: int, after: int) -> str:
     return f"({','.join(operations)})×6，均匀减{amount}针"
 
 
-def _increase_rounds(max_stitches: int) -> List[Dict[str, Any]]:
+def _increase_rounds(max_stitches: int) -> list[dict[str, Any]]:
     """Increase rounds shared by sphere/cylinder/cup: magic ring 6 → max_stitches.
 
     max_stitches must be a positive multiple of 6.
@@ -162,7 +163,7 @@ def _increase_rounds(max_stitches: int) -> List[Dict[str, Any]]:
     ])
 
 
-def bridge_rounds(cur: int, target: int, max_change: int = 6) -> List[int]:
+def bridge_rounds(cur: int, target: int, max_change: int = 6) -> list[int]:
     """从 cur 到 target 的中间圈针数（不含 cur、含 target）。
 
     F13 防线：跨圈跳变（如头部收针链直接接目标颈围）必须经此桥接，
@@ -185,7 +186,7 @@ class PatternGenerationError(RuntimeError):
     """生成器自检失败——阻止代数矛盾的图解成为可下载产物（F13）。"""
 
 
-def _mark_staggered(rounds: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _mark_staggered(rounds: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """连续加针圈提示错开半组（避免六边形棱线；PlanetJune 实证技法）。"""
     for i in range(1, len(rounds)):
         if rounds[i].get("increase") and rounds[i - 1].get("increase"):
@@ -196,7 +197,7 @@ def _mark_staggered(rounds: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return rounds
 
 
-def _sphere_rounds(max_stitches: int = 36) -> List[Dict[str, Any]]:
+def _sphere_rounds(max_stitches: int = 36) -> list[dict[str, Any]]:
     """Increase -> constant -> decrease rounds for an Amigurumi sphere.
     max_stitches must be a positive multiple of 6.
     """
@@ -231,7 +232,7 @@ def _ideal_sphere_rounds(
     gauge: Gauge = DEFAULT_GAUGE,
     egg: bool = False,
     egg_e: float = 0.12,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """理想球/蛋形（M2.6/M2.7）：逐圈针数 ∝ sin(极角)。
 
     依据：The Ideal Crochet Sphere（mspremiseconclusion, 2010，已核实原文）——
@@ -263,7 +264,7 @@ def _ideal_sphere_rounds(
         prev = clamped[-1]
         clamped.append(next_shaping_stitch_count(
             prev, max(6, t), gauge.max_shaping_change))
-    rounds: List[Dict[str, Any]] = [{
+    rounds: list[dict[str, Any]] = [{
         "row": 1, "stitches": clamped[0],
         "notes": f"魔法环起{clamped[0]}针（X×{clamped[0]}）",
     }]
@@ -289,7 +290,7 @@ def _ideal_sphere_rounds(
     return rounds
 
 
-def _cylinder_rounds(max_stitches: int = 24, body_rounds: int = 15) -> List[Dict[str, Any]]:
+def _cylinder_rounds(max_stitches: int = 24, body_rounds: int = 15) -> list[dict[str, Any]]:
     """Generate cylinder: increase to max_stitches, hold, then 2 taper rounds."""
     step = 6
     n_up = max_stitches // step
@@ -316,7 +317,7 @@ def _cylinder_rounds(max_stitches: int = 24, body_rounds: int = 15) -> List[Dict
     return rounds
 
 
-def _cup_rounds(max_stitches: int, depth_rounds: int) -> List[Dict[str, Any]]:
+def _cup_rounds(max_stitches: int, depth_rounds: int) -> list[dict[str, Any]]:
     """Open cup (hat/skirt): increase to max, straight to depth — NO closing.
 
     帽子/裙子必须开口：走 sphere 收口到 6 针的成品根本无法佩戴。
@@ -329,29 +330,27 @@ def _cup_rounds(max_stitches: int, depth_rounds: int) -> List[Dict[str, Any]]:
     return _increase_rounds(max_stitches) + constant
 
 
-def _part_name(part: Any) -> str:
-    return part["name"] if isinstance(part, dict) else part.name
+def _part_name(part: dict[str, Any]) -> str:
+    return part["name"]
 
 
-def _part_rounds(part: Any) -> List[Any]:
-    return part.get("rounds", []) if isinstance(part, dict) else part.rounds
+def _part_rounds(part: dict[str, Any]) -> list[dict[str, Any]]:
+    return part.get("rounds", [])
 
 
-def _part_quantity(part: Any) -> int:
+def _part_quantity(part: dict[str, Any]) -> int:
     """Physical copies represented by one logical part pattern (legacy = 1)."""
-    raw = part.get("quantity", 1) if isinstance(part, dict) else getattr(
-        part, "quantity", 1)
     try:
-        return max(1, min(20, int(raw)))
+        return max(1, min(20, int(part.get("quantity", 1))))
     except (TypeError, ValueError):
         return 1
 
 
-def _round_stitches(rd: Any) -> int:
-    return rd.get("stitches", 0) if isinstance(rd, dict) else rd.stitches
+def _round_stitches(rd: dict[str, Any]) -> int:
+    return int(rd.get("stitches", 0))
 
 
-def structure_connection_plan(structure: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def structure_connection_plan(structure: dict[str, Any]) -> dict[str, Any] | None:
     """Project StructureGeometry v2 attachments into a stable assembly IR.
 
     Legacy structures return ``None`` so callers can preserve the historical
@@ -367,7 +366,7 @@ def structure_connection_plan(structure: Dict[str, Any]) -> Optional[Dict[str, A
         for part in raw_parts
         if isinstance(part, dict) and part.get("part_id") and part.get("name")
     }
-    connections: List[Dict[str, str]] = []
+    connections: list[dict[str, str]] = []
     for part in raw_parts:
         if not isinstance(part, dict):
             continue
@@ -402,9 +401,9 @@ def structure_connection_plan(structure: Dict[str, Any]) -> Optional[Dict[str, A
     }
 
 
-def _materials(parts: List[Any], part_names: set,
-                gauge: Gauge = DEFAULT_GAUGE) -> List[Dict[str, str]]:
-    """材料清单随实际部件生成；parts 元素可为 CrochetPart 或 dict（JSON 修正路径）。
+def _materials(parts: list[dict[str, Any]], part_names: set,
+                gauge: Gauge = DEFAULT_GAUGE) -> list[dict[str, str]]:
+    """材料清单随实际部件生成（parts 为 dict 形态，见 _build_result）。
 
     克重按针数×单针克重估算；米数按针宽分档的**经验估算值**换算
     （gauge.meters_per_100g，非标准机构数据——CYC 标准不含长度信息），
@@ -412,7 +411,7 @@ def _materials(parts: List[Any], part_names: set,
     除肤色系/主体色两组汇总外，另按**具体毛线色**逐色给出用量（T2，
     十字绣界按色号给量的通行惯例；跨部件同色自动合并）。
     """
-    materials: List[Dict[str, str]] = []
+    materials: list[dict[str, str]] = []
     _skin = _SKIN_PARTS | {_ONE_PIECE_NAME}
     _body = _BODY_PARTS | {_ONE_PIECE_NAME}
     for group, label in ((_skin, "肤色系毛线"), (_body, "主体色毛线")):
@@ -429,14 +428,13 @@ def _materials(parts: List[Any], part_names: set,
     # T2：逐色用量（跨部件聚合；色来自逐圈配色）。内部占位符不是毛线
     # 色名（单色部件回退 p.color 会把 "skin"/"body" 写进材料清单）——排除
     _PLACEHOLDER_COLORS = {"skin", "body"}
-    color_stitches: Dict[str, int] = {}
+    color_stitches: dict[str, int] = {}
     for p in parts:
         quantity = _part_quantity(p)
         for rd in _part_rounds(p):
-            c = (rd.get("color") if isinstance(rd, dict) else rd.color) \
-                or None
+            c = rd.get("color") or None
             if c is None:
-                c = p.get("color") if isinstance(p, dict) else p.color
+                c = p.get("color") or None
             if c and c not in _PLACEHOLDER_COLORS:
                 color_stitches[c] = (
                     color_stitches.get(c, 0) + _round_stitches(rd) * quantity)
@@ -465,7 +463,7 @@ def _gauge_from_params(params: dict) -> Gauge:
     return gauge_from_mapping(params.get("gauge"))
 
 
-def _shaping_meta(gauge: Gauge) -> Dict[str, Any]:
+def _shaping_meta(gauge: Gauge) -> dict[str, Any]:
     """Serializable explanation of the gauge-dependent shaping constraint."""
     return {
         "continuous_delta": round(gauge.shaping_continuous_delta, 2),
@@ -475,7 +473,7 @@ def _shaping_meta(gauge: Gauge) -> Dict[str, Any]:
     }
 
 
-def estimate_minutes(parts: List[Any]) -> int:
+def estimate_minutes(parts: list[Any]) -> int:
     """U23：共用时长估算（refresh_derived 与 _build_result 共用，消除
     两份重复实现的失同步风险）。时长 = 针数×单针 + 圈数×每圈固定开销；
     下限 30 分钟（含备料/收针/藏线头等固定开销——极小样本上线性模型
@@ -489,7 +487,7 @@ def estimate_minutes(parts: List[Any]) -> int:
                           + total_rounds * SECONDS_PER_ROUND_OVERHEAD) / 60.0))
 
 
-def time_estimate_basis() -> Dict[str, Any]:
+def time_estimate_basis() -> dict[str, Any]:
     """Describe the deliberately narrow, currently uncalibrated time model."""
     return {
         "scope": "round_crochet_baseline",
@@ -538,8 +536,8 @@ def refresh_derived(params: dict) -> dict:
 
 
 def build_assembly(part_names, skirt_style: str = "ring",
-                   quantities: Optional[Dict[str, int]] = None,
-                   assembly_plan: Optional[Dict[str, Any]] = None) -> str:
+                   quantities: dict[str, int] | None = None,
+                   assembly_plan: dict[str, Any] | None = None) -> str:
     """Build assembly text from the v2 graph, with a legacy name fallback."""
     quantities = quantities or {}
 
@@ -552,7 +550,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
         return f"{name}共 {quantity} 个，{many}"
 
     one_piece = _ONE_PIECE_NAME in part_names
-    steps: List[str] = ["按各部件标注数量分别完成并填充棉花"]
+    steps: list[str] = ["按各部件标注数量分别完成并填充棉花"]
     if one_piece:
         steps.append("一体件钩完头部后先填充头部再继续钩身体（分阶段填充）")
     if "头部" in part_names or one_piece:
@@ -594,7 +592,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
 
     raw_connections = (assembly_plan.get("connections", [])
                        if isinstance(assembly_plan, dict) else [])
-    grouped: Dict[tuple, List[Dict[str, Any]]] = {}
+    grouped: dict[tuple, list[dict[str, Any]]] = {}
     for connection in raw_connections:
         if not isinstance(connection, dict):
             continue
@@ -668,13 +666,13 @@ class CrochetParamsGenerator:
     @staticmethod
     def generate_params(
         analysis: ImageAnalysis,
-        structure: Dict,
-        color_bands: Optional[List[Dict]] = None,
-        body_profile: Optional[List[float]] = None,
+        structure: dict,
+        color_bands: list[dict] | None = None,
+        body_profile: list[float] | None = None,
         gauge: Gauge = DEFAULT_GAUGE,
-        style: ShapingStyle = None,
-        spans: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        style: ShapingStyle | None = None,
+        spans: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Generate crochet parameters using structure data for dimensions.
 
         圈数（rows）一律由 len(rounds) 派生；圆柱/帽的标注高度按圈数反推，
@@ -687,14 +685,13 @@ class CrochetParamsGenerator:
         style：塑形风格（理想球/蛋形头、头身一体、裙子做法、波浪摆）。
         spans（S1）：姿态关键点实测部件占比；None 回退 PART_SPAN 先验。
         """
-        from .gauge import DEFAULT_STYLE
         style = style or DEFAULT_STYLE
-        struct_parts: Dict[str, Dict] = {
+        struct_parts: dict[str, dict] = {
             p["name"]: p for p in structure.get("parts", [])
         }
         head_d = analysis.head_diameter_cm
 
-        crochet_parts: List[CrochetPart] = []
+        crochet_parts: list[CrochetPart] = []
 
         # 以结构层部件清单为准（structure 可能按 clothing_type 补了裙子，
         # 只遍历 analysis.parts 会漏掉）；结构为空时回退 analysis.parts。
@@ -864,8 +861,8 @@ class CrochetParamsGenerator:
                     for i, n in enumerate(wall)
                 ]
                 wall_dicts = _mark_staggered(wall_dicts)
-                for i, rd in enumerate(wall_dicts):
-                    rd["row"] = len(dome) + i + 1
+                for i, wd in enumerate(wall_dicts):
+                    wd["row"] = len(dome) + i + 1
                 rounds_raw = dome + wall_dicts
                 actual_h = round(len(wall) * gauge.row_h_cm, 1)
                 part = CrochetPart(
@@ -957,7 +954,7 @@ class CrochetParamsGenerator:
             analysis, crochet_parts, gauge, style, structure)
 
     @staticmethod
-    def _merge_head_body(parts: List[CrochetPart], gauge: Gauge) -> List[CrochetPart]:
+    def _merge_head_body(parts: list[CrochetPart], gauge: Gauge) -> list[CrochetPart]:
         """头身一体钩（M2.10）：头顶起针→颈部不断线→身体向下→底部收口。
 
         头部保留到颈围（与身体顶端口径一致的减针链），身体筒壁反转成自顶
@@ -977,7 +974,7 @@ class CrochetParamsGenerator:
         neck = wall[-1] if wall else 24                # 身体顶端（近颈）针数
 
         # 头部保留至减针链中 ≥ neck 的最后一圈，丢弃更小的收口圈
-        head_kept: List[int] = []
+        head_kept: list[int] = []
         for r in head.rounds:
             head_kept.append(r.stitches)
             if r.stitches >= neck and (r.decrease or 0) > 0:
@@ -1003,7 +1000,7 @@ class CrochetParamsGenerator:
             merged_sts.append(next_shaping_stitch_count(
                 merged_sts[-1], 6, gauge.max_shaping_change))
 
-        rounds_raw: List[Dict[str, Any]] = []
+        rounds_raw: list[dict[str, Any]] = []
         for i, n in enumerate(merged_sts):
             if i == 0:
                 notes = f"魔法环起{n}针（X×{n}）"
@@ -1043,9 +1040,9 @@ class CrochetParamsGenerator:
         return [merged] + [p for p in parts if p.name not in ("头部", "身体")]
 
     @staticmethod
-    def _apply_color_plan(part: CrochetPart, bands: List[Dict],
-                          snap_color: Optional[str] = None,
-                          spans: Optional[Dict[str, Any]] = None) -> None:
+    def _apply_color_plan(part: CrochetPart, bands: list[dict],
+                          snap_color: str | None = None,
+                          spans: dict[str, Any] | None = None) -> None:
         """把照片色带按部件纵向占比铺到每一圈（原地），并生成换线说明。
 
         snap_color（M3.13 语义融合）：提供时保留色带分段结构，把与该语义色
@@ -1064,7 +1061,7 @@ class CrochetParamsGenerator:
         # 钩织方向：身体/四肢自端部起针（R1=脚底/手端/胯部=照片低处），
         # 末圈才缝合到躯干——这些部件的照片色带映射必须自底向上。
         bottom_up = part.name in _BOTTOM_UP_PARTS
-        colors: List[Optional[str]] = []
+        colors: list[str | None] = []
         for j in range(n):
             frac = (span_e - span_len * (j + 0.5) / n) if bottom_up else (
                 span_s + span_len * (j + 0.5) / n
@@ -1079,7 +1076,8 @@ class CrochetParamsGenerator:
         if snap_color:
             from .colors import YARN_COLORS, color_distance
 
-            rgb_by_name = {name: tuple(rgb) for rgb, name in YARN_COLORS}
+            rgb_by_name = {
+                name: (rgb[0], rgb[1], rgb[2]) for rgb, name in YARN_COLORS}
             snap_rgb = rgb_by_name.get(snap_color)
             if snap_rgb is not None:
                 candidates = {c for c in colors if c in rgb_by_name}
@@ -1090,7 +1088,7 @@ class CrochetParamsGenerator:
                                        -color_distance(rgb_by_name[c], snap_rgb)))
                     colors = [snap_color if c == dominant else c for c in colors]
 
-        prev: Optional[str] = None
+        prev: str | None = None
         if len(part.rounds) != len(colors):
             raise RuntimeError("round color count does not match generated rounds")
         for rd, c in zip(part.rounds, colors):  # noqa: B905 - length checked above
@@ -1103,20 +1101,30 @@ class CrochetParamsGenerator:
             prev = c
         if len(set(colors)) > 1:
             part.notes = (part.notes or "") + f" 配色（自上而下）：{blocks_summary_text(colors)}。"
-        # 主色回写：部件基准色取该部件占比最大的色段
-        part.color = max(set(colors), key=colors.count)
+        # 主色回写：部件基准色取该部件占比最大的色段（round_color 在
+        # blocks 非空时恒返回色名，调用方已保证；过滤只满足 str 类型）
+        named = [c for c in colors if c is not None]
+        part.color = max(set(named), key=colors.count)
 
     @staticmethod
-    def _build_result(analysis: ImageAnalysis, parts: List[CrochetPart],
+    def _build_result(analysis: ImageAnalysis, parts: list[CrochetPart],
                       gauge: Gauge = DEFAULT_GAUGE,
-                      style: "ShapingStyle" = None,
-                      structure: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Assemble the result dict: materials / assembly / time scale with parts."""
-        part_names = {p.name for p in parts}
-        total_stitches = sum(
-            r.stitches * _part_quantity(p) for p in parts for r in p.rounds)
+                      style: "ShapingStyle | None" = None,
+                      structure: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Assemble the result dict: materials / assembly / time scale with parts.
 
-        quantities = {p.name: _part_quantity(p) for p in parts}
+        双态收敛出口：parts 以 CrochetPart 模型参与构造、配色与校验，
+        在此统一 dump 为 dict——params["parts"] 的内存形态与落盘/分享/
+        历史形态一致，_part_* helper 只需处理 dict。
+        """
+        style = style or DEFAULT_STYLE
+        part_dicts = [p.model_dump() for p in parts]
+        part_names = {p["name"] for p in part_dicts}
+        total_stitches = sum(
+            r["stitches"] * _part_quantity(p)
+            for p in part_dicts for r in p["rounds"])
+
+        quantities = {p["name"]: _part_quantity(p) for p in part_dicts}
         assembly_plan = structure_connection_plan(structure or {})
         assembly = build_assembly(
             part_names, style.skirt_style, quantities, assembly_plan)
@@ -1126,7 +1134,7 @@ class CrochetParamsGenerator:
         gauge_payload = {"stitches_per_10cm": gauge.stitches_per_10cm,
                          "rows_per_10cm": gauge.rows_per_10cm}
         validation = validate_pattern({
-            "parts": [p.model_dump() for p in parts],
+            "parts": part_dicts,
             "gauge": gauge_payload,
         })
         if not validation["ok"]:
@@ -1134,11 +1142,11 @@ class CrochetParamsGenerator:
                 "生成的图解未通过自检: " + "；".join(validation["issues"]))
 
         result = {
-            "materials": _materials(parts, part_names, gauge),
-            "parts": parts,
+            "materials": _materials(part_dicts, part_names, gauge),
+            "parts": part_dicts,
             "assembly_instructions": assembly,
             "difficulty": analysis.difficulty,
-            "estimated_time_minutes": estimate_minutes(parts),
+            "estimated_time_minutes": estimate_minutes(part_dicts),
             "time_estimate_basis": time_estimate_basis(),
             "total_stitches": total_stitches,
             "skirt_style": style.skirt_style,  # refresh_derived 保留裙子做法口径

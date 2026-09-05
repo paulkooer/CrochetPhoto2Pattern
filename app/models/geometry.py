@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from PIL import Image
 from pydantic import BaseModel, Field, model_validator
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class SilhouetteObservation(BaseModel):
     """Normalized subject width profile, top-to-bottom."""
 
-    profile: List[float] = Field(min_length=8)
+    profile: list[float] = Field(min_length=8)
     flare: bool = False
     source: Literal["segmentation_pipeline"] = "segmentation_pipeline"
     confidence: float = Field(default=0.65, ge=0.0, le=1.0)
@@ -26,9 +26,9 @@ class GeometryObservation(BaseModel):
 
     schema_version: Literal["1.0"] = "1.0"
     view_mode: Literal["single_front_assumed"] = "single_front_assumed"
-    silhouette: Optional[SilhouetteObservation] = None
+    silhouette: SilhouetteObservation | None = None
     used_for_generation: bool = True
-    limitations: List[str] = Field(default_factory=lambda: [
+    limitations: list[str] = Field(default_factory=lambda: [
         "单张正面图没有背面或深度信息",
         "宽度剖面按圆形截面近似为旋转体",
         "部件遮挡可能使轮廓宽度偏大",
@@ -66,8 +66,8 @@ class PartInstance(BaseModel):
     instance_id: str = Field(min_length=1)
     position: NormalizedPosition
     rotation_deg: EulerRotation = Field(default_factory=EulerRotation)
-    mirror_of: Optional[str] = None
-    attachments: List[AttachmentSpec] = Field(default_factory=list)
+    mirror_of: str | None = None
+    attachments: list[AttachmentSpec] = Field(default_factory=list)
 
 
 class PartGeometry(BaseModel):
@@ -76,18 +76,18 @@ class PartGeometry(BaseModel):
     part_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     shape: str = Field(min_length=1)
-    diameter_cm: Optional[float] = Field(default=None, gt=0)
-    height_cm: Optional[float] = Field(default=None, gt=0)
-    length_cm: Optional[float] = Field(default=None, gt=0)
+    diameter_cm: float | None = Field(default=None, gt=0)
+    height_cm: float | None = Field(default=None, gt=0)
+    length_cm: float | None = Field(default=None, gt=0)
     color: str = Field(default="body", min_length=1)
     count: int = Field(default=1, ge=1, le=20)
-    mirror_group: Optional[str] = None
-    instances: List[PartInstance] = Field(min_length=1)
+    mirror_group: str | None = None
+    instances: list[PartInstance] = Field(min_length=1)
     source: Literal["template_inferred"] = "template_inferred"
     confidence: float = Field(default=0.45, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
-    def _instances_match_count(self) -> "PartGeometry":
+    def _instances_match_count(self) -> PartGeometry:
         if len(self.instances) != self.count:
             raise ValueError("part count must equal the number of concrete instances")
         if self.diameter_cm is None and self.height_cm is None and self.length_cm is None:
@@ -119,12 +119,12 @@ class StructureGeometry(BaseModel):
     schema_version: Literal["2.0"] = "2.0"
     coordinate_system: StructureCoordinateSystem = Field(
         default_factory=StructureCoordinateSystem)
-    parts: List[PartGeometry]
+    parts: list[PartGeometry]
     proportions: str
     notes: str
 
     @model_validator(mode="after")
-    def _validate_graph_references(self) -> "StructureGeometry":
+    def _validate_graph_references(self) -> StructureGeometry:
         part_ids = [part.part_id for part in self.parts]
         if len(part_ids) != len(set(part_ids)):
             raise ValueError("part_id values must be unique")
@@ -150,7 +150,7 @@ class StructureGeometry(BaseModel):
         return self
 
 
-def normalize_structure(structure: Any) -> Dict[str, Any]:
+def normalize_structure(structure: Any) -> dict[str, Any]:
     """Validate a structure payload while preserving pre-v2 backup support.
 
     Declaring schema_version=2.0 opts into the complete graph contract.  Older
@@ -167,7 +167,7 @@ def normalize_structure(structure: Any) -> Dict[str, Any]:
     return structure
 
 
-def silhouette_profile(image: Image.Image, n_rows: int = 40) -> Optional[List[float]]:
+def silhouette_profile(image: Image.Image, n_rows: int = 40) -> list[float] | None:
     """Measure normalized subject width from top to bottom.
 
     GrabCut subject extraction is preferred; a corner-background colour model
@@ -218,7 +218,7 @@ def silhouette_profile(image: Image.Image, n_rows: int = 40) -> Optional[List[fl
         return None
 
 
-def has_bottom_flare(profile: List[float]) -> bool:
+def has_bottom_flare(profile: list[float]) -> bool:
     """Detect a lower-quarter flare within the occupied subject rows."""
     rows = [i for i, width in enumerate(profile) if width > 0.08]
     if not rows:

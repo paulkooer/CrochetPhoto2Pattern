@@ -15,8 +15,12 @@ import json
 import os
 import sqlite3
 import time
+from collections.abc import Iterator
+from contextlib import closing, contextmanager, suppress
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+from ..schemas import PatternResult
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS patterns (
@@ -28,6 +32,10 @@ CREATE TABLE IF NOT EXISTS patterns (
     title      TEXT
 )
 """
+
+# 建表 + 旧库迁移只需对同一文件跑一次（进程内缓存）。按解析后的路径
+# 记录：测试通过 CROCHET_HISTORY_DB 指向不同文件，各自初始化。
+_INITIALIZED: set = set()
 
 
 def _db_path() -> Path:
@@ -41,19 +49,28 @@ def _connect() -> sqlite3.Connection:
     path = _db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
-    conn.execute(_SCHEMA)
-    try:  # 旧库迁移（K2/U26）：已有表缺列逐一补齐（幂等）
-        conn.execute("ALTER TABLE patterns ADD COLUMN preview TEXT")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        conn.execute("ALTER TABLE patterns ADD COLUMN title TEXT")
-    except sqlite3.OperationalError:
-        pass
+    key = str(path.resolve())
+    if key not in _INITIALIZED:
+        conn.execute(_SCHEMA)
+        # 旧库迁移（K2/U26）：已有表缺列逐一补齐（幂等）
+        with suppress(sqlite3.OperationalError):
+            conn.execute("ALTER TABLE patterns ADD COLUMN preview TEXT")
+        with suppress(sqlite3.OperationalError):
+            conn.execute("ALTER TABLE patterns ADD COLUMN title TEXT")
+        conn.commit()
+        _INITIALIZED.add(key)
     return conn
 
 
-def _summary(result: Dict[str, Any]) -> str:
+@contextmanager
+def _connection() -> Iterator[sqlite3.Connection]:
+    """短连接 + 事务语义：with conn 只管 commit/rollback 不管 close，
+    Python 3.13 起未关闭的连接会报 ResourceWarning——closing 补上关闭。"""
+    with closing(_connect()) as conn, conn:
+        yield conn
+
+
+def _summary(result: dict[str, Any]) -> str:
     analysis = result.get("analysis") or {}
     params = result.get("params") or {}
     parts = params.get("parts") or []
@@ -63,29 +80,27 @@ def _summary(result: Dict[str, Any]) -> str:
             f"{len(parts)} 部件")
 
 
-def save_result(result: Dict[str, Any], title: Optional[str] = None) -> str:
+def save_result(result: dict[str, Any], title: str | None = None) -> str:
     """保存完整结果（含 result_id），返回 rid。重复 rid 覆盖。
 
     title（U26）：用户可命名的标题（None 时侧栏回退摘要）。
     V5：入库前最小结构校验——缺 analysis/params.parts 的数据会让
-    侧栏/载入路径渲染崩溃，在入口拦截。
+    侧栏/载入路径渲染崩溃，在入口拦截。校验与序列化统一走
+    PatternResult 契约（缺必带键 → ValueError）。
     """
     rid = result.get("result_id")
     if not rid:
         raise ValueError("result 缺少 result_id")
-    analysis = result.get("analysis")
-    params = result.get("params")
-    if (not isinstance(analysis, dict)
-            or not isinstance(params, dict)
-            or not isinstance(params.get("parts"), list)):
-        raise ValueError("result 缺少有效的 analysis / params.parts")
-    # pydantic 对象必须 model_dump（default=str 会把部件存成字符串，
-    # 恢复后渲染层崩溃）
-    blob = json.dumps(
-        result, ensure_ascii=False,
-        default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o))
+    try:
+        record = PatternResult.from_result(result)
+    except Exception as e:
+        raise ValueError(f"result 不符合 PatternResult 契约: {e}") from e
+    params = record.params
+    if not isinstance(params.get("parts"), list):
+        raise ValueError("result 缺少有效的 params.parts")
+    blob = json.dumps(record.to_result_dict(), ensure_ascii=False)
     preview = result.get("preview")
-    with _connect() as conn:
+    with _connection() as conn:
         conn.execute(
             "INSERT OR REPLACE INTO patterns "
             "(rid, created_at, summary, blob, preview, title) "
@@ -95,8 +110,8 @@ def save_result(result: Dict[str, Any], title: Optional[str] = None) -> str:
     return rid
 
 
-def list_results(limit: int = 30, query: Optional[str] = None,
-                 color: Optional[str] = None) -> List[Dict[str, Any]]:
+def list_results(limit: int = 30, query: str | None = None,
+                 color: str | None = None) -> list[dict[str, Any]]:
     """最近保存的结果元信息（新→旧）。
 
     query（U26）：匹配摘要或完整 blob 的子串（LIKE）；color：匹配任一
@@ -117,7 +132,8 @@ def list_results(limit: int = 30, query: Optional[str] = None,
                     .replace("%", esc_ch + "%")
                     .replace("_", esc_ch + "_"))
 
-    conds, params = [], []
+    conds: list[str] = []
+    params: list[Any] = []
     if query:
         e = _like_escape(query)
         conds.append("(summary LIKE ? " + escape_clause
@@ -131,21 +147,21 @@ def list_results(limit: int = 30, query: Optional[str] = None,
         sql += " WHERE " + " AND ".join(conds)
     sql += " ORDER BY created_at DESC LIMIT ?"
     params.append(limit)
-    with _connect() as conn:
+    with _connection() as conn:
         rows = conn.execute(sql, params).fetchall()
     return [{"rid": r, "created_at": t, "summary": s, "preview": pv,
              "title": ti}
             for r, t, s, pv, ti in rows]
 
 
-def load_result(rid: str) -> Optional[Dict[str, Any]]:
+def load_result(rid: str) -> dict[str, Any] | None:
     """按 rid 取完整结果；不存在/损坏返回 None（F31）。
 
     F25：title 存在独立列（不在 blob 内），取回后写入 result["title"]，
     使"载入 → 再存入"往返保留用户命名。blob 手改/截断为非法 JSON 时
     吞掉解码错误返回 None——与"不存在"同一出口，调用方统一提示。
     """
-    with _connect() as conn:
+    with _connection() as conn:
         row = conn.execute(
             "SELECT blob, title FROM patterns WHERE rid = ?", (rid,)).fetchone()
     if row is None:
@@ -162,7 +178,7 @@ def load_result(rid: str) -> Optional[Dict[str, Any]]:
 
 
 def delete_result(rid: str) -> None:
-    with _connect() as conn:
+    with _connection() as conn:
         conn.execute("DELETE FROM patterns WHERE rid = ?", (rid,))
 
 

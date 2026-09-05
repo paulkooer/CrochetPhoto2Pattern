@@ -1,4 +1,4 @@
-"""第十四轮（U1-U8）回归：PDF 转义 / 分享链接 / 符号条 / CLI / 色号。"""
+"""PDF 转义 / 分享链接 / 符号条 / CLI / 色号回归（原 test_round14.py）。"""
 import json
 from pathlib import Path
 
@@ -28,7 +28,7 @@ def test_pdf_markup_notes_render_literally():
     pytest.importorskip("reportlab")
     from app.utils.pdf_export import export_pdf
     p = _params()
-    p["parts"][0].notes = "说明 <b>加粗</b> <script>alert(1)</script> <foo>"
+    p["parts"][0]["notes"] = "说明 <b>加粗</b> <script>alert(1)</script> <foo>"
     data = export_pdf(p, {"body_type": "标准", "head_diameter_cm": 9.0,
                           "height_cm": 18.0, "difficulty": "easy"})
     assert data[:5] == b"%PDF-"
@@ -47,11 +47,11 @@ def test_brand_codes_verified_only():
 def test_materials_carry_brand_code_when_known():
     params = _params()
     for p in params["parts"]:
-        for r in p.rounds:
-            r.color = "黑色"
-        p.color = "黑色"
+        for r in p["rounds"]:
+            r["color"] = "黑色"
+        p["color"] = "黑色"
     from app.models.crochet_params import _materials
-    mats = _materials(params["parts"], {p.name for p in params["parts"]})
+    mats = _materials(params["parts"], {p["name"] for p in params["parts"]})
     assert any("Catona 110" in m["item"] for m in mats)
 
 
@@ -80,13 +80,12 @@ def test_share_size_guard_returns_none():
 
     result = _full_result()
     part0 = result["params"]["parts"][0]
-    # F35：全程保持 CrochetStitch 真类型（塞裸 dict 会在 pydantic 序列化
-    # 时产生 UserWarning，污染 -W error 信号）；唯一 notes 防 zlib 压缩
-    base = list(part0.rounds)
+    # parts 为 dict 形态（双态收敛后）；唯一 notes 防 zlib 压缩去重
+    base = list(part0["rounds"])
     grown = list(base)
     for r in base * 30:
-        grown.append(r.model_copy(update={"notes": uuid.uuid4().hex}))
-    part0.rounds = grown
+        grown.append({**r, "notes": uuid.uuid4().hex})
+    part0["rounds"] = grown
     assert encode_result(result) is None
 
 
@@ -127,7 +126,7 @@ def test_share_link_loads_via_query_params(monkeypatch, tmp_path):
 def test_symbol_strip_glyph_counts_match_rounds():
     svg = render_symbol_strip(_params()["parts"][0])
     head = _params()["parts"][0]
-    n = len(head.rounds)
+    n = len(head["rounds"])
     assert svg.count("<path") + svg.count("<line") >= n   # 每圈至少一个记号
     assert "图例" in svg and "逐圈符号条" in svg
 
@@ -189,7 +188,7 @@ def test_cli_mock_mode_is_reachable_without_image(tmp_path, monkeypatch):
     assert rc == 0
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["vision_meta"]["source"] == "mock"
-    assert "与照片无关" in payload["vision_meta"]["note"]
+    assert "无照片参与" in payload["vision_meta"]["note"]
     assert payload["analysis"]["height_cm"] == 24.0
     assert payload["sizing"]["source"] == "cli_target"
     assert payload["geometry"]["used_for_generation"] is False

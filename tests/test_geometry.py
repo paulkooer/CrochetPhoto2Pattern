@@ -42,8 +42,8 @@ def test_ai_pipeline_consumes_same_geometry_profile_as_local(monkeypatch):
     orchestrator = PipelineOrchestrator(openai_key="test-key")
     with patch.object(ImageParser, "parse_image", return_value=_analysis()):
         result = orchestrator.run_full_pipeline(Image.new("RGB", (80, 160)))
-    body = next(part for part in result["params"]["parts"] if part.name == "身体")
-    assert body.type == "profile"
+    body = next(part for part in result["params"]["parts"] if part["name"] == "身体")
+    assert body["type"] == "profile"
     assert result["geometry"]["used_for_generation"] is True
     assert result["geometry"]["silhouette"]["profile"] == profile
 

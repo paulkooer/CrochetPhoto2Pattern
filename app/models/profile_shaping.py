@@ -17,10 +17,10 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 
-def _smooth3(values: Sequence[float]) -> List[float]:
+def _smooth3(values: Sequence[float]) -> list[float]:
     out = []
     n = len(values)
     for i, v in enumerate(values):
@@ -47,13 +47,13 @@ def _sample_at(profile: Sequence[float], frac: float) -> float:
 
 def profile_to_rounds(
     profile: Sequence[float],
-    span: Tuple[float, float],
+    span: tuple[float, float],
     height_cm: float,
     gauge,
     ref_stitches: int,
     direction: str = "bottom_up",
     min_rounds: int = 3,
-) -> List[int]:
+) -> list[int]:
     """照片宽度剖面 → 部件筒壁逐圈针数（返回每圈针数列表，按钩织顺序）。
 
     Args:
@@ -92,7 +92,7 @@ def profile_to_rounds(
     return clamped
 
 
-def strip_dome(stitches: Sequence[int]) -> List[int]:
+def strip_dome(stitches: Sequence[int]) -> list[int]:
     """去掉前缀中的底部圆盘圈，返回筒壁逐圈针数。
 
     圆盘 = 自 R1 起逐圈 +6 的最长前缀（6,12,…,wall[0]，即
@@ -108,7 +108,7 @@ def strip_dome(stitches: Sequence[int]) -> List[int]:
     return list(stitches[n_dome:])
 
 
-def rounds_to_notes(stitches: Sequence[int]) -> List[str]:
+def rounds_to_notes(stitches: Sequence[int]) -> list[str]:
     """逐圈针数 → 标准符号说明（复用通行 (aX,V)/(aX,A) 口径）。"""
     from .crochet_params import _change_note
 
@@ -125,8 +125,8 @@ def rounds_to_notes(stitches: Sequence[int]) -> List[str]:
 def render_silhouette_svg(
     stitches: Sequence[int],
     gauge,
-    photo_profile: Optional[Sequence[float]] = None,
-    span: Optional[Tuple[float, float]] = None,
+    photo_profile: Sequence[float] | None = None,
+    span: tuple[float, float] | None = None,
     width_px: int = 220,
     height_px: int = 300,
 ) -> str:

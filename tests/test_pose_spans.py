@@ -110,14 +110,14 @@ def test_generate_params_uses_measured_spans():
     spans = measured_spans(_standing_landmarks())
     params = CrochetParamsGenerator.generate_params(
         a, struct, color_bands=bands, spans=spans)
-    by = {p.name: p for p in params["parts"]}
+    by = {p["name"]: p for p in params["parts"]}
     # 实测身体 0.25-0.50 全在蓝色带内 → 身体整段蓝（先验会混入黑）
-    assert {r.color for r in by["身体"].rounds} == {"蓝色"}
+    assert {r["color"] for r in by["身体"]["rounds"]} == {"蓝色"}
     # 无 spans 时保持旧行为（回退先验）
     params_prior = CrochetParamsGenerator.generate_params(
         a, struct, color_bands=bands)
-    by_prior = {p.name: p for p in params_prior["parts"]}
-    assert {r.color for r in by_prior["身体"].rounds} != {"蓝色"}
+    by_prior = {p["name"]: p for p in params_prior["parts"]}
+    assert {r["color"] for r in by_prior["身体"]["rounds"]} != {"蓝色"}
 
 
 def test_orchestrator_pose_failure_falls_back(monkeypatch):

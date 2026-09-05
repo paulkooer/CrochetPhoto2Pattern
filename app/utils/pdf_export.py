@@ -9,10 +9,10 @@ from __future__ import annotations
 import html
 import io
 import re
-from typing import Any, Dict, Optional
+from typing import Any
 
 
-def export_pdf(params: Dict[str, Any], analysis: Optional[Dict[str, Any]] = None) -> bytes:
+def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -> bytes:
     """生成图解 PDF，返回字节流。reportlab 缺失时抛 ImportError。"""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -75,8 +75,7 @@ def export_pdf(params: Dict[str, Any], analysis: Optional[Dict[str, Any]] = None
         f"±{shaping['max_stitch_change']} 针；较平缓轮廓仍可使用 6 针步长",
         small))
     physical_parts = sum(
-        max(1, int((part.model_dump() if hasattr(part, "model_dump") else part).get(
-            "quantity", 1)))
+        max(1, int(part.get("quantity", 1)))
         for part in params.get("parts", []))
     minutes = max(0, int(params.get("estimated_time_minutes") or 0))
     story.append(Paragraph(
@@ -121,7 +120,7 @@ def export_pdf(params: Dict[str, Any], analysis: Optional[Dict[str, Any]] = None
 
     # 逐部件
     for part in params.get("parts", []):
-        pd = part.model_dump() if hasattr(part, "model_dump") else part
+        pd = part
         rounds = pd.get("rounds", [])
         quantity = max(1, int(pd.get("quantity", 1)))
         qty_label = f" × {quantity} 个" if quantity > 1 else ""
@@ -143,8 +142,7 @@ def export_pdf(params: Dict[str, Any], analysis: Optional[Dict[str, Any]] = None
                           ("圈", "针数", "加/减", "配色", "说明")]
             rows = [head_cells]
             for r in rounds:
-                rd = r if isinstance(r, dict) else (
-                    r.model_dump() if hasattr(r, "model_dump") else {})
+                rd = r
                 inc = f"+{rd['increase']}" if rd.get("increase") else (
                     f"-{rd['decrease']}" if rd.get("decrease") else "—")
                 rows.append([

@@ -26,7 +26,7 @@ import sys
 import urllib.request
 from ctypes.util import find_library
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def _sha256_of(path: Path) -> str:
     return h.hexdigest()
 
 
-def model_path() -> Optional[Path]:
+def model_path() -> Path | None:
     """模型文件路径；缺失时下载缓存（含 SHA256 校验）。失败返回 None。
 
     CROCHET_POSE_MODEL 指向用户自备模型时不校验（信任本地文件）。
@@ -100,7 +100,7 @@ def model_path() -> Optional[Path]:
         return None
 
 
-def get_body_landmarks(image) -> Optional[Dict[str, Any]]:
+def get_body_landmarks(image) -> dict[str, Any] | None:
     """照片 → 归一化关键点（0..1，全图坐标）。
 
     Returns {"nose": (y), "eye_top", "shoulder", "hip", "knee",
@@ -136,19 +136,19 @@ def get_body_landmarks(image) -> Optional[Dict[str, Any]]:
             return None
         pts = result.pose_landmarks[0]
 
-        def y(idx: int) -> Optional[float]:
+        def y(idx: int) -> float | None:
             p = pts[idx]
             if p.visibility is not None and p.visibility < _MIN_VISIBILITY:
                 return None
             return float(min(max(p.y, 0.0), 1.0))
 
-        def mid(a: int, b: int) -> Optional[float]:
+        def mid(a: int, b: int) -> float | None:
             ya, yb = y(a), y(b)
             if ya is None or yb is None:
                 return None
             return (ya + yb) / 2.0
 
-        lm: Dict[str, Any] = {
+        lm: dict[str, Any] = {
             "nose": y(_NOSE),
             "eye_top": min(v for v in (y(_EYE_L), y(_EYE_R)) if v is not None)
             if any(y(i) is not None for i in (_EYE_L, _EYE_R)) else None,
@@ -167,7 +167,7 @@ def get_body_landmarks(image) -> Optional[Dict[str, Any]]:
         return None
 
 
-def measured_spans(lm: Dict[str, Any]) -> Dict[str, Any]:
+def measured_spans(lm: dict[str, Any]) -> dict[str, Any]:
     """关键点 → 部件纵向 span（0 顶 → 1 底，与 PART_SPAN 同坐标系）。
 
     人体学映射（近似的比例系数按美术常识，元数据透明展示）：
@@ -188,7 +188,7 @@ def measured_spans(lm: Dict[str, Any]) -> Dict[str, Any]:
     head_len = head_bottom - head_top
 
     # 髋 = 身体/腿部精确分界（不得重叠——重叠段会让色带被两个部件重复取用）
-    spans: Dict[str, Any] = {
+    spans: dict[str, Any] = {
         "头部": head,
         "身体": (shoulder, hip),
         "手臂": (shoulder, max(wrist or hip, hip)),
@@ -199,7 +199,7 @@ def measured_spans(lm: Dict[str, Any]) -> Dict[str, Any]:
     spans["帽子"] = (head_top, head_top + head_len * 0.55)
     spans["耳朵"] = (head_top + head_len * 0.35, head_bottom)
     # 净化：s<e 且在 0..1 内，非法部件回退先验（调用方按缺失处理）
-    clean: Dict[str, Any] = {}
+    clean: dict[str, Any] = {}
     for name, (s, e) in spans.items():
         s, e = min(max(s, 0.0), 1.0), min(max(e, 0.0), 1.0)
         if e - s > 0.02:
@@ -207,7 +207,7 @@ def measured_spans(lm: Dict[str, Any]) -> Dict[str, Any]:
     return clean
 
 
-def format_span_hints(spans: Dict[str, Any]) -> Optional[str]:
+def format_span_hints(spans: dict[str, Any]) -> str | None:
     """实测 span → prompt 附加参考文案（T6，S1×LLM 协同）。
 
     让 Vision 模型的 parts 判断与几何实测交叉验证；无实测返回 None。

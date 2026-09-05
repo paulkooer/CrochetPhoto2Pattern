@@ -55,8 +55,7 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         f"±{shaping['max_stitch_change']} 针；较平缓轮廓仍可使用 6 针步长")
     lines.append("")
     physical_parts = sum(
-        max(1, int((part.model_dump() if hasattr(part, "model_dump") else part).get(
-            "quantity", 1)))
+        max(1, int(part.get("quantity", 1)))
         for part in params.get("parts", []))
     minutes = max(0, int(params.get("estimated_time_minutes") or 0))
     lines.append(
@@ -99,7 +98,7 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
 
     # Each part
     for part in params.get("parts", []):
-        pd = part.model_dump() if hasattr(part, "model_dump") else part
+        pd = part
         n_rounds = len(pd.get("rounds", []))
         quantity = max(1, int(pd.get("quantity", 1)))
         qty_label = f" × {quantity} 个" if quantity > 1 else ""
@@ -127,7 +126,7 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
             lines.append("| 圈数 | 针数 | 加针 | 减针 | 配色 | 说明 |")
             lines.append("|:----:|:----:|:----:|:----:|:----:|------|")
             for r in rounds:
-                rd = r if isinstance(r, dict) else (r.model_dump() if hasattr(r, "model_dump") else {})
+                rd = r
                 inc = f"+{rd['increase']}" if rd.get("increase") else "—"
                 dec = f"-{rd['decrease']}" if rd.get("decrease") else "—"
                 lines.append(
