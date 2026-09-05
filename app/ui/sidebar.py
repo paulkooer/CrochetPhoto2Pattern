@@ -145,10 +145,12 @@ def render_sidebar() -> None:
                         # 存入的坏结果（JSON 修正改坏后存档），直接入库
                         # 会崩在渲染层；在此校验并给出 st.error + 删除出路
                         try:
-                            from app.ui.result_renderer import _validated_backup
-                            analysis, structure = _validated_backup(data)
-                            from app.ui.result_renderer import _rebuild_params
-                            data["params"] = _rebuild_params(dict(data["params"]))
+                            from app.ui.result_logic import (
+                                rebuild_params,
+                                validate_backup,
+                            )
+                            analysis, structure = validate_backup(data)
+                            data["params"] = rebuild_params(dict(data["params"]))
                             data["analysis"] = analysis
                             data["structure"] = structure
                         except Exception as e:

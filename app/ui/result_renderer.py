@@ -13,9 +13,9 @@ import uuid
 import streamlit as st
 
 from app.models.colors import YARN_COLORS
-from app.models.crochet_params import refresh_derived
-from app.models.geometry import normalize_structure
-from app.schemas import PART_NAMES, CrochetPart, CrochetStitch, ImageAnalysis, PatternResult
+from app.schemas import PART_NAMES
+from app.ui import result_logic
+from app.ui.result_logic import rebuild_params, result_profile
 from app.utils.exporters import export_markdown
 from app.utils.share import _BACKUP_KEYS
 
@@ -49,18 +49,6 @@ def _plain_text(value) -> str:
     return _strip_invisible(str(value))
 
 
-def _result_profile(result: dict):
-    """Read current geometry IR, with legacy vision_meta backup fallback."""
-    geometry = result.get("geometry") or {}
-    silhouette = geometry.get("silhouette") or {}
-    profile = silhouette.get("profile")
-    if isinstance(profile, list) and profile:
-        return profile
-    legacy = ((result.get("vision_meta") or {}).get("silhouette") or {})
-    profile = legacy.get("profile")
-    return profile if isinstance(profile, list) and profile else None
-
-
 def _yarn_chip_html(name: str) -> str:
     """毛线色名 → 带真实色样的胶囊 HTML。
 
@@ -83,26 +71,6 @@ def _yarn_chip_html(name: str) -> str:
     )
 
 
-def _rebuild_params(corrected: dict) -> dict:
-    """把用户 JSON 中的 parts 重建为 CrochetPart 并重算派生量（regen/导入共用）。
-
-    CrochetPart 只作校验器：重建后立即 dump 回 dict——params["parts"]
-    的内存形态与落盘/分享/历史形态一致（双态收敛，见 _build_result）。
-    """
-    rebuilt_parts = []
-    for p in corrected.get("parts", []):
-        p = dict(p)  # 不原地改动用户输入
-        raw_rounds = p.pop("rounds", [])
-        # rows 由 len(rounds) 派生（schema 已无该字段），丢弃过期值防失同步。
-        p.pop("rows", None)
-        rounds = [CrochetStitch(**r) for r in raw_rounds]
-        rebuilt_parts.append(CrochetPart(rounds=rounds, **p).model_dump())
-    corrected["parts"] = rebuilt_parts
-    # 时长/总针数/材料克数是 parts 的派生量，必须随编辑重算。
-    refresh_derived(corrected)
-    return corrected
-
-
 def purge_result_state(result: dict) -> None:
     """Drop widget state namespaced to a result that is about to be replaced.
 
@@ -117,19 +85,94 @@ def purge_result_state(result: dict) -> None:
             del st.session_state[key]
 
 
-def _validated_backup(data: dict) -> tuple:
-    """备份 JSON → (analysis, structure)，与 params 同等待遇的入参校验。
+@st.fragment
+def _render_part_progress(
+    part: dict,
+    part_data: dict,
+    part_key: str,
+    chk_keys_by_copy: list[list[str]],
+    chk_keys: list[str],
+    rounds_list: list[dict],
+    quantity: int,
+    n_rounds: int,
+    result: dict,
+    params: dict,
+) -> None:
+    """单个部件的进度区（fragment）。
 
-    旧版只重建 params，analysis/structure 原样入库——手改坏的结构要到
-    下一次 rerun 的渲染层才崩（import 的 try 管不到那里），表现为
-    Streamlit 异常页。在这里拦住，错误以 st.error 呈现。
+    勾选/取消勾选只重跑本区块——几十个 checkbox 不再各自触发整页
+    rerun（fable5.1 审核 P2）。「重置/全部完成」按钮与其它流程仍走
+    st.rerun() 整页刷新，语义与旧版一致。
     """
-    analysis = ImageAnalysis(**data["analysis"]).model_dump()
-    # V2 is a real graph contract: reject dangling attachment/mirror IDs,
-    # invalid coordinates and count/instance mismatches at the import edge.
-    # Legacy backups retain their historical minimal contract.
-    structure = normalize_structure(data["structure"])
-    return analysis, structure
+    # Checkbox widget state is the single source of truth for progress.
+    # It is updated by Streamlit before the rerun, so the counts below
+    # already include the click that triggered this run (no one-step lag).
+    n_done = sum(bool(st.session_state.get(k)) for k in chk_keys)
+    physical_rounds = n_rounds * quantity
+    pct = int(n_done / physical_rounds * 100) if physical_rounds else 0
+    quantity_label = f" × {quantity} 个" if quantity > 1 else ""
+    rounds_label = (f"{n_rounds} 圈/个，共 {physical_rounds} 圈次"
+                    if quantity > 1 else f"{n_rounds} 圈")
+    label_exp = (
+        f"🧶 {part_data['name']}{quantity_label} ({rounds_label})"
+        f"  —  ✅ {n_done}/{physical_rounds} 圈次"
+    )
+    with st.expander(label_exp):
+        st.write(f"**形状**: {part_data['type']} | **颜色**: {part_data['color']}")
+        if quantity > 1:
+            st.info(f"此圈序需制作 {quantity} 份相同部件；总针数、材料和工时已按 {quantity} 份计算。")
+        # T8：环形圈数图（球/一体件的顶视图；勾选列表上方的直观总览）
+        if part_data.get("type") in ("sphere", "onepiece"):
+            with st.expander("⭕ 顶视图（环形圈数图）", expanded=False):
+                try:
+                    import streamlit.components.v1 as _components2
+
+                    from app.models.ring_chart import render_ring_svg, render_symbol_strip
+                    _sw = (result.get("gauge") or params.get("gauge") or {})
+                    _sw_cm = 10.0 / max(float(_sw.get(
+                        "stitches_per_10cm", 13.0)), 1e-6)
+                    _components2.html(
+                        render_ring_svg(part, stitch_w_cm=_sw_cm),
+                        height=330, scrolling=False)
+                    _strip = render_symbol_strip(part)
+                    if _strip:
+                        st.markdown("**逐圈符号条**（×=X · V=加针 · A=减针）")
+                        _components2.html(_strip, height=min(
+                            30 + 16 * min(len(part.get("rounds", [])), 24)
+                            + 10, 560),
+                            scrolling=True)
+                except Exception as e:  # 可视化失败不影响主流程
+                    st.caption(f"顶视图不可用: {e}")
+        if part_data.get("notes"):
+            st.info(part_data["notes"])
+        st.progress(
+            pct, text=f"钩织进度 {pct}%  ({n_done}/{physical_rounds} 圈次)")
+        st.markdown("**逐圈进度** — 勾选已完成的圈：")
+        col_clear, col_all = st.columns(2)
+        with col_clear:
+            if st.button("↩️ 重置进度", key=f"clear_{part_key}"):
+                for k in chk_keys:
+                    st.session_state[k] = False
+                st.rerun()
+        with col_all:
+            if st.button("✅ 全部完成", key=f"all_{part_key}"):
+                for k in chk_keys:
+                    st.session_state[k] = True
+                st.rerun()
+        for copy, copy_keys in enumerate(chk_keys_by_copy, 1):
+            if quantity > 1:
+                st.markdown(f"**第 {copy} 个 {part_data['name']}**")
+            for i, r in enumerate(rounds_list):
+                rd = r
+                inc_str = f"+{rd['increase']}" if rd.get("increase") else ""
+                dec_str = f"-{rd['decrease']}" if rd.get("decrease") else ""
+                change = f" ({inc_str}{dec_str})" if (inc_str or dec_str) else ""
+                notes_str = f" — {rd['notes']}" if rd.get("notes") else ""
+                color_str = f" · {rd['color']}" if rd.get("color") else ""
+                lbl = (f"第 {rd.get('row', i + 1)} 圈："
+                       f"{rd.get('stitches', '?')}针"
+                       f"{change}{notes_str}{color_str}")
+                st.checkbox(lbl, key=copy_keys[i])
 
 
 def render_results(result: dict, slot: str) -> None:
@@ -254,7 +297,7 @@ def render_results(result: dict, slot: str) -> None:
                 _gd = result.get("gauge") or params.get("gauge") or {}
                 _gauge = _G(_gd.get("stitches_per_10cm", 13.0),
                             _gd.get("rows_per_10cm", 16.0))
-                _photo = _result_profile(result)
+                _photo = result_profile(result)
                 _spans = result.get("spans") or _SPAN
                 for _pp in profile_parts:
                     _wall = [r.stitches for r in _pp.rounds]
@@ -428,73 +471,9 @@ def render_results(result: dict, slot: str) -> None:
             for prefix in copy_prefixes
         ]
         chk_keys = [key for keys in chk_keys_by_copy for key in keys]
-        n_done = sum(bool(st.session_state.get(k)) for k in chk_keys)
-        physical_rounds = n_rounds * quantity
-        pct = int(n_done / physical_rounds * 100) if physical_rounds else 0
-        quantity_label = f" × {quantity} 个" if quantity > 1 else ""
-        rounds_label = (f"{n_rounds} 圈/个，共 {physical_rounds} 圈次"
-                        if quantity > 1 else f"{n_rounds} 圈")
-        label_exp = (
-            f"🧶 {part_data['name']}{quantity_label} ({rounds_label})"
-            f"  —  ✅ {n_done}/{physical_rounds} 圈次"
-        )
-        with st.expander(label_exp):
-            st.write(f"**形状**: {part_data['type']} | **颜色**: {part_data['color']}")
-            if quantity > 1:
-                st.info(f"此圈序需制作 {quantity} 份相同部件；总针数、材料和工时已按 {quantity} 份计算。")
-            # T8：环形圈数图（球/一体件的顶视图；勾选列表上方的直观总览）
-            if part_data.get("type") in ("sphere", "onepiece"):
-                with st.expander("⭕ 顶视图（环形圈数图）", expanded=False):
-                    try:
-                        import streamlit.components.v1 as _components2
-
-                        from app.models.ring_chart import render_ring_svg
-                        _sw = (result.get("gauge") or params.get("gauge") or {})
-                        _sw_cm = 10.0 / max(float(_sw.get(
-                            "stitches_per_10cm", 13.0)), 1e-6)
-                        from app.models.ring_chart import render_symbol_strip
-                        _components2.html(
-                            render_ring_svg(part, stitch_w_cm=_sw_cm),
-                            height=330, scrolling=False)
-                        _strip = render_symbol_strip(part)
-                        if _strip:
-                            st.markdown("**逐圈符号条**（×=X · V=加针 · A=减针）")
-                            _components2.html(_strip, height=min(
-                                30 + 16 * min(len(part.get("rounds", [])), 24)
-                                + 10, 560),
-                                scrolling=True)
-                    except Exception as e:  # 可视化失败不影响主流程
-                        st.caption(f"顶视图不可用: {e}")
-            if part_data.get("notes"):
-                st.info(part_data["notes"])
-            st.progress(
-                pct, text=f"钩织进度 {pct}%  ({n_done}/{physical_rounds} 圈次)")
-            st.markdown("**逐圈进度** — 勾选已完成的圈：")
-            col_clear, col_all = st.columns(2)
-            with col_clear:
-                if st.button("↩️ 重置进度", key=f"clear_{part_key}"):
-                    for k in chk_keys:
-                        st.session_state[k] = False
-                    st.rerun()
-            with col_all:
-                if st.button("✅ 全部完成", key=f"all_{part_key}"):
-                    for k in chk_keys:
-                        st.session_state[k] = True
-                    st.rerun()
-            for copy, copy_keys in enumerate(chk_keys_by_copy, 1):
-                if quantity > 1:
-                    st.markdown(f"**第 {copy} 个 {part_data['name']}**")
-                for i, r in enumerate(rounds_list):
-                    rd = r
-                    inc_str = f"+{rd['increase']}" if rd.get("increase") else ""
-                    dec_str = f"-{rd['decrease']}" if rd.get("decrease") else ""
-                    change = f" ({inc_str}{dec_str})" if (inc_str or dec_str) else ""
-                    notes_str = f" — {rd['notes']}" if rd.get("notes") else ""
-                    color_str = f" · {rd['color']}" if rd.get("color") else ""
-                    lbl = (f"第 {rd.get('row', i + 1)} 圈："
-                           f"{rd.get('stitches', '?')}针"
-                           f"{change}{notes_str}{color_str}")
-                    st.checkbox(lbl, key=copy_keys[i])
+        _render_part_progress(
+            part, part_data, part_key, chk_keys_by_copy, chk_keys,
+            rounds_list, quantity, n_rounds, result, params)
 
     # Section 4: Assembly
     st.subheader("4️⃣ 装配说明")
@@ -535,54 +514,14 @@ def render_results(result: dict, slot: str) -> None:
                 key=f"sz_height_{result_key}")
         if st.button("📐 按新尺寸重新生成", key=f"sz_go_{result_key}"):
             try:
-                from app.models.crochet_params import CrochetParamsGenerator
-                from app.models.gauge import Gauge, ShapingStyle
-                from app.models.sizing import sizing_meta_for_analysis
-                from app.models.structure_designer import StructureDesigner
-
-                _g = result.get("gauge") or params.get("gauge") or {}
-                _gauge = Gauge(_g.get("stitches_per_10cm", 13.0),
-                               _g.get("rows_per_10cm", 16.0))
-                _st_def = {"sphere_mode": "ladder", "one_piece": False,
-                           "skirt_style": "ring", "ruffle_hem": False}
-                _style = ShapingStyle(**{**_st_def, **(result.get("style") or {})})
-                _new_analysis = ImageAnalysis(**{
-                    **analysis, "head_diameter_cm": _new_head,
-                    "height_cm": _new_height})
-                _structure = StructureDesigner.design_3d_structure(_new_analysis)
-                _profile = _result_profile(result)
-                _new_params = CrochetParamsGenerator.generate_params(
-                    _new_analysis, _structure,
-                    color_bands=result.get("color_bands"),
-                    body_profile=_profile, gauge=_gauge, style=_style,
-                    spans=result.get("spans"))
-                _old_sizing = result.get("sizing") or {}
-                _new_sizing = sizing_meta_for_analysis(
-                    _new_analysis,
-                    "user_resize",
-                    photo_head_to_height_ratio=_old_sizing.get(
-                        "photo_head_to_height_ratio"),
-                )
+                # 业务逻辑在 result_logic（纯函数，可离线单测）
+                _new_result = result_logic.regenerate_with_size(
+                    result, _new_head, _new_height)
+                _new_rid = uuid.uuid4().hex[:12]
+                _new_result["result_id"] = _new_rid
                 if slot in st.session_state:
                     purge_result_state(st.session_state[slot])
-                _new_rid = uuid.uuid4().hex[:12]
-                # 键集走 PatternResult 契约（schemas.py），不再手抄
-                st.session_state[slot] = PatternResult(
-                    analysis=_new_analysis.model_dump(),
-                    structure=_structure,
-                    params=_new_params,
-                    result_id=_new_rid,
-                    usage=result.get("usage") or {},
-                    vision_meta=result.get("vision_meta") or {},
-                    gauge=result.get("gauge") or {},
-                    style=result.get("style") or _st_def,
-                    color_bands=result.get("color_bands"),
-                    spans=result.get("spans"),
-                    spans_measured=result.get("spans_measured") or [],
-                    preview=result.get("preview"),
-                    sizing=_new_sizing,
-                    geometry=result.get("geometry"),
-                ).to_result_dict()
+                st.session_state[slot] = _new_result
                 # 成功标志必须以"新" result_id 为键：rerun 后 render_results
                 # 按新 rid 组键弹出（旧 rid 已被替换，旧键永远弹不出来）
                 st.session_state[f"sz_{_new_rid}_ok"] = True
@@ -605,42 +544,14 @@ def render_results(result: dict, slot: str) -> None:
         )
         if st.button("🧩 校验结构并重新生成", key=f"struct_go_{result_key}"):
             try:
-                from app.models.crochet_params import CrochetParamsGenerator
-                from app.models.gauge import Gauge, ShapingStyle
-
-                corrected_structure = normalize_structure(json.loads(structure_json))
-                generation_analysis = ImageAnalysis(**analysis)
-                raw_gauge = result.get("gauge") or params.get("gauge") or {}
-                generation_gauge = Gauge(
-                    raw_gauge.get("stitches_per_10cm", 13.0),
-                    raw_gauge.get("rows_per_10cm", 16.0),
-                )
-                style_defaults = {
-                    "sphere_mode": "ladder", "one_piece": False,
-                    "skirt_style": "ring", "ruffle_hem": False,
-                }
-                generation_style = ShapingStyle(**{
-                    **style_defaults, **(result.get("style") or {}),
-                })
-                regenerated_params = CrochetParamsGenerator.generate_params(
-                    generation_analysis,
-                    corrected_structure,
-                    color_bands=result.get("color_bands"),
-                    body_profile=_result_profile(result),
-                    gauge=generation_gauge,
-                    style=generation_style,
-                    spans=result.get("spans"),
-                )
+                # 校验 + 重生成在 result_logic（纯函数，可离线单测）
+                _updated = result_logic.regenerate_with_structure(
+                    result, json.loads(structure_json))
+                new_result_id = uuid.uuid4().hex[:12]
+                _updated["result_id"] = new_result_id
                 if slot in st.session_state:
                     purge_result_state(st.session_state[slot])
-                new_result_id = uuid.uuid4().hex[:12]
-                updated_result = dict(result)
-                updated_result.update({
-                    "structure": corrected_structure,
-                    "params": regenerated_params,
-                    "result_id": new_result_id,
-                })
-                st.session_state[slot] = updated_result
+                st.session_state[slot] = _updated
                 st.session_state[f"struct_{new_result_id}_ok"] = True
                 st.rerun()
             except Exception as e:
@@ -664,7 +575,7 @@ def render_results(result: dict, slot: str) -> None:
         if st.button("🔄 重新生成", key=f"regen_{result_key}"):
             try:
                 corrected = json.loads(correction_json)
-                st.session_state[slot]["params"] = _rebuild_params(corrected)
+                st.session_state[slot]["params"] = rebuild_params(corrected)
                 st.session_state[_ok_flag] = True
                 st.rerun()
             except Exception as e:
@@ -747,7 +658,7 @@ def render_results(result: dict, slot: str) -> None:
             try:
                 from app.utils import history
                 saved = dict(result)
-                saved["params"] = _rebuild_params(json.loads(correction_json))
+                saved["params"] = rebuild_params(json.loads(correction_json))
                 _title = (st.session_state.get(f"hist_title_{result_key}")
                           or "").strip() or None
                 history.save_result(saved, title=_title)
@@ -760,22 +671,12 @@ def render_results(result: dict, slot: str) -> None:
             )
             if st.button("导入并替换当前结果", key=f"importbtn_{result_key}"):
                 try:
-                    data = json.loads(pasted)
-                    restored_analysis, restored_structure = _validated_backup(data)
-                    restored_params = _rebuild_params(dict(data["params"]))
+                    # 校验 + 回填在 result_logic（纯函数，与历史载入同口径）
+                    imported = result_logic.import_backup(
+                        json.loads(pasted), uuid.uuid4().hex[:12])
                     # 只替换当前槽位；另一个 Tab 的结果不受影响
                     if slot in st.session_state:
                         purge_result_state(st.session_state[slot])
-                    # F24/G1：非重建键按 _BACKUP_KEYS 从备份数据回填——
-                    # 旧版 setdefault(k, None) 把 style/gauge 等全写 None。
-                    # 键集由 PatternResult 契约定义（旧格式缺键 → None 兜底）。
-                    imported = PatternResult.from_result({
-                        **data,
-                        "analysis": restored_analysis,
-                        "structure": restored_structure,
-                        "params": restored_params,
-                        "result_id": uuid.uuid4().hex[:12],
-                    }).to_result_dict()
                     st.session_state[slot] = imported
                     st.rerun()
                 except Exception as e:

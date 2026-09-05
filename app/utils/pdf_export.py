@@ -11,6 +11,8 @@ import io
 import re
 from typing import Any
 
+from app import PRODUCT_NAME
+
 
 def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -> bytes:
     """生成图解 PDF，返回字节流。reportlab 缺失时抛 ImportError。"""
@@ -173,6 +175,6 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -
 
     story.append(Spacer(1, 10))
     story.append(Paragraph(
-        "由 Photo2Amigurumi 生成 — 比例可能需要试钩调整", small))
+        f"由 {PRODUCT_NAME} 生成 — 比例可能需要试钩调整", small))
     doc.build(story)
     return buf.getvalue()

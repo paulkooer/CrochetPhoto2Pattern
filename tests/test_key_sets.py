@@ -35,7 +35,9 @@ def test_backup_import_preserves_all_backup_keys():
     from app.models.gauge import Gauge, ShapingStyle
     from app.models.structure_designer import StructureDesigner
     from app.schemas import ImageAnalysis
-    from app.ui.result_renderer import _BACKUP_KEYS, _rebuild_params, _validated_backup
+    from app.ui.result_logic import rebuild_params as _rebuild_params
+    from app.ui.result_logic import validate_backup as _validated_backup
+    from app.utils.share import _BACKUP_KEYS
 
     a = ImageAnalysis(body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
                       main_features=[], pose="站立", difficulty="easy",
@@ -87,7 +89,7 @@ def test_backup_validation_accepts_legacy_structure_but_checks_v2_graph():
 
     from app.models.structure_designer import StructureDesigner
     from app.schemas import ImageAnalysis
-    from app.ui.result_renderer import _validated_backup
+    from app.ui.result_logic import validate_backup as _validated_backup
 
     analysis = ImageAnalysis(
         body_type="标准", head_diameter_cm=9.0, height_cm=18.0,

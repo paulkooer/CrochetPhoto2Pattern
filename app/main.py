@@ -1,4 +1,4 @@
-"""Photo2Amigurumi — Streamlit entry point.
+"""CrochetPhoto2Pattern — Streamlit entry point.
 
 入口只做四件事：全局配置、侧栏、三个 Tab 的分发、页脚。
 各 Tab 的具体 UI 在 app/ui/ 对应模块中，导出工具在 app/utils/。
@@ -10,6 +10,7 @@ import logging
 import streamlit as st
 from dotenv import load_dotenv
 
+from app import PRODUCT_NAME
 from app.ui.design_system import apply_design_system, render_hero
 from app.ui.sidebar import render_sidebar
 from app.ui.tab_grid import render_tab_grid
@@ -21,7 +22,7 @@ load_dotenv()
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
 
-st.set_page_config(page_title="Photo2Amigurumi", page_icon="🧶", layout="wide")
+st.set_page_config(page_title=PRODUCT_NAME, page_icon="🧶", layout="wide")
 apply_design_system()
 render_hero()
 
@@ -31,14 +32,14 @@ _qp = st.query_params
 if "p" in _qp and "result" not in st.session_state:
     import uuid as _uuid
 
+    from app.ui.result_logic import rebuild_params, validate_backup
     from app.utils.share import decode_result
     _shared = decode_result(_qp["p"])
     if _shared:
         # V5：与备份导入同级的校验（坏 token 不进 session）
-        from app.ui.result_renderer import _rebuild_params, _validated_backup
         try:
-            analysis, structure = _validated_backup(_shared)
-            _shared["params"] = _rebuild_params(dict(_shared["params"]))
+            analysis, structure = validate_backup(_shared)
+            _shared["params"] = rebuild_params(dict(_shared["params"]))
             _shared["analysis"] = analysis
             _shared["structure"] = structure
         except Exception:
@@ -63,4 +64,4 @@ with tab_grid:
     render_tab_grid()
 
 st.divider()
-st.caption("Photo2Amigurumi — AI 驱动的立体钩织图解生成器")
+st.caption(f"{PRODUCT_NAME} — AI 驱动的立体钩织图解生成器")

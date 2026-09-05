@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import re as _re
 
+from app import PRODUCT_NAME
+
 # U30：双语记号对照（X/V/A 日式 Amigurumi 惯例 ↔ CYC 西方体系，
 # 对应关系经 craftyarncouncil.com/standards/crochet-chart-symbols 核实）
 _LEGEND_BILINGUAL = (
@@ -146,5 +148,5 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         lines.append("")
 
     lines.append("---")
-    lines.append("*由 Photo2Amigurumi AI 自动生成 — 部分比例可能需要试钩调整*")
+    lines.append(f"*由 {PRODUCT_NAME} AI 自动生成 — 部分比例可能需要试钩调整*")
     return "\n".join(lines)

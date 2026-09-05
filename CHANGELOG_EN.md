@@ -78,6 +78,14 @@ formats may still evolve during Beta; incompatible changes must include migratio
   source, preparing the i18n migration; `PART_NAMES` values are unchanged.
 - CI gains a `type-check` job: `mypy` joins the dev extra with a zero-error baseline
   across all 37 app files (see `[tool.mypy]`) to prevent type regressions.
+- The three local result-page flows (quick resize / structure edit / backup import)
+  move out of button callbacks into a pure-function layer (`app/ui/result_logic.py`)
+  that is unit-testable offline; the per-round progress section is now an
+  `st.fragment`, so ticking a round no longer reruns the whole page.
+- Product display name unified to `CrochetPhoto2Pattern`: a single
+  `app.PRODUCT_NAME` source now feeds the page title, hero, footer, and
+  Markdown/PDF exports (the UI previously said Photo2Amigurumi while the
+  repo and package say CrochetPhoto2Pattern).
 - `params["parts"]` is uniformly dict-shaped in memory (matching disk/share/history):
   the dict/model dual-state branches in `_part_name`, `_part_rounds`,
   `_part_quantity`, `_round_stitches`, the validator, exporters, PDF export, and the

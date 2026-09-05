@@ -95,7 +95,7 @@ def test_share_link_loads_via_query_params(monkeypatch, tmp_path):
 
     from streamlit.testing.v1 import AppTest
 
-    from app.ui.result_renderer import _rebuild_params
+    from app.ui.result_logic import rebuild_params as _rebuild_params
     from app.utils import history
     from app.utils.share import decode_result, encode_result
 

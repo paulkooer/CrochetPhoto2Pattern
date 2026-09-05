@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from app import PRODUCT_NAME
+
 
 def apply_design_system() -> None:
     """Apply the shared visual theme without changing application behavior."""
@@ -224,10 +226,10 @@ def apply_design_system() -> None:
 def render_hero() -> None:
     """Render the application introduction using the shared visual language."""
     st.markdown(
-        """
+        f"""
         <section class="crochet-hero">
           <div class="crochet-hero__eyebrow">Photo to handmade pattern</div>
-          <div class="crochet-hero__title">🧶 Photo2Amigurumi</div>
+          <div class="crochet-hero__title">🧶 {PRODUCT_NAME}</div>
           <p class="crochet-hero__copy">
             从一张照片出发，整理人物比例、立体结构与逐圈针法，生成一份可以边钩边勾选的玩偶图解。
           </p>

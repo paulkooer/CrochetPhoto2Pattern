@@ -135,7 +135,7 @@ def test_bilingual_stitch_key_in_exports():
 
 def test_validated_backup_rejects_corrupt_history_record(tmp_path):
     """坏历史记录经 _validated_backup 必须报错（与备份导入对等）。"""
-    from app.ui.result_renderer import _validated_backup
+    from app.ui.result_logic import validate_backup as _validated_backup
     with pytest.raises((ValueError, TypeError, KeyError)):
         _validated_backup({"analysis": {"body_type": "标准"},
                            "structure": ["坏结构"],

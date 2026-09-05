@@ -78,6 +78,12 @@
   铺路；`PART_NAMES` 数值保持不变。
 - CI 新增 `type-check` job：`mypy` 纳入 dev 依赖，app 全包 37 文件
   0 错误为基线（配置见 `[tool.mypy]`），防止类型回归。
+- 结果页三条本地流程（快速调尺寸 / 结构修正 / 备份导入）从按钮回调
+  抽离为 `app/ui/result_logic.py` 纯函数层，可离线单测；逐圈勾选区改用
+  `st.fragment`，勾选/取消只重跑该区块，不再触发整页 rerun。
+- 产品显示名统一为 `CrochetPhoto2Pattern`：新增 `app.PRODUCT_NAME`
+  单一来源，页面标题、hero、页脚与 Markdown/PDF 导出全部从其读取
+  （此前 UI/导出用 Photo2Amigurumi，仓库与包名是 CrochetPhoto2Pattern）。
 - `params["parts"]` 在内存中统一为 dict 形态（与落盘/分享/历史一致）：
   `_part_name`/`_part_rounds`/`_part_quantity`/`_round_stitches` 及
   validator、导出、PDF、环形图中的 dict/模型双态分支全部移除，
