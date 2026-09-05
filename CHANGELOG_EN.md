@@ -100,6 +100,18 @@ formats may still evolve during Beta; incompatible changes must include migratio
   the fully cinched sphere head honestly reports none. Recomputed by
   refresh_derived after JSON edits; callers without the parameter keep
   the previous wording.
+- **Closing technique upgraded to the seamless close**: the final-round
+  note on spheres/eggs/one-piece bodies changes from the plain "cinch
+  tight" to the community-standard technique — "thread the tail through
+  the front loops of every remaining stitch and pull tight" (Chinese
+  community term 无痕收口, seen on Bianzhirensheng; English counterpart
+  is PlanetJune's Fastening Off front-loops method). Reachability of CN
+  sources is documented too: Xiaohongshu requires login and hosts
+  image-based charts; Bianzhirensheng's full text sits behind its share
+  platform (persistent 502/500) with image charts on the main site —
+  text-level calibration sources essentially don't exist in fetchable
+  form in the CN community, which is exactly the gap a photo->pattern
+  system fills there.
 
 ### Fixed
 

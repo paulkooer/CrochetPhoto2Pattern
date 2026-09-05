@@ -419,7 +419,7 @@ def test_annotated_height_excludes_base_dome():
 
 def test_finishing_notes_present():
     from app.models.crochet_params import _cylinder_rounds, _sphere_rounds
-    assert "勒紧收口" in _sphere_rounds(36)[-1]["notes"]
+    assert "无痕收口" in _sphere_rounds(36)[-1]["notes"]
     assert "缝合" in _cylinder_rounds(24, 5)[-1]["notes"]
 
 
@@ -603,14 +603,14 @@ def test_ideal_sphere_shape_and_constraints():
     r = _ideal_sphere_rounds(9.0)
     sts = [x["stitches"] for x in r]
     assert max(sts) == 36                       # 与阶梯球同锚点
-    assert sts[0] == 6 and sts[-1] <= 12       # 默认密度末极停在 ≤12，直接勒紧收口
+    assert sts[0] == 6 and sts[-1] <= 12       # 默认密度末极停在 ≤12，直接无痕收口
     assert all(n % 6 == 0 for n in sts)
     assert all(abs(b - a) <= default_gauge.max_shaping_change
                for a, b in zip(sts, sts[1:]))  # noqa: B905 - adjacent pairs truncate by design
     # 近似对称（球）：上半镜像与下半差 ≤ 每侧 1 档
     half = len(sts) // 2
     assert abs(sum(sts[:half]) - sum(sts[-half:])) <= 36
-    assert any("勒紧收口" in (x["notes"] or "") for x in r)
+    assert any("无痕收口" in (x["notes"] or "") for x in r)
 
 
 def test_generalized_change_notes_are_executable_by_six_sectors():
@@ -664,7 +664,7 @@ def test_one_piece_merge():
     assert sts[-1] == 6                                 # 底部收口
     assert max(sts) >= 30                               # 含头部最宽圈
     notes = "".join(r.get("notes") or "" for r in op["rounds"])
-    assert "颈部" in notes and "勒紧收口" in notes
+    assert "颈部" in notes and "无痕收口" in notes
     assert any("错开半组" in (r.get("notes") or "") for r in op["rounds"])
     # 装配：一体件有分阶段填充，且无头身缝合步骤
     asm = params["assembly_instructions"]
@@ -768,7 +768,7 @@ def test_assembly_mentions_opening_stitch_counts():
     asm = params["assembly_instructions"]
     assert "手臂对称缝合到身体两侧上方（开口" in asm
     assert "腿部对称缝合到身体底部（开口" in asm
-    # 球体头部勒紧收口（末圈 6 针带收口注记）——无开口可言
+    # 球体头部无痕收口（末圈 6 针带收口注记）——无开口可言
     assert "头部接合到身体顶部" in asm
     assert "头部接合到身体顶部（开口" not in asm
     arms = next(p for p in params["parts"] if p["name"] == "手臂")

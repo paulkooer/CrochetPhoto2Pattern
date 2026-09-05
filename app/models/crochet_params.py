@@ -223,7 +223,9 @@ def _sphere_rounds(max_stitches: int = 36) -> list[dict[str, Any]]:
     rounds = _increase_rounds(max_stitches) + constant + decrease
     if rounds:
         last = rounds[-1]
-        last["notes"] = (last.get("notes") or "") + "；断线留10cm，勒紧收口藏线头"
+        last["notes"] = (last.get("notes") or "") + (
+            "；断线留10cm，穿末圈每针前半针后拉紧藏线头"
+            "（无痕收口，社区/PlanetJune fastening off 通行技法）")
     return rounds
 
 
@@ -243,7 +245,8 @@ def _ideal_sphere_rounds(
     egg=True：宽度乘 (1 + e·cosθ)（θ 自顶极点），上略宽下略窄的蛋形——
     玩偶头主流形状；返回值附 eye_round（最大围行，眼睛在其下一两圈）。
     原文工艺警告：收尾不要按标准减针收到 6 针（底部过尖）——保持约
-    12 针左右直接穿线勒紧收口；动态塑形上限仍受单圈可执行性约束。
+    12 针左右直接穿线无痕收口（穿末圈前半针拉紧）；动态塑形上限仍受
+    单圈可执行性约束。
     """
     import math
 
@@ -280,9 +283,9 @@ def _ideal_sphere_rounds(
     rounds = _mark_staggered(rounds)
     if rounds:
         last = rounds[-1]
-        # 原文工艺：不要继续减针收到 6 针（底部过尖）——穿线勒紧收口
+        # 原文工艺：不要继续减针收到 6 针（底部过尖）——穿前半针收口
         last["notes"] = (last.get("notes") or "") + (
-            "；断线留10cm，穿过后圈每针勒紧收口藏线头"
+            "；断线留10cm，穿末圈每针前半针后拉紧（无痕收口）藏线头"
             "（勿再减针收成6针，底部会过尖）")
     # 眼睛：最大围所在圈（蛋形时上移），再往下 1 圈
     eye_idx = max(range(len(clamped)), key=lambda i: clamped[i])
@@ -574,7 +577,7 @@ def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
     """各部件的开口针数（末圈针数）——完全收口的部件不计入。
 
     专业图解装配段的通行惯例：缝合前先报开口针数（"sew the remaining
-    12 sts to the body"）。球体头部以"勒紧收口"完全闭合，无开口；
+    12 sts to the body"）。球体头部以"无痕收口"完全闭合，无开口；
     圆柱四肢以"断线留15cm用于缝合"收尾留口；帽/裙明确不收口。
     """
     openings: dict[str, int] = {}
@@ -1088,7 +1091,8 @@ class CrochetParamsGenerator:
             })
         rounds_raw = _mark_staggered(rounds_raw)
         last = rounds_raw[-1]
-        last["notes"] = (last.get("notes") or "") + "；断线留10cm，勒紧收口藏线头"
+        last["notes"] = (last.get("notes") or "") + (
+            "；断线留10cm，穿末圈每针前半针后拉紧（无痕收口）藏线头")
 
         eye_round = next((i + 1 for i, r in enumerate(rounds_raw)
                           if r["stitches"] == max(merged_sts)), 2) + 1

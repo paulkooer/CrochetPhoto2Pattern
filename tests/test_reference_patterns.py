@@ -262,12 +262,12 @@ def test_ideal_sphere_follows_source_sin_profile():
 
 
 def test_ideal_sphere_honors_source_craft_warning():
-    """原文工艺警告（勿收针到 6 针，穿线勒紧收口）落实在收尾圈备注。"""
+    """原文工艺警告（勿收针到 6 针，穿线无痕收口）落实在收尾圈备注。"""
     from app.models.crochet_params import _ideal_sphere_rounds
     from app.models.gauge import Gauge
 
     rounds = _ideal_sphere_rounds(9.0, Gauge(13.0, 16.0))
-    assert "勒紧收口" in (rounds[-1].get("notes") or "")
+    assert "无痕收口" in (rounds[-1].get("notes") or "")
 
 
 def test_parade_tokens_align_with_cyc_abbreviations():
