@@ -115,6 +115,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed
 
+- **Head notes now use the same safety-eye sizing as the materials
+  list**: the head note hardcoded "install safety eyes (8 mm...)",
+  conflicting with the diameter-based materials ladder (10 mm for a
+  9 cm head, 14 mm for 15 cm) — both now go through `_safety_eye_mm`,
+  pinned by a regression test.
+
 - **Validator domain confusion (found by the calibration, two instances)**:
   real patterns contain 22/16/9/14-stitch rounds that are perfectly
   crochetable, and professional designers' 8->16 doubling rounds (one

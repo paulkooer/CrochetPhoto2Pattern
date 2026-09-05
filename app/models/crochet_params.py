@@ -796,12 +796,16 @@ class CrochetParamsGenerator:
                     color = sp.get("color", "skin")
                     eye_round = eye_extra or max(2, len(rounds_raw) * 2 // 3)
                     eye_gap = max(4, max_st // 6)
+                    # 安全眼直径与材料清单同口径（_safety_eye_mm 按头径分档），
+                    # 文案不得写死——否则与清单冲突
+                    eye_mm = _safety_eye_mm(diameter)
                     shape_label = {"ideal": "理想球形（sinθ 分布）",
                                    "egg": "蛋形（下半收窄）"}.get(
                                        style.sphere_mode, "标准球形")
                     notes = (
                         f"{shape_label}，最大 {max_st} 针。"
-                        f"第 {eye_round} 圈安装安全眼（8mm，两眼间隔约 {eye_gap} 针）。"
+                        f"第 {eye_round} 圈安装安全眼（{eye_mm}mm，"
+                        f"两眼间隔约 {eye_gap} 针）。"
                         "建议先钩小样测试张力。"
                     )
                 else:

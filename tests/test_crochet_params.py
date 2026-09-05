@@ -796,3 +796,18 @@ def test_refresh_derived_rebuilds_opening_counts_from_edited_parts():
               "parts": [p for p in params["parts"] if p["name"] != "手臂"]}
     out = refresh_derived(edited)
     assert "手臂" not in out["assembly_instructions"]
+
+
+def test_head_notes_eye_size_matches_materials():
+    """部件注记里的安全眼直径必须与材料清单同口径（_safety_eye_mm 分档）。
+
+    回归：装配/部件注记曾写死"8mm"，与按头径分档的材料清单冲突。
+    """
+    params = _params_for(["头部"], head_d=15.0)
+    head = next(p for p in params["parts"] if p["name"] == "头部")
+    assert "安装安全眼（14mm" in head["notes"]
+    eye = next(m for m in params["materials"] if m["item"] == "安全眼")
+    assert "(14mm)" in eye["quantity"]
+    params = _params_for(["头部"], head_d=9.0)
+    head = next(p for p in params["parts"] if p["name"] == "头部")
+    assert "安装安全眼（10mm" in head["notes"]
