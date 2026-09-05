@@ -101,7 +101,8 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
 
     # Materials
     lines.append(
-        "> 记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针）；"
+        "> 记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针），"
+        "W=1针目钩3短针，M=三针短针并一针；"
         "(4X,V)×6 = “4短针+1加针”重复 6 次"
     )
     lines.append(">")

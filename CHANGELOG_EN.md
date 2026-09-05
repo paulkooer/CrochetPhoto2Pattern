@@ -135,6 +135,24 @@ formats may still evolve during Beta; incompatible changes must include migratio
   "keep the opening... do not close") are no longer misclassified as
   closed by the substring "收口" — a negative-lookbehind regex
   `(?<![不勿])收口` handles it.
+- **Third validator-prior correction: mixed increase/decrease rounds
+  downgrade to notes**: the lop-rabbit eye-socket round
+  `7X,7V,A,7V,7X` (30->43) mixes increases and decreases within one
+  round in a real chart, algebraically sound — the old validator
+  hard-rejected it. Executability stays guaranteed by inc<=prev /
+  dec<=prev/2 (hard checks); mixed rounds exceed this generator's
+  uniform-group expression, so the CrochetPARADE export honestly skips
+  them.
+- **Channel sweep harvest (vision transcription at scale)**: the lop
+  rabbit (face shaping / sc3tog / a flat oval ear on a foundation
+  chain / a 6-stitch tube arm / a 3-mm tiny-eyes data point), Mr. Orange
+  (a **three-sector hat topology** at +3/round, a 7-start headcover with
+  a doubling round and slip-stitch edging, feet decreasing to odd 7, and
+  a same-round join of feet+arms = one-piece), and AllAboutAmi's
+  Elephant (a cone trunk at -3/round; oval foundation-start bodies and
+  pick-up legs are documented as beyond the aggregate model). The export
+  legend gains the CN-standard W (3 sc in one st) and M (sc3tog)
+  symbols.
 
 - **Validator domain confusion (found by the calibration, two instances)**:
   real patterns contain 22/16/9/14-stitch rounds that are perfectly

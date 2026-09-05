@@ -123,13 +123,16 @@ def test_validator_flags_broken_algebra():
     assert any("第 6 圈" in i for i in v["issues"])
 
 
-def test_validator_flags_inc_and_dec_together():
+def test_validator_downgrades_mixed_inc_dec_to_notes():
+    """印证修正：真实图解的面部塑形同圈混用加减速（垂耳兔眼窝圈
+    7X,7V,A,7V,7X：30→43）——可钩，降级为 notes 而非硬错误。"""
     params = _params()
     pd = params["parts"][0]
     pd["rounds"][8]["increase"] = 6
     pd["rounds"][8]["decrease"] = 6
     v = validate_pattern(params)
-    assert any("同时加针" in i for i in v["issues"])
+    assert v["ok"], v["issues"]
+    assert any("混用加针" in n for n in v["notes"])
 
 
 def test_validator_uses_gauge_derived_dynamic_shaping_limit():

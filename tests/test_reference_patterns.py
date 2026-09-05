@@ -31,6 +31,15 @@
 - r/Amigurumi 眼睛 wiki（社区安全眼分档：迷你 5–6mm / 常规 8–12mm /
   大型 14–20mm+）——安全眼随头径分档以此校准。
   https://www.reddit.com/r/Amigurumi/wiki/faq_eyeqs/
+- 紫柚手作「垂耳兔」「橘子先生」（编织人生图片图解，视觉转录）：面部
+  塑形混用加减速圈（校验器第 3 处先验修正）、sc3tog（M）、平织椭圆耳、
+  3 等分帽子拓扑（+3/圈）、7 起针头套、减到奇数 7 的脚。
+  https://www.bianzhirensheng.com/a/44051_zhifa.html
+  https://www.bianzhirensheng.com/a/44093_zhifa.html
+- AllAboutAmi Elephant（专业设计师站，仅取代数结构）：象鼻圆锥
+  （-3/圈成对平针收细到 6）；椭圆起链身体与跨部件挑钩腿超出聚合
+  模型范围，如实记录不夹注。
+  https://www.allaboutami.com/elephantpattern/
 - Supergurumi「The Chubby Bee」蜜蜂玩偶（德国专业设计工作室）：55 圈
   头身一体（66 针峰值）、黄黑条纹逐圈换色、BLO 脊线圈、"1 短针"螺旋
   移位圈、错位增减圈、3 针递减奇数收尾序列（33→…→9→6）；纱线
@@ -41,6 +50,8 @@
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
 """
+
+from typing import Any
 
 from PIL import Image
 
@@ -757,3 +768,203 @@ def test_cn_headcover_opening_feeds_openings_map():
     openings = _openings_by_part(parts)
     assert openings.get("头套") == 30
     assert "团子主体" not in openings   # 末圈带收口注记 → 无开口
+
+
+# ── 中文社区印证 2：紫柚手作「垂耳兔」（编织人生图片图解，视觉转录）──────────
+# 线材 4 股毛线 + 1.8/2.0mm 钩、眼睛 3mm（迷你件用极小安全眼的数据点）。
+# 四个新结构案例：① 兔头 R10 眼窝塑形圈 7X,7V,A,7V,7X（30→43）同圈混用
+# 加减速——第 3 处"生成器先验 ≠ 可钩性"校准点（原硬错误降级为 notes）；
+# ② R15 用 M（三针短针并一针，sc3tog），聚合按针数差计入减针；
+# ③ 耳朵是辫子针起立的平织椭圆片（19CH 倒2回钩沿两侧钩，非环钩）；
+# ④ 胳膊是 6 针 7 圈的极简圆筒，捏扁缝合开口。
+# 收口方式原文"挑每个的外半针拉紧"——与无痕收口技法一致。
+# https://www.bianzhirensheng.com/a/44051_zhifa.html
+
+def _cn_rabbit_head_rounds() -> list[dict]:
+    return [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 12, "increase": 6},
+        {"row": 3, "stitches": 18, "increase": 6,
+         "notes": "原文此圈标'断线'（疑笔误，R4 起仍连续）"},
+        {"row": 4, "stitches": 24, "increase": 6},
+        {"row": 5, "stitches": 30, "increase": 6},
+        *({"row": r, "stitches": 30} for r in range(6, 10)),
+        {"row": 10, "stitches": 43, "increase": 14, "decrease": 1,
+         "notes": "眼窝塑形（原文 7X,7V,A,7V,7X——同圈混用加减速）"},
+        {"row": 11, "stitches": 41, "decrease": 2,
+         "notes": "原文 5X,A,29X,A,5X"},
+        *({"row": r, "stitches": 41} for r in range(12, 15)),
+        {"row": 15, "stitches": 25, "decrease": 16,
+         "notes": "原文 5X,7A,M,7A,5X（M=三针并一针，按针数差计入减针）"},
+        {"row": 16, "stitches": 20, "decrease": 5, "notes": "原文 5(3X,A)"},
+        {"row": 17, "stitches": 15, "decrease": 5, "notes": "原文 5(X,A,X)"},
+    ]
+
+
+def test_cn_rabbit_head_face_shaping_passes():
+    """眼窝混用圈 + sc3tog 圈 + 非对称减针：代数全过，走 notes。"""
+    head = {"name": "兔头", "type": "sphere", "color": "白色",
+            "magic_ring": True, "rounds": _cn_rabbit_head_rounds()}
+    result = validate_pattern({"parts": [head]})
+    assert result["ok"], result["issues"]
+    notes = "\n".join(result["notes"])
+    assert "混用加针" in notes            # 30→43 眼窝圈（原硬错误）
+    assert "相邻圈跳变" in notes          # |Δ|=13 超平滑先验
+    assert "非 6 的倍数" in notes         # 43/41/25/15
+    # 混用圈超出均匀分组表达 → parade 导出诚实跳过
+    dsl = export_parade_dsl({"params": {"parts": [head]}})
+    assert "超出可译子集" in dsl and lint_parade_dsl(dsl) == []
+
+
+def test_cn_rabbit_ear_flat_rows_pass():
+    """耳朵 = 辫子针起立的平织椭圆片（非环钩）——行代数与圈代数同构。"""
+    ear = {"name": "耳朵", "type": "flat", "color": "白色",
+           "magic_ring": False,
+           "rounds": [
+               {"row": 1, "stitches": 37,
+                "notes": "19CH 倒2回钩沿两侧钩成椭圆"
+                         "（5X,4T,5F,3T,W,3T,5F,4T,5X,SL）"},
+               {"row": 2, "stitches": 37, "notes": "留长线缝合"},
+           ]}
+    result = validate_pattern({"parts": [ear]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+def test_cn_rabbit_arm_six_stitch_tube():
+    """胳膊 = 6 针 7 圈极简圆筒：全 6 倍数零提示，开口进入推导。"""
+    from app.models.crochet_params import _openings_by_part
+    arm = {"name": "胳膊", "type": "cylinder", "color": "白色",
+           "magic_ring": True,
+           "rounds": [{"row": 1, "stitches": 6}]
+                      + [{"row": r, "stitches": 6} for r in range(2, 8)]}
+    arm["rounds"][-1]["notes"] = "捏扁缝合开口处（原文）"
+    result = validate_pattern({"parts": [arm]})
+    assert result["ok"], result["issues"]
+    assert not result["notes"]
+    assert _openings_by_part([arm]).get("胳膊") == 6
+
+
+# ── 中文社区印证 3：紫柚手作「橘子先生」（编织人生图片图解，视觉转录）─────────
+# 钩针 1.8mm、线材萌4。四个新案例：① 帽子为 3 等分体系（+3/圈，
+# 3(X,V)/3(3X,V)/3(11X,V)…：6→9→12→…→42）——第 4 种针数拓扑
+# （6 等分 / 7 起针 / 8 起针 / 3 等分），小圆顶几何不适用六扇区；
+# ② 头套 7 起针 + R2 倍增（7V：7→14）+ R18 引拔边（在 R17 上引拔一圈，
+# 聚合计数不变）；③ 脚部减针到奇数 7（2X,4A,2X → 3X,A,3X）；④ 主体
+# R16 同圈加入脚和胳膊一起钩（无缝合一件钩，对应本项目 one_piece）。
+# https://www.bianzhirensheng.com/a/44093_zhifa.html
+
+def _cn_orange_hat_rounds() -> list[dict]:
+    """帽子：3 等分体系 +3/圈（6→42），末 2 圈平针为帽口。"""
+    rounds = [{"row": 1, "stitches": 6}]
+    spec = [
+        (9, 3, "3(X,V)"), (9, 0, ""), (12, 3, "3(X,V,X)"),
+        (15, 3, "3(3X,V)"), (18, 3, "3(2X,V,2X)"), (21, 3, "3(5X,V)"),
+        (24, 3, "3(3X,V,3X)"), (27, 3, "3(7X,V)"), (30, 3, "3(4X,V,4X)"),
+        (33, 3, "3(9X,V)"), (36, 3, "3(5X,V,5X)"), (39, 3, "3(11X,V)"),
+        (42, 3, "3(6X,V,6X)"),
+    ]
+    for i, (st, inc, raw) in enumerate(spec, 2):
+        rd: dict[str, Any] = {"row": i, "stitches": st}
+        if inc:
+            rd["increase"] = inc
+            rd["notes"] = f"原文 {raw}（三扇区对称）"
+        rounds.append(rd)
+    rounds += [{"row": r, "stitches": 42} for r in (15, 16)]
+    return rounds
+
+
+def test_cn_orange_hat_three_sector_topology_passes():
+    """3 等分小圆顶（+3/圈）：代数全过，非 6 倍数圈走 notes。"""
+    hat = {"name": "帽子", "type": "cup", "color": "紫色",
+           "magic_ring": True, "rounds": _cn_orange_hat_rounds()}
+    result = validate_pattern({"parts": [hat]})
+    assert result["ok"], result["issues"]
+    notes = "\n".join(result["notes"])
+    assert "非 6 的倍数" in notes   # 9/15/21/27/33/39
+    assert "相邻圈跳变" not in notes  # |Δ|=3 全程在平滑先验内
+
+
+def _cn_orange_headcover_rounds() -> list[dict]:
+    """头套：7 起针、R2 倍增、R7 并回 6 等分、R18 引拔边。"""
+    return [
+        {"row": 1, "stitches": 7},
+        {"row": 2, "stitches": 14, "increase": 7,
+         "notes": "原文 7V——7 起针体系倍增圈"},
+        {"row": 3, "stitches": 21, "increase": 7},
+        {"row": 4, "stitches": 28, "increase": 7},
+        {"row": 5, "stitches": 35, "increase": 7},
+        {"row": 6, "stitches": 42, "increase": 7},
+        {"row": 7, "stitches": 48, "increase": 6,
+         "notes": "原文 6(6X,V)——并回 6 等分体系"},
+        *({"row": r, "stitches": 48} for r in range(8, 18)),
+        {"row": 18, "stitches": 48,
+         "notes": "引拔边（原文：在R17上引拔一圈）——聚合计数不变"},
+    ]
+
+
+def test_cn_orange_headcover_seven_start_with_doubling():
+    """7 起针 + 倍增 + SL 边：代数全过，非 6 倍数与倍增圈走 notes。"""
+    hc = {"name": "头套", "type": "cup", "color": "橙色",
+          "magic_ring": True, "rounds": _cn_orange_headcover_rounds()}
+    result = validate_pattern({"parts": [hc]})
+    assert result["ok"], result["issues"]
+    notes = "\n".join(result["notes"])
+    assert "相邻圈跳变" in notes          # 7→14 倍增
+    assert "非 6 的倍数" in notes         # 7/14/21/28/35
+    dsl = export_parade_dsl({"params": {"parts": [hc]}})
+    assert lint_parade_dsl(dsl) == []
+    assert "7sc2inc" in dsl              # 7→14 倍增圈可译
+
+
+def _cn_orange_foot_rounds() -> list[dict]:
+    return [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 12, "increase": 6},
+        {"row": 3, "stitches": 8, "decrease": 4,
+         "notes": "原文 2X,4A,2X"},
+        {"row": 4, "stitches": 7, "decrease": 1,
+         "notes": "原文 3X,A,3X——减到奇数 7"},
+        {"row": 5, "stitches": 7},
+    ]
+
+
+def test_cn_orange_foot_decreases_to_odd_seven():
+    """脚部 12→8→7 减到奇数：非 6 倍数走 notes，可钩。"""
+    foot = {"name": "脚", "type": "cylinder", "color": "橙色",
+            "magic_ring": True, "rounds": _cn_orange_foot_rounds()}
+    result = validate_pattern({"parts": [foot]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+# ── 国际补采：AllAboutAmi Elephant（专业设计师站）───────────────────────────
+# 象鼻是标准圆锥（-3/圈、减针圈与平针圈成对、18 收细到 6）。转录口径：
+# 该站声明勿整篇转载——仅按原文摘要的锥形节奏取针数代数（非逐字全文，
+# 成对位置为标注过的推断）。另两例超出本项目聚合模型范围，如实记录
+# 不夹注：椭圆起链身体（Ch 9 环绕起钩）与跨部件挑钩腿（R1: 21 sc body
+# + 6 sc leg chain）。
+# https://www.allaboutami.com/elephantpattern/
+
+def test_intl_elephant_trunk_cone_taper_passes():
+    """象鼻圆锥（-3/圈成对平针）：代数全过，15/9 非 6 倍数走 notes。"""
+    trunk = {"name": "象鼻", "type": "cylinder", "color": "灰色",
+             "magic_ring": True,
+             "rounds": [
+                 {"row": 1, "stitches": 18},
+                 {"row": 2, "stitches": 18},
+                 {"row": 3, "stitches": 15, "decrease": 3},
+                 {"row": 4, "stitches": 15},
+                 {"row": 5, "stitches": 12, "decrease": 3},
+                 {"row": 6, "stitches": 12},
+                 {"row": 7, "stitches": 9, "decrease": 3},
+                 {"row": 8, "stitches": 9},
+                 {"row": 9, "stitches": 6, "decrease": 3},
+             ]}
+    result = validate_pattern({"parts": [trunk]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+    dsl = export_parade_dsl({"params": {"parts": [trunk]}})
+    # -3/圈的减针聚合计数可译为均匀分组（18%3=0 → 3[5sc,sc2tog]）
+    assert lint_parade_dsl(dsl) == []
+    assert "3[5sc,sc2tog]" in dsl and "3[2sc,sc2tog]" in dsl
