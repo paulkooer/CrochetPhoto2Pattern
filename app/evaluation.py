@@ -254,6 +254,7 @@ def evaluate_dataset(
     flare_matches: list[float] = []
     color_matches: list[float] = []
     pattern_valid_values: list[float] = []
+    parade_export_values: list[float] = []
     case_pass_values: list[float] = []
     pipeline_errors = 0
     tag_counts: dict[str, int] = {}
@@ -294,6 +295,16 @@ def evaluate_dataset(
 
             validation = validate_pattern(result.get("params") or {})
             pattern_valid = bool(validation["ok"] and validation["checked"] > 0)
+            # tier-2（CrochetBench 口径）：结果能否翻译为 CrochetPARADE DSL——
+            # 代数自检之外的"可执行正确性"最近似代理（其官方 translator 为
+            # GPL，不作依赖；这里校验导出 + emitter-level 语法自检）
+            from app.utils.parade_export import export_parade_dsl, lint_parade_dsl
+
+            try:
+                _parade = export_parade_dsl(result)
+                parade_export_ok = bool(not lint_parade_dsl(_parade))
+            except Exception:
+                parade_export_ok = False
             case_passed = bool(
                 recall >= thresholds.min_case_part_recall
                 and (flare_match is not False)
@@ -318,6 +329,7 @@ def evaluate_dataset(
                 "actual_colors_top3": colors,
                 "color_top3_match": color_match,
                 "pattern_valid": pattern_valid,
+                "parade_export_ok": parade_export_ok,
                 "pattern_issues": validation["issues"],
                 "passed": case_passed,
                 "error": None,
@@ -328,6 +340,7 @@ def evaluate_dataset(
             flare_match = False if case.expected.flare is not None else None
             color_match = False if case.expected.dominant_colors else None
             pattern_valid = False
+            parade_export_ok = False
             case_passed = False
             case_report = {
                 "id": case.id,
@@ -358,6 +371,7 @@ def evaluate_dataset(
         if color_match is not None:
             color_matches.append(float(color_match))
         pattern_valid_values.append(float(pattern_valid))
+        parade_export_values.append(float(parade_export_ok))
         case_pass_values.append(float(case_passed))
         case_reports.append(case_report)
 
@@ -365,6 +379,7 @@ def evaluate_dataset(
     flare_accuracy = _mean(flare_matches)
     color_top3_accuracy = _mean(color_matches)
     pattern_valid_rate = _mean(pattern_valid_values)
+    parade_export_rate = _mean(parade_export_values)
     case_pass_rate = _mean(case_pass_values)
     passed = bool(
         len(case_reports) >= thresholds.min_cases
@@ -402,6 +417,7 @@ def evaluate_dataset(
             "color_labeled_cases": len(color_matches),
             "color_top3_accuracy": color_top3_accuracy,
             "pattern_valid_rate": pattern_valid_rate,
+            "parade_export_rate": parade_export_rate,
             "passed": passed,
         },
         "cases": case_reports,

@@ -1,0 +1,327 @@
+{
+  "$defs": {
+    "AttachmentSpec": {
+      "description": "One instance's connection to a named anchor on another logical part.",
+      "properties": {
+        "method": {
+          "default": "sewn",
+          "enum": [
+            "sewn",
+            "worn",
+            "crocheted_or_sewn"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "self_anchor": {
+          "minLength": 1,
+          "title": "Self Anchor",
+          "type": "string"
+        },
+        "target_anchor": {
+          "minLength": 1,
+          "title": "Target Anchor",
+          "type": "string"
+        },
+        "target_part_id": {
+          "minLength": 1,
+          "title": "Target Part Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_part_id",
+        "target_anchor",
+        "self_anchor"
+      ],
+      "title": "AttachmentSpec",
+      "type": "object"
+    },
+    "EulerRotation": {
+      "description": "Approximate template orientation in degrees.",
+      "properties": {
+        "x": {
+          "default": 0.0,
+          "maximum": 180.0,
+          "minimum": -180.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "default": 0.0,
+          "maximum": 180.0,
+          "minimum": -180.0,
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "default": 0.0,
+          "maximum": 180.0,
+          "minimum": -180.0,
+          "title": "Z",
+          "type": "number"
+        }
+      },
+      "title": "EulerRotation",
+      "type": "object"
+    },
+    "NormalizedPosition": {
+      "description": "Template-space part centre; deliberately carries no fake cm depth.",
+      "properties": {
+        "x": {
+          "description": "left (-) to right (+)",
+          "maximum": 1.0,
+          "minimum": -1.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "description": "bottom (0) to top (1)",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "description": "back (-) to front (+)",
+          "maximum": 1.0,
+          "minimum": -1.0,
+          "title": "Z",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "title": "NormalizedPosition",
+      "type": "object"
+    },
+    "PartGeometry": {
+      "description": "Version-2 logical part while retaining all legacy dimension keys.",
+      "properties": {
+        "color": {
+          "default": "body",
+          "minLength": 1,
+          "title": "Color",
+          "type": "string"
+        },
+        "confidence": {
+          "default": 0.45,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "count": {
+          "default": 1,
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "diameter_cm": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diameter Cm"
+        },
+        "height_cm": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height Cm"
+        },
+        "instances": {
+          "items": {
+            "$ref": "#/$defs/PartInstance"
+          },
+          "minItems": 1,
+          "title": "Instances",
+          "type": "array"
+        },
+        "length_cm": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length Cm"
+        },
+        "mirror_group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mirror Group"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "part_id": {
+          "minLength": 1,
+          "title": "Part Id",
+          "type": "string"
+        },
+        "shape": {
+          "minLength": 1,
+          "title": "Shape",
+          "type": "string"
+        },
+        "source": {
+          "const": "template_inferred",
+          "default": "template_inferred",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "part_id",
+        "name",
+        "shape",
+        "instances"
+      ],
+      "title": "PartGeometry",
+      "type": "object"
+    },
+    "PartInstance": {
+      "description": "A concrete copy of a logical part, including mirror/attachment data.",
+      "properties": {
+        "attachments": {
+          "items": {
+            "$ref": "#/$defs/AttachmentSpec"
+          },
+          "title": "Attachments",
+          "type": "array"
+        },
+        "instance_id": {
+          "minLength": 1,
+          "title": "Instance Id",
+          "type": "string"
+        },
+        "mirror_of": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mirror Of"
+        },
+        "position": {
+          "$ref": "#/$defs/NormalizedPosition"
+        },
+        "rotation_deg": {
+          "$ref": "#/$defs/EulerRotation"
+        }
+      },
+      "required": [
+        "instance_id",
+        "position"
+      ],
+      "title": "PartInstance",
+      "type": "object"
+    },
+    "StructureCoordinateSystem": {
+      "description": "Machine-readable convention for normalized template coordinates.",
+      "properties": {
+        "origin": {
+          "const": "subject_bottom_center",
+          "default": "subject_bottom_center",
+          "title": "Origin",
+          "type": "string"
+        },
+        "units": {
+          "const": "normalized_template_space",
+          "default": "normalized_template_space",
+          "title": "Units",
+          "type": "string"
+        },
+        "x_axis": {
+          "const": "left_negative_right_positive",
+          "default": "left_negative_right_positive",
+          "title": "X Axis",
+          "type": "string"
+        },
+        "y_axis": {
+          "const": "bottom_zero_top_one",
+          "default": "bottom_zero_top_one",
+          "title": "Y Axis",
+          "type": "string"
+        },
+        "z_axis": {
+          "const": "back_negative_front_positive",
+          "default": "back_negative_front_positive",
+          "title": "Z Axis",
+          "type": "string"
+        }
+      },
+      "title": "StructureCoordinateSystem",
+      "type": "object"
+    }
+  },
+  "description": "Versioned editable part graph produced by :class:`StructureDesigner`.",
+  "properties": {
+    "coordinate_system": {
+      "$ref": "#/$defs/StructureCoordinateSystem"
+    },
+    "notes": {
+      "title": "Notes",
+      "type": "string"
+    },
+    "parts": {
+      "items": {
+        "$ref": "#/$defs/PartGeometry"
+      },
+      "title": "Parts",
+      "type": "array"
+    },
+    "proportions": {
+      "title": "Proportions",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "parts",
+    "proportions",
+    "notes"
+  ],
+  "title": "StructureGeometry",
+  "type": "object"
+}

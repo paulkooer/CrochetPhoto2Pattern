@@ -94,6 +94,28 @@
   spans_measured、sizing/vision_meta 备注与全部异常文案同样转义。
 - 备份导入新增 2MB 粘贴长度门禁（与分享 token 的 2MB 解压上限同源）。
 
+### Added
+
+- **CrochetPARADE DSL 导出器**（外部对标研究 P1）：`app/utils/parade_export.py`
+  把逐圈图解翻译为 crochetparade.org 的文本语法（`ring` / `scNinc` /
+  `N[sc,sc2inc]` / `start_anew` / `COLOR:` 子集，逐条核对官方手册与官方
+  示例），CLI `--parade` 与结果页导出入口均可生成；导出自带 emitter
+  级语法自检。用户粘贴到其本地网页应用即得独立 3D 渲染、针目张力
+  分析与 Blender 可导入模型——代数自检之外的独立验证层。许可边界：
+  只输出文本、不引入其 GPLv3 代码。
+- 评测协议新增第二层"可执行正确性"指标 `parade_export_rate`
+  （CrochetBench 方法论：从表面相似度到可执行正确性的双层口径），
+  与 `pattern_valid_rate` 并列写入报告。
+- 结构 v2 → 3D 结构预览（`app/ui/preview3d.py`）：自研 canvas 软渲染
+  （三角面片 + 画家算法 + Lambert 着色，零外部依赖），instances 的
+  位置/旋转与部件尺寸/配色直接成图，可拖动旋转/滚轮缩放；圆柱直径
+  从针数与密度推导，profile 部件按逐圈针数车床成面（与环形图同口径）。
+- `docs/schemas/` 发布核心契约的 JSON Schema（PatternResult /
+  StructureGeometry / ImageAnalysis / CrochetPart，pydantic 自动生成），
+  漂移测试保证文档与模型同步——对标 Knitout 的开放中间格式思路。
+- 网格 Tab 新增 Floyd–Steinberg 抖动选项（少色板下保留渐变层次；
+  对照 Stitchy 等照片转网格工具的通行能力），默认关闭。
+
 ### Fixed
 
 - `st.components.v1.html` 已过 Streamlit 的弃用截止线（2026-06-01），

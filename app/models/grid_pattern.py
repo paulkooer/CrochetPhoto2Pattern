@@ -311,12 +311,40 @@ def recolor_grid_region(
     return changed
 
 
+def _assign_dithered(px_arr: np.ndarray, width: int, height: int,
+                     palette_rgbs: list, pal_labs: np.ndarray) -> np.ndarray:
+    """Floyd–Steinberg 误差扩散 + CIEDE2000 最近邻（对照 Stitchy 等照片转
+    网格工具的通行做法：少色板下保留渐变层次，代价是噪点感）。"""
+    from .colors import _srgb_to_lab_vec, ciede2000_vec
+
+    buf = px_arr.reshape(height, width, 3).astype(np.float64).copy()
+    idx = np.zeros(height * width, dtype=np.int64)
+    for y in range(height):
+        for x in range(width):
+            rgb = np.clip(np.round(buf[y, x]), 0, 255).astype(np.int32).reshape(1, -1)
+            lab = _srgb_to_lab_vec(rgb)
+            d = ciede2000_vec(lab, pal_labs, pairwise=False)[0]
+            bi = int(d.argmin())
+            idx[y * width + x] = bi
+            err = buf[y, x] - np.asarray(palette_rgbs[bi], dtype=np.float64)
+            if x + 1 < width:
+                buf[y, x + 1] += err * 7 / 16
+            if y + 1 < height:
+                if x > 0:
+                    buf[y + 1, x - 1] += err * 3 / 16
+                buf[y + 1, x] += err * 5 / 16
+                if x + 1 < width:
+                    buf[y + 1, x + 1] += err * 1 / 16
+    return idx
+
+
 def generate_grid_pattern(
     image: Image.Image,
     grid_width: int = 40,
     n_colors: int = 6,
     aspect_ratio: float = 0.75,
     resample: str = "lanczos",
+    dither: bool = False,
 ) -> GridPattern:
     """Convert a PIL image to a 2D tapestry crochet grid pattern.
 
@@ -366,8 +394,12 @@ def generate_grid_pattern(
     px_arr = np.array(pixels, dtype=np.int32)
     px_labs = _srgb_to_lab_vec(px_arr)
     pal_labs = _srgb_to_lab_vec(np.array(palette_rgbs, dtype=np.int32))
-    dmat = ciede2000_vec(px_labs, pal_labs, pairwise=False)  # (像素数, 色板数)
-    best_idx = dmat.argmin(axis=1)
+    if dither:
+        best_idx = _assign_dithered(px_arr, grid_width, grid_height,
+                                    palette_rgbs, pal_labs)
+    else:
+        dmat = ciede2000_vec(px_labs, pal_labs, pairwise=False)  # (像素数, 色板数)
+        best_idx = dmat.argmin(axis=1)
     flat: list[GridCell] = []
     if len(best_idx) != len(pixels):
         raise RuntimeError("palette assignment count does not match grid pixels")

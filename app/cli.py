@@ -55,6 +55,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out-dir", help="批量模式输出目录（默认与图片同目录）")
     parser.add_argument("--out", help="输出 JSON 路径（默认打印到 stdout）")
     parser.add_argument("--md", help="额外输出 Markdown 图解路径")
+    parser.add_argument("--parade", help="额外输出 CrochetPARADE DSL 路径"
+                        "（粘贴到 crochetparade.org 可得 3D 渲染与针目张力分析）")
     parser.add_argument("--pdf", help="额外输出 PDF 路径（需 reportlab）")
     parser.add_argument("--quiet", action="store_true", help="不打印摘要")
     return parser
@@ -218,6 +220,10 @@ def main(argv=None) -> int:
         analysis = result["analysis"]
         Path(args.md).write_text(
             export_markdown(result["params"], analysis), encoding="utf-8")
+    if args.parade:
+        from app.utils.parade_export import export_parade_dsl
+        Path(args.parade).write_text(
+            export_parade_dsl(result), encoding="utf-8")
     if args.pdf:
         from app.utils.pdf_export import export_pdf
         Path(args.pdf).write_bytes(export_pdf(result["params"],

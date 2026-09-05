@@ -1,0 +1,163 @@
+{
+  "description": "完整图解结果的单一契约。\n\n生成（orchestrator/CLI/手动）、快速调尺寸、备份导入、分享 token、\n历史持久化全部经由本模型构造与序列化；任何新顶层键必须加在这里，\ntest_key_sets 会把 share 键集与 orchestrator 产物钉死在本模型上。",
+  "properties": {
+    "analysis": {
+      "additionalProperties": true,
+      "title": "Analysis",
+      "type": "object"
+    },
+    "color_bands": {
+      "anyOf": [
+        {
+          "items": {},
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Color Bands"
+    },
+    "gauge": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gauge"
+    },
+    "geometry": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Geometry"
+    },
+    "params": {
+      "additionalProperties": true,
+      "title": "Params",
+      "type": "object"
+    },
+    "preview": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preview"
+    },
+    "result_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Result Id"
+    },
+    "schema_version": {
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sizing": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sizing"
+    },
+    "spans": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Spans"
+    },
+    "spans_measured": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Spans Measured",
+      "type": "array"
+    },
+    "structure": {
+      "additionalProperties": true,
+      "title": "Structure",
+      "type": "object"
+    },
+    "style": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Style"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Title"
+    },
+    "usage": {
+      "additionalProperties": true,
+      "title": "Usage",
+      "type": "object"
+    },
+    "vision_meta": {
+      "additionalProperties": true,
+      "title": "Vision Meta",
+      "type": "object"
+    }
+  },
+  "required": [
+    "analysis",
+    "structure",
+    "params"
+  ],
+  "title": "PatternResult",
+  "type": "object"
+}

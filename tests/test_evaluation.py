@@ -110,6 +110,7 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
         "color_labeled_cases": 2,
         "color_top3_accuracy": 1.0,
         "pattern_valid_rate": 1.0,
+        "parade_export_rate": 1.0,
         "passed": True,
     }
     assert all(case["passed"] for case in report["cases"])

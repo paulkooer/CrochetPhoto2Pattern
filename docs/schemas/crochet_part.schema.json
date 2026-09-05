@@ -1,0 +1,142 @@
+{
+  "$defs": {
+    "CrochetStitch": {
+      "properties": {
+        "allow_wide_jump": {
+          "default": false,
+          "title": "Allow Wide Jump",
+          "type": "boolean"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
+        "decrease": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Decrease",
+          "type": "integer"
+        },
+        "increase": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Increase",
+          "type": "integer"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "row": {
+          "exclusiveMinimum": 0,
+          "title": "Row",
+          "type": "integer"
+        },
+        "stitches": {
+          "minimum": 1,
+          "title": "Stitches",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "row",
+        "stitches"
+      ],
+      "title": "CrochetStitch",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "color": {
+      "title": "Color",
+      "type": "string"
+    },
+    "diameter_cm": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Diameter Cm"
+    },
+    "height_cm": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Height Cm"
+    },
+    "magic_ring": {
+      "default": false,
+      "title": "Magic Ring",
+      "type": "boolean"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "quantity": {
+      "default": 1,
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Quantity",
+      "type": "integer"
+    },
+    "rounds": {
+      "items": {
+        "$ref": "#/$defs/CrochetStitch"
+      },
+      "title": "Rounds",
+      "type": "array"
+    },
+    "type": {
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "rounds",
+    "color"
+  ],
+  "title": "CrochetPart",
+  "type": "object"
+}

@@ -99,6 +99,30 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - Backup import gains a 2MB paste-size gate (aligned with the share token's
   2MB decompression cap).
 
+### Added
+
+- **CrochetPARADE DSL exporter** (P1 from the external对标 review): translate
+  round-by-round patterns into the crochetparade.org text grammar (`ring`,
+  `scNinc`, `N[sc,sc2inc]`, `start_anew`, `COLOR:` — a verified subset checked
+  against the official manual and examples). Available via CLI `--parade` and
+  the result page, with emitter-level syntax lint. Users paste it into their
+  locally-run web app for independent 3D rendering, stitch-tension analysis and
+  Blender-importable models — a verification layer beyond our algebra gate.
+  License boundary: text output only, no GPLv3 code pulled in.
+- Evaluation protocol gains a second-tier executable-correctness metric
+  `parade_export_rate` (CrochetBench methodology), reported alongside
+  `pattern_valid_rate`.
+- Structure v2 -> 3D preview (`app/ui/preview3d.py`): a self-contained canvas
+  software renderer (triangle faces, painter's algorithm, Lambert shading, no
+  external CDN); instance positions/rotations and part sizes/colors render
+  directly, drag to rotate, wheel to zoom; cylinder radii derive from stitch
+  counts and gauge, profile parts lathe per round (same math as the ring chart).
+- `docs/schemas/` publishes JSON Schemas for the core contracts (PatternResult,
+  StructureGeometry, ImageAnalysis, CrochetPart) with a drift test — following
+  the open-intermediate-format playbook of Knitout.
+- Grid tab gains an optional Floyd–Steinberg dithering toggle (keeps gradients
+  under small palettes; default off), matching common photo-to-grid tools.
+
 ### Fixed
 
 - `st.components.v1.html` passed Streamlit's deprecation deadline (2026-06-01);

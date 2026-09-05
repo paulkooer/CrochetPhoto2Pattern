@@ -27,6 +27,19 @@ Generated results are design drafts and starting points for test crocheting. Unt
 2 and 3 are complete, size, material usage, and physical crochetability must not be
 described as validated outcomes.
 
+**Why "executable correctness" matters here:** research on vision-language models for
+crochet ([CrochetBench, ACL 2026](https://arxiv.org/abs/2511.09483)) shows model
+performance drops sharply when evaluation moves from surface-level similarity to
+executable correctness — models describe well but rarely produce workable instructions.
+This project therefore treats the pattern as a checkable artifact: every generated
+pattern passes an algebra/self-check gate before download, and the evaluation protocol
+reports a second-tier `parade_export_rate` — whether the result can be translated into
+the [CrochetPARADE](https://crochetparade.org) pattern language (independent
+structural analysis, 3D rendering, and stitch-tension checks; paste the exported DSL
+into their locally-run web app). This is also the evidence baseline for model selection:
+default vision models are chosen against published image-to-instruction benchmarks, not
+convention.
+
 ## Features
 
 - Photo upload, plus manual and 2D grid workflows.
@@ -40,6 +53,11 @@ described as validated outcomes.
 - Versioned template geometry with part instances, mirrored pairs, rotations, attachment
   anchors, and explicit inference confidence. This is not full 3D reconstruction.
 - Gauge-aware, round-by-round stitch generation with executable six-section shaping.
+- **CrochetPARADE export:** translate the pattern into the
+  [CrochetPARADE](https://crochetparade.org) DSL (result page / `--parade`) for
+  independent 3D rendering and stitch-tension analysis — a second-tier
+  executable-correctness check reported by the evaluation protocol
+  (`parade_export_rate`).
 - Correct multiplicity accounting for paired arms, legs, and ears across stitches,
   materials, time estimates, exports, and progress.
 - Strictly validated advanced structure editing without another AI call.

@@ -1,0 +1,129 @@
+{
+  "properties": {
+    "body_type": {
+      "title": "Body Type",
+      "type": "string"
+    },
+    "bottom_color": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Lower garment (pants/skirt) main color as a yarn color name",
+      "title": "Bottom Color"
+    },
+    "clothing_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "裤子 | 裙子 | 连衣裙 | 其他 | null",
+      "title": "Clothing Type"
+    },
+    "difficulty": {
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ],
+      "title": "Difficulty",
+      "type": "string"
+    },
+    "hair_color": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Hair color as a yarn color name, null if not visible",
+      "title": "Hair Color"
+    },
+    "head_diameter_cm": {
+      "description": "Head diameter on a reference scale; pipeline applies target cm",
+      "exclusiveMinimum": 0,
+      "maximum": 50,
+      "title": "Head Diameter Cm",
+      "type": "number"
+    },
+    "height_cm": {
+      "description": "Reference height from photo parser or explicit target height",
+      "exclusiveMinimum": 0,
+      "maximum": 200,
+      "title": "Height Cm",
+      "type": "number"
+    },
+    "main_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Main Features",
+      "type": "array"
+    },
+    "parts": {
+      "description": "Identified body parts. Expected values: 头部、身体、手臂、腿部、尾巴、耳朵、帽子、裙子",
+      "items": {
+        "type": "string"
+      },
+      "title": "Parts",
+      "type": "array"
+    },
+    "pose": {
+      "title": "Pose",
+      "type": "string"
+    },
+    "recommended_colors": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Dominant colors extracted from image, mapped to yarn names",
+      "title": "Recommended Colors"
+    },
+    "top_color": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Upper garment main color as a yarn color name",
+      "title": "Top Color"
+    }
+  },
+  "required": [
+    "body_type",
+    "head_diameter_cm",
+    "height_cm",
+    "main_features",
+    "pose",
+    "difficulty",
+    "parts"
+  ],
+  "title": "ImageAnalysis",
+  "type": "object"
+}

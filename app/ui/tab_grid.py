@@ -132,6 +132,10 @@ def render_tab_grid() -> None:
             format_func=lambda x: _fmt.get(x, f"按小样 ({_gauge_wh})"),
             key="grid_aspect",
         )
+        dither = st.checkbox(
+            "抖动（Floyd–Steinberg 误差扩散）", value=False, key="grid_dither",
+            help="少色板下用相邻误差扩散保留渐变层次；代价是噪点感与更碎的"
+                 "换色（修色/绣制更费工）。默认关闭。")
         resample = st.select_slider(
             "缩放算法",
             options=["lanczos", "nearest"],
@@ -176,6 +180,7 @@ def render_tab_grid() -> None:
                     pattern = generate_grid_pattern(
                         cropped_image, grid_width=grid_width,
                         n_colors=n_colors, aspect_ratio=aspect, resample=resample,
+                        dither=dither,
                     )
                     # 预渲染字符串保证普通 rerun 轻量；额外保存纯整数色板索引，
                     # 仅在用户明确修色时恢复 GridPattern 并重新渲染。

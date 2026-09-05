@@ -381,6 +381,16 @@ def render_results(result: dict, slot: str) -> None:
             st.caption(
                 "结构 v2 坐标：x 左−右+，y 底部0→顶部1，z 后−前+；"
                 "位置、旋转和连接来自模板推断，并非单张照片的三维测量。")
+        with st.expander("🧸 3D 结构预览（示意）", expanded=False):
+            from app.ui.preview3d import structure_preview_html
+
+            _pv = structure_preview_html(result)
+            if _pv:
+                from app.ui.design_system import html_box
+
+                st.html(html_box(_pv, 400), unsafe_allow_javascript=True)
+            else:
+                st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):
             for part in structure.get("parts", []):
                 st.json(part)
@@ -614,6 +624,30 @@ def render_results(result: dict, slot: str) -> None:
             mime="text/markdown",
             key=f"dl_md_{result_key}",
         )
+
+    # ── CrochetPARADE 导出（3D 验证）：独立 DSL 出口的差异化功能 ──────────
+    with st.expander("🧶 导出 CrochetPARADE（3D 验证）", expanded=False):
+        st.caption(
+            "把图解翻译为 [CrochetPARADE](https://crochetparade.org) 的文本语法："
+            "粘贴到其网页应用（本地计算、照片不外发）可得可旋转 3D 模型、"
+            "\"过松/过紧针目\"物理分析与逐针动画——本应用代数自检之外的"
+            "独立验证层。语法映射基于其官方手册的已核对子集。")
+        try:
+            from app.utils.parade_export import export_parade_dsl, lint_parade_dsl
+            _parade_text = export_parade_dsl(result)
+            _parade_issues = lint_parade_dsl(_parade_text)
+            if _parade_issues:
+                st.warning("导出自检提示：\n" + "\n".join(md_safe(i)
+                                                       for i in _parade_issues))
+            st.code(_parade_text, language=None)
+            st.download_button(
+                "💾 下载 CrochetPARADE DSL",
+                _parade_text,
+                file_name="amigurumi_parade.txt",
+                mime="text/plain",
+                key=f"dl_parade_{result_key}")
+        except Exception as e:
+            st.caption(f"CrochetPARADE 导出不可用: {md_safe(e)}")
 
     # ── 完整结果备份/导入（刷新会丢 session，备份 JSON 可跨会话恢复）───────
     # F24：备份键集走 _BACKUP_KEYS 与分享同构——旧版只写三键，导入后
