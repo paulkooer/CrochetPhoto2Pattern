@@ -63,3 +63,20 @@ def test_export_without_analysis():
     params, _ = _sample_params()
     md = export_markdown(params, analysis=None)
     assert "所需材料" in md
+
+
+def test_export_difficulty_aligned_with_cyc_project_levels():
+    """导出的难度标签按 CYC Project Levels 对齐（不再裸显英文枚举值）。"""
+    params, analysis = _sample_params()  # mock analysis 难度恒为 easy
+    md = export_markdown(params, analysis)
+    assert "难度：简单（CYC Basic）" in md
+    assert "难度：easy" not in md
+
+
+def test_difficulty_label_fallback_keeps_legacy_values():
+    """旧结果里可能存了未知难度值——兜底原样显示而非 KeyError。"""
+    from app.schemas import difficulty_label
+    assert difficulty_label("easy") == "简单（CYC Basic）"
+    assert difficulty_label("easy", zh=False) == "Easy (CYC Basic)"
+    assert difficulty_label("mystery") == "mystery"
+    assert difficulty_label("—") == "—"

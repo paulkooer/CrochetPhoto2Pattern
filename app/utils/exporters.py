@@ -4,6 +4,7 @@ from __future__ import annotations
 import re as _re
 
 from app import PRODUCT_NAME
+from app.schemas import difficulty_label
 
 # U30：双语记号对照（X/V/A 日式 Amigurumi 惯例 ↔ CYC 西方体系，
 # 对应关系经 craftyarncouncil.com/standards/crochet-chart-symbols 核实）
@@ -35,7 +36,7 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         lines.append(f"> 体型：{analysis.get('body_type', '—')}  ·  "
                      f"目标头径：{analysis.get('head_diameter_cm', '—')} cm  ·  "
                      f"目标高度：{analysis.get('height_cm', '—')} cm  ·  "
-                     f"难度：{analysis.get('difficulty', '—')}")
+                     f"难度：{difficulty_label(str(analysis.get('difficulty', '—')))}")
         lines.append("")
     # U24（升级）：密度是复现图解的第一要素（所有针数由它推导），
     # 必须随图解导出——缺失时给兜底声明并提示重新生成

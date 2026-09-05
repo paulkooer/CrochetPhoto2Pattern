@@ -11,7 +11,13 @@ from app.models.gauge import gauge_from_ui
 from app.models.geometry import no_photo_geometry
 from app.models.sizing import sizing_meta_for_analysis
 from app.models.structure_designer import StructureDesigner
-from app.schemas import PART_NAMES, Difficulty, ImageAnalysis, PatternResult
+from app.schemas import (
+    PART_NAMES,
+    Difficulty,
+    ImageAnalysis,
+    PatternResult,
+    difficulty_label,
+)
 from app.ui.result_renderer import md_safe, purge_result_state, render_results
 
 logger = logging.getLogger(__name__)
@@ -79,7 +85,8 @@ def render_tab_manual() -> None:
         m_height = st.slider("整体高度 (cm)", 10.0, 60.0, 18.0, 0.5, key="m_height")
         difficulty_options: tuple[Difficulty, ...] = ("easy", "medium", "hard")
         m_difficulty = st.select_slider(
-            "难度", options=difficulty_options, value="easy", key="m_difficulty"
+            "难度", options=difficulty_options, value="easy", key="m_difficulty",
+            format_func=difficulty_label,
         )
 
     with col_m2:

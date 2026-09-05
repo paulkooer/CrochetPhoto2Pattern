@@ -13,7 +13,7 @@ import uuid
 import streamlit as st
 
 from app.models.colors import YARN_COLORS
-from app.schemas import PART_NAMES
+from app.schemas import PART_NAMES, difficulty_label
 from app.ui import result_logic
 from app.ui.result_logic import rebuild_params, result_profile
 from app.utils.exporters import export_markdown
@@ -217,7 +217,10 @@ def render_results(result: dict, slot: str) -> None:
     col_a, col_b = st.columns(2)
     with col_a:
         st.metric("体型", analysis["body_type"])
-        st.metric("难度", analysis["difficulty"])
+        st.metric("难度", difficulty_label(analysis["difficulty"]),
+                  help="难度档按 CYC（Craft Yarn Council）Project Levels 官方"
+                       "定义对齐：Basic=基础针法+基础加减针；Easy=简单配色/"
+                       "塑形；Intermediate=复杂塑形")
     with col_b:
         st.metric("目标头部直径", f"{analysis['head_diameter_cm']} cm")
         st.metric("目标整体高度", f"{analysis['height_cm']} cm")

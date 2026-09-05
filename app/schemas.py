@@ -7,6 +7,34 @@ from pydantic import BaseModel, Field, field_validator
 
 Difficulty = Literal["easy", "medium", "hard"]
 
+# CYC Project Levels 对齐（craftyarncouncil.com/standards/skill-levels，
+# 2026-09 抓取核对）。官方四级定义（逐字）：Basic——"Projects using basic
+# stitches. May include basic increases and decreases."；Easy——"Projects
+# may include simple stitch patterns, color work, and/or shaping."；
+# Intermediate——"Projects may include involved stitch patterns, color
+# work, and/or shaping."；Complex——"Projects may include complex stitch
+# patterns, color work, and or/shaping using a variety of techniques and
+# stitches simultaneously."。本系统只生成短针玩偶（sc + 加减针 + 配色带）：
+# easy=仅基础针法与加减（Basic）、medium=多部件+配色带（Easy）、hard=
+# 复杂塑形/一体钩/结构装配（Intermediate）；Complex 要求多种技法同时
+# 使用——生成器不产生，故无对应档位。
+DIFFICULTY_LABELS_ZH: dict[str, str] = {
+    "easy": "简单（CYC Basic）",
+    "medium": "中等（CYC Easy）",
+    "hard": "较难（CYC Intermediate）",
+}
+DIFFICULTY_LABELS_EN: dict[str, str] = {
+    "easy": "Easy (CYC Basic)",
+    "medium": "Medium (CYC Easy)",
+    "hard": "Hard (CYC Intermediate)",
+}
+
+
+def difficulty_label(value: str, *, zh: bool = True) -> str:
+    """difficulty 裸值 → CYC 对齐显示标签；未知值（旧数据）原样返回。"""
+    labels = DIFFICULTY_LABELS_ZH if zh else DIFFICULTY_LABELS_EN
+    return labels.get(value, value)
+
 
 class PartKind(StrEnum):
     """部件的英文领域主键（i18n 迁移锚点，取值 = 结构 v2 的 part_id）。

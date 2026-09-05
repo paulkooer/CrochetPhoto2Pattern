@@ -16,7 +16,17 @@
   Lovable Loops 樱桃迷你 C2C 图表（9×9 逐行色块全文）、Spin a Yarn
   Crochet 的 8 针起环（8→16→24 倍增）、Ms Premise-Conclusion《The Ideal
   Crochet Sphere》的 sin 轮廓性质验证（逐圈对照独立重算的 N=C/s 理论值）
-  逐圈代数全过校验且 CrochetPARADE 导出 lint 全净）。
+  逐圈代数全过校验且 CrochetPARADE 导出 lint 全净）、StringyDingDing
+  袋鼠 + 小袋鼠（高人气免费图解：头部环起后先平钩一圈再增、一体钩
+  非均匀增减与 21/15 奇数圈、耳朵 inc-4；腿部 R5 为又一处已发布印刷
+  矛盾——加针指令 vs (24) 计数，忠实转录后代数自检捕获、导出器诚实
+  拒译，修正后通过）。
+- **难度标签对齐 CYC Project Levels**（`app/schemas.py`）：官方四级
+  Basic/Easy/Intermediate/Complex 定义（2026-09 抓取逐字核对）——本系统
+  只生成短针玩偶，easy/medium/hard 分别对齐 Basic/Easy/Intermediate，
+  Complex 要求多种技法同时使用、生成器不产生故不设。结果页 metric、
+  手动页滑条、Markdown/PDF 导出四处展示面全部从裸英文枚举值切换为
+  CYC 对齐标签（旧数据未知值兜底原样显示）。
 - **CYC 纱线重量档映射**（`Gauge.cyc_label`）：按 Craft Yarn Council
   Standard Yarn Weight System（官方"短针/4 英寸"密度分档，2026-09 抓取
   核对）把密度映射到官方档位并附该档标准钩针区间；材料清单钩针行并列

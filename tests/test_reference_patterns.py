@@ -17,6 +17,14 @@
 - CYC（Craft Yarn Council）Standard Yarn Weight System：官方密度分档
   （短针/4 英寸）——gauge 层 cyc_label 映射以此核对。
   https://www.craftyarncouncil.com/standards/yarn-weight-system
+- StringyDingDing 袋鼠 + 小袋鼠免费图解（Yarn 4/Medium、4mm）：头部
+  环起后先平钩一圈、一体钩非均匀增减与 21/15 奇数圈、耳朵 inc-4、
+  腿部 R5 已发布印刷矛盾（加针指令 vs (24) 计数）——第二例真实出版
+  错误夹具。
+  https://stringydingding.com/kangaroo-amigurumi-free-crochet-pattern/
+- CYC Project Levels（官方难度四级 Basic/Easy/Intermediate/Complex）：
+  difficulty 显示标签（DIFFICULTY_LABELS_*）按其定义对齐。
+  https://www.craftyarncouncil.com/standards/skill-levels
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -342,3 +350,121 @@ def test_drops_stem_chain_start_exports_with_honest_warning():
     dsl = export_parade_dsl({"params": {"parts": [stem]}})
     assert lint_parade_dsl(dsl) == []
     assert "非魔法环" in dsl and "sc4inc" in dsl
+
+
+# ── StringyDingDing（高人气免费玩偶图解站）袋鼠印证 ─────────────────────────
+# 袋鼠 + 小袋鼠免费图解（Yarn 4/Medium + 4mm 钩，CYC #4 medium 紧钩惯例）。
+# 三个新结构案例：① 头部环形起针后先钩 1 圈平针再增（R1: 6 → R2: 平 6）；
+# ② 小袋鼠头身一体钩（对应本项目 one_piece 工艺）含非均匀增减与 21/15
+# 奇数圈；③ 妈妈腿部 R5 为已发布图解的印刷矛盾（指令 *Inc, Sc in the
+# next 3 st* 但计数印 (24)，按指令应 30 且后续圈均为 24）——忠实转录后
+# 代数自检必须捕获（DROPS 23-60 R17 之后第二例真实出版错误）。
+# https://stringydingding.com/kangaroo-amigurumi-free-crochet-pattern/
+
+def _kangaroo_head_rounds() -> list[dict]:
+    return [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 6},                    # 环起后先平钩一圈
+        {"row": 3, "stitches": 12, "increase": 6},
+        {"row": 4, "stitches": 18, "increase": 6},
+        {"row": 5, "stitches": 24, "increase": 6},
+        {"row": 6, "stitches": 24},
+        {"row": 7, "stitches": 30, "increase": 6},
+        {"row": 8, "stitches": 30},
+        {"row": 9, "stitches": 36, "increase": 6},
+        {"row": 10, "stitches": 36},
+        {"row": 11, "stitches": 42, "increase": 6},
+        {"row": 12, "stitches": 42},
+        {"row": 13, "stitches": 48, "increase": 6},
+        *({"row": r, "stitches": 48} for r in range(14, 19)),
+    ]
+
+
+def _kangaroo_baby_one_piece() -> dict:
+    return {"name": "小袋鼠头身", "type": "sphere", "color": "棕色",
+            "magic_ring": True, "one_piece": True,
+            "rounds": [
+                {"row": 1, "stitches": 6},
+                {"row": 2, "stitches": 6},
+                {"row": 3, "stitches": 12, "increase": 6},
+                {"row": 4, "stitches": 18, "increase": 6},
+                # 非均匀增：Sc 8, Inc×3, Sc 7（三处增针集中在一段）
+                {"row": 5, "stitches": 21, "increase": 3},
+                {"row": 6, "stitches": 18, "decrease": 3},
+                {"row": 7, "stitches": 15, "decrease": 3},   # 奇数圈
+                {"row": 8, "stitches": 12, "decrease": 3},
+            ]}
+
+
+def test_published_kangaroo_head_ring_then_plain_round_passes():
+    """头部起环后先平钩一圈再增——校验器不要求起环后立刻增针。
+
+    全程 6 倍数 + 每圈 |Δ|=6（恰在上限内）：应零 issues 零 notes。
+    """
+    head = {"name": "头部", "type": "sphere", "color": "棕色",
+            "magic_ring": True, "rounds": _kangaroo_head_rounds()}
+    result = validate_pattern({"parts": [head]})
+    assert result["ok"], result["issues"]
+    assert not result["notes"]
+
+
+def test_published_kangaroo_baby_one_piece_asymmetric_shaping_passes():
+    """一体钩的非均匀增减与 21/15 奇数圈：可钩，代数全过，走 notes。"""
+    result = validate_pattern({"parts": [_kangaroo_baby_one_piece()]})
+    assert result["ok"], result["issues"]
+    notes = "\n".join(result["notes"])
+    assert "21" in notes and "15" in notes   # 非 6 倍数圈提示
+
+
+def test_kangaroo_baby_asymmetric_rounds_still_translate_to_parade():
+    """非均匀塑形的聚合计数（18+3=21）仍可整体翻译为均匀分组 DSL。"""
+    baby = _kangaroo_baby_one_piece()
+    dsl = export_parade_dsl({"params": {"parts": [baby]}})
+    assert lint_parade_dsl(dsl) == []
+    assert "3[5sc,sc2inc]" in dsl    # 18→21（聚合成 3 组均匀增）
+    assert "3[5sc,sc2tog]" in dsl    # 18→15
+    assert "超出可译子集" not in dsl  # 全圈可译，无需诚实降级
+
+
+def test_kangaroo_baby_ears_four_increases_pass_with_note():
+    """耳朵 6→10（inc-4）：专业图解常见的小幅增圈。"""
+    ear = {"name": "耳朵", "type": "sphere", "color": "棕色", "magic_ring": True,
+           "rounds": [
+               {"row": 1, "stitches": 6},
+               {"row": 2, "stitches": 10, "increase": 4},
+               {"row": 3, "stitches": 10},
+           ]}
+    result = validate_pattern({"parts": [ear]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in note for note in result["notes"])
+
+
+def test_validator_catches_published_kangaroo_leg_round5_contradiction():
+    """忠实转录已发布 R5（加针指令 + (24) 计数互相矛盾）→ 代数捕获。
+
+    R4=24，R5 指令 *Inc, Sc in the next 3 st* 隐含 30 但印 (24)，且 R6-8
+    均为 24——按代数自检 24 ≠ 24+6。修正为其计数（平针）后通过。
+    导出器同样拒绝该圈（聚合计数不自洽 → 诚实跳过）。
+    """
+    base = [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 12, "increase": 6},
+        {"row": 3, "stitches": 18, "increase": 6},
+        {"row": 4, "stitches": 24, "increase": 6},
+    ]
+    legs_bad = {"name": "腿部", "type": "cylinder", "color": "棕色",
+                "magic_ring": True,
+                "rounds": [*base, {"row": 5, "stitches": 24, "increase": 6},
+                           *({"row": r, "stitches": 24} for r in range(6, 9))]}
+    result = validate_pattern({"parts": [legs_bad]})
+    assert not result["ok"]
+    assert any("≠" in issue for issue in result["issues"])
+
+    legs_fixed = {"name": "腿部", "type": "cylinder", "color": "棕色",
+                  "magic_ring": True,
+                  "rounds": [*base, {"row": 5, "stitches": 24},
+                             *({"row": r, "stitches": 24} for r in range(6, 9))]}
+    assert validate_pattern({"parts": [legs_fixed]})["ok"]
+
+    dsl = export_parade_dsl({"params": {"parts": [legs_bad]}})
+    assert "超出可译子集" in dsl and lint_parade_dsl(dsl) == []

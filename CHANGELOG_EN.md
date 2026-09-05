@@ -20,7 +20,22 @@ formats may still evolve during Beta; incompatible changes must include migratio
   Crochet Sphere" (per-row comparison against independently recomputed
   N=C/s values) including its craft-warning handling, Craft Yarn
   Council abbreviation alignment (sc2tog), and DROPS Design Children 23-60
-  passes the validator and the CrochetPARADE export lints clean).
+  passes the validator and the CrochetPARADE export lints clean), and
+  StringyDingDing's kangaroo + joey (a widely used free pattern: the head
+  works one plain round right after the ring before increasing, the
+  one-piece joey contains asymmetric shaping and odd 21/15-stitch rounds,
+  the ears use a 4-increase round; the mamma leg R5 is another published
+  typo — an increase instruction against a (24) count — which the faithful
+  transcription turns into an algebra catch and an honest exporter skip,
+  passing once corrected).
+- **Difficulty labels aligned with CYC Project Levels** (`app/schemas.py`):
+  the official four levels Basic/Easy/Intermediate/Complex (fetched and
+  quoted verbatim 2026-09) map onto our easy/medium/hard — the generator
+  only produces single-crochet toys, so CYC's Complex (multiple techniques
+  simultaneously) has no counterpart by design. The result-page metric,
+  the manual-tab slider, and the Markdown/PDF exports all switch from raw
+  English enum values to CYC-aligned labels (unknown legacy values fall
+  back to verbatim display).
 - **CYC yarn-weight category mapping** (`Gauge.cyc_label`): maps stitch
   density onto the Craft Yarn Council Standard Yarn Weight System (official
   "single crochet per 4 inch" categories, fetched and cross-checked 2026-09)

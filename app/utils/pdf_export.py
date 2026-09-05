@@ -12,6 +12,7 @@ import re
 from typing import Any
 
 from app import PRODUCT_NAME
+from app.schemas import difficulty_label
 
 
 def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -> bytes:
@@ -57,7 +58,7 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -
             f"体型 {esc(analysis.get('body_type', '—'))} · "
             f"目标头径 {esc(analysis.get('head_diameter_cm', '—'))}cm · "
             f"目标高 {esc(analysis.get('height_cm', '—'))}cm · "
-            f"难度 {esc(analysis.get('difficulty', '—'))}", small))
+            f"难度 {esc(difficulty_label(str(analysis.get('difficulty', '—'))))}", small))
     # U24（升级）：密度随图解导出 + 兜底声明
     g = params.get("gauge") or {}
     st_g, rw_g = g.get("stitches_per_10cm"), g.get("rows_per_10cm")
