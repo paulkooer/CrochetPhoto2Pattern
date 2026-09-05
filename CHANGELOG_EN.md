@@ -8,6 +8,26 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added
+
+- **Reference-pattern verification tests** (`tests/test_reference_patterns.py`):
+  external calibration against free community patterns — Clover's official
+  AKIHIRO doll (22-st legs / 16-st arms / 9-st tail / 14-st ears), the
+  community sphere formula (6-sc ring start, +6 per round) and the Lovable
+  Loops cherry mini C2C chart (9x9, full written block rows).
+
+### Fixed
+
+- **Validator domain confusion (found by the calibration)**: real patterns
+  contain 22/16/9/14-stitch rounds that are perfectly crochetable; the old
+  validator hard-failed any non-multiple-of-6 count — conflating the
+  generator's six-section prior with crochetability. Non-6-multiple counts
+  now become `notes` (algebra, V/A executability and gauge jump checks
+  unchanged); the result page shows them as info captions.
+- **Grid pipeline externally verified**: the cherry chart (white 57 / red 18 /
+  green 6) maps through nearest sampling with each cluster landing on a
+  single yarn color, cluster sizes exactly matching the published chart.
+
 ## 0.2.0-beta.2 - 2026-09-05
 
 ### Added

@@ -431,6 +431,8 @@ def render_results(result: dict, slot: str) -> None:
         st.success(
             f"✅ 针数代数与相邻圈跳变检查通过（已检查 {_v['checked']} 圈）")
         st.caption("该检查不等同于成品形状、部件连接或实际可钩性验证。")
+    if _v.get("notes"):
+        st.caption("ℹ️ " + "；".join(md_safe(n) for n in _v["notes"]))
     else:
         st.warning("⚠️ 图解自检发现问题（可在局部修正中修复）：\n"
                    + "\n".join(md_safe(issue) for issue in _v["issues"]))

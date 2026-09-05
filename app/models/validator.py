@@ -50,6 +50,7 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
       "每针放2针"），否则视为生成器缺陷。
     """
     issues: list[str] = []
+    notes: list[str] = []
     checked = 0
     shaping_policy = shaping_policy_for_pattern(params)
     max_change = int(shaping_policy["max_stitch_change"])
@@ -71,9 +72,15 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
                 continue
             if inc > 0 and dec > 0:
                 issues.append(f"{name} 第 {i} 圈：同时加针 {inc} 与减针 {dec}")
-            if st < 6 or st % 6:
-                issues.append(
-                    f"{name} 第 {i} 圈：针数 {st} 不是正的 6 的倍数")
+            if st < 1:
+                issues.append(f"{name} 第 {i} 圈：针数 {st} 无效")
+            elif st < 6 or st % 6:
+                # 印证修正（真实图解校准）：六等分是本生成器的先验约定，
+                # 不是可钩性要求——社区公开图解常见 22 针腿、16 针臂、
+                # 9 针尾（Clover AKIHIRO）。降级为提示而非错误。
+                notes.append(
+                    f"{name} 第 {i} 圈：针数 {st} 非 6 的倍数——偏离本生成器"
+                    "的六等分先验，但仍可正常钩织")
             if prev_stitches is not None:
                 expect = prev_stitches + inc - dec
                 if st != expect:
@@ -97,6 +104,7 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
                         "且未声明 allow_wide_jump")
             prev_stitches = st
 
-    return {"ok": not issues, "issues": issues, "checked": checked,
+    return {"ok": not issues, "issues": issues, "notes": notes,
+            "checked": checked,
             "max_stitch_change": max_change,
             "shaping_continuous_delta": shaping_policy["continuous_delta"]}

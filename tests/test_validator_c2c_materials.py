@@ -197,13 +197,15 @@ def test_validator_rejects_incapable_v_or_a_even_within_dynamic_cap():
     assert any("可组成的 A 数量" in issue for issue in result["issues"])
 
 
-def test_validator_rejects_non_six_stitch_topology():
-    pattern = {"parts": [{"name": "坏拓扑", "rounds": [
+def test_validator_notes_non_six_stitch_topology():
+    """印证修正：真实图解（22 针腿/16 针臂/9 针尾）非 6 倍数但完全可钩——
+    六等分是生成器先验而非可钩性要求，降级为提示。"""
+    pattern = {"parts": [{"name": "真实图解", "rounds": [
         {"stitches": 7},
     ]}]}
     result = validate_pattern(pattern)
-    assert not result["ok"]
-    assert any("不是正的 6 的倍数" in issue for issue in result["issues"])
+    assert result["ok"]
+    assert any("非 6 的倍数" in note for note in result["notes"])
 
 
 # ── T6 span hints ─────────────────────────────────────────────────────────
