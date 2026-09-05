@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis
@@ -573,6 +574,11 @@ def refresh_derived(params: dict) -> dict:
     return params
 
 
+# 末圈注记里的闭合语义："收口/勒紧收口/无痕收口"=已闭合；"不收口/勿收口"
+# 是开口声明——负向断言排除后者（中文社区头套"开口保留…不收口"）
+_CLOSING_RE = re.compile(r"(?<![不勿])收口")
+
+
 def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
     """各部件的开口针数（末圈针数）——完全收口的部件不计入。
 
@@ -586,7 +592,9 @@ def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
         if not rounds:
             continue
         last = rounds[-1]
-        if "收口" in str(last.get("notes") or ""):
+        # "收口"=闭合无开口；但"不收口/勿收口"是明确的开口声明
+        #（真实图解如中文社区头套"开口保留…不收口"），不得误判
+        if _CLOSING_RE.search(str(last.get("notes") or "")):
             continue
         openings[_part_name(p)] = _round_stitches(last)
     return openings

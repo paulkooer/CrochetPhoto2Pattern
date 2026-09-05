@@ -111,6 +111,11 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
     )
     lines.append(">")
     lines.append(
+        "> 中文社区图解常见\u201c每圈 CH 起立 + SL 引拔\u201d的引拔圈钩法——"
+        "与螺旋钩针数节奏完全一致，按习惯任选即可"
+    )
+    lines.append(">")
+    lines.append(
         "> 环起困难的替代法：锁 4 针引拔成环，首圈针数全部钩入环心后拉紧"
         "（Supergurumi 图解写法）；或锁 2 针、在第 2 针内钩入首圈针数"
         "（社区通行）"

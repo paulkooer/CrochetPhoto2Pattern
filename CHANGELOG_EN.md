@@ -120,6 +120,21 @@ formats may still evolve during Beta; incompatible changes must include migratio
   conflicting with the diameter-based materials ladder (10 mm for a
   9 cm head, 14 mm for 15 cm) — both now go through `_safety_eye_mm`,
   pinned by a regression test.
+- **Image-chart vision transcription unlocked (first Chinese-community
+  fixture)**: the Ziyou Shouzuo "Bone Dumpling" image chart reposted on
+  Bianzhirensheng's CDN was transcribed visually into aggregate counts —
+  its notation (X/V/A/CH/SL) matches our export legend exactly, and its
+  4-ply yarn + 1.8/2.0 mm hook corroborates the fine preset's "4-ply
+  cotton" label. Five new tests pin: the symmetric 6->42->6 body worked
+  in joined rounds (zero notes), the bone's 18->36 doubling round
+  (written as "36X"), the 10/8-stitch bang ring starts, the headcover's
+  30-stitch opening feeding the openings map, and a new preamble note
+  bridging joined rounds (CN mainstream) and spiral work.
+- **Opening-filter fix**: last-round notes saying "do not close"
+  (不收口/勿收口 — an explicit opening statement, e.g. the headcover's
+  "keep the opening... do not close") are no longer misclassified as
+  closed by the substring "收口" — a negative-lookbehind regex
+  `(?<![不勿])收口` handles it.
 
 - **Validator domain confusion (found by the calibration, two instances)**:
   real patterns contain 22/16/9/14-stitch rounds that are perfectly

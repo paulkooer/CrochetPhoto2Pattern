@@ -114,3 +114,10 @@ def test_markdown_preamble_includes_ring_start_alternative():
     md = export_markdown(params, analysis)
     assert "环起困难的替代法" in md
     assert "锁 4 针引拔成环" in md and "锁 2 针" in md
+
+
+def test_preamble_mentions_joined_rounds_convention():
+    """导出前言注明引拔圈（中文社区主流）与螺旋钩等价——跨社区钩法桥接。"""
+    params, analysis = _sample_params()
+    md = export_markdown(params, analysis)
+    assert "引拔圈钩法" in md and "针数节奏完全一致" in md

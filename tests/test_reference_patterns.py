@@ -646,3 +646,114 @@ def test_russian_finger_puppet_rounds_pass_validation():
     result = validate_pattern({"parts": [head]})
     assert result["ok"], result["issues"]
     assert not result["notes"]   # 标准 +6 节奏：零 issues 零 notes
+
+
+# ── 中文社区印证（编织人生转载·紫柚手作「骨头团子」，图片图解视觉转录）───────
+# 图解为图片制图（appimg.bianzhirensheng.com CDN，2026-09 抓取），经视觉
+# 识别逐字转录为聚合计数。记号与本项目导出图例完全一致：
+# X=短针、V=加针、A=减针、CH=锁针、SL=引拔；线材 4 股毛线 + 1.8/2.0mm
+# 钩（中文社区紧钩惯例，印证 fine 预设的"4 股棉线"标签）。
+# 结构特点：① 主体为【每圈起立锁针+引拔】的引拔圈钩法（中文社区主流，
+# 区别于欧美螺旋钩）——聚合计数与螺旋钩完全一致，校验器无需区分；
+# ② 主体 6→42→6 对称 ±6 节奏；③ 骨头2 R6 记"36X"= 18→36 倍增圈；
+# ④ 刘海环起 10 / 8（非 6 起针再+2）；⑤ 头套 R18 后留 30 针开口不收口。
+# https://www.bianzhirensheng.com/a/44140_zhifa.html
+
+def _cn_tuanzi_body_rounds() -> list[dict]:
+    """主体 R1-R20：对称 +6/-6（引拔圈，聚合计数与螺旋钩一致）。"""
+    return [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 12, "increase": 6},
+        {"row": 3, "stitches": 18, "increase": 6},
+        {"row": 4, "stitches": 24, "increase": 6},
+        {"row": 5, "stitches": 30, "increase": 6},
+        {"row": 6, "stitches": 36, "increase": 6},
+        {"row": 7, "stitches": 42, "increase": 6},
+        *({"row": r, "stitches": 42} for r in range(8, 15)),
+        {"row": 15, "stitches": 36, "decrease": 6},
+        {"row": 16, "stitches": 30, "decrease": 6},
+        {"row": 17, "stitches": 24, "decrease": 6},
+        {"row": 18, "stitches": 18, "decrease": 6},
+        {"row": 19, "stitches": 12, "decrease": 6},
+        {"row": 20, "stitches": 6, "decrease": 6,
+         "notes": "留长线缝合收口（原文：留长线缝合收口）"},
+    ]
+
+
+def _cn_bone2_rounds() -> list[dict]:
+    """骨头2 R1-R11：R6 记"36X"——18→36 倍增圈（隐含每针 2 短针）。"""
+    return [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 12, "increase": 6},
+        {"row": 3, "stitches": 18, "increase": 6},
+        *({"row": r, "stitches": 18} for r in (4, 5)),
+        {"row": 6, "stitches": 36, "increase": 18,
+         "notes": "倍增圈（原文记 36X，每针 2 短针）"},
+        {"row": 7, "stitches": 30, "decrease": 6},
+        {"row": 8, "stitches": 24, "decrease": 6},
+        {"row": 9, "stitches": 18, "decrease": 6},
+        *({"row": r, "stitches": 18} for r in (10, 11)),
+    ]
+
+
+def _cn_headcover_rounds() -> list[dict]:
+    """头套（大人团子）R1-R18：增到 42、9 圈平针、减到 30——留 30 针开口。"""
+    return [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 12, "increase": 6},
+        {"row": 3, "stitches": 18, "increase": 6},
+        {"row": 4, "stitches": 24, "increase": 6},
+        {"row": 5, "stitches": 30, "increase": 6},
+        {"row": 6, "stitches": 36, "increase": 6},
+        {"row": 7, "stitches": 42, "increase": 6},
+        *({"row": r, "stitches": 42} for r in range(8, 17)),
+        {"row": 17, "stitches": 36, "decrease": 6},
+        {"row": 18, "stitches": 30, "decrease": 6,
+         "notes": "开口保留（头套套入主体，不收口）"},
+    ]
+
+
+def test_cn_tuanzi_body_symmetric_cadence_passes():
+    """中文图解主体（引拔圈钩法）：全程 6 倍数 ±6，零 issues 零 notes。"""
+    body = {"name": "团子主体", "type": "sphere", "color": "白色",
+            "magic_ring": True, "rounds": _cn_tuanzi_body_rounds()}
+    result = validate_pattern({"parts": [body]})
+    assert result["ok"], result["issues"]
+    assert not result["notes"]
+
+
+def test_cn_bone_doubling_round_passes_with_note():
+    """骨头2 的 18→36 倍增圈（36X）：代数成立，平滑超限走 notes。"""
+    bone = {"name": "骨头", "type": "cylinder", "color": "白色",
+            "magic_ring": True, "rounds": _cn_bone2_rounds()}
+    result = validate_pattern({"parts": [bone]})
+    assert result["ok"], result["issues"]
+    assert any("相邻圈跳变" in n for n in result["notes"])
+    dsl = export_parade_dsl({"params": {"parts": [bone]}})
+    assert lint_parade_dsl(dsl) == []
+    assert "18sc2inc" in dsl   # 18→36 倍增圈可译（每针 2 短针）
+
+
+def test_cn_bangs_non_six_ring_starts():
+    """刘海环起 10 / 8：中文社区同样使用非 6 起针。"""
+    parts = [
+        {"name": "大刘海", "type": "sphere", "color": "白色",
+         "magic_ring": True, "rounds": [{"row": 1, "stitches": 10}]},
+        {"name": "小刘海", "type": "sphere", "color": "白色",
+         "magic_ring": True, "rounds": [{"row": 1, "stitches": 8}]},
+    ]
+    result = validate_pattern({"parts": parts})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+def test_cn_headcover_opening_feeds_openings_map():
+    """头套留 30 针开口（不收口）——开口推导应计入，收口的主体不计入。"""
+    from app.models.crochet_params import _openings_by_part
+    parts = [
+        {"name": "团子主体", "rounds": _cn_tuanzi_body_rounds()},
+        {"name": "头套", "rounds": _cn_headcover_rounds()},
+    ]
+    openings = _openings_by_part(parts)
+    assert openings.get("头套") == 30
+    assert "团子主体" not in openings   # 末圈带收口注记 → 无开口
