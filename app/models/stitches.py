@@ -57,7 +57,11 @@ STITCH_GLOSSARY: tuple[Stitch, ...] = (
            "（toruyuri 法则）"),
     Stitch("减针", "A", "dec / sc2tog", "dec", "減らし目", "2→1",
            "加减针", "隐形减针=只挑两针目前半针并钩；BLO 减针时图解常"
-           "指定普通减针（Minion 原文注）"),
+           "指定普通减针（Minion 原文注）。其他针高的减针（CYC 官方）："
+           "hdc2tog / dc2tog / tr2tog，记号依各图解自定义"),
+    Stitch("三放一", "W", "3 sc in same st", "3 dc in same st", "1目に3目",
+           "1→3", "加减针", "一针目钩 3 短针——椭圆起针端盖与花瓣加厚"
+           "（Patchy Bear 口鼻 [10] 的末针 3X；中文图解通用记号 W）"),
     Stitch("三并一", "M", "sc3tog", "dc3tog", "3目一度編み", "3→1",
            "加减针", "三短针并一（面部塑形/快速收窄）"),
     Stitch("四并一", "sc4tog", "sc4tog", "dc4tog", "4目一度編み", "4→1",
@@ -85,6 +89,43 @@ STITCH_GLOSSARY: tuple[Stitch, ...] = (
            "挑针与钩位", "围绕针杆钩出浮凸条纹——CYC 官方 FPdc/BPsc 族"),
 )
 
+# 突尼斯（Tunisian）针族——CYC 官方缩写表逐字（13 条：12 针 + 进程结构）。
+# 与普通钩针不同：长钩带线，每行由「前进程（FwP）+ 退进程（RetP）」构成；
+# 圈代数（st = prev + inc − dec）按行计，不适用于圈针数校验。
+# 日语通称アフガン編み，各针无通行汉字略记，故 jp 列统一标注通称。
+_TN = "突尼斯针"
+
+TUNISIAN_GLOSSARY: tuple[Stitch, ...] = (
+    Stitch("突尼斯简单针", "tss", "tss", "Tunisian simple st", "アフガン編み",
+           "1→1（按前进程）", _TN, "突尼斯针的「平针」——柱上取针（CYC 官方）"),
+    Stitch("突尼斯下针", "tks", "tks", "Tunisian knit st", "アフガン編み",
+           "1→1（按前进程）", _TN, "织出棒针风「下针」纹理"),
+    Stitch("突尼斯上针", "tps", "tps", "Tunisian purl st", "アフガン編み",
+           "1→1（按前进程）", _TN, "织出棒针风「上针」纹理"),
+    Stitch("突尼斯短针", "tsc", "tsc", "Tunisian single crochet", "アフガン編み",
+           "1→1（按前进程）", _TN, "退进程即钩——织物最接近普通短针"),
+    Stitch("突尼斯中长针", "thdc", "thdc", "Tunisian half double", "アフガン編み",
+           "1→1（按前进程）", _TN, "CYC 官方 thdc"),
+    Stitch("突尼斯长针", "tdc", "tdc", "Tunisian double crochet", "アフガン編み",
+           "1→1（按前进程）", _TN, "CYC 官方 tdc"),
+    Stitch("突尼斯反向针", "trs", "trs", "Tunisian reverse st", "アフガン編み",
+           "1→1（按前进程）", _TN, "柱后方进针，形成凸起棱线"),
+    Stitch("突尼斯引拔针", "tslst", "tslst", "Tunisian slip st", "アフガン編み",
+           "1→1（按前进程）", _TN, "常用于收边或缩行"),
+    Stitch("突尼斯长长针", "ttr", "ttr", "Tunisian treble", "アフガン編み",
+           "1→1（按前进程）", _TN, "CYC 官方 ttr"),
+    Stitch("突尼斯全针", "tfs", "tfs", "Tunisian full st", "アフガン編み",
+           "1→1（按前进程）", _TN, "柱间空档进针（网格纹理）"),
+    Stitch("扩展突尼斯简单针", "etss", "etss", "extended Tunisian simple",
+           "アフガン編み", "1→1（按前进程）", _TN,
+           "每针加一锁针垫高——防卷边（CYC 官方 etss）"),
+    Stitch("扭针", "ttw", "ttw", "Tunisian twisted", "アフガン編み",
+           "1→1（按前进程）", _TN, "CYC 官方 ttw（twisted simple stitch）"),
+    Stitch("前进程/退进程", "FwP/RetP", "FwP / RetP", "forward / return pass",
+           "アフガン編み", "—（行结构）", _TN,
+           "突尼斯行 = 前进程挂线不退 + 退进程并锁收针；「圈」概念不适用"),
+)
+
 # US↔UK「错位一级」对照链（Shelley Husband / KnitPro 对照表）——
 # 上一级的 UK 名 = 下一级的 US 名，此不变量由测试钉死。
 _HEIGHT_LADDER_US_UK: tuple[tuple[str, str], ...] = (
@@ -109,3 +150,31 @@ def glossary_note_lines() -> list[str]:
         f"> 变化针族（{cluster}）进出各 1 不改圈针数；边缘装饰"
         f"（{edge}）不占底部针位",
     ]
+
+
+def _table_markdown(entries: tuple[Stitch, ...], title: str) -> str:
+    """词条组 → markdown 表（结果页「针法速查」折叠区）。"""
+    lines = [
+        f"**{title}**",
+        "",
+        "| 记号 | 针法 | US | UK | 日语 | 针数 | 说明 |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    lines.extend(
+        f"| {s.symbol} | {s.zh} | {s.us} | {s.uk} | {s.jp} | "
+        f"{s.count} | {s.note} |" for s in entries)
+    return "\n".join(lines)
+
+
+def glossary_table_markdown() -> str:
+    """主针法表 + 突尼斯子表（每针含来源锚点；逐字口径见 docs/SOURCES.md）。"""
+    parts = [
+        _table_markdown(STITCH_GLOSSARY, "钩针针法（五体系对照）"),
+        "",
+        _table_markdown(TUNISIAN_GLOSSARY,
+                        "突尼斯针族（アフガン編み；按行工艺，圈代数不适用）"),
+        "",
+        "> 各词条来源锚点与逐字口径见仓库内 docs/SOURCES.md"
+        "（外部校准证据链）。",
+    ]
+    return "\n".join(parts)

@@ -63,6 +63,21 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Glossary completion and in-app surfacing**: ① added the missing W
+  "three-in-one" entry (3 sc in one stitch, 1→3 — the notation was in
+  our own legend but had no glossary entry; oval end caps and petal
+  thickening, per Patchy Bear's snout [10]), and the decrease entry now
+  notes its other-height siblings (CYC's hdc2tog/dc2tog/tr2tog, notated
+  per pattern); ② a **Tunisian sub-table of 13 entries** (CYC chart
+  verbatim: tss/tks/tps/tsc/tdc/thdc/trs/tslst/ttr/tfs/etss/ttw plus
+  the FwP/RetP pass structure; Japanese generic name afghan stitching;
+  marked as row-based — round algebra does not apply); ③ the result
+  page's "crochet parameters" section gains a **"stitch quick
+  reference" expander** — the main table plus the Tunisian sub-table
+  (symbol/name/US/UK/Japanese/count semantics/notes columns, each with
+  its source anchor), browsable on screen rather than only in exports.
+  3 new tests (7 in the file, 824 total).
+
 - **System-wide stitch glossary** (`app/models/stitches.py`, 18 entries
   × 5 systems): previously scattered stitch knowledge consolidated
   into a single source — Chinese letter notation (X/T/F/E/V/A/W/M/B),

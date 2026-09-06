@@ -13,15 +13,18 @@
 from app.models.stitches import (
     _HEIGHT_LADDER_US_UK,
     STITCH_GLOSSARY,
+    TUNISIAN_GLOSSARY,
     Stitch,
     glossary_note_lines,
+    glossary_table_markdown,
 )
 
 _FAMILIES = {"基础针", "加减针", "簇生针", "边缘针", "挑针与钩位"}
+_FAMILIES.add("突尼斯针")
 _COUNTS = {
-    "1→1", "0→1（新基底）", "—（连接）", "1→2", "2→1", "3→1", "4→1",
-    "跳过（不钩）", "中性（进出各1）", "装饰（不入针数）", "1→1（反向）",
-    "修饰",
+    "1→1", "0→1（新基底）", "—（连接）", "1→2", "1→3", "2→1", "3→1",
+    "4→1", "跳过（不钩）", "中性（进出各1）", "装饰（不入针数）",
+    "1→1（反向）", "修饰", "1→1（按前进程）", "—（行结构）",
 }
 
 
@@ -75,3 +78,34 @@ def test_glossary_lines_render_into_export():
     assert "边缘装饰（狗牙针、逆短针）" in md
     lines = glossary_note_lines()
     assert len(lines) == 2 and all(line.startswith("> ") for line in lines)
+
+
+def test_w_three_in_one_entry_exists():
+    """W（1针目3短针，1→3）必须入表——图例既有记号，椭圆端盖/花瓣加厚。"""
+    by_symbol = {s.symbol: s for s in STITCH_GLOSSARY}
+    w = by_symbol["W"]
+    assert w.count == "1→3" and w.family == "加减针"
+    assert "3 sc" in w.us
+
+
+def test_tunisian_family_matches_cyc_chart():
+    """突尼斯 13 条 = CYC 官方表逐字（12 针 + FwP/RetP 行结构）。"""
+    assert len(TUNISIAN_GLOSSARY) == 13
+    cyc = {"tss", "tks", "tps", "tsc", "tdc", "thdc", "trs", "tslst",
+           "ttr", "tfs", "etss", "ttw", "FwP/RetP"}
+    assert {s.symbol for s in TUNISIAN_GLOSSARY} == cyc
+    # 全族同分族；除行结构条目外均为"1→1（按前进程）"
+    assert all(s.family == "突尼斯针" for s in TUNISIAN_GLOSSARY)
+    for s in TUNISIAN_GLOSSARY:
+        if s.symbol != "FwP/RetP":
+            assert s.count == "1→1（按前进程）", s
+
+
+def test_glossary_table_markdown_renders_both_tables():
+    """结果页「针法速查」数据：两张表 + 每表表头 + 来源指针。"""
+    md = glossary_table_markdown()
+    assert "钩针针法（五体系对照）" in md
+    assert "突尼斯针族" in md and "圈代数不适用" in md
+    assert md.count("| 记号 | 针法 | US | UK | 日语 | 针数 | 说明 |") == 2
+    assert "docs/SOURCES.md" in md
+    assert "| W | 三放一 |" in md and "| tss | 突尼斯简单针 |" in md
