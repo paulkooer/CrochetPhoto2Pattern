@@ -63,6 +63,25 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Joined-round (non-spiral) part verification** (Tiny Curl's
+  "Monsieur Bear" + Squirrel Picnic's "Motley the Bear", full text
+  verbatim): ① the beret is explicitly labeled "joined rnds, not
+  continuous spiral", with the turning-chain-counts convention
+  "Ch 3 (count as st)" — round totals include the turning chain
+  (11->22->33->44->44->33, symmetric +/-11 verified round by round;
+  non-6-multiples correctly downgraded to notes); ② a joined, turned
+  ear (MR 7, ch 1 counts + turn, half double crochet) enters the
+  fixtures for the first time; ③ the muzzle switches to "Join with
+  slst, ch 1" from round 2 (turning chain does **not** count —
+  contrast between the two sources) while mixed with spiral rounds in
+  the same piece — confirming that joined rounds keep the same stitch
+  rhythm as spirals; ④ skip-based closing `(1 sc, skip 1) x 6`
+  (12->6, same counts as sc2tog, different technique); ⑤ the head's
+  R29 FLO neck round corroborates the bee's BLO neck round
+  (count-neutral neck divider). The export preamble now notes that
+  the starting chain usually does not count as a stitch unless the
+  pattern says so. 3 tests (48 in the file, 808 total).
+
 - **Chain-joined-legs body and oval-start verification** (Craftably Ever
   After's "Patchy Bear" sit-down bear, full text captured verbatim):
   ① the standard sitting-amigurumi body start — chain-bridge leg join

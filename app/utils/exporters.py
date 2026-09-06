@@ -114,7 +114,8 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
     lines.append(">")
     lines.append(
         "> 中文社区图解常见\u201c每圈 CH 起立 + SL 引拔\u201d的引拔圈钩法——"
-        "与螺旋钩针数节奏完全一致，按习惯任选即可"
+        "与螺旋钩针数节奏完全一致（起立锁针通常不计入针数；若图解注明"
+        "\u201c计为 1 针\u201d则按图解），按习惯任选即可"
     )
     lines.append(">")
     lines.append(

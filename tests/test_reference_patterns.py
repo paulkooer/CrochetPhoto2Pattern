@@ -57,6 +57,13 @@
   2 sc in ch+3 sc，机械核对成立）、口鼻椭圆起针逐字 [10]、眼位
   锚点（帽沿上 2 行、间距 2 针）、手臂只填一半、无痕收口。
   https://craftablyeverafter.wordpress.com/2022/04/22/patchy-bear-crochet-pattern/
+- Tiny Curl「Monsieur Bear」+ Squirrel Picnic「Motley the Bear」
+  （引拔合圈印证，全文逐字）：贝雷帽原文标注 "joined rnds, not
+  continuous spiral"、ch-3 计针约定（11→…→44→33）；MR7 翻面 hdc 耳；
+  口鼻每圈 "Join with slst, ch 1"（起立锁针不计针）与螺旋混用；
+  (sc, sk)×6 跳针收口。导出前言的引拔圈说明以此校准。
+  https://www.tinycurl.co/monsieur-bear-free-amigurumi-crochet-pattern/
+  https://squirrelpicnic.com/2015/04/24/motley-the-bear-crochet-pattern/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1256,3 +1263,79 @@ def test_intl_snout_oval_start_verbatim():
     result = validate_pattern({"parts": [snout]})
     assert result["ok"], result["issues"]
     assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+# ── 国际印证：引拔合圈（非螺旋）部件 ──────────────────────────────────────
+# 两篇逐字全文印证导出前言的"引拔圈与螺旋钩针数节奏完全一致"：
+# ① Tiny Curl「Monsieur Bear」贝雷帽——原文显式标注 "joined rnds, not
+#    continuous spiral"；起立锁针计针约定："Ch 3 (count as st)"——
+#    圈总数含起立锁针（11→22→33→44→44→33，±11 对称，逐圈核对成立）。
+#    耳朵为 MR 7、第 2 圈 "Ch 1 (count as st), turn" 的合圈翻面 hdc。
+# ② Squirrel Picnic「Motley the Bear」口鼻——第 2 圈起每圈
+#    "Join with slst, ch 1"（此处 ch 1 不计针，与 Hookers Don't Bite
+#    "First Ch 1 does not count as a stitch" 一致），同一主体内螺旋
+#    与合圈混用；头部 R62 用 (sc, sk)×6 跳针收口（12→6，与 sc2tog
+#    同数不同法）；R29 FLO 颈圈（42→42 计数中性）与蜜蜂 BLO 颈圈互证。
+# https://www.tinycurl.co/monsieur-bear-free-amigurumi-crochet-pattern/
+# https://squirrelpicnic.com/2015/04/24/motley-the-bear-crochet-pattern/
+
+def test_intl_tinycurl_beret_joined_rounds_passes():
+    """显式合圈贝雷帽：ch-3 计为 1 针，±11 对称，非 6 倍数降提示。"""
+    beret = {"name": "贝雷帽", "type": "cylinder", "color": "红色",
+             "magic_ring": True,
+             "rounds": [
+                 {"row": 1, "stitches": 11,
+                  "notes": "合圈（joined rnds，原文标注非螺旋）；"
+                           "ch 3 计为 1 针 + 10 长针"},
+                 {"row": 2, "stitches": 22, "increase": 11,
+                  "notes": "ch 3 计为 1 针，同针 1 长针，(长针加针)×10"},
+                 {"row": 3, "stitches": 33, "increase": 11},
+                 {"row": 4, "stitches": 44, "increase": 11},
+                 {"row": 5, "stitches": 44},
+                 {"row": 6, "stitches": 33, "decrease": 11,
+                  "notes": "ch 1 计为 1 针，1 短针，隐形减针，(2X, A)×10"},
+             ]}
+    result = validate_pattern({"parts": [beret]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"] and result["notes"]
+
+
+def test_intl_tinycurl_ear_hdc_turned_round():
+    """合圈翻面耳：MR 7 起、ch 1 计针 + 翻面、hdc（7→10，+3）。"""
+    ear = {"name": "耳朵", "type": "flat", "color": "白色",
+           "magic_ring": True,
+           "rounds": [
+               {"row": 1, "stitches": 7},
+               {"row": 2, "stitches": 10, "increase": 3,
+                "notes": "ch 1（计为 1 针），翻面，同针 1 半长针，"
+                         "(1X, V)×2，2X，SL 合圈"},
+           ]}
+    result = validate_pattern({"parts": [ear]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"] and result["notes"]
+
+
+def test_intl_squirrelpicnic_motley_joined_muzzle_and_skip_close():
+    """口鼻合圈 +6 扇形（零提示）；跳针收口与 sc2tog 同数不同法。"""
+    muzzle = {"name": "口鼻", "type": "cylinder", "color": "白色",
+              "magic_ring": True,
+              "rounds": [
+                  {"row": 1, "stitches": 6},
+                  {"row": 2, "stitches": 12, "increase": 6,
+                   "notes": "每圈 Join with slst, ch 1（起立锁针不计针）"},
+                  {"row": 3, "stitches": 18, "increase": 6},
+                  {"row": 4, "stitches": 24, "increase": 6},
+                  {"row": 5, "stitches": 30, "increase": 6},
+                  {"row": 6, "stitches": 36, "increase": 6},
+              ]}
+    closing = {"name": "头身收尾", "type": "cylinder", "color": "白色",
+               "magic_ring": False,
+               "rounds": [
+                   {"row": 61, "stitches": 12},
+                   {"row": 62, "stitches": 6, "decrease": 6,
+                    "notes": "(1X, 跳过 1 针)×6——跳针收口，与 sc2tog "
+                             "同数不同法"},
+               ]}
+    result = validate_pattern({"parts": [muzzle, closing]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"] and not result["notes"]
