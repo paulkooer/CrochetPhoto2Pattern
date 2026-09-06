@@ -235,6 +235,18 @@ formats may still evolve during Beta; incompatible changes must include migratio
   neutral) to the export legend, plus fixtures for a full 24->12
   decrease round and an in-round color change on BLO (beyond this
   model's per-round color granularity, documented as such).
+- **Two-leg join and shoulder-shaping fixtures (first Xiaohongshu-native
+  chart)**: Qing Yi Shouzuo's "Little Rabbit Sister" (watermark confirms
+  Xiaohongshu origin, reposted on Bianzhirensheng) — the overalls start
+  from two separately ringed 24-stitch legs joined in the round into a
+  48-stitch body (matching this system's body-R1 join semantics); the
+  big carrot narrows then re-widens (12->9->12, an in-part direction
+  reversal); the small carrot starts with 5 stitches and closes 9->5
+  with "4 dec, 1 sc". International: 53stitches' "Low sew Bunny" — MR 8
+  start with popcorn-stitch limbs (neutral, same family as the bobble).
+  The validator again caught two transcription misreads on the spot
+  (a v/a mix-up on the carrot; an elided-row discontinuity on the
+  bunny) — the transcribe-verify loop keeps paying off.
 
 - **Validator domain confusion (found by the calibration, two instances)**:
   real patterns contain 22/16/9/14-stitch rounds that are perfectly

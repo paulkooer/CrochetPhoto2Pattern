@@ -36,6 +36,12 @@
   3 等分帽子拓扑（+3/圈）、7 起针头套、减到奇数 7 的脚。
   https://www.bianzhirensheng.com/a/44051_zhifa.html
   https://www.bianzhirensheng.com/a/44093_zhifa.html
+- 53stitches「Low sew Bunny」（国际·低缝设计）：MR 8 起环、泡芙针
+  （5dc popcorn）直接成四肢（进出各 1，与枣形针同族中性）。
+  https://53stitches.com/low-sew-bunny-free-crochet-pattern/
+- 晴一手作「小兔叽妹妹」（小红书原生图解，编织人生转载）：背带裤
+  两腿并钩（24+24→48）、胡萝卜中段先减后增收肩、5 针起环小胡萝卜。
+  https://www.bianzhirensheng.com/a/43996_zhifa.html
 - AllAboutAmi Elephant（专业设计师站，仅取代数结构）：象鼻圆锥
   （-3/圈成对平针收细到 6）；椭圆起链身体与跨部件挑钩腿超出聚合
   模型范围，如实记录不夹注。
@@ -1102,3 +1108,92 @@ def test_cn_gummy_export_and_legend_carry_bobble():
     p2 = CrochetParamsGenerator.generate_params(a, st2)
     md = export_markdown(p2, a.model_dump())
     assert "B=枣形针" in md
+
+
+# ── 中文社区印证 5：晴一手作「小兔叽妹妹」（小红书原图，编织人生转载）─────────
+# 小红书号水印确认其为小红书原生图解。三个新案例：
+# ① 背带裤 = 两腿各自 24ch 绕圈起 24X、"其中一个不断线再连接第二个圈"
+#    → R3 合体 48X——经典"并腿起身体"（对应本系统身体 R1 的缝合语义）；
+# ② 大胡萝卜中段先减后增（12→9→12 收肩）——圈级塑形方向反转；
+# ③ 小胡萝卜 5 针起环 + 尾圈 4a,x（奇数针收尾）。
+# 另：53stitches「Low sew Bunny」（国际·低缝设计）——MR 8 起环、
+# 泡芙针（5dc popcorn，进出各 1）直接成四肢，无缝合。
+# https://www.bianzhirensheng.com/a/43996_zhifa.html
+# https://53stitches.com/low-sew-bunny-free-crochet-pattern/
+
+def test_cn_overalls_two_leg_join_passes():
+    """背带裤并腿结构：两腿 24+24 → 身体 R1=48；A×2 收腰；46 非 6 倍数。"""
+    body = {"name": "背带裤身体", "type": "cylinder", "color": "蓝色",
+            "magic_ring": False,
+            "rounds": [
+                {"row": 1, "stitches": 48,
+                 "notes": "两腿各 24X 环起后并钩（原文：其中一个不断线，"
+                          "再连接第二个圈）"},
+                *({"row": r, "stitches": 48} for r in range(2, 9)),
+                {"row": 11, "stitches": 46, "decrease": 2,
+                 "notes": "原文 11X,A,22X,A,11X"},
+                *({"row": r, "stitches": 46} for r in range(12, 15)),
+            ]}
+    result = validate_pattern({"parts": [body]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+def test_cn_carrot_cone_direction_reversal():
+    """大胡萝卜：12→9（收肩减）→12（回增）→…→6——塑形方向中途反转。"""
+    carrot = {"name": "大胡萝卜", "type": "cone", "color": "橙色",
+              "magic_ring": True,
+              "rounds": [
+                  {"row": 1, "stitches": 6},
+                  {"row": 2, "stitches": 12, "increase": 6},
+                  # R3 原文小字号 v/a 易混读：计数链（R4-5=9、R6 回增到
+                  # 12）证明 12→9 是减 3——校验器当场抓获我的误读
+                  {"row": 3, "stitches": 9, "decrease": 3},
+                  {"row": 4, "stitches": 9},
+                  {"row": 5, "stitches": 9},
+                  {"row": 6, "stitches": 12, "increase": 3},
+                  {"row": 7, "stitches": 12},
+                  {"row": 8, "stitches": 12},
+                  {"row": 9, "stitches": 6, "decrease": 6,
+                   "notes": "原文 6a"},
+              ]}
+    result = validate_pattern({"parts": [carrot]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+def test_cn_small_carrot_five_start_odd_close():
+    """小胡萝卜：5 针起环、R6 以 4a,x 收奇数针尾（9→5，dec 4 ≤ 9//2）。"""
+    carrot = {"name": "小胡萝卜", "type": "cone", "color": "橙色",
+              "magic_ring": True,
+              "rounds": [
+                  {"row": 1, "stitches": 5},
+                  {"row": 2, "stitches": 5},
+                  {"row": 3, "stitches": 7, "increase": 2,
+                   "notes": "原文 2(xv)x"},
+                  {"row": 4, "stitches": 7},
+                  {"row": 5, "stitches": 9, "increase": 2,
+                   "notes": "原文 2(2xv)x"},
+                  {"row": 6, "stitches": 5, "decrease": 4,
+                   "notes": "原文 4a,x"},
+              ]}
+    result = validate_pattern({"parts": [carrot]})
+    assert result["ok"], result["issues"]
+
+
+def test_intl_lowsew_bunny_popcorn_limbs():
+    """53stitches 低缝兔：MR8 起环、泡芙针四肢（进出各 1，代数中性）。"""
+    bunny = {"name": "低缝兔", "type": "sphere", "color": "白色",
+             "magic_ring": True,
+             "rounds": [
+                 {"row": 1, "stitches": 8, "notes": "原文 MR 8 sc"},
+                 {"row": 2, "stitches": 16, "increase": 8},
+                 {"row": 3, "stitches": 24, "increase": 8,
+                  "notes": "原文 [inc, sc]x8"},
+                 {"row": 4, "stitches": 32, "increase": 8},
+             ]}
+    result = validate_pattern({"parts": [bunny]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+    # R5-12（未逐字转录）逐步减回 24；R13 = sc 7, 5dc popcorn, sc 8,
+    # 5dc popcorn, sc 7——泡芙四肢（进出各 1，代数中性，同软糖 B 族）
