@@ -63,6 +63,19 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Chain-joined-legs body and oval-start verification** (Craftably Ever
+  After's "Patchy Bear" sit-down bear, full text captured verbatim):
+  ① the standard sitting-amigurumi body start — chain-bridge leg join
+  R15=36 (the source self-reports 13 sc (leg 2) + 2 ch + 16 sc (leg 1) +
+  2 sc in ch + 3 sc; mechanically verified, distinct from the direct
+  24+24->48 leg merge and from sewing); ② the snout oval start with its
+  verbatim count (ch 4, 2nd ch from hook, 3 sc end caps -> [10]; the
+  validator correctly downgrades it to a note); ③ one more eye-placement
+  anchor — 2 rows above the cap edge, 2 stitches apart (an anatomical
+  anchor, not a round-ratio rule); craft corroboration: arms stuffed
+  only halfway, ears flattened unstuffed, seamless closing (front
+  loops). 2 tests (45 total).
+
 - **Reference-pattern verification tests** (`tests/test_reference_patterns.py`,
   24 items): external calibration against professional/community patterns —
   Clover's official AKIHIRO doll (22-st legs / 16-st arms / 9-st tail /

@@ -52,6 +52,11 @@
   Schachenmayr Catania（125m/50g=250m/100g、Sport/Fine(2)）校准
   fine 档米数估算。
   https://www.supergurumi.com/amigurumi-crochet-bee-pattern
+- Craftably Ever After「Patchy Bear」坐姿熊（WordPress 独立设计师，
+  全文逐字抓取）：锁针并腿身体 R15=36（原文自报 13 sc+2 ch+16 sc+
+  2 sc in ch+3 sc，机械核对成立）、口鼻椭圆起针逐字 [10]、眼位
+  锚点（帽沿上 2 行、间距 2 针）、手臂只填一半、无痕收口。
+  https://craftablyeverafter.wordpress.com/2022/04/22/patchy-bear-crochet-pattern/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1197,3 +1202,57 @@ def test_intl_lowsew_bunny_popcorn_limbs():
     assert any("非 6 的倍数" in n for n in result["notes"])
     # R5-12（未逐字转录）逐步减回 24；R13 = sc 7, 5dc popcorn, sc 8,
     # 5dc popcorn, sc 7——泡芙四肢（进出各 1，代数中性，同软糖 B 族）
+
+
+# ── 国际印证：Craftably Ever After「Patchy Bear」（坐姿熊，锁针并腿）─────────
+# 全文逐字抓取。三个新案例：
+# ① 锁针并腿身体（R15）："sc 13(leg2), ch 2, 1 sc in 8th st(leg1),
+#    15 sc, 1 sc in each of the 2 ch spaces, 3 sc" → 原文自报 36 针
+#    （13+2+16+2+3），机械核对成立——坐姿玩偶标准身体起点；
+# ② 口鼻 = 椭圆起针逐字计数（锁针 4、倒 2 回钩、两端 3 短针 → [10]）；
+# ③ 眼位锚点：帽沿上 2 行、间距 2 针（又一例"解剖学锚点而非圈数比例"）。
+# 工艺佐证：手臂"只填一半"、耳朵捏扁免填充、无痕收口（front loops 拉紧）。
+# 身体 R38 末端反增到 30 针留头颈接口。
+# https://craftablyeverafter.wordpress.com/2022/04/22/patchy-bear-crochet-pattern/
+
+def test_intl_patchy_bear_chain_joined_body_passes():
+    """锁针并腿身体：R15=36（13+2+16+2+3），全程 ±6 无提示。"""
+    body = {"name": "身体", "type": "cylinder", "color": "棕色",
+            "magic_ring": False,
+            "rounds": [
+                {"row": 15, "stitches": 36,
+                 "notes": "并腿圈：sc 13(腿2) + ch 2 + 16 sc(腿1)"
+                          " + 2 sc in ch + 3 sc（两腿各 16 针）"},
+                {"row": 16, "stitches": 36},
+                {"row": 17, "stitches": 42, "increase": 6},
+                {"row": 18, "stitches": 42},
+                {"row": 19, "stitches": 48, "increase": 6},
+                *({"row": r, "stitches": 48} for r in range(20, 24)),
+                {"row": 24, "stitches": 42, "decrease": 6},
+                *({"row": r, "stitches": 42} for r in (25, 26)),
+                {"row": 27, "stitches": 36, "decrease": 6},
+                *({"row": r, "stitches": 36} for r in (28, 29)),
+                {"row": 30, "stitches": 30, "decrease": 6},
+                *({"row": r, "stitches": 30} for r in range(31, 34)),
+                {"row": 34, "stitches": 24, "decrease": 6},
+                *({"row": r, "stitches": 24} for r in (35, 36, 37)),
+                {"row": 38, "stitches": 30, "increase": 6,
+                 "notes": "颈口反增留头部缝合接口"},
+            ]}
+    result = validate_pattern({"parts": [body]})
+    assert result["ok"], result["issues"]
+    assert not result["notes"]   # 全程 6 倍数 ±6，零提示
+
+
+def test_intl_snout_oval_start_verbatim():
+    """口鼻椭圆起针（锁针 4 两端 3 短针）：[10] 逐字计数。"""
+    snout = {"name": "口鼻", "type": "flat", "color": "黑色",
+             "magic_ring": False,
+             "rounds": [
+                 {"row": 1, "stitches": 10,
+                  "notes": "锁针 4，倒 2 回钩 2X，末针 3X，"
+                           "另一侧 2X，3X（原文 [10]）"},
+             ]}
+    result = validate_pattern({"parts": [snout]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
