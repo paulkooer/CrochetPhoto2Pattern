@@ -80,6 +80,7 @@ def test_repository_has_public_contribution_and_security_guidance():
         "docs/physical-trials.en.md",
         "docs/flow.en.md",
         "docs/3d-reconstruction-design.en.md",
+        "docs/SOURCES.en.md",
         ".github/pull_request_template.md",
         ".github/ISSUE_TEMPLATE/bug_report.yml",
         ".github/ISSUE_TEMPLATE/feature_request.yml",
@@ -107,6 +108,7 @@ def test_bilingual_entry_points_cross_link_and_preserve_release_boundaries():
         ("docs/physical-trials.md", "docs/physical-trials.en.md"),
         ("docs/flow.md", "docs/flow.en.md"),
         ("docs/3d-reconstruction-design.md", "docs/3d-reconstruction-design.en.md"),
+        ("docs/SOURCES.md", "docs/SOURCES.en.md"),
     )
     for chinese_path, english_path in pairs:
         chinese = (_REPO / chinese_path).read_text(encoding="utf-8")

@@ -814,3 +814,18 @@ def test_head_notes_eye_size_matches_materials():
     params = _params_for(["头部"], head_d=9.0)
     head = next(p for p in params["parts"] if p["name"] == "头部")
     assert "安装安全眼（10mm" in head["notes"]
+
+
+def test_materials_wire_row_for_limbs_only():
+    """四肢部件出现可选定型线行（纸包 18 号花艺线锚点 + 端部折环安全
+    提示——Crafty Intentions / Maclafersa / r/CrochetHelp）；无四肢不出现。"""
+    params = _params_for(["头部", "身体", "手臂", "腿部"])
+    rows = [m for m in params["materials"] if m["item"] == "定型线（可选）"]
+    assert len(rows) == 1
+    q = rows[0]["quantity"]
+    assert "18号" in q and "纸包" in q
+    assert "折" in q          # 端部折回成环
+    assert "毛条/竹签" in q   # 儿童玩具替代
+
+    ear_only = _params_for(["头部", "耳朵"])
+    assert all(m["item"] != "定型线（可选）" for m in ear_only["materials"])

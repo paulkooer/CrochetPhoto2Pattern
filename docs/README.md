@@ -10,6 +10,7 @@
 | Authorized real-photo evaluation / 授权真实照片评测 | [evaluation.en.md](evaluation.en.md) | [evaluation.md](evaluation.md) |
 | Physical trials and calibration / 实体试钩与校准 | [physical-trials.en.md](physical-trials.en.md) | [physical-trials.md](physical-trials.md) |
 | Processing flow / 系统处理流程 | [flow.en.md](flow.en.md) | [flow.md](flow.md) |
+| External calibration evidence chain / 外部校准证据链 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
 | Single-image 3D design / 单图 3D 重建设计 | [3d-reconstruction-design.en.md](3d-reconstruction-design.en.md) | [3d-reconstruction-design.md](3d-reconstruction-design.md) |
 
 Root-level user and community documents are also bilingual:

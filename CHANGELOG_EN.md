@@ -63,6 +63,21 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **External calibration evidence-chain doc + optional wire-armature
+  materials row**: ① new [`docs/SOURCES.md`](docs/SOURCES.md)
+  (bilingual): the evidence chain for all 27 verbatim sources — what
+  each verified, the driving evidence for the four prior corrections
+  and the decrease rule that held, fixture mapping, transcription
+  errata history, and the reachability backlog — also enforced by the
+  repo-hygiene bilingual-pair test; ② when the structure has limbs
+  (arms/legs/tail) the materials list gains an **optional armature-wire
+  row** (root count follows limb count): spec anchored to Crafty
+  Intentions' designer spec (paper-wrapped 18-gauge 18-inch floral
+  wire; cloth-wrapped same gauge is too soft) and the r/CrochetHelp
+  16–20-gauge consensus; safety requirements from Maclafersa's guide
+  (bend ends into closed loops and wrap them, tape alone unreliable,
+  use pipe cleaners/dowels for children's toys).
+
 - **Positive verification of the decrease hard rule** (Chibiscraft's
   Cute Minion via AlwaysFreeAmigurumi, full text verbatim): leg round
   3 "BLO 2sc, 2dec, sc4tog, 2dec, 2sc, dec (10)" is the densest real

@@ -483,6 +483,19 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         materials.append({"item": "安全眼",
                           "quantity": f"一对 ({_safety_eye_mm(diameter)}mm)"})
     materials.append({"item": "填充棉", "quantity": "适量"})
+    # 可弯折四肢的定型线（可选件）——规格锚点：Crafty Intentions 设计师
+    # 用纸包 18 号 18 英寸花艺线（布包同号过软不承力），r/CrochetHelp
+    # 共识 16–20 号；端部折环包裹、儿童玩具改毛条/竹签出自 Maclafersa
+    # 安全指南（端口折环 + 软物缠绕，胶带单独不可靠）。
+    limb_count = sum(
+        _part_quantity(p) for p in parts
+        if any(k in _part_name(p) for k in ("手臂", "腿", "尾")))
+    if limb_count:
+        materials.append({
+            "item": "定型线（可选）",
+            "quantity": f"18号（≈1.2mm）纸包花艺线 {limb_count} 根——"
+                        "端部折回成环并包裹防戳，儿童玩具改用毛条/竹签",
+        })
     # CYC 分档是"密度→档位"参考（见 Gauge.cyc_label）：前者是玩偶紧钩
     # 惯例的钩针建议，后者是同密度的 CYC 标准钩针区间——并列展示而非混淆。
     materials.append({
