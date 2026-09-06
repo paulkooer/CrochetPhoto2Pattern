@@ -64,6 +64,7 @@ generator's uniform (aX,V)×n grouping — the exporter skips such rounds".
 | Source | What it verified | Fixture |
 |--------|------------------|---------|
 | [PlanetJune magic ring](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-a-magic-ring/) | 6-start +6 formula; seamless closing (front loops) | `test_generated_sphere_matches_community_formula` |
+| [PlanetJune needlesculpting](https://www.planetjune.com/blog/tutorials/needlesculpting/) | needle sculpting (optional assembly step): eye sockets via a pass through the whole head, both ends pulled tight from one hole and hidden; invisible weaving (under the V of each stitch); anchor placement; "patterns with built-in shaping don't need this" | `test_assembly_optional_needle_sculpting_step` |
 | [r/Amigurumi eyes wiki](https://www.reddit.com/r/Amigurumi/wiki/faq_eyeqs/) | safety-eye size bands (mini 5–6 / regular 8–12 / large 14–20+ mm) | eye ladder in `test_crochet_params.py` |
 | [kruchcom.ru finger puppet](https://kruchcom.ru/archives/22215) | Russian КА/ПРИБ/СБН verbatim — the same standard across languages | `test_russian_finger_puppet_rounds_pass_validation` |
 | [Lovable Loops cherry C2C](https://lovableloops.com/cherry-square-mini-c2c-crochet-pattern/) | 9×9 written block rows, full round-trip | `test_grid_pipeline_reproduces_published_c2c_chart` |

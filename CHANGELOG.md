@@ -47,6 +47,14 @@
 
 ### Added
 
+- **针塑形（needle sculpting）进入组装说明**（PlanetJune 专页逐字，
+  该站第 3 个引用页）：有头部的图解装配步骤在安全眼/绣五官之后新增
+  **可选步骤**——长针带同色线自一侧眼位入针、横穿头内至对侧眼位再
+  穿回，两端自同一针孔拉紧打结藏线，形成眼窝凹陷；并注明"本图解
+  塑形已内建，此步仅在想要更立体五官时使用"（PlanetJune 定性：
+  内建塑形的图解无需此步，针塑形本质是补救/增强工艺）。测试 1 项
+  （有头部含步骤、无头部不出现；全库 834）。
+
 - **北美大厂锚点（Yarnspirations Red Heart Bear，官方 PDF 逐字）**：
   Sarah Zimmerman（Repeat Crafter Me）设计。① **10 起针 + 全程引拔
   合圈**的大厂房风（原文 Notes："All rnds are joined with sl st to

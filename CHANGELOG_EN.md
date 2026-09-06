@@ -63,6 +63,19 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Needle sculpting enters the assembly notes** (PlanetJune's tutorial
+  page verbatim — the third PlanetJune page in the corpus): for
+  head-bearing patterns the assembly now includes an **optional step**
+  after the safety eyes / embroidered features — run a long needle
+  with matching yarn in at one eye position, across the whole head,
+  out at the other eye and back, then pull both ends tight from the
+  same hole, knot and hide them to form the eye-socket indents; with
+  the note that this pattern's shaping is already built in, so the
+  step is only for more sculpted features (PlanetJune's own framing:
+  patterns with built-in shaping don't need it — it's a fix/enhance
+  technique). 1 test (step appears with a head, absent without;
+  834 total).
+
 - **North-American major-brand anchor (Yarnspirations Red Heart Bear,
   official PDF verbatim)**: designed by Sarah Zimmerman (Repeat
   Crafter Me). ① The big-brand house style of a **10-stitch start with

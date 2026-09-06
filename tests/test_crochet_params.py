@@ -840,3 +840,20 @@ def test_assembly_neck_stuffing_note():
     if not isinstance(asm, str):
         asm = "".join(asm)
     assert "塞棉紧实" in asm and "前倾" in asm
+
+
+def test_assembly_optional_needle_sculpting_step():
+    """有头部时装配说明含可选针塑形步骤（PlanetJune needlesculpting
+    口径：横穿头内、两端同孔拉紧打结藏线）；无头部不出现。"""
+    params = _params_for(["头部", "身体"])
+    asm = params["assembly_instructions"]
+    if not isinstance(asm, str):
+        asm = "".join(asm)
+    assert "针塑形" in asm and "眼窝" in asm and "可选" in asm
+    assert "藏线" in asm          # 两端同孔打结后藏线的收尾语义
+
+    no_head = _params_for(["身体", "腿部"])
+    asm2 = no_head["assembly_instructions"]
+    if not isinstance(asm2, str):
+        asm2 = "".join(asm2)
+    assert "针塑形" not in asm2

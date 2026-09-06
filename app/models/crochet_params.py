@@ -645,6 +645,11 @@ def build_assembly(part_names, skirt_style: str = "ring",
     if "头部" in part_names or one_piece:
         steps.append("头部安装安全眼（第2/3高度处）")
         steps.append("用黑色毛线绣鼻子和嘴巴")
+        steps.append(
+            "可选：针塑形（needle sculpting）——长针带同色线自一侧眼位"
+            "入针、横穿头内至对侧眼位再穿回，两端自同一针孔拉紧打结藏线，"
+            "形成眼窝凹陷（PlanetJune needlesculpting；本图解塑形已内建，"
+            "此步仅在想要更立体五官时使用）")
 
     # Old backups have no graph.  Keep their established name-based behavior
     # rather than pretending to infer missing connection nodes during import.
