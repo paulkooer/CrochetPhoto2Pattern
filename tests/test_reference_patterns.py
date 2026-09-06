@@ -69,6 +69,12 @@
   角空间（inc > prev）触发校验器第 4 处先验修正（加针超源降 notes）。
   https://www.lionbrand.com/community/blog/how-to-crochet-a-classic-granny-square/
   https://www.marchingnorth.com/solid-crochet-granny-square-pattern/
+- Chibiscraft 小黄人（AlwaysFreeAmigurumi 转载，全文逐字）：迄今语料
+  最密真实减针圈（18 针内 sc4tog+4×sc2tog，减针当量 8 ≤ 9）正面印证
+  "dec ≤ prev//2" 硬规则（保持硬错误，与加针超源降级成对照）；鞋底
+  BLO/FLO 交替成型；头身收尾 R39 dec = 18//2 边界值；椭圆起针第三例
+  （锁针 6 → [12]）。
+  https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1402,3 +1408,67 @@ def test_intl_solid_granny_space_increase_downgraded_to_note():
     assert result["ok"], result["issues"]
     assert not result["issues"]
     assert any("超过上圈 12 个源针" in n for n in result["notes"])
+
+
+# ── 国际印证：Chibiscraft 小黄人（sc4tog 最密减针圈 + 鞋底 BLO/FLO）────────
+# 全文逐字抓取（AlwaysFreeAmigurumi 转载，设计师 Febby Pranajaya）。
+# 三个案例：
+# ① 腿 R3 = "BLO 2sc, 2dec, sc4tog, 2dec, 2sc, dec (10)"——18 源针里
+#    sc4tog×1 + sc2tog×4，减针当量 8，恰好 ≤ prev//2 = 9：迄今语料最密
+#    真实减针圈仍不越"dec ≤ prev//2"硬规则 → **减针规则获正面印证，
+#    保持硬错误**（与加针超源被降级形成对照：减针在真实图解中确实
+#    受物理配对限制，最密圈也只踩到 8/9）。
+# ② 鞋底成型：R3 BLO 减 / R5 FLO 增 / R6 BLO 减交替——前后半针换面
+#    翻出鞋底；原文工艺注"BLO 减针用普通减针（非隐形）"。
+# ③ 头身收尾 R35-39：54→45→36→27→18→9（每圈 dec 9），R39"9-dec"
+#    恰好 = 18//2 边界值。
+# 另：椭圆起针第三例（锁针 6 → [12]，含 3sc 端盖）；眼睛为逐字合圈
+# （"Work in joined rounds"，与 Tiny Curl 贝雷帽互证）。
+# https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/
+
+def test_intl_minion_leg_densest_real_decrease_round():
+    """小黄人腿：sc4tog 密集减针圈（dec 8 ≤ 9 硬规则存活）+ 鞋底 BLO/FLO。"""
+    leg = {"name": "腿", "type": "cylinder", "color": "黑色",
+           "magic_ring": False,
+           "rounds": [
+               {"row": 1, "stitches": 12,
+                "notes": "椭圆起针第三例：锁针 6，倒 2 回钩 4X，末针 3X，"
+                         "另一侧 3X，加针（原文 [12]）"},
+               {"row": 2, "stitches": 18, "increase": 6,
+                "notes": "inc, 3X, 3inc, 3X, 2inc"},
+               {"row": 3, "stitches": 10, "decrease": 8,
+                "notes": "BLO 2X, 2A, sc4tog, 2A, 2X, A——最密真实减针圈；"
+                         "原文注：BLO 减针用普通减针（非隐形）"},
+               {"row": 4, "stitches": 8, "decrease": 2},
+               {"row": 5, "stitches": 14, "increase": 6,
+                "notes": "FLO 1X, 6inc, 1X——鞋底换面前半针增"},
+               {"row": 6, "stitches": 10, "decrease": 4,
+                "notes": "BLO 3X, 4A, 3X——鞋底换面后半针减"},
+               {"row": 7, "stitches": 12, "increase": 2},
+               {"row": 8, "stitches": 12},
+               {"row": 9, "stitches": 8, "decrease": 4},
+               {"row": 10, "stitches": 8,
+                "notes": "对折两片并钩 4X 收口"},
+           ]}
+    result = validate_pattern({"parts": [leg]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]      # dec 8 ≤ 9：硬规则不触发
+    assert result["notes"]           # 18→10 跳变 + 非 6 倍数如实降提示
+
+
+def test_intl_minion_body_taper_boundary_decrease():
+    """头身收尾 54→9 每圈减 9，末圈 9-dec = 18//2 恰好边界。"""
+    body = {"name": "头身收尾", "type": "cylinder", "color": "黄色",
+            "magic_ring": False,
+            "rounds": [
+                {"row": 35, "stitches": 45, "decrease": 9},
+                {"row": 36, "stitches": 36, "decrease": 9},
+                {"row": 37, "stitches": 27, "decrease": 9},
+                {"row": 38, "stitches": 18, "decrease": 9},
+                {"row": 39, "stitches": 9, "decrease": 9,
+                 "notes": "9-dec——恰好上圈一半；断线穿末圈前半针拉紧收口"},
+            ]}
+    result = validate_pattern({"parts": [body]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]      # dec 9 = 18//2 边界值，不触发
+    assert any("非 6 的倍数" in n for n in result["notes"])

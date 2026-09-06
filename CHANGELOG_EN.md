@@ -63,6 +63,21 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Positive verification of the decrease hard rule** (Chibiscraft's
+  Cute Minion via AlwaysFreeAmigurumi, full text verbatim): leg round
+  3 "BLO 2sc, 2dec, sc4tog, 2dec, 2sc, dec (10)" is the densest real
+  decrease round in our corpus — one sc4tog plus four sc2tog across
+  18 source stitches, a decrease equivalent of 8, exactly within the
+  prev//2 = 9 limit: **the "dec <= prev//2" hard rule survives the
+  densest real round and stays hard** (an instructive asymmetry with
+  inc-exceeding-source, which granny space increases did break). Also
+  pinned: the sole-turning BLO/FLO alternation (R3 BLO dec / R5 FLO
+  inc / R6 BLO dec, with the source note "use a normal, not invisible,
+  decrease when working BLO"); the body taper 54->45->36->27->18->9
+  decreasing by 9 per round with R39 exactly at the 18//2 boundary;
+  and a third verbatim oval start (ch 6 -> [12]). 2 fixtures (52 in
+  the file, 812 total).
+
 - **Granny flat-motif topology and the 4th validator prior correction**
   (Lion Brand's classic granny square + Marching North's solid granny
   square, full text verbatim): ① the classic grows 12->24->36->48
