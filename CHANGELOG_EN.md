@@ -63,6 +63,25 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **North-American major-brand anchor (Yarnspirations Red Heart Bear,
+  official PDF verbatim)**: designed by Sarah Zimmerman (Repeat
+  Crafter Me). ① The big-brand house style of a **10-stitch start with
+  joined rounds throughout** (original notes: "All rnds are joined
+  with sl st to first sc"; the turning Ch 1 does not count) — a
+  professional register coexisting with the community's 6-start
+  spirals; ② a one-piece (bottom-up) with the deepest waist pinch in
+  the corpus: 30->24->18->**12 (waist)**->doubled back to 24 at the
+  neck->36->closed to 6; ③ the **eye gap = max/6 rule confirmed
+  exactly**: "approx 6 sts apart" on a 36-st head, the same ratio as
+  Zepiany (5 on 30) — two independent sources for the max_st//6
+  heuristic; eyes "between Rnds 24-25, centered over the snout"; ④
+  official materials: **12mm safety eyes on a 23cm toy** (matching our
+  eye ladder) and the official **13 sc/10cm gauge at 5mm** (center of
+  CYC #4); ⑤ feet "stick out sideways to give Bear support to sit up"
+  — independent corroboration of the sitting-support craft with the
+  Russian bear's tail counterweight; ears unstitched/unstuffed, sewn
+  ~4 rounds from the top. 2 fixtures (64 in file, 830 total).
+
 - **Heavyweight Russian verification (AmiguRoom bear, Yulia Deinega)**:
   full text verbatim plus 78 comment threads of trial-crochet
   discussion. ① The **complete 6<->3 sector transition** — after

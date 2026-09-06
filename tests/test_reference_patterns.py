@@ -1784,3 +1784,146 @@ def test_intl_ru_deynega_bear_tail_five_start_and_arms():
     assert result["ok"], result["issues"]
     assert not result["issues"]
     assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+# ── 国际印证：Yarnspirations Red Heart Bear（北美大厂，PDF 逐字）──────────
+# Sarah Zimmerman（Repeat Crafter Me）设计、Yarnspirations 专业编辑。
+# 高价值发现（机械核对全部成立）：
+# ① 10 起针 + 全程引拔合圈的大厂房风（原文 Notes："All rnds are joined
+#    with sl st to first sc"，起立 Ch 1 不计针）——与社区 6 起针螺旋
+#    并存的另一套专业口径；
+# ② 腰身掐细一体件（自底向上）：30→24→18→12（腰）→ R17 倍增回 24 →
+#    36（颈口）→ 头部 36 收到 6——腰身最深的真实夹具；
+# ③ **眼距 = 最大圈/6 精确印证**：36 针头围上"approx 6 sts apart"
+#    ——与 Zepiany（30 针 5 针距 = 30/6）两独立来源同比例，钉住
+#    max_st//6 启发式；眼位"第 24-25 圈之间、居口鼻正上方"（解剖锚点）；
+# ④ 官方材料 12mm 安全眼 @ 23cm 玩偶（与安全眼梯一致）；面密度
+#    13 sc/10cm @ 5mm（CYC #4 居中）；
+# ⑤ 脚"外撇摆出让熊坐稳"——与俄语熊"尾巴配重"独立互证坐姿支撑；
+#    耳朵"顶部往下约 4 圈、不填充"；口鼻缝在 R20-24 之间。
+# https://www.yarnspirations.com/products/red-heart-bear-amigurumi
+
+def test_intl_red_heart_bear_one_piece_waist():
+    """大厂一体件（自底向上）：腰身掐到 12 再倍增回颈口，10 起针合圈。"""
+    body = {"name": "Body/Head", "type": "cylinder", "color": "Café Latte",
+            "magic_ring": False,
+            "rounds": [
+                {"row": 1, "stitches": 10,
+                 "notes": "Ch 1（不计针）+ 10 sc in ring；每圈末 SL 引拔"
+                          "（原文 Notes：全程合圈）"},
+                {"row": 2, "stitches": 20, "increase": 10},
+                {"row": 3, "stitches": 30, "increase": 10},
+                {"row": 4, "stitches": 30},
+                {"row": 5, "stitches": 30},
+                {"row": 6, "stitches": 30},
+                {"row": 7, "stitches": 30},
+                {"row": 8, "stitches": 30},
+                {"row": 9, "stitches": 30},
+                {"row": 10, "stitches": 30},
+                {"row": 11, "stitches": 24, "decrease": 6,
+                 "notes": "(sc2tog, 3 sc)×6"},
+                {"row": 12, "stitches": 24},
+                {"row": 13, "stitches": 18, "decrease": 6,
+                 "notes": "(sc2tog, 2 sc)×6"},
+                {"row": 14, "stitches": 18},
+                {"row": 15, "stitches": 12, "decrease": 6,
+                 "notes": "(sc2tog, 1 sc)×6——腰部最细处"},
+                {"row": 16, "stitches": 12},
+                {"row": 17, "stitches": 24, "increase": 12,
+                 "notes": "2 sc in each sc——颈口倍增（inc 12 = 前圈 12）"},
+                {"row": 18, "stitches": 36, "increase": 12,
+                 "notes": "(2 sc, 1 sc)×12"},
+                {"row": 19, "stitches": 36},
+                {"row": 20, "stitches": 36},
+                {"row": 21, "stitches": 36},
+                {"row": 22, "stitches": 36},
+                {"row": 23, "stitches": 36,
+                 "notes": "口鼻缝于 R20-24 之间（原文部件位次）"},
+                {"row": 24, "stitches": 36},
+                {"row": 25, "stitches": 36,
+                 "notes": "安全眼装于 R24-25 之间、间距约 6 针、居口鼻正上"
+                          "方（36 针 → 6 针距 = max/6）"},
+                {"row": 26, "stitches": 36},
+                {"row": 27, "stitches": 30, "decrease": 6,
+                 "notes": "(sc2tog, 4 sc)×6"},
+                {"row": 28, "stitches": 30},
+                {"row": 29, "stitches": 24, "decrease": 6,
+                 "notes": "(sc2tog, 3 sc)×6"},
+                {"row": 30, "stitches": 24},
+                {"row": 31, "stitches": 18, "decrease": 6},
+                {"row": 32, "stitches": 12, "decrease": 6},
+                {"row": 33, "stitches": 6, "decrease": 6,
+                 "notes": "sc2tog×6——dec 6 恰为 12//2 边界"},
+            ]}
+    result = validate_pattern({"parts": [body]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])   # 10/20 起针
+
+
+def test_intl_red_heart_bear_five_small_parts():
+    """口鼻/耳/脚/臂/尾：大厂 10/8 起针 + 均匀减法，含坐姿支撑位次注。"""
+    snout = {"name": "Snout", "type": "cylinder", "color": "Buff",
+             "magic_ring": False,
+             "rounds": [
+                 {"row": 1, "stitches": 10},
+                 {"row": 2, "stitches": 20, "increase": 10},
+             ]}
+    ear = {"name": "Ears", "type": "cylinder", "color": "Café Latte",
+           "magic_ring": False,
+           "rounds": [
+               {"row": 1, "stitches": 8},
+               {"row": 2, "stitches": 12, "increase": 4,
+                "notes": "(2 sc, 1 sc)×4"},
+               {"row": 3, "stitches": 12},
+               {"row": 4, "stitches": 12},
+               {"row": 5, "stitches": 8, "decrease": 4,
+                "notes": "(sc2tog, 1 sc)×4；不填充，顶部往下约 4 圈缝位"},
+           ]}
+    foot = {"name": "Feet", "type": "cylinder", "color": "Café Latte",
+            "magic_ring": False,
+            "rounds": [
+                {"row": 1, "stitches": 10},
+                {"row": 2, "stitches": 20, "increase": 10},
+                {"row": 3, "stitches": 20},
+                {"row": 4, "stitches": 20},
+                {"row": 5, "stitches": 16, "decrease": 4},
+                {"row": 6, "stitches": 16},
+                {"row": 7, "stitches": 12, "decrease": 4},
+                {"row": 8, "stitches": 8, "decrease": 4,
+                 "notes": "脚外撇缝在身体底侧——给坐姿提供支撑"
+                          "（与俄语熊尾巴配重独立互证）"},
+            ]}
+    arm = {"name": "Arms", "type": "cylinder", "color": "Café Latte",
+           "magic_ring": False,
+           "rounds": [
+               {"row": 1, "stitches": 10},
+               {"row": 2, "stitches": 15, "increase": 5,
+                "notes": "(2 sc, 1 sc)×5"},
+               {"row": 3, "stitches": 15},
+               {"row": 4, "stitches": 15},
+               {"row": 5, "stitches": 15},
+               {"row": 6, "stitches": 15},
+               {"row": 7, "stitches": 12, "decrease": 3,
+                "notes": "(sc2tog, 3 sc)×3"},
+               {"row": 8, "stitches": 12},
+               {"row": 9, "stitches": 12},
+               {"row": 10, "stitches": 9, "decrease": 3,
+                "notes": "(sc2tog, 2 sc)×3；缝在颈侧让手臂垂在脚前"},
+           ]}
+    tail = {"name": "Tail", "type": "cylinder", "color": "Café Latte",
+            "magic_ring": False,
+            "rounds": [
+                {"row": 1, "stitches": 10},
+                {"row": 2, "stitches": 15, "increase": 5,
+                 "notes": "(2 sc, 1 sc)×5"},
+                {"row": 3, "stitches": 15},
+                {"row": 4, "stitches": 10, "decrease": 5,
+                 "notes": "(sc2tog, 1 sc)×5"},
+                {"row": 5, "stitches": 5, "decrease": 5,
+                 "notes": "sc2tog×5——dec 5 恰为 10//2 边界"},
+            ]}
+    result = validate_pattern({"parts": [snout, ear, foot, arm, tail]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
