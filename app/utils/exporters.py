@@ -124,6 +124,13 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         "（社区通行）"
     )
     lines.append(">")
+    lines.append(
+        "> 加针点提示：螺旋钩时每圈起点自动漂移 1 针，加针点自然错位、"
+        "不易出棱角；若改用引拔圈，请逐圈手动错开加针位（日语圈法则是"
+        "\u201c奇数段放段尾、偶数段放段中\u201d——固定同点加针会钩出"
+        "六角形，toruyuri 増し目の法則有照片实证）"
+    )
+    lines.append(">")
     lines.append(_LEGEND_BILINGUAL)
     lines.append("")
     lines.append("## 🧵 所需材料")

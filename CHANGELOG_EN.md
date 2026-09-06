@@ -63,6 +63,21 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Japanese-language verification (4th notation system) + increase
+  offset reminder**: toruyuri's "circle increase law" captured in full
+  verbatim — the Japanese formulation of staggered increases (odd
+  rounds place the pair at the unit's end, even rounds mid-unit;
+  staggered placement yields a circle, same-position yields a hexagon,
+  with photo proof); a ring-start experiment (3 is the minimum, 10
+  leaves a hole, 5–6 most common), corroborating the existing MR5/MR7/
+  MR8 fixtures. Changes: ① the export preamble gains an
+  "increase placement" note (in spiral hooking the start drifts by one
+  stitch per round so corners do not form; in joined rounds you must
+  stagger manually or you get a hexagon); ② one Japanese-notation
+  fixture (dan/me/saibi/mashime) — 53 in the file, 815 total. Hamanaka's
+  official PDF proved unstable to download twice — recorded in the
+  reachability backlog.
+
 - **External calibration evidence-chain doc + optional wire-armature
   materials row**: ① new [`docs/SOURCES.md`](docs/SOURCES.md)
   (bilingual): the evidence chain for all 27 verbatim sources — what

@@ -121,3 +121,11 @@ def test_preamble_mentions_joined_rounds_convention():
     params, analysis = _sample_params()
     md = export_markdown(params, analysis)
     assert "引拔圈钩法" in md and "针数节奏完全一致" in md
+
+
+def test_preamble_mentions_increase_offset_rule():
+    """螺旋钩加针点自动漂移 vs 引拔圈需手动错开——toruyuri 日语法则
+    （奇数段段尾/偶数段段中），固定同点加针会成六角形。"""
+    params, analysis = _sample_params()
+    md = export_markdown(params, analysis)
+    assert "自动漂移" in md and "六角形" in md and "段尾" in md

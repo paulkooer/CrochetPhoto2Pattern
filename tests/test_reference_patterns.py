@@ -75,6 +75,11 @@
   BLO/FLO 交替成型；头身收尾 R39 dec = 18//2 边界值；椭圆起针第三例
   （锁针 6 → [12]）。
   https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/
+- toruyuri「円の増し目の法則」（日语圈全文逐字，第 4 套语言体系
+  段/目/増し目）：错位加针机理——奇数段段尾/偶数段段中，逐圈错位成
+  圆、固定同点成六角形（照片实证）；起针数实验（3 最小、10 露洞、
+  5–6 常见）。螺旋自动漂移 vs 引拔需手动错开的提醒已进导出前言。
+  https://toruyuri.com/2020/02/02/wanomashime/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1472,3 +1477,47 @@ def test_intl_minion_body_taper_boundary_decrease():
     assert result["ok"], result["issues"]
     assert not result["issues"]      # dec 9 = 18//2 边界值，不触发
     assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+# ── 国际印证：日语圈（amigurumi 发源地的 notation 与加针法则）─────────────
+# toruyuri「円の増し目の法則」全文逐字（第 4 套语言体系：段/目/細編み/
+# 増し目/減らし目/作り目）：
+# ① 错位加针机理的日语表述——"奇数段は編み終わりに増し目、偶数段は
+#    増す必要数の半分の目で増し目"；逐圈错位 → 圆，固定同点 → 六角形
+#    （原文附照片实证："増し目の箇所がずれて、円に近い状態になります"
+#    vs "毎回同じ箇所で増し目をすると、正六角形のような形になります"）。
+#    本图解为螺旋钩（起点每圈自动漂移）——该提醒已进导出前言；引拔圈
+#    需手动按此法则错开。
+# ② 起针数实验：最小 3、最大 10（10 会露洞不推荐）、5–6 最常见——
+#    与 MR5 胡萝卜/MR7 耳/MR8 低缝兔等既有夹具互证。
+# ③ Hamanaka（日本最大手芸纱线商）系教程（ameblo 转载，摘要级）：
+#    各段 立ち上がり鎖1 + 引き抜き編み 的日语合圈口径、MR7 目起环；
+#    官方 PDF（amuuse.jp）两次下载不稳定，记入可达性欠账。
+# https://toruyuri.com/2020/02/02/wanomashime/
+
+def test_japanese_circle_increase_law_passes():
+    """日语 +6 圆的错位加针法则：计数与社区公式一致（6→…→48），
+    段内加针位逐圈错开（奇数段段尾/偶数段段中）。"""
+    circle = {"name": "円モチーフ", "type": "cylinder", "color": "茶色",
+              "magic_ring": True,
+              "rounds": [
+                  {"row": 1, "stitches": 6,
+                   "notes": "輪の作り目に細編み6目（作り目=起环针数）"},
+                  {"row": 2, "stitches": 12, "increase": 6,
+                   "notes": "1目に細編み2目（=V×6）"},
+                  {"row": 3, "stitches": 18, "increase": 6,
+                   "notes": "奇数段：各ユニット1目通常、2・3目めで増し目"
+                            "（段尾に増し）"},
+                  {"row": 4, "stitches": 24, "increase": 6,
+                   "notes": "偶数段：2・3目めで増し目（段中に増し）"},
+                  {"row": 5, "stitches": 30, "increase": 6,
+                   "notes": "奇数段：1～3目め通常、4・5目めで増し目"},
+                  {"row": 6, "stitches": 36, "increase": 6,
+                   "notes": "偶数段：1目め通常、2・3目めで増し目"},
+                  {"row": 7, "stitches": 42, "increase": 6},
+                  {"row": 8, "stitches": 48, "increase": 6,
+                   "notes": "偶数段：1～2目め通常、3・4目めで増し目"},
+              ]}
+    result = validate_pattern({"parts": [circle]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]

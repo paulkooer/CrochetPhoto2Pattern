@@ -61,6 +61,7 @@
 | [Lovable Loops 心形 C2C](https://lovableloops.com/mini-heart-square-c2c-crochet-pattern/) | 非对称行钉死读取方向（↙正面/↗反面） | `test_grid_written_rows_match_published_heart_chart` |
 | [Maclafersa 定型线安全指南](https://maclafersa.com/how-to-add-wire-to-amigurumi-safely-for-posing/) | 端部折环+包裹防戳（胶带单独不可靠）、比量手→肩→手、尾线略短于成品、开口时放入、九大错误清单 | `test_materials_wire_row_for_limbs_only` |
 | [Crafty Intentions 线材清单](https://craftyintentions.com/blog/2019/7/8/supplies-wire) | 纸包 18 号 18 英寸花艺线规格锚点（布包同号过软）、纸褶摩擦防移位、防锈 | `test_materials_wire_row_for_limbs_only` |
+| [toruyuri 円の増し目の法則](https://toruyuri.com/2020/02/02/wanomashime/) | 日语圈错位加针法则（奇数段段尾/偶数段段中，六角形 vs 圆照片实证）；起针数实验（3 最小、10 露洞）；第 4 套语言 notation（段/目/増し目） | `test_japanese_circle_increase_law_passes`、`test_preamble_mentions_increase_offset_rule` |
 
 ### 国内图解（图片图解，视觉转录）
 
