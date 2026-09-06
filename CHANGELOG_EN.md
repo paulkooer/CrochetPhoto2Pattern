@@ -10,6 +10,43 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed
 
+- **External AI (GPT) audit remediation (all 7 findings addressed)**:
+  ① **the 5th prior correction** — decrease exceeding the pure-A
+  pairing limit (dec > prev//2) downgraded from hard error to note:
+  the mechanical counterexample is 4 stitches closed by a single
+  sc4tog (3 > 2 yet fully hookable); M (3-to-1), sc4tog and loop
+  decreases are all real combined decreases in our own glossary; the
+  decrease field means "net stitch drop" and cannot double as "the
+  number of A stitches"; hard errors now reduce to algebra breakage
+  and stitch count < 1 (with a new sc4tog counterexample test).
+  ② Minion leg R3 comment errata: the composition is 5×sc2tog +
+  sc4tog net 3 (not 4×sc2tog), corrected across 5 documents with the
+  errata kept. ③ Stitch-glossary fact fixes: slip stitch UK is "ss";
+  ladder end dtr→trtr (current CYC chart; "ttr" noted as regional);
+  bobble (bo) and cluster (CL) split into two entries (different
+  structures); the "full CYC chart" claim narrowed to "common
+  entries"; the Tunisian "13 entries" clarified as 12 stitches plus a
+  merged FwP/RetP row. ④ **one-piece gating gap** (real bug): the
+  merged "head+body (one piece)" name slipped past exact-match gates,
+  silently dropping the safety-eye row and its age warning — gates
+  now match substrings (new test). ⑤ Safety wording hardened:
+  "prefer embroidered eyes" → "forbidden under 3 and for pets — must
+  use embroidered eyes"; the wire row's children alternative no
+  longer mentions bamboo sticks (no rigid internal armatures).
+  ⑥ Export consistency: markdown now renders single inc/dec groups
+  without the ×n suffix (same convention as parade); the "all notes
+  are skipped" documentation wording corrected (non-6-multiples and
+  wide jumps only warn; mixed and over-expression rounds are skipped);
+  the parade "virtual previous round" limitation is documented in
+  code. ⑦ Count-drift治理: documents no longer hand-maintain fixture
+  counts (pytest collection is the source of truth); grid fixtures
+  split into `tests/test_reference_grid.py` (source notes migrated,
+  the heart test's cross-file dependency localized). A new SVG-channel
+  regression gate bans st.html calls in app/. 842 passed + 1 skipped,
+  ruff/mypy clean.
+
+### Fixed
+
 - **`st.html` sanitizer strips SVG and scripts (found by in-browser
   inspection, two fixes)**: Streamlit 1.60 sanitizes `st.html` with
   DOMPurify — the **entire `<svg>` element is removed** (the hero ring
@@ -235,7 +272,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - **Positive verification of the decrease hard rule** (Chibiscraft's
   Cute Minion via AlwaysFreeAmigurumi, full text verbatim): leg round
   3 "BLO 2sc, 2dec, sc4tog, 2dec, 2sc, dec (10)" is the densest real
-  decrease round in our corpus — one sc4tog plus four sc2tog across
+  decrease round in our corpus — one sc4tog plus five sc2tog across
   18 source stitches, a decrease equivalent of 8, exactly within the
   prev//2 = 9 limit: **the "dec <= prev//2" hard rule survives the
   densest real round and stays hard** (an instructive asymmetry with

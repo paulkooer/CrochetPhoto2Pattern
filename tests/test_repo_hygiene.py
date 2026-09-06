@@ -255,3 +255,21 @@ def test_no_real_api_keys_in_versionable_text_files():
         for pat in _KEY_PATTERNS:
             m = pat.search(text)
             assert m is None, f"{rel} 疑似包含真实 API Key（{m.group()[:12]}…）"
+
+
+def test_svg_never_flows_into_st_html():
+    """SVG 回归门（外部 AI 审核建议）：app 内不得出现把含 <svg> 的内容
+    传给 st.html 的调用——st.html 的 DOMPurify 会剥掉整个 <svg>
+    （Streamlit 1.60 实测）。所有静态 SVG 必须走 st.markdown 通道。"""
+
+    app_root = _REPO / "app"
+    offenders: list[str] = []
+    for py in app_root.rglob("*.py"):
+        for lineno, line in enumerate(
+                py.read_text(encoding="utf-8").splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                continue
+            if "st.html(" in line:
+                offenders.append(f"{py.relative_to(_REPO)}:{lineno}: {line.strip()}")
+    assert not offenders, "app 内不得调用 st.html(：" + "; ".join(offenders)

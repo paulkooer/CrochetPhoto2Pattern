@@ -1,7 +1,7 @@
 """针法速查表（app.models.stitches）——词表完整性与导出接线。
 
 词表内容的外部校准来源（逐字核对）：
-- CYC 官方缩写全表（sc/hdc/dc/tr/dtr/trtr、pc/ps/bo/CL、FLO/BLO、
+- CYC 官方缩写常用条目（sc/hdc/dc/tr/dtr/trtr、pc/ps/bo/CL、FLO/BLO、
   FP/BP 族）——US 记号口径；
 - 中文图解 X/T/F/E 体系（社区新手指南与既有图解惯例）；
 - US↔UK 错位一级（Shelley Husband / KnitPro 对照表）；
@@ -44,9 +44,9 @@ def test_glossary_entries_are_unique_and_well_formed():
 
 def test_height_ladder_us_uk_offset_invariant():
     """US↔UK 错位一级：配对表与 Shelley Husband/KnitPro 公布对照逐项一致；
-    UK 名恒比 US 名"高一级"（US sc=UK dc、US dc=UK tr、US dtr=UK ttr）。"""
+    UK 名恒比 US 名"高一级"（US sc=UK dc、US dc=UK tr、US dtr=UK trtr）。"""
     published_chart = {
-        "sc": "dc", "hdc": "htr", "dc": "tr", "tr": "dtr", "dtr": "ttr",
+        "sc": "dc", "hdc": "htr", "dc": "tr", "tr": "dtr", "dtr": "trtr",
     }
     assert dict(_HEIGHT_LADDER_US_UK) == published_chart
     # 词表中的短/中/长/长长针与配对表一致
@@ -63,7 +63,7 @@ def test_height_ladder_us_uk_offset_invariant():
 def test_cluster_stitches_are_count_neutral():
     """簇生针族必须全部为中性（进出各1）——软糖枣形/低缝兔爆米花印证。"""
     cluster = [s for s in STITCH_GLOSSARY if s.family == "簇生针"]
-    assert {s.zh for s in cluster} == {"枣形针", "泡芙针", "爆米花针"}
+    assert {s.zh for s in cluster} == {"枣形针", "集群针", "泡芙针", "爆米花针"}
     assert all(s.count == "中性（进出各1）" for s in cluster)
 
 
@@ -75,7 +75,7 @@ def test_glossary_lines_render_into_export():
     params, analysis = _sample_params()
     md = export_markdown(params, analysis)
     assert "针高阶梯" in md and "US sc=UK dc" in md
-    assert "变化针族（枣形针、泡芙针、爆米花针）" in md
+    assert "变化针族（枣形针、集群针、泡芙针、爆米花针）" in md
     assert "边缘装饰（狗牙针、逆短针）" in md
     lines = glossary_note_lines()
     assert len(lines) == 2 and all(line.startswith("> ") for line in lines)

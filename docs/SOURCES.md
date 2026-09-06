@@ -5,7 +5,10 @@
 本系统的领域假设不是拍脑袋定的：每一条例子都来自真实可钩的公开图解，
 逐字转录后先做机械代数核对，再落成可运行的测试夹具
 （[`tests/test_reference_patterns.py`](../tests/test_reference_patterns.py)，
-52 项）。真实图解四度推翻生成器先验，校验器随之修正——每处修正的
+夹具总数以
+`uv run pytest tests/test_reference_patterns.py tests/test_reference_grid.py
+--collect-only -q` 为准，不在文档中手工维护）。真实图解五次推翻生成器
+先验，校验器随之修正——每处修正的
 证据都在下表。仅取针数代数与圈结构，不复制创作文本（遵循各源版权声明）。
 
 ## 校验器演进：四先验修正 + 一规则存活
@@ -16,10 +19,11 @@
 | 2 | 相邻圈跳变 ±6 | 硬错误 → notes（`allow_wide_jump` 白名单保留） | Spin a Yarn 8→16 倍增圈；Ms Premise-Conclusion 理想球体 sin 轮廓 | `test_professional_eight_stitch_ring_start_passes_validation`、`test_ideal_sphere_*` |
 | 3 | 同圈加减速混用 | 硬错误 → notes | 紫柚手作垂耳兔眼窝圈 7X,7V,A,7V,7X | `test_cn_rabbit_head_face_shaping_passes` |
 | 4 | 加针 ≤ 上圈源针 | 硬错误 → notes | granny 实心款第 2 圈：+16 加进 4 个锁针角空间（12 源针） | `test_intl_solid_granny_space_increase_downgraded_to_note` |
-| — | 减针 ≤ 上圈一半 | **保持硬错误**（正面印证） | 小黄人腿 R3：18 针内 sc4tog+4×sc2tog，减针当量 8 ≤ 9，最密真实圈也未越界 | `test_intl_minion_leg_densest_real_decrease_round` |
+| 5 | 减针超纯 A（2并1）配对上限 | 硬错误 → notes（外部 AI 审核确认） | 机械反例：4 针经一次 sc4tog 收到 1 针（3 > 2，完全可钩）；小黄人 8 ≤ 9 的最密圈在纯 A 配对内 | `test_validator_downgrades_incapable_v_and_incapable_a` |
 
-降级 ≠ 放水：硬错误现在只留"物理不可钩"项；notes 表示"完全可钩但超出
-本生成器均匀分组 (aX,V)×n 表达，导出器会跳过该圈"。
+降级 ≠ 放水：硬错误现在只留"代数断裂 + 针数 < 1"；notes 分两类——
+非 6 倍数/超平滑跳变只提示（正常导出），混圈与超均匀分组表达的圈由
+parade 导出跳过并留 warning。
 
 ## 来源清单
 

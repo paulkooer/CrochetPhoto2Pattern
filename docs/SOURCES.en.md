@@ -6,7 +6,10 @@ The domain assumptions in this system are not guessed: every example
 comes from a real, hookable public pattern, transcribed verbatim,
 mechanically verified round by round, and pinned as a runnable test
 fixture ([`tests/test_reference_patterns.py`](../tests/test_reference_patterns.py),
-52 tests). Real patterns overturned four generator priors, and the
+fixture count is
+whatever `uv run pytest tests/test_reference_patterns.py
+tests/test_reference_grid.py --collect-only -q` reports — never
+hand-maintained). Real patterns overturned five generator priors, and the
 validator was corrected each time — the evidence for every correction
 is in the table below. Only stitch algebra and round structure are
 taken from each source, never creative text (per each source's terms).
@@ -19,7 +22,7 @@ taken from each source, never creative text (per each source's terms).
 | 2 | Adjacent-round jump ±6 | hard error → note (`allow_wide_jump` allowlist kept) | Spin a Yarn's 8→16 doubling; Ms Premise-Conclusion's sin-profile sphere | `test_professional_eight_stitch_ring_start_passes_validation`, `test_ideal_sphere_*` |
 | 3 | Mixed inc/dec in one round | hard error → note | Ziyou Handmade lop-ear rabbit eye-socket round 7X,7V,A,7V,7X | `test_cn_rabbit_head_face_shaping_passes` |
 | 4 | Increase ≤ source stitches | hard error → note | solid granny round 2: +16 into 4 chain corner spaces (12 source sts) | `test_intl_solid_granny_space_increase_downgraded_to_note` |
-| — | Decrease ≤ half of previous | **stays hard** (positively verified) | Minion leg R3: sc4tog + 4×sc2tog across 18 sts, decrease equivalent 8 ≤ 9 | `test_intl_minion_leg_densest_real_decrease_round` |
+| 5 | Decrease > half of previous (pure-A pairing) | hard error → note (external AI audit) | mechanical counterexample: 4 sts closed by one sc4tog (3 > 2, fully hookable); Minion's 8 ≤ 9 dense round still within pure-A pairing | `test_validator_downgrades_incapable_v_and_incapable_a` |
 
 Downgrading is not loosening: hard errors now contain only "physically
 unhookable" items; notes mean "fully hookable but outside this

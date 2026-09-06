@@ -32,12 +32,13 @@ def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
 
     专业图解（Supergurumi/DROPS 等）以 "[4 sc, 1 inc] repeat" 表达均匀
     分组圈，X/V/A 记号约定见导出图例；均匀分组前提与 parade 导出器的
-    _round_tokens 一致。单针增量无重复语义，同样返回 None。
+    _round_tokens 一致。groups==1（单次增/减）同样渲染为 "(4X,V)"——
+    与 parade 发射器允许单分组保持同口径（外部 AI 审核发现的不一致）。
     """
     if (inc and dec) or (not inc and not dec):
         return None
     groups = inc or dec
-    if groups < 2 or prev % groups:
+    if groups < 1 or prev % groups:
         return None
     base = prev // groups - 1
     if base < 0:
@@ -52,6 +53,8 @@ def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
     else:
         head = f"{base}X,"
     op = "V" if inc else "A"
+    if groups == 1:
+        return f"({head}{op})"
     return f"({head}{op})×{groups}"
 
 

@@ -826,7 +826,7 @@ def test_materials_wire_row_for_limbs_only():
     q = rows[0]["quantity"]
     assert "18号" in q and "纸包" in q
     assert "折" in q          # 端部折回成环
-    assert "毛条/竹签" in q   # 儿童玩具替代
+    assert "勿用" in q and "硬质" in q   # 儿童玩具：禁用硬质内骨架
 
     ear_only = _params_for(["头部", "耳朵"])
     assert all(m["item"] != "定型线（可选）" for m in ear_only["materials"])
@@ -875,3 +875,28 @@ def test_weighted_base_materials_and_assembly():
 
     no_body = _params_for(["头部", "耳朵"])
     assert all(m["item"] != "配重珠（可选）" for m in no_body["materials"])
+
+
+def test_one_piece_mode_keeps_safety_rows():
+    """一体件（头身合并改名"头身（一体）"）不得漏安全眼/配重珠行
+    （外部 AI 审核发现的门控缺口）；安全眼行含禁用措辞。"""
+    from app.models.crochet_params import _materials
+    merged = {"name": "头身（一体）",
+              "rounds": [{"row": 1, "stitches": 6}],
+              "diameter_cm": 12.0, "quantity": 1}
+    mats = _materials([merged], {"头身（一体）"})
+    items = [m["item"] for m in mats]
+    assert "安全眼" in items
+    assert "配重珠（可选）" in items
+    eye = next(m for m in mats if m["item"] == "安全眼")
+    assert "禁用" in eye["quantity"] and "刺绣眼" in eye["quantity"]
+
+
+def test_safety_wording_bans_rigid_armatures_for_children():
+    """定型线行的儿童措辞不含竹签（硬质内骨架一律禁用）。"""
+    from tests.test_crochet_params import _params_for
+    params = _params_for(["头部", "身体", "手臂", "腿部"])
+    wire = next(m for m in params["materials"]
+                if m["item"] == "定型线（可选）")
+    assert "竹签" not in wire["quantity"]
+    assert "硬质" in wire["quantity"]

@@ -83,7 +83,7 @@ def test_difficulty_label_fallback_keeps_legacy_values():
 
 
 def test_repeat_notation_uniform_and_uneven():
-    """聚合计数 → 专业重复写法；非均匀/不自洽/单针增量返回 None。"""
+    """聚合计数 → 专业重复写法；非均匀/不自洽返回 None；单次增减渲染为不带 ×n 的分组。"""
     from app.utils.exporters import _repeat_notation
     assert _repeat_notation(18, 12, 6, 0) == "(X,V)×6"
     assert _repeat_notation(12, 6, 6, 0) == "(V)×6"       # 环起首圈全增
@@ -91,7 +91,7 @@ def test_repeat_notation_uniform_and_uneven():
     assert _repeat_notation(21, 18, 3, 0) == "(5X,V)×3"   # 非 6 等分组
     assert _repeat_notation(16, 12, 4, 0) == "(2X,V)×4"
     assert _repeat_notation(24, 24, 0, 0) is None          # 平针圈无重复语义
-    assert _repeat_notation(13, 12, 1, 0) is None          # 单针增量
+    assert _repeat_notation(13, 12, 1, 0) == "(11X,V)"     # 单次增（与 parade 单分组同口径）
     assert _repeat_notation(25, 24, 6, 0) is None          # 聚合不自洽
 
 

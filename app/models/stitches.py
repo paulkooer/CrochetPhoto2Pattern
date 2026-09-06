@@ -1,7 +1,7 @@
 """针法速查表（STITCH_GLOSSARY）——全系统针法词表的单一来源。
 
 覆盖五套语言体系的对照：中文图解字母记号（X/T/F/E/V/A/W/M/B）、
-US 官方缩写（Craft Yarn Council 缩写规范逐字核对）、UK 传统记号
+US 官方缩写（Craft Yarn Council 缩写规范的常用条目逐字核对；dtr/trtr 见高度链）、UK 传统记号
 （美英"错位一级"：US sc = UK dc，Shelley Husband / KnitPro 对照表）、
 日语名称（toruyuri / Hamanaka 系教程：細編み・長編み・増し目），
 以及每针的**针数语义**（进出针目比——校验器代数的词汇基础）。
@@ -40,7 +40,7 @@ STITCH_GLOSSARY: tuple[Stitch, ...] = (
     Stitch("锁针", "CH", "ch", "ch", "鎖編み", "0→1（新基底）",
            "基础针", "起立与连接；除图解注明（如 Tiny Curl 的 ch-3 计为"
            " 1 针）外不计入圈针数（Motley 口径 ch-1 不计针，两约定并存）"),
-    Stitch("引拔针", "SL", "sl st", "sl st", "引き抜き編み", "—（连接）",
+    Stitch("引拔针", "SL", "sl st", "ss", "引き抜き編み", "—（连接）",
            "基础针", "合圈收尾 / 部件连接；合圈每圈末尾 SL 引拔、"
            "起立锁针开启下圈"),
     Stitch("短针", "X", "sc", "dc", "細編み", "1→1",
@@ -70,8 +70,10 @@ STITCH_GLOSSARY: tuple[Stitch, ...] = (
            "加减针", "(1X, 跳过 1 针)×6 与 sc2tog 同数不同法——留洞由"
            "后续收口处理（Motley R62）"),
     # ── 簇生针族（进出各 1——不改变圈针数）────────────────────────
-    Stitch("枣形针", "B", "bo / CL", "bobble", "玉編み", "中性（进出各1）",
+    Stitch("枣形针", "B", "bo", "bobble", "玉編み", "中性（进出各1）",
            "簇生针", "5 未完成长针并 1 针引出，进出各 1（软糖系列逐字）"),
+    Stitch("集群针", "CL", "CL", "cluster", "かたまり編み", "中性（进出各1）",
+           "簇生针", "多针未完成并拢引出成簇——结构与 bobble 不同（CYC 分列 bo 与 CL），进出各 1"),
     Stitch("泡芙针", "ps", "ps / puff", "puff", "パフ編み", "中性（进出各1）",
            "簇生针", "同针目多次入线成蓬起后束紧；CYC 缩写 ps/puff"),
     Stitch("爆米花针", "pc", "pc", "popcorn", "ポップコーン編み", "中性（进出各1）",
@@ -142,13 +144,15 @@ TUNISIAN_GLOSSARY: tuple[Stitch, ...] = (
 )
 
 # US↔UK「错位一级」对照链（Shelley Husband / KnitPro 对照表）——
+# 末级 dtr→trtr 按 CYC 现行对照表（ttr 为地区性写法）；对照为
+# 2026-09 快照级核对，测试钉住本表与所引来源一致。
 # 上一级的 UK 名 = 下一级的 US 名，此不变量由测试钉死。
 _HEIGHT_LADDER_US_UK: tuple[tuple[str, str], ...] = (
     ("sc", "dc"),
     ("hdc", "htr"),
     ("dc", "tr"),
     ("tr", "dtr"),
-    ("dtr", "ttr"),
+    ("dtr", "trtr"),
 )
 
 

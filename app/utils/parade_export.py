@@ -119,6 +119,11 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
                 warnings.append(
                     f"{name} 第 {rd.get('row')} 圈形态超出可译子集"
                     f"（{prev}→{rd.get('stitches')}），已跳过")
+                # 已知限制（外部 AI 审核）：跳过圈仍更新 prev，后续圈以
+                # "虚拟前圈"为基础翻译——token 语法可过 lint，但与上一条
+                # 实际发射的圈之间可能存在计数不连续。lint 只查语法不查
+                # 连续性；结构化"可表达性分类"（无损/仅保针数/跳过）为
+                # 改进方向，暂以 warning 留痕。
                 prev = int(rd.get("stitches", prev))
                 continue
             color_hex = _hex_of(rd.get("color"))

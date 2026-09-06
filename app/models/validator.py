@@ -3,9 +3,10 @@ correctness checking 理念：把"代数自洽"从测试层暴露给用户。
 
 检查项：
 1. 针数代数：每圈针数 = 上圈针数 + 加针 − 减针（首圈为起针，不检查）；
-2. 可执行性：A 不多于源针数的一半；针数 ≥ 1；
+2. 可执行性：针数 ≥ 1（组合减针——M/sc4tog——不受纯 A 配对
+   限制，见第 5 处先验降级）；
 3. 生成器先验（notes 提示，非硬错误——印证校准）：非 6 倍数圈、
-   超平滑节奏圈、加减速混用圈、加针超源针圈。混用圈在真实图解的
+   超平滑节奏圈、加减速混用圈、加针超源针圈、减针超纯 A 配对圈。混用圈在真实图解的
    面部/异形塑形中常见（如垂耳兔眼窝圈 7X,7V,A,7V,7X）；加针超源
    在空间加针工艺中常见（如 granny 四角往锁针空间加针）——均完全
    可钩，只是超出本生成器的均匀分组表达，导出器会诚实跳过；
@@ -48,9 +49,8 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
     - 代数自洽（一直有）：每圈针数 = 上圈 + 加 − 减；
     - 物理边界：相邻圈变化不超过 gauge 的
       ``ceil_to_6(2π·行高/针宽)``；旧图解无 gauge 时回退经典 ±6。
-      装饰性宽跳变须由
-      CrochetStitch.allow_wide_jump 显式置位豁免（如波浪裙摆
-      "每针放2针"），否则视为生成器缺陷。
+      宽跳变默认只降级为 note；CrochetStitch.allow_wide_jump
+      置位可抑制该 note（如波浪裙摆"每针放2针"）。
     """
     issues: list[str] = []
     notes: list[str] = []
@@ -109,14 +109,23 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
                         "多针的工艺（granny 四角、贝壳花、W 泡芙）则完全"
                         "可钩；超出均匀分组 (aX,V)×n 表达，导出将跳过此圈")
                 if dec > prev_stitches // 2:
-                    issues.append(
+                    # 印证修正（第 5 处先验降级，外部 AI 审核发现）：
+                    # "A 不多于源针一半"只对纯 A（2并1）成立；词表中的
+                    # M（3→1）、sc4tog（4→1）、圈圈减针（挂4环）都是真实
+                    # 可钩的组合减针——机械反例：上一圈 4 针用一次
+                    # sc4tog 收到 1 针（1 = 4 + 0 − 3，而 3 > 4//2）。
+                    # decrease 字段语义是"净减少针数"，不能同时当作
+                    # "A 的数量"。降级为 notes，导出器跳过该圈。
+                    notes.append(
                         f"{name} 第 {i} 圈：减针 {dec} 超过上圈 "
-                        f"{prev_stitches} 针可组成的 A 数量")
+                        f"{prev_stitches} 针的纯 A（2并1）配对上限——若含"
+                        " M 三并一/sc4tog/跳针等组合减针则完全可钩；超出"
+                        "均匀分组 (aX,A)×n 表达，导出将跳过此圈")
                 # V2 → 印证修正：|Δ| 上限是本生成器的平滑度先验而非
-                # 可执行性边界（真实图解的 8→16 倍增圈常见且完全可钩，
-                # 可执行性已由 inc≤prev / dec≤prev/2 保证）。超限降级为
-                # notes；allow_wide_jump 白名单标志继续接受（生成器仍
-                # 对波浪裙摆等装饰工艺显式置位）。
+                # 可钩性边界（真实图解的 8→16 倍增圈常见且完全可钩）。
+                # 超限降级为 notes；allow_wide_jump 只是抑制这条 note 的
+                # 标志（置位与否 ok 均为真）——生成器仍对波浪裙摆等
+                # 装饰工艺显式置位以保持 notes 干净。
                 if abs(st - prev_stitches) > max_change and not rd.get(
                         "allow_wide_jump", False):
                     notes.append(

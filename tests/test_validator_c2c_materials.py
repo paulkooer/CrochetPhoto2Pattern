@@ -179,9 +179,10 @@ def test_validator_does_not_trust_editable_shaping_metadata():
     assert any("平滑塑形节奏 ±6" in note for note in result["notes"])
 
 
-def test_validator_downgrades_incapable_v_but_keeps_incapable_a():
-    """印证修正：加针超源降为 notes（granny 空间加针/W 可执行）；
-    减针超源仍为硬错误（无对应真实源证据，保持保守）。"""
+def test_validator_downgrades_incapable_v_and_incapable_a():
+    """印证修正（外部 AI 审核确认第 5 处）：加针超源与减针超纯 A
+    配对均降为 notes——M 三并一/sc4tog 等组合减针真实可钩（机械
+    反例：4 针经一次 sc4tog 收到 1 针，3 > 4//2 但完全可钩）。"""
     gauge = {"stitches_per_10cm": 20.0, "rows_per_10cm": 16.0}
     too_many_increases = {
         "gauge": gauge,
@@ -204,8 +205,20 @@ def test_validator_downgrades_incapable_v_but_keeps_incapable_a():
         ]}],
     }
     result = validate_pattern(too_many_decreases)
-    assert not result["ok"]
-    assert any("可组成的 A 数量" in issue for issue in result["issues"])
+    assert result["ok"]
+    assert not result["issues"]
+    assert any("纯 A（2并1）配对上限" in note for note in result["notes"])
+
+    # 机械反例（GPT 审核）：4 针一次 sc4tog → 1 针
+    sc4tog_case = {
+        "gauge": gauge,
+        "parts": [{"name": "指尖", "rounds": [
+            {"stitches": 4},
+            {"stitches": 1, "decrease": 3},
+        ]}],
+    }
+    result = validate_pattern(sc4tog_case)
+    assert result["ok"] and not result["issues"]
 
 
 def test_validator_notes_non_six_stitch_topology():

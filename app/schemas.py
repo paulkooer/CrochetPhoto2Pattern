@@ -91,9 +91,9 @@ class CrochetStitch(BaseModel):
     notes: str | None = None
     # 本圈使用的毛线色（照片配色设计；无图/单色部件为 None）
     color: str | None = None
-    # V2：装饰性宽跳变显式白名单（如波浪裙摆"每针放2针"——工艺正确但
-    # 违反平盘 |Δ|≤6 物理极限）。生成器对唯一合法场景显式置位；
-    # validator 对未置位的宽跳变报错（与代数自洽解耦的物理检查）。
+    # V2：装饰性宽跳变标志（如波浪裙摆"每针放2针"——工艺正确但超出
+    # 生成器平滑节奏先验）。宽跳变本身只降级为 note；置位仅抑制该
+    # note（生成器对唯一合法场景显式置位以保持 notes 干净）。
     allow_wide_jump: bool = False
 
 class CrochetPart(BaseModel):
