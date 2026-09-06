@@ -197,6 +197,19 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - **Flat-seam hint for tiny openings in assembly text**: limb steps with
   an opening of 6 stitches or fewer now add "small openings can be
   flattened and sewn" (community practice, e.g. the lop-rabbit arms).
+- **Eye-placement note anchored in words**: head notes now say "near the
+  widest round" — professional charts place eyes relative to landmarks
+  (Supergurumi bee: "2 stitch rows after the nose" — the BLO ridge —
+  with spacing down to 1 stitch), and this generator has no landmarks,
+  so the geometric approximation is stated and the maker is told to
+  adjust for eye size and face.
+- **Bulk channel enumeration**: Bianzhirensheng's sitemap shards
+  (25k URLs) are enumerable and chart posts are locatable by ID range;
+  the Gummy-series mini-charm chart (vision transcription) adds the
+  bobble B (5-dc cluster, in-and-out of one stitch — stitch-count
+  neutral) to the export legend, plus fixtures for a full 24->12
+  decrease round and an in-round color change on BLO (beyond this
+  model's per-round color granularity, documented as such).
 
 - **Validator domain confusion (found by the calibration, two instances)**:
   real patterns contain 22/16/9/14-stitch rounds that are perfectly

@@ -816,8 +816,11 @@ class CrochetParamsGenerator:
                                        style.sphere_mode, "标准球形")
                     notes = (
                         f"{shape_label}，最大 {max_st} 针。"
-                        f"第 {eye_round} 圈安装安全眼（{eye_mm}mm，"
-                        f"两眼间隔约 {eye_gap} 针）。"
+                        # 眼位锚定在最大围附近（专业图解以鼻线/眼窝等地标
+                        # 定位——Supergurumi 蜜蜂"鼻线后2行"；本生成器无
+                        # 地标，用几何近似）
+                        f"第 {eye_round} 圈（最大围附近）安装安全眼（{eye_mm}mm，"
+                        f"两眼间隔约 {eye_gap} 针，可依眼径与脸型调整）。"
                         "建议先钩小样测试张力。"
                     )
                 else:

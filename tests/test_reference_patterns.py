@@ -1045,3 +1045,60 @@ def test_grid_written_rows_match_published_heart_chart():
         for color, cnt in blocks:
             expected.extend([name_of(color, seq)] * cnt)
         assert seq == expected, f"对角行 {r}: {seq} != {expected}"
+
+
+# ── 中文社区印证 4：软糖系列（迷你挂件，编织人生图片图解，视觉转录）──────────
+# 三个新案例：① B = 枣形针（原文针法说明："钩织5个未完成的长针，然后
+# 锁一针"）——消耗 1 产 1，针数中性，代数自检不受影响；② R8 记 12A
+# （每针都减，24→12，dec == prev//2 的满额减针）；③ kitty R9 内半针
+# （BLO）圈中粉色 X 间夹白色 B——**圈内换色**超出本项目逐圈配色粒度，
+# 如实记录不夹注（导出会简化为整圈一色）。
+# 记号补充：N 在针法前为重复计数（2V = V×2）。
+# https://www.bianzhirensheng.com/a/44074_zhifa.html
+
+def test_cn_gummy_bunny_bobble_rounds_pass():
+    """小兔软糖：枣形圈（进出各1）代数中性，12A 满额减针，全部可钩。"""
+    bunny = {"name": "小兔软糖", "type": "sphere", "color": "白色",
+             "magic_ring": True,
+             "rounds": [
+                 {"row": 1, "stitches": 6},
+                 {"row": 2, "stitches": 12, "increase": 6},
+                 {"row": 3, "stitches": 18, "increase": 6},
+                 {"row": 4, "stitches": 24, "increase": 6},
+                 *({"row": r, "stitches": 24} for r in range(5, 8)),
+                 {"row": 8, "stitches": 12, "decrease": 12,
+                  "notes": "原文 12A——每针都减"},
+                 # 原文 R9: V,X,2V,X,B,X,B,2V,X,V（B=枣形针，进出各1）
+                 {"row": 9, "stitches": 18, "increase": 6,
+                  "notes": "枣形圈：V,X,2V,X,B,X,B,2V,X,V"},
+                 {"row": 10, "stitches": 18},
+                 {"row": 11, "stitches": 18,
+                  "notes": "原文 5X,B,6X,B,5X"},
+                 {"row": 12, "stitches": 12, "decrease": 6},
+             ]}
+    result = validate_pattern({"parts": [bunny]})
+    assert result["ok"], result["issues"]
+    notes = "\n".join(result["notes"])
+    assert "相邻圈跳变" in notes   # 24→12 满额减圈超 ±6 平滑先验
+
+
+def test_cn_gummy_export_and_legend_carry_bobble():
+    """枣形针进导出图例；软糖聚合计数仍全圈可译（B 是圈内细节）。"""
+    from app.utils.exporters import export_markdown
+    bunny = {"name": "小兔软糖", "type": "sphere", "color": "白色",
+             "magic_ring": True, "rounds": [
+                 {"row": 1, "stitches": 6},
+                 {"row": 2, "stitches": 12, "increase": 6},
+                 {"row": 3, "stitches": 18, "increase": 6},
+             ]}
+    dsl = export_parade_dsl({"params": {"parts": [bunny]}})
+    assert lint_parade_dsl(dsl) == []
+    # 图例（B 记号来自软糖系列针法说明）
+    from app.models.crochet_params import CrochetParamsGenerator
+    from app.models.image_parser import ImageParser
+    from app.models.structure_designer import StructureDesigner
+    a = ImageParser._mock_analysis()
+    st2 = StructureDesigner.design_3d_structure(a)
+    p2 = CrochetParamsGenerator.generate_params(a, st2)
+    md = export_markdown(p2, a.model_dump())
+    assert "B=枣形针" in md
