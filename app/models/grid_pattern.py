@@ -417,12 +417,14 @@ def generate_grid_pattern(
 
 def render_svg(pattern: GridPattern, cell_px: int = 14) -> str:
     """Render a GridPattern as an SVG string with colored cells and symbol overlays."""
+    from app import theme  # 叶子令牌模块（无 Streamlit 依赖）；SVG 可下载，字体须内联
+
     W = pattern.width * cell_px
     H = pattern.height * cell_px
     font_size = max(6, cell_px - 4)
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
-        f'viewBox="0 0 {W} {H}" style="font-family:monospace;">',
+        f'viewBox="0 0 {W} {H}" font-family=\'{theme.FONT_SANS}\'>',
     ]
     for row_idx, row in enumerate(pattern.cells):
         y = row_idx * cell_px
@@ -435,7 +437,7 @@ def render_svg(pattern: GridPattern, cell_px: int = 14) -> str:
             txt_color = "#ffffff" if lum < 128 else "#000000"
             lines.append(
                 f'<rect x="{x}" y="{y}" width="{cell_px}" height="{cell_px}" '
-                f'fill="{hex_color}" stroke="#888" stroke-width="0.3"/>')
+                f'fill="{hex_color}" stroke="{theme.EDGE}" stroke-width="0.3"/>')
             if cell_px >= 10:
                 lines.append(
                     f'<text x="{x + cell_px // 2}" y="{y + cell_px - 2}" '
@@ -444,10 +446,12 @@ def render_svg(pattern: GridPattern, cell_px: int = 14) -> str:
     # Bold grid lines every 10 cells
     for i in range(0, pattern.width + 1, 10):
         x = i * cell_px
-        lines.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{H}" stroke="#444" stroke-width="1"/>')
+        lines.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{H}" '
+                     f'stroke="{theme.INK}" stroke-width="1"/>')
     for i in range(0, pattern.height + 1, 10):
         y = i * cell_px
-        lines.append(f'<line x1="0" y1="{y}" x2="{W}" y2="{y}" stroke="#444" stroke-width="1"/>')
+        lines.append(f'<line x1="0" y1="{y}" x2="{W}" y2="{y}" '
+                     f'stroke="{theme.INK}" stroke-width="1"/>')
     lines.append("</svg>")
     return "\n".join(lines)
 
@@ -522,6 +526,8 @@ def render_legend_html(pattern: GridPattern) -> str:
     """
     import html as _html
 
+    from app import theme  # 叶子令牌模块（无 Streamlit 依赖）
+
     total = pattern.width * pattern.height
     counts: dict[int, int] = {}
     for row in pattern.cells:
@@ -531,19 +537,20 @@ def render_legend_html(pattern: GridPattern) -> str:
     for idx, (name, rgb) in enumerate(pattern.palette):
         hex_bg = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
         lum = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
-        sym_color = "#ffffff" if lum < 128 else "#222222"
+        sym_color = "#ffffff" if lum < 128 else theme.INK
         sym = pattern.symbol_map.get(idx, "?")
         cnt = counts.get(idx, 0)
         pct = round(cnt / total * 100) if total else 0
         rows.append(
             f"<div style='display:flex;align-items:center;gap:8px;"
             f"margin:4px 0;'>"
-            f"<span style='width:26px;height:26px;border-radius:6px;"
-            f"background:{hex_bg};border:1px solid rgba(0,0,0,0.2);"
+            f"<span style='width:26px;height:26px;border-radius:2px;"
+            f"background:{hex_bg};border:1px solid rgba(29,36,64,0.35);"
             f"display:inline-flex;align-items:center;justify-content:center;"
             f"color:{sym_color};font-size:13px;'>{sym}</span>"
             f"<span style='font-size:0.85rem;'>{_html.escape(name)}"
-            f"</span><span style='color:#888;font-size:0.78rem;'>"
+            f"</span><span style='color:{theme.INK_SOFT};font-size:0.78rem;"
+            f"font-variant-numeric:tabular-nums;'>"
             f"{pct}%</span></div>")
     return ("<div style='display:flex;flex-direction:column;gap:2px;'>"
             + "".join(rows) + "</div>")

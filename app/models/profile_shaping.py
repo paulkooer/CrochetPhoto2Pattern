@@ -160,14 +160,17 @@ def render_silhouette_svg(
     pts_left = [(2 * cx - x, y) for (x, y) in reversed(pts_right)]
     poly = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts_right + pts_left)
 
+    from app import theme  # 叶子令牌模块（无 Streamlit 依赖）
+
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width_px}" '
-        f'height="{height_px}" viewBox="0 0 {width_px} {height_px}">',
-        f'<rect width="{width_px}" height="{height_px}" fill="#fafafa" '
-        f'stroke="#ddd"/>',
-        '<text x="6" y="12" font-size="10" fill="#666">生成侧影（照片驱动）</text>',
-        f'<polygon points="{poly}" fill="#9ecae1" fill-opacity="0.55" '
-        f'stroke="#2171b5" stroke-width="1.2"/>',
+        f'height="{height_px}" viewBox="0 0 {width_px} {height_px}" '
+        f"font-family='{theme.FONT_SANS}'>",
+        f'<rect width="{width_px}" height="{height_px}" fill="{theme.SHEET}" '
+        f'stroke="{theme.RULE}" rx="3"/>',
+        f'<text x="6" y="12" font-size="10" fill="{theme.INK_SOFT}">生成侧影（照片驱动）</text>',
+        f'<polygon points="{poly}" fill="{theme.SILHOUETTE_FILL}" fill-opacity="0.55" '
+        f'stroke="{theme.SILHOUETTE_STROKE}" stroke-width="1.2"/>',
     ]
 
     # 照片剖面对照（同一部件区间，按区间峰值对齐到锚点半宽——与
@@ -186,10 +189,10 @@ def render_silhouette_svg(
         pts += [(2 * cx - x, y) for (x, y) in reversed(pts)]
         poly2 = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
         lines.append(
-            f'<polygon points="{poly2}" fill="none" stroke="#e6550d" '
+            f'<polygon points="{poly2}" fill="none" stroke="{theme.PHOTO_PROFILE}" '
             f'stroke-width="1.2" stroke-dasharray="4 2"/>')
         lines.append(
-            f'<text x="6" y="{height_px - 6}" font-size="10" fill="#e6550d">'
+            f'<text x="6" y="{height_px - 6}" font-size="10" fill="{theme.PHOTO_PROFILE}">'
             f'虚线=照片轮廓</text>')
     lines.append("</svg>")
     return "\n".join(lines)

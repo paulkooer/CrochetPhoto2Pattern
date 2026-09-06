@@ -131,8 +131,9 @@ def render_sidebar() -> None:
                 else:
                     c_h1.markdown("<div style='width:64px;height:44px;"
                                   "display:flex;align-items:center;"
-                                  "justify-content:center;border:1px dashed #ccc;"
-                                  "border-radius:6px;'>🧶</div>",
+                                  "justify-content:center;"
+                                  "border:1px dashed var(--edge);"
+                                  "border-radius:3px;'>🧶</div>",
                                   unsafe_allow_html=True)
                 _display = it.get("title") or it["summary"]
                 c_h1.caption(f"{history.format_time(it['created_at'])}\n\n{_display}")

@@ -8,6 +8,26 @@
 
 ## Unreleased
 
+### Changed
+
+- **视觉重设计「图解纸」**：整体视觉从通用暖色卡通风改为"一张打印
+  的图解纸"——冷白纸面、藏青墨色、唯一的高亮记号扣黄只用于"你在哪 /
+  你做完了什么"（激活 Tab、选中项、已勾选圈、进度），毛线色成为页面
+  上仅有的其他颜色。新增 `app/theme.py` 叶子令牌模块作为 `.streamlit/
+  config.toml`、注入 CSS 与全部 SVG/canvas 渲染器（环图/符号条/侧影/
+  网格/3D 预览）的单一颜色来源（叶子模块无 Streamlit 依赖，避免
+  models→ui 循环）；`tests/test_theme_tokens.py` 断言四个表面不漂移，
+  并守护旧调色板不再回潮。结果页按 1–5 编号章节重排：部件圈序渲染为
+  图解纸行（宋体行、勾选后记号扣黄扫过）、逐圈标签中的 notes/配色先
+  经 md_safe 再进 Markdown 标签（注入防线同口径）、毛线芯片改为规则
+  边框样式。Hero 为"前六圈顶视图（6→36 等距环）"的一次性描线动画
+  （pathLength 属性会被 st.html 消毒器剥离，改用内联 dash 值）；
+  `prefers-reduced-motion` 全量降级。字体不加载 Web 字体（离线/隐私
+  立场，大陆访问 Google Fonts 不可靠）：正文系统黑体、标题西文优先
+  Charter/Palatino 回落宋体，数字等宽内衬。打印样式隐藏界面 chrome、
+  白底黑字输出图解。对比度：正文 ≈14:1、次级 5.3:1、控件边框 3:1
+  （WCAG 1.4.11）。PDF 导出表头/斑马纹同步对齐令牌（旧陶土色清除）。
+
 ### Added
 
 - **真实图解印证测试**（`tests/test_reference_patterns.py`，24 项）：以

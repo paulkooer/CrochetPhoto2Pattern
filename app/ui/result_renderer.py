@@ -15,6 +15,7 @@ import streamlit as st
 from app.models.colors import YARN_COLORS
 from app.schemas import PART_NAMES, difficulty_label
 from app.ui import result_logic
+from app.ui.design_system import section_heading
 from app.ui.result_logic import rebuild_params, result_profile
 from app.utils.exporters import export_markdown
 from app.utils.share import _BACKUP_KEYS
@@ -74,18 +75,17 @@ def _yarn_chip_html(name: str) -> str:
     （LLM 自造色名）退化为中性胶囊。名字经 html.escape 后才进
     unsafe_allow_html（prompt-injection 防线，与旧实现同口径）。
     """
-    dot = ""
     rgb = _RGB_BY_NAME.get(name)
     if rgb is not None:
         hex_bg = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-        dot = (f"<span style='display:inline-block;width:11px;height:11px;"
-               f"border-radius:50%;background:{hex_bg};"
-               f"border:1px solid rgba(0,0,0,0.25);margin-right:6px;"
-               f"vertical-align:-1px;'></span>")
+        swatch = f"<i class='yarn-chip__swatch' style='background:{hex_bg};'></i>"
+        variant = ""
+    else:
+        swatch = "<i class='yarn-chip__swatch'></i>"
+        variant = " yarn-chip--unknown"
     return (
-        "<span style='background:#f4f4f4;padding:4px 14px;border-radius:20px;"
-        "font-size:0.85rem;border:1px solid #ccc;display:inline-flex;"
-        f"align-items:center;'>{dot}🧶 {html.escape(_strip_invisible(str(name)))}</span>"
+        f"<span class='yarn-chip{variant}'>{swatch}"
+        f"{html.escape(_strip_invisible(str(name)))}</span>"
     )
 
 
@@ -132,8 +132,8 @@ def _render_part_progress(
     rounds_label = (f"{n_rounds} 圈/个，共 {physical_rounds} 圈次"
                     if quantity > 1 else f"{n_rounds} 圈")
     label_exp = (
-        f"🧶 {part_data['name']}{quantity_label} ({rounds_label})"
-        f"  —  ✅ {n_done}/{physical_rounds} 圈次"
+        f"{part_data['name']}{quantity_label}（{rounds_label}）"
+        f"　已完成 {n_done}/{physical_rounds} 圈次"
     )
     with st.expander(label_exp):
         st.write(f"**形状**: {md_safe(part_data['type'])} | "
@@ -157,7 +157,7 @@ def _render_part_progress(
                         render_ring_svg(part, stitch_w_cm=_sw_cm), 330))
                     _strip = render_symbol_strip(part)
                     if _strip:
-                        st.markdown("**逐圈符号条**（×=X · V=加针 · A=减针）")
+                        st.markdown("**逐圈符号条**（×=短针，V=加针，A=减针）")
                         st.html(html_box(_strip, min(
                             30 + 16 * min(len(part.get("rounds", [])), 24)
                             + 10, 560), scroll=True))
@@ -167,7 +167,7 @@ def _render_part_progress(
             st.info(md_safe(part_data["notes"]))
         st.progress(
             pct, text=f"钩织进度 {pct}%  ({n_done}/{physical_rounds} 圈次)")
-        st.markdown("**逐圈进度** — 勾选已完成的圈：")
+        st.markdown("**逐圈进度**：勾选已完成的圈")
         col_clear, col_all = st.columns(2)
         with col_clear:
             if st.button("↩️ 重置进度", key=f"clear_{part_key}"):
@@ -186,12 +186,14 @@ def _render_part_progress(
                 rd = r
                 inc_str = f"+{rd['increase']}" if rd.get("increase") else ""
                 dec_str = f"-{rd['decrease']}" if rd.get("decrease") else ""
-                change = f" ({inc_str}{dec_str})" if (inc_str or dec_str) else ""
-                notes_str = f" — {rd['notes']}" if rd.get("notes") else ""
-                color_str = f" · {rd['color']}" if rd.get("color") else ""
-                lbl = (f"第 {rd.get('row', i + 1)} 圈："
-                       f"{rd.get('stitches', '?')}针"
-                       f"{change}{notes_str}{color_str}")
+                change = f"（{inc_str}{dec_str}）" if (inc_str or dec_str) else ""
+                # notes/color 为模型或 JSON 编辑器可写字段；checkbox 标签会
+                # 渲染 Markdown，先经 md_safe 再拼进标签
+                notes_str = f"　{md_safe(rd['notes'])}" if rd.get("notes") else ""
+                color_str = f"　{md_safe(rd['color'])}" if rd.get("color") else ""
+                lbl = (f"**第 {rd.get('row', i + 1)} 圈**　"
+                       f"{rd.get('stitches', '?')} 针"
+                       f"{change}{color_str}{notes_str}")
                 st.checkbox(lbl, key=copy_keys[i])
 
 
@@ -207,13 +209,13 @@ def render_results(result: dict, slot: str) -> None:
 
     st.divider()
     st.markdown(
-        "<p class='crochet-section-note'>图解已生成。"
+        "<p class='sheet-note'>图解已生成。"
         "你可以查看结构、逐圈勾选进度、局部修正并下载备份。</p>",
         unsafe_allow_html=True,
     )
 
     # Section 1: Analysis
-    st.subheader("1️⃣ 人物与比例")
+    section_heading(1, "人物与比例")
     col_a, col_b = st.columns(2)
     with col_a:
         st.metric("体型", analysis["body_type"])
@@ -304,7 +306,7 @@ def render_results(result: dict, slot: str) -> None:
         st.caption("颜色仅供参考，请根据实际毛线颜色调整")
 
     # Section 2: Structure
-    st.subheader("2️⃣ 部件结构设计（基础形状）")
+    section_heading(2, "部件结构设计（基础形状）")
     profile_parts = [p for p in params.get("parts", [])
                      if getattr(p, "type", None) == "profile"]
     if profile_parts:
@@ -399,7 +401,7 @@ def render_results(result: dict, slot: str) -> None:
                 st.json(part)
 
     # Section 3: Crochet Pattern  (with round progress tracking)
-    st.subheader("3️⃣ 钩织参数")
+    section_heading(3, "钩织参数")
     st.caption(
         "记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针）；"
         "(4X,V)×6 = “4短针+1加针”重复 6 次。"
@@ -455,8 +457,7 @@ def render_results(result: dict, slot: str) -> None:
             if item.startswith("毛线 · ") and mat.get("color") in _RGB_BY_NAME:
                 st.markdown(
                     _yarn_chip_html(item.replace("毛线 · ", ""))
-                    + f"&nbsp;<span style='color:#555;font-size:0.9rem;'>"
-                      f"{html.escape(qty)}</span>",
+                    + f"<span class='yarn-qty'>{html.escape(qty)}</span>",
                     unsafe_allow_html=True)
             else:
                 st.text(f"  - {item}: {qty}")
@@ -466,7 +467,7 @@ def render_results(result: dict, slot: str) -> None:
     # 同名部件（历史坏结果/JSON 编辑复制部件）会生成冲突 widget key → 整页
     # 崩溃；重名时追加序号后缀。正常结果首个部件不带后缀，key 保持稳定。
     seen_names: dict = {}
-    for part in params.get("parts", []):
+    for part_index, part in enumerate(params.get("parts", [])):
         part_data = part
         name = part_data.get("name", "?")
         seen_names[name] = seen_names.get(name, 0) + 1
@@ -504,19 +505,22 @@ def render_results(result: dict, slot: str) -> None:
             for prefix in copy_prefixes
         ]
         chk_keys = [key for keys in chk_keys_by_copy for key in keys]
-        _render_part_progress(
-            part, part_data, part_key, chk_keys_by_copy, chk_keys,
-            rounds_list, quantity, n_rounds, result, params)
+        # 带 key 的容器获得 CSS 类 st-key-sheet_part_…；design_system 据此把
+        # 这一部件的圈序渲染成"图解纸"（宋体行，勾选后记号扣高亮）
+        with st.container(key=f"sheet_part_{result_key}_{part_index}"):
+            _render_part_progress(
+                part, part_data, part_key, chk_keys_by_copy, chk_keys,
+                rounds_list, quantity, n_rounds, result, params)
 
     # Section 4: Assembly
-    st.subheader("4️⃣ 装配说明")
+    section_heading(4, "装配说明")
     # 装配文本内嵌部件名（模型/结构 JSON 可写）——纯文本渲染，
     # 不经 Markdown（链接/图片语法不生效）
     asm = params.get("assembly_instructions") or ""
     st.text(asm if isinstance(asm, str) else str(asm))
 
     # Section 5: Edit & Re-generate
-    st.subheader("5️⃣ 局部修正")
+    section_heading(5, "局部修正")
     # A5: st.success 后立即 st.rerun() 的话消息会被 rerun 丢弃（用户看不见），
     # 改为 session 标志，下一次 rerun 渲染时弹出。
     _ok_flag = f"regen_{result_key}_ok"

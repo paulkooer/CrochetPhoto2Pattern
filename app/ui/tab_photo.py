@@ -63,7 +63,7 @@ def _has_effective_keys() -> bool:
 def render_tab_photo() -> None:
     st.subheader("📷 从照片开始创作")
     st.markdown(
-        "<p class='crochet-section-note'>上传一张轮廓清晰的正面照片，"
+        "<p class='sheet-note'>上传一张轮廓清晰的正面照片，"
         "我们会整理人物比例、结构与逐圈针法。</p>",
         unsafe_allow_html=True,
     )
@@ -118,8 +118,8 @@ def render_tab_photo() -> None:
     with col_preview:
         if uploaded_file is None:
             st.markdown(
-                "<div class='crochet-empty'>🧶<br>上传照片后，这里会显示预览，"
-                "生成结果将出现在下方。</div>",
+                "<div class='sheet-empty'>上传照片后，这里显示预览；"
+                "生成的图解会出现在下方。</div>",
                 unsafe_allow_html=True,
             )
 

@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from app import theme
+
 # 单色部件的占位色（skin/body 不是毛线色名）→ 中性示意色
 _PLACEHOLDER_HEX = {"skin": "#e8bfa8", "body": "#9aa7b8"}
 
@@ -197,7 +199,7 @@ function draw(){resize();var W=cv.width,H2=cv.height;
     ctx.lineTo(fc.pts[2][0],fc.pts[2][1]);ctx.closePath();
     ctx.fillStyle=shade(fc.rgb,Math.abs(fc.nx),Math.abs(fc.ny),Math.abs(fc.nz));
     ctx.fill();ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=0.5;ctx.stroke();});
-  ctx.fillStyle='#543f35';ctx.font=(11*devicePixelRatio)+'px sans-serif';
+  ctx.fillStyle='__INK__';ctx.font=(11*devicePixelRatio)+'px __SANS__';
   ctx.fillText('示意预览——拖动旋转，滚轮缩放（非物理仿真）',
     8*devicePixelRatio,16*devicePixelRatio);}
 setTimeout(function(){resize();draw();},50);
@@ -211,5 +213,9 @@ def structure_preview_html(result: dict) -> str | None:
         return None
     data = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
     canvas = ('<canvas id="c2p3d" style="width:100%;height:100%;display:block;'
-              'background:#fffdf8;border-radius:8px;cursor:grab;"></canvas>')
-    return canvas + "<script>" + _JS.replace("__PAYLOAD__", data) + "</script>"
+              f'background:{theme.SHEET};border:1px solid {theme.RULE};'
+              'border-radius:3px;cursor:grab;"></canvas>')
+    script = (_JS.replace("__PAYLOAD__", data)
+              .replace("__INK__", theme.INK)
+              .replace("__SANS__", theme.FONT_SANS))
+    return canvas + "<script>" + script + "</script>"

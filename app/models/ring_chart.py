@@ -11,6 +11,8 @@ from __future__ import annotations
 import html
 from typing import Any
 
+from app import theme
+
 _SVG_W, _SVG_H = 320, 320
 
 
@@ -37,11 +39,12 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{_SVG_W}" '
-        f'height="{_SVG_H}" viewBox="0 0 {_SVG_W} {_SVG_H}">',
-        f'<rect width="{_SVG_W}" height="{_SVG_H}" fill="#fffdf8" '
-        f'stroke="#ead8ca" rx="12"/>',
-        f'<text x="12" y="18" font-size="12" fill="#543f35">'
-        f'{html.escape(str(name))} · 顶视图（内=起针）</text>',
+        f'height="{_SVG_H}" viewBox="0 0 {_SVG_W} {_SVG_H}" '
+        f"font-family='{theme.FONT_SANS}'>",
+        f'<rect width="{_SVG_W}" height="{_SVG_H}" fill="{theme.SHEET}" '
+        f'stroke="{theme.RULE}" rx="3"/>',
+        f'<text x="12" y="18" font-size="12" fill="{theme.INK}">'
+        f'{html.escape(str(name))} 顶视图（内圈=起针）</text>',
     ]
 
     # F19：只标注"变化圈"——首圈、末圈、以及配色或加/减针相位相对
@@ -64,8 +67,8 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
     for i, rd in enumerate(rounds):
         r_px = radii[i] * scale
         c = rd.get("color")
-        fill = hex_of.get(c, "#e8e0d8") if c else "#e8e0d8"
-        stroke = "#b9a795" if not c else "#8f7d6d"
+        fill = hex_of.get(c, theme.GRID) if c else theme.GRID
+        stroke = theme.EDGE if not c else theme.INK_SOFT
         if r_px >= 1:
             lines.append(
                 f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r_px:.1f}" '
@@ -82,10 +85,11 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
         ly = 34 + row * 18
         side = 186 if col % 2 == 0 else 244
         label_ys.append(ly)
+        color_span = f'<tspan dx="6">{html.escape(str(c))}</tspan>' if c else ""
         lines.append(
-            f'<text x="{side}" y="{ly + 8}" font-size="9.5" fill="#543f35">'
-            f'R{i + 1} · {rd.get("stitches", "?")}X'
-            f'{(" · " + html.escape(str(c))) if c else ""}</text>')
+            f'<text x="{side}" y="{ly + 8}" font-size="9.5" fill="{theme.INK}">'
+            f'<tspan font-weight="600">R{i + 1}</tspan>'
+            f'<tspan dx="6">{rd.get("stitches", "?")}X</tspan>{color_span}</text>')
     lines.append("</svg>")
     return "\n".join(lines)
 
@@ -164,15 +168,16 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
-        f'height="{height}" viewBox="0 0 {width} {height}">',
-        f'<rect width="{width}" height="{height}" fill="#fffdf8" '
-        f'stroke="#ead8ca" rx="10"/>',
-        f'<text x="8" y="16" font-size="11" fill="#543f35">'
-        f'{html.escape(str(name))} · 逐圈符号条'
+        f'height="{height}" viewBox="0 0 {width} {height}" '
+        f"font-family='{theme.FONT_SANS}'>",
+        f'<rect width="{width}" height="{height}" fill="{theme.SHEET}" '
+        f'stroke="{theme.RULE}" rx="3"/>',
+        f'<text x="8" y="16" font-size="11" fill="{theme.INK}">'
+        f'{html.escape(str(name))} 逐圈符号条'
         f'（{"自起针圈后 " + str(start_row + 1) + " 圈起" if start_row else "自起针圈"}）</text>',
         # 图例
-        f'<text x="{width - 118}" y="16" font-size="9.5" fill="#806d63">'
-        f'图例：×=X · V=加针 · A=减针</text>',
+        f'<text x="{width - 150}" y="16" font-size="9.5" fill="{theme.INK_SOFT}">'
+        f'图例：×=短针　V=加针　A=减针</text>',
     ]
 
     def _glyph_x(x: float, y: float) -> str:
@@ -194,7 +199,7 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
     for ri, rd in enumerate(rounds):
         y = 30 + ri * row_h
         c = rd.get("color")
-        stroke = hex_of.get(c, "#543f35") if c else "#543f35"
+        stroke = hex_of.get(c, theme.INK) if c else theme.INK
         n = int(rd.get("stitches", 0) or 0)
         seq = _round_operation_sequence(all_rounds, start_row + ri)
         shown = min(len(seq), max_marks)
@@ -207,11 +212,11 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
         row_svg = "".join(marks)
         overflow = len(seq) - shown
         suffix = (f'<text x="{left + max_marks * mark_w + 4:.1f}" y="{y + 8}" '
-                  f'font-size="9" fill="#806d63">+{overflow}</text>'
+                  f'font-size="9" fill="{theme.INK_SOFT}">+{overflow}</text>'
                   if overflow > 0 else "")
-        label = f'R{start_row + ri + 1} · 成圈 {n}X'
+        label = f'R{start_row + ri + 1} 成圈 {n}X'
         lines.append(
-            f'<text x="8" y="{y + 8:.1f}" font-size="9.5" fill="#543f35">'
+            f'<text x="8" y="{y + 8:.1f}" font-size="9.5" fill="{theme.INK}">'
             f'{html.escape(label)}</text>')
         lines.append(row_svg + suffix)
     lines.append("</svg>")

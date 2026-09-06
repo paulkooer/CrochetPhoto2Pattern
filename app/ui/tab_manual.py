@@ -73,7 +73,7 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
 def render_tab_manual() -> None:
     st.subheader("✏️ 手动设计玩偶")
     st.markdown(
-        "<p class='crochet-section-note'>无需上传照片，填写人物比例、姿态与部件，"
+        "<p class='sheet-note'>无需上传照片，填写人物比例、姿态与部件，"
         "就能直接生成专属钩织图解。</p>",
         unsafe_allow_html=True,
     )

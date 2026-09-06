@@ -8,6 +8,34 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed
+
+- **Visual redesign: the pattern sheet (图解纸)**. The app's look moves
+  from a generic warm-craft theme to a printed pattern sheet: cool paper,
+  navy ink, and a single stitch-marker yellow reserved for "where you
+  are / what you have done" (active tab, chosen option, checked rounds,
+  progress); yarn colours stay the only other colour on the page. A new
+  leaf token module `app/theme.py` is the single colour source for
+  `.streamlit/config.toml`, the injected CSS, and every SVG/canvas
+  renderer (ring chart, symbol strip, silhouette, grid, 3D preview) —
+  leaf means no Streamlit import, avoiding a models→ui cycle;
+  `tests/test_theme_tokens.py` keeps the four surfaces in sync and guards
+  against legacy-palette regressions. The result page is re-laid-out as
+  numbered sections 1–5: each part's rounds render as pattern-sheet rows
+  (serif rows, a marker-yellow sweep on check), round labels pass
+  notes/colour through md_safe before Markdown rendering (same
+  injection defence), and yarn chips get ruled-border styling. The hero
+  is a one-shot draw animation of the first six rounds of a +6 sphere
+  (equal rings — r grows linearly; st.html's sanitizer strips the
+  pathLength attribute, so inline dash values are used instead), fully
+  degraded under prefers-reduced-motion. No web fonts (offline/privacy
+  stance; Google Fonts unreliable in the mainland): system sans for
+  body, Charter/Palatino falling through to Songti for headings, lining
+  tabular digits. Print styles hide app chrome and output a clean
+  black-on-white sheet. Contrast: body ≈14:1, secondary 5.3:1, control
+  borders 3:1 (WCAG 1.4.11). The PDF exporter's table header/stripes now
+  share the tokens (legacy terracotta removed).
+
 ### Added
 
 - **Reference-pattern verification tests** (`tests/test_reference_patterns.py`,

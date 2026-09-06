@@ -72,7 +72,7 @@ def _reset_grid_editor_state() -> None:
 def render_tab_grid() -> None:
     st.subheader("🎨 制作平面像素图案")
     st.markdown(
-        "<p class='crochet-section-note'>将照片整理成彩色针目网格，适合平面嵌花钩织、"
+        "<p class='sheet-note'>将照片整理成彩色针目网格，适合平面嵌花钩织、"
         "C2C 或十字绣。每格代表 1 针，符号对应一种毛线颜色。</p>",
         unsafe_allow_html=True,
     )

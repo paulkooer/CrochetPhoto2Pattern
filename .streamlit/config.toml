@@ -1,10 +1,45 @@
-# 与 app/ui/design_system.py 的 CSS 变量同源——避免首帧白闪与控件配色漂移
+# 与 app/theme.py 的令牌同源（tests/test_theme_tokens.py 断言一致）——
+# 避免首帧白闪与控件配色漂移。视觉概念：图解纸——冷白纸面、藏青墨色、
+# 一种记号扣黄只用于"你在哪 / 你做完了什么"。
 [theme]
 base = "light"
-primaryColor = "#a85442"
-backgroundColor = "#fffaf2"
-secondaryBackgroundColor = "#fffdf8"
-textColor = "#543f35"
+primaryColor = "#1d2440"
+backgroundColor = "#f6f7f4"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#1d2440"
+linkColor = "#1d2440"
+borderColor = "#848da2"
+dataframeBorderColor = "#cfd6e3"
+dataframeHeaderBackgroundColor = "#f6f7f4"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "3px"
+buttonRadius = "3px"
+# 提示框：白底 + 状态色左线（CSS），状态色本身走主题——警告用橙褐而非黄，
+# 以免与记号扣黄混淆。
+greenColor = "#1f6f43"
+yellowColor = "#9a4d00"
+orangeColor = "#9a4d00"
+redColor = "#a12a2a"
+blueColor = "#1d2440"
+greenBackgroundColor = "#ffffff"
+yellowBackgroundColor = "#ffffff"
+orangeBackgroundColor = "#ffffff"
+redBackgroundColor = "#ffffff"
+blueBackgroundColor = "#ffffff"
+# 字体：不加载 Web 字体（离线/隐私立场；大陆访问 Google Fonts 不可靠）。
+# 正文与控件走系统黑体，标题走系统宋体；西文与数字优先落在 Charter/
+# Palatino/Cambria（等宽内衬数字），中文再回落到宋体。
+font = "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", \"Source Han Sans SC\", \"Noto Sans SC\", system-ui, sans-serif"
+headingFont = "Charter, \"Palatino Linotype\", Palatino, Cambria, \"Songti SC\", STSong, \"Noto Serif CJK SC\", \"Source Han Serif SC\", \"Noto Serif SC\", SimSun, Georgia, serif"
+codeFont = "\"SF Mono\", Menlo, Consolas, \"Noto Sans Mono CJK SC\", monospace"
+headingFontSizes = ["2rem", "1.5rem", "1.25rem"]
+headingFontWeights = [700, 600, 600]
+
+[theme.sidebar]
+backgroundColor = "#e9ecf2"
+secondaryBackgroundColor = "#ffffff"
+borderColor = "#848da2"
 
 # 与 app/utils/images.py 的 MAX_UPLOAD_MB 同源（20MB）。应用层的文件大小
 # 门禁发生在 Streamlit 把上传读进内存之后——默认 200MB 的服务器上限会让

@@ -11,7 +11,7 @@ import io
 import re
 from typing import Any
 
-from app import PRODUCT_NAME
+from app import PRODUCT_NAME, theme
 from app.schemas import difficulty_label
 
 
@@ -113,11 +113,12 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -
             mat_rows.append([Paragraph(esc(mat), cell), Paragraph("", cell)])
     mat_table = Table(mat_rows, colWidths=[70 * mm, 90 * mm])
     mat_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#a85442")),
-        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cccccc")),
+        # 图解纸令牌：藏青表头 + 冷白斑马纹（与界面主题同源，见 app/theme.py）
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(theme.INK)),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor(theme.RULE)),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1),
-         [colors.white, colors.HexColor("#faf6f2")]),
+         [colors.white, colors.HexColor(theme.PAPER)]),
     ]))
     story.append(mat_table)
 
@@ -158,11 +159,11 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -
             rt = Table(rows, colWidths=[10 * mm, 14 * mm, 14 * mm, 22 * mm,
                                         116 * mm], repeatRows=1)
             rt.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#a85442")),
-                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cccccc")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(theme.INK)),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor(theme.RULE)),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1),
-                 [colors.white, colors.HexColor("#faf6f2")]),
+                 [colors.white, colors.HexColor(theme.PAPER)]),
             ]))
             story.append(rt)
 
