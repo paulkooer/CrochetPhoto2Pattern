@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "dataset": {
     "name": "authorized-real-photos",
     "version": "2026-08-30.1",
@@ -16,13 +16,27 @@
     "min_case_pass_rate": 0.8,
     "min_flare_accuracy": 0.8,
     "min_color_top3_accuracy": 0.8,
-    "min_pattern_valid_rate": 1.0
+    "min_pattern_valid_rate": 1.0,
+    "min_parade_export_rate": 1.0
   },
   "cases": [
     {
       "id": "standing-plain-001",
       "file": "standing-plain-001.jpg",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "rights": {
+        "copyright_basis": "written_permission",
+        "author_or_rightsholder": "contributor-001",
+        "source_url": null,
+        "license_identifier": null,
+        "license_url": null,
+        "permission_reference": "consent-receipt-standing-plain-001",
+        "verified_on": "2026-09-06",
+        "depicts_identifiable_person": true,
+        "subject_authorization": "documented_consent",
+        "evaluation_use_approved": true,
+        "redistribution_allowed": false
+      },
       "tags": ["full-body", "standing", "plain-background", "no-skirt"],
       "expected": {
         "parts": ["头部", "身体", "手臂", "腿部"],

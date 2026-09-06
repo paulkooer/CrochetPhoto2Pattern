@@ -121,6 +121,9 @@ not sent to a user-controlled endpoint. Models can be overridden with
 - `.env`, authorized evaluation photos, evaluation outputs, and physical-trial records
   are ignored by Git by default. Always review staged files for credentials, private
   photos, and personal information.
+- Public visibility is not authorization; disclaimers, credit, or "remove on notice" promises
+  cannot replace permission. See the [Third-Party Content Policy](THIRD_PARTY_CONTENT_EN.md)
+  and [Notice and Takedown Process](NOTICE_AND_TAKEDOWN_EN.md).
 
 ### Run the UI
 
@@ -173,8 +176,9 @@ separate PDF, pose, wheel, coverage, and dependency-security checks.
 
 ## Authorized real-photo evaluation
 
-The evaluation command records usage rights, purpose approval, SHA-256, and scene tags.
-It runs only local vision and does not send evaluation photos to an LLM provider:
+The evaluation command records per-image copyright evidence, subject authorization,
+purpose approval, SHA-256, and scene tags. It runs only local vision and does not send
+evaluation photos to an LLM provider:
 
 ```bash
 uv run crochet2pattern-eval --dataset eval_data/release-01 \

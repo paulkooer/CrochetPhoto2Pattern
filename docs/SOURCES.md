@@ -3,13 +3,14 @@
 **简体中文** | [English](SOURCES.en.md)
 
 本系统的领域假设不是拍脑袋定的：每一条例子都来自真实可钩的公开图解，
-逐字转录后先做机械代数核对，再落成可运行的测试夹具
+人工提取必要的针数代数与圈结构事实，先做机械核对，再落成可运行的测试夹具
 （[`tests/test_reference_patterns.py`](../tests/test_reference_patterns.py)，
 夹具总数以
 `uv run pytest tests/test_reference_patterns.py tests/test_reference_grid.py
 --collect-only -q` 为准，不在文档中手工维护）。真实图解五次推翻生成器
 先验，校验器随之修正——每处修正的
-证据都在下表。仅取针数代数与圈结构，不复制创作文本（遵循各源版权声明）。
+证据都在下表。这里只做参考验证，不训练或微调模型权重；仅取针数代数与圈结构，
+不复制创作文本或图解图片（遵循各源版权声明）。
 
 ## 校验器演进：五处先验修正
 

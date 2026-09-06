@@ -10,6 +10,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed
 
+- **Executable correctness is now a gate, not only a reported metric**: authorized-photo
+  evaluation adds `min_parade_export_rate` (100% by default). A failed complete
+  CrochetPARADE export now makes both the case and overall `passed=false`, preventing an
+  algebraically valid but unrepresentable result from becoming a release false positive.
+
 - **External AI (GPT) audit and second-review remediation (all 7 findings addressed)**:
   ① **the 5th prior correction** — decrease exceeding the pure-A
   pairing limit (dec > prev//2) downgraded from hard error to note:
@@ -105,6 +110,16 @@ formats may still evolve during Beta; incompatible changes must include migratio
   share the tokens (legacy terracotta removed).
 
 ### Added
+
+- **Per-image authorization evidence and rights-response process**: evaluation manifests move
+  to schema v2 and require every image to record its copyright basis, creator/rightsholder,
+  verification date, permission or license evidence, identifiable-subject status and separate
+  consent, evaluation approval, and redistribution scope. Dataset declarations must match the
+  per-case evidence. New bilingual third-party-content and notice/takedown policies plus a
+  structured Rights issue form make clear that credit, thanks, disclaimers, and “remove on
+  notice” promises are not authorization. The documentation also distinguishes current
+  stitch/round facts encoded as reference fixtures from model training: this repository has no
+  weight-training or fine-tuning pipeline, and web articles remain non-calibrating context only.
 
 - **Batch expansion (+2 full patterns / +4 fixtures)**: ① Stringy
   DingDing's "Scraptacular Bunnies" (no-sew scrap bunnies, verbatim) —

@@ -5,6 +5,8 @@
 真实评测只运行本地视觉路径，不调用 OpenAI、Anthropic 或第三方中转站。照片、
 带识别含义的文件名及报告默认放在 Git 忽略的 `eval_data/`、`eval_outputs/`；
 清单中的授权声明只是审计记录，不能替代适用地区所需的真实同意流程。
+免责声明、作者致谢和“通知即删”也不是授权，详见
+[第三方内容政策](../THIRD_PARTY_CONTENT.md)。
 
 ## 1. 建立数据集
 
@@ -19,10 +21,26 @@ shasum -a 256 eval_data/release-01/standing-plain-001.jpg
 
 清单必须包含：
 
-- `schema_version`：当前固定为 `1`。
+- `schema_version`：当前固定为 `2`。版本 1 不含逐图权利证据，不能再作为 G3
+  发布凭据；迁移时应逐张核实，不能从数据集级声明自动推断。
 - `dataset`：数据集名称、版本、权利基础、评测用途批准、个人数据标记和保留策略。
 - `thresholds`：最小样本数与发布质量阈值。
-- `cases`：稳定案例 ID、相对文件路径、SHA-256、场景标签和人工真值。
+- `cases`：稳定案例 ID、相对文件路径、SHA-256、逐图权利证据、场景标签和人工真值。
+
+每个案例的 `rights` 必须记录：
+
+- `copyright_basis`：`self_owned`、`written_permission`、`open_license` 或
+  `public_domain`；数据集混合多类来源时，`dataset.rights_basis` 必须为 `mixed`。
+- `author_or_rightsholder` 与 `verified_on`。
+- 自有/书面许可使用不含个人信息的 `permission_reference`；开放许可/公有领域使用
+  原始 `source_url`、精确 `license_identifier` 与 `license_url`。
+- `depicts_identifiable_person` 与独立的 `subject_authorization`。可识别人物必须是
+  `self` 或 `documented_consent`；开放许可不自动满足这一项。
+- `evaluation_use_approved=true` 与 `redistribution_allowed`。后者即使为 true 也不表示
+  应把原图提交到仓库。
+
+只有搜索结果、转载页、署名、感谢或下架承诺的图片均不合格。网络图片必须先找到
+原始资源页并逐项核实；无法确认时保持在评测集之外。
 
 部件和颜色必须使用项目规范名称。`dominant_colors` 可提供最多三个可接受主色；
 预测前三色命中任意一个即算成功。`tags` 只允许小写 ASCII，便于跨报告统计。
@@ -69,6 +87,8 @@ uv run pytest -q tests/test_eval_real.py
 - `flare_accuracy`：仅在提供 `flare` 真值的案例上统计。
 - `color_top3_accuracy`：仅在提供主色真值的案例上统计。
 - `pattern_valid_rate`：生成图解通过针数代数和塑形门禁的比例，发布默认必须为 100%。
+- `parade_export_rate`：生成图解能够完整导出并通过 CrochetPARADE DSL 语法自检的比例，
+  发布默认必须为 100%。该指标现已进入单案例和总体 `passed` 判定。
 
 这些指标衡量照片到图解的软件行为，不能证明实际尺寸、用线量、工时或成品可钩性。
 实体试钩需要独立记录毛线批次、小样密度、实际尺寸、耗材、工时和人工修改。

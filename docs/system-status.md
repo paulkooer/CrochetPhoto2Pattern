@@ -2,12 +2,12 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-08-31. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-09-06. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
 
-CrochetPhoto2Pattern is a **0.2.0b1 engineering candidate**. Stitch arithmetic, input
+CrochetPhoto2Pattern is a **0.2.0-beta.2 engineering candidate**. Stitch arithmetic, input
 gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
@@ -15,6 +15,10 @@ project must not claim validated dimensions, material usage, time, or finished-i
 ## Latest verification
 
 > New in 0.2.0-beta.2: CrochetPARADE DSL export (`--parade` / result page) with the second-tier executable-correctness metric `parade_export_rate`, a structure-v2 3D preview, core-contract JSON Schemas (docs/schemas/) and a grid dithering option.
+
+The current pre-PR checkout passes the complete local suite, Ruff, mypy, and diff checks.
+The table below remains the latest published multi-Python/extras snapshot and is tied to its
+named commit; the new branch must repeat the protected checks before merge.
 
 | Check | Result | Notes |
 |---|---|---|
@@ -40,7 +44,7 @@ and locked dependency audit
 |---|---|---|
 | G1 Reproducible source | **Passed** | reviewed commit, version, lock, changelog, and remote `main` agree |
 | G2 Supported-version automation | **Passed** | core 3.11–3.14, PDF/pose, and security audit are green |
-| G3 Authorized-photo baseline | **Blocked** | at least 30 stratified cases passing `evaluation.en.md` thresholds |
+| G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` thresholds including 100% Parade export |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |
 | G6 Product claims | **Beta-compliant** | UI/docs/exports retain single-photo, template, estimate, and trial boundaries |
@@ -48,6 +52,10 @@ and locked dependency audit
 Do not create a formal release tag until G1–G4 pass. Synthetic inputs, web articles,
 published yarn estimates, and more unit tests cannot substitute for authorized photos or
 independent physical samples.
+
+The repository has no corpus-ingestion, model-weight training, or fine-tuning pipeline.
+Public pattern sources contribute narrowly extracted stitch/round facts to deterministic
+reference tests; this does not make unlicensed web images eligible for G3.
 
 ## Delivered capabilities
 
