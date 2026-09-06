@@ -89,6 +89,11 @@
   已进安全眼材料行。
   https://www.zepiany.com/pages/es-bee1
   https://melonchillo.com/anillo-magico/
+- cbfiberworks 圈圈针 + Yarnhild（纹理针法逐字）：环圈成于反面
+  （反过来钩或 front-side 变体）、减针挂 4 环并拉过、双圈内卷警告、
+  环起处先钩普通短针。针法表新增纹理针族 3 词条。
+  https://cbfiberworks.com/how-to-make-loop-stitches-for-amigurumi/
+  https://yarnhild.com/how-to-crochet-the-loop-stitch/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1599,3 +1604,35 @@ def test_intl_melonchillo_dc_circle_start_height_law():
     assert result["ok"], result["issues"]
     assert not result["issues"]
     assert any("平滑塑形节奏" in n for n in result["notes"])
+
+
+# ── 国际印证：圈圈针（玩偶毛发/绵羊卷毛的纹理针法）────────────────────────
+# cbfiberworks「How to Make Loop Stitches for Amigurumi」逐字：
+# ① 基础/双圈圈针的环圈成于反面——amigurumi 要么反过来钩让毛圈朝外，
+#    要么用 front-side 变体（正面起圈）；环起处勿直接钩圈圈（先 1 圈
+#    普通短针）；② 减针=钩针上挂 4 环并拉过（基础 4 环/front-side 3 环/
+#    双圈 5 环）；③ 双圈圈针即使均匀加针也会使织物明显内卷（工艺警告）；
+# ④ 练习圆为标准 6→12→18→24（+6/圈）——圈圈针按短针计数，校验器
+#    原样通过。Yarnhild 补充：圈圈针明显费线。
+# https://cbfiberworks.com/how-to-make-loop-stitches-for-amigurumi/
+# https://yarnhild.com/how-to-crochet-the-loop-stitch/
+
+def test_intl_loop_stitch_texture_rounds_pass():
+    """圈圈针圆（6→24，+6/圈）：按短针计数原样过校验；工艺注随身。"""
+    circle = {"name": "圈圈练习圆", "type": "cylinder", "color": "白色",
+              "magic_ring": True,
+              "rounds": [
+                  {"row": 1, "stitches": 6,
+                   "notes": "环起 6 短针（普通短针——原文注：环起处勿直接"
+                            "钩圈圈针）；圈圈针环圈成于反面，需反过来钩"
+                            "或用 front-side 变体"},
+                  {"row": 2, "stitches": 12, "increase": 6,
+                   "notes": "加针=同针目 2 圈圈针"},
+                  {"row": 3, "stitches": 18, "increase": 6},
+                  {"row": 4, "stitches": 24, "increase": 6,
+                   "notes": "减针法：钩针挂 4 环并拉过（2→1）；双圈圈针"
+                            "会使织物内卷（原文工艺警告）；明显费线"},
+              ]}
+    result = validate_pattern({"parts": [circle]})
+    assert result["ok"], result["issues"]
+    assert not result["notes"]      # 6 倍数 ±6 干净系列

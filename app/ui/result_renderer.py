@@ -413,9 +413,14 @@ def render_results(result: dict, slot: str) -> None:
         "(4X,V)×6 = “4短针+1加针”重复 6 次。"
         "螺旋钩法（不引拔不翻转），每圈第一针挂记号扣；减针建议隐形减针（只挑前半针）"
     )
-    from app.models.stitches import glossary_table_markdown
+    from app.models.stitches import (
+        glossary_table_markdown,
+        symbol_strip_html,
+    )
 
     with st.expander("🪡 针法速查（五体系对照 · 含突尼斯针族）", expanded=False):
+        # 符号条走 markdown 通道（st.html 的净化器剥整个 <svg>，实测 1.60）
+        st.markdown(symbol_strip_html(), unsafe_allow_html=True)
         st.markdown(glossary_table_markdown())
     physical_parts = sum(
         max(1, int(part.get("quantity", 1)))

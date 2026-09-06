@@ -63,6 +63,21 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Chart-symbol glyphs + loop-stitch texture family (real-method
+  verification)**: ① the quick-reference expander now opens with a
+  **crochet chart symbol strip** — the ten base notation glyphs
+  (CH ellipse / SL dot / X / V / A / W / T / F / E / B teardrop) drawn
+  as inline SVGs, mirroring real pattern charts (routed through the
+  markdown channel per the established st.html-sanitizer lesson); ②
+  the glossary gains a **texture family of 3 entries** (verified
+  against cbfiberworks/Yarnhild verbatim): loop stitch (1→1 with loops
+  on the wrong side — turn inside out or use front-side variants,
+  never start the magic ring with loops, yarn-hungry), double loop
+  stitch (curl-inward craft warning), loop decrease (4 loops on hook
+  pulled through, 2→1); ③ one more real-pattern fixture: the loop
+  practice circle 6→24 (+6/round, passes clean — loop stitches count
+  as single crochets). 2 new tests (9 in the file, 825 total).
+
 - **Glossary completion and in-app surfacing**: ① added the missing W
   "three-in-one" entry (3 sc in one stitch, 1→3 — the notation was in
   our own legend but had no glossary entry; oval end caps and petal

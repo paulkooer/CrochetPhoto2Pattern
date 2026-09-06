@@ -81,6 +81,21 @@ STITCH_GLOSSARY: tuple[Stitch, ...] = (
            "边缘针", "锁 3-4 回引拔于起针成小环——齿状花边收口装饰"),
     Stitch("逆短针", "逆X", "crab st / rev sc", "crab st", "逆細編み", "1→1（反向）",
            "边缘针", "反方向钩短针成绳状边——常用于玩偶边缘收边"),
+    # ── 纹理针（针数如标注，另带表面纹理/方向性）────────────────────
+    Stitch("圈圈针", "loop st", "loop st", "loop st", "ループ編み",
+           "1→1（反面起圈）", "纹理针",
+           "钩短针时在指上绕大环——环圈成于**反面**：要么反过来钩让毛圈"
+           "朝外，要么用 front-side 变体（cbfiberworks）；环起处勿直接"
+           "钩圈圈（先 1 圈普通短针）；费线明显（Yarnhild）。玩偶毛发/"
+           "绵羊卷毛主力"),
+    Stitch("双圈圈针", "double loop", "double loop st", "double loop st",
+           "ダブルループ", "1→1（反面起圈）", "纹理针",
+           "一针内留两道环——更浓密但会使织物明显内卷，即使均匀加针"
+           "（cbfiberworks 工艺警告）"),
+    Stitch("圈圈减针", "loop dec", "loop st dec", "loop st dec", "ループ編み減らし",
+           "2→1（挂4环并拉过）", "纹理针",
+           "圈圈针减针：钩针上保留 4 个环再拉过（基础圈圈；front-side "
+           "变体 3 环、双圈 5 环）——cbfiberworks 逐字"),
     # ── 挑针与钩位修饰（不改针数，改纹理/朝向）──────────────────────
     Stitch("前/后半针", "FLO/BLO", "FL(O) / BL(O)", "FL / BL", "表山・裏山", "修饰",
            "挑针与钩位", "只挑半针：脊线圈（蜜蜂 BLO）、鞋底换面"
@@ -164,6 +179,46 @@ def _table_markdown(entries: tuple[Stitch, ...], title: str) -> str:
         f"| {s.symbol} | {s.zh} | {s.us} | {s.uk} | {s.jp} | "
         f"{s.count} | {s.note} |" for s in entries)
     return "\n".join(lines)
+
+
+def symbol_strip_html() -> str:
+    """钩织图解符号条（inline SVG）——与真实图解的图形记号对照。
+
+    通道注意：st.html 的 DOMPurify 净化器会剥掉整个 <svg>（1.60 实测），
+    必须走 st.markdown unsafe_allow_html（无空行、不经 markdown 重排）。
+    """
+    from app import theme
+
+    def _svg(paths: str) -> str:
+        return (f'<svg width="30" height="30" viewBox="0 0 24 24" '
+                f'fill="none" stroke="{theme.INK}" stroke-width="1.8" '
+                f'stroke-linecap="round" stroke-linejoin="round">'
+                f"{paths}</svg>")
+
+    _top = "M4.5 5.5 H19.5 M12 5.5 V19"
+    glyphs: tuple[tuple[str, str, str], ...] = (
+        ("锁针", "CH", _svg('<ellipse cx="12" cy="12" rx="8.5" ry="4.2"/>')),
+        ("引拔", "SL", _svg(f'<circle cx="12" cy="12" r="3.2" '
+                            f'fill="{theme.INK}"/>')),
+        ("短针", "X", _svg('<path d="M5 4.5 L19 19.5 M19 4.5 L5 19.5"/>')),
+        ("加针", "V", _svg('<path d="M5 5 L12 19 L19 5"/>')),
+        ("减针", "A", _svg('<path d="M5 19 L12 5 L19 19"/>')),
+        ("三放一", "W", _svg('<path d="M4 5 L8.5 19 L12 8 L15.5 19 L20 5"/>')),
+        ("中长针", "T", _svg(f"<path d=\"{_top}\"/>")),
+        ("长针", "F", _svg(f"<path d=\"{_top} M7.5 11.5 H16.5\"/>")),
+        ("长长针", "E", _svg(f"<path d=\"{_top} M7.5 10.5 H16.5 "
+                             f'M7.5 14.5 H16.5\"/>')),
+        ("枣形针", "B", _svg('<path d="M12 3.5 C18 9 18 15 12 20.5 '
+                             'C6 15 6 9 12 3.5 Z M10 9.5 V15.5 '
+                             'M12 8.5 V16.5 M14 9.5 V15.5"/>')),
+    )
+    items = "".join(
+        f'<div style="text-align:center;min-width:40px;">{svg}'
+        f'<div style="font-size:11px;color:{theme.INK_SOFT};'
+        f'margin-top:2px;white-space:nowrap;">{zh} {sym}</div></div>'
+        for zh, sym, svg in glyphs)
+    return (f'<div style="display:flex;flex-wrap:wrap;gap:8px 12px;'
+            f'align-items:flex-end;">{items}</div>')
 
 
 def glossary_table_markdown() -> str:

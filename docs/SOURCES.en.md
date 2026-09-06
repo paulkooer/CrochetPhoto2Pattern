@@ -38,6 +38,7 @@ generator's uniform (aX,V)×n grouping — the exporter skips such rounds".
 | [CYC abbreviations](https://www.craftyarncouncil.com/standards/crochet-abbreviations) | CrochetPARADE DSL token consistency | `test_parade_tokens_align_with_cyc_abbreviations` |
 | [Shelley Husband US↔UK chart](https://shelleyhusbandcrochet.com/uk-and-us-crochet-terms-conversion-help-and-chart/) | one-level offset conversion chain (sc=dc, hdc=htr, dc=tr, tr=dtr, dtr=ttr) — the glossary's UK column | `test_height_ladder_us_uk_offset_invariant` |
 | [Chinese symbol system (Zhihu/Reddit beginner guides)](https://zhuanlan.zhihu.com/p/2397749055) | X/T/F/E/V/A letter notation <-> sc/hdc/dc/tr — the glossary's Chinese and symbol columns | `tests/test_stitches.py` |
+| [cbfiberworks loop stitch](https://cbfiberworks.com/how-to-make-loop-stitches-for-amigurumi/) / [Yarnhild](https://yarnhild.com/how-to-crochet-the-loop-stitch/) | texture family: loops face the wrong side (turn inside out / front-side variants), decrease holds 4 loops on hook, double-loop curl warning, yarn-hungry | `test_intl_loop_stitch_texture_rounds_pass`, `test_loop_stitch_family_entries` |
 | [Lion Brand classic granny](https://www.lionbrand.com/community/blog/how-to-crochet-a-classic-granny-square/) | corner topology +12/round, 76-st border | `test_intl_lionbrand_classic_granny_passes` |
 
 ### Professional studios / independent designers

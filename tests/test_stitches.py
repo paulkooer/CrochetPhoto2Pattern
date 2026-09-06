@@ -19,12 +19,13 @@ from app.models.stitches import (
     glossary_table_markdown,
 )
 
-_FAMILIES = {"基础针", "加减针", "簇生针", "边缘针", "挑针与钩位"}
-_FAMILIES.add("突尼斯针")
+_FAMILIES = {"基础针", "加减针", "簇生针", "边缘针", "挑针与钩位",
+             "纹理针", "突尼斯针"}
 _COUNTS = {
     "1→1", "0→1（新基底）", "—（连接）", "1→2", "1→3", "2→1", "3→1",
     "4→1", "跳过（不钩）", "中性（进出各1）", "装饰（不入针数）",
     "1→1（反向）", "修饰", "1→1（按前进程）", "—（行结构）",
+    "1→1（反面起圈）", "2→1（挂4环并拉过）",
 }
 
 
@@ -109,3 +110,25 @@ def test_glossary_table_markdown_renders_both_tables():
     assert md.count("| 记号 | 针法 | US | UK | 日语 | 针数 | 说明 |") == 2
     assert "docs/SOURCES.md" in md
     assert "| W | 三放一 |" in md and "| tss | 突尼斯简单针 |" in md
+
+
+def test_loop_stitch_family_entries():
+    """纹理针族（圈圈针三词条）——反面起圈语义 + 挂4环减针。"""
+    texture = [s for s in STITCH_GLOSSARY if s.family == "纹理针"]
+    assert {s.symbol for s in texture} == {"loop st", "double loop",
+                                           "loop dec"}
+    loop = next(s for s in texture if s.symbol == "loop st")
+    assert loop.count == "1→1（反面起圈）"
+    assert "反面" in loop.note and "front-side" in loop.note
+    dec = next(s for s in texture if s.symbol == "loop dec")
+    assert dec.count == "2→1（挂4环并拉过）"
+
+
+def test_symbol_strip_renders_chart_glyphs():
+    """符号条：inline SVG 走 markdown 通道；十个基础记号图形齐全。"""
+    from app.models.stitches import symbol_strip_html
+    html = symbol_strip_html()
+    assert html.count("<svg") == 10
+    for label in ("锁针 CH", "引拔 SL", "短针 X", "加针 V", "减针 A",
+                  "三放一 W", "中长针 T", "长针 F", "长长针 E", "枣形针 B"):
+        assert label in html
