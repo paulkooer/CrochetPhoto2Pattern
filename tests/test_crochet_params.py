@@ -830,3 +830,13 @@ def test_materials_wire_row_for_limbs_only():
 
     ear_only = _params_for(["头部", "耳朵"])
     assert all(m["item"] != "定型线（可选）" for m in ear_only["materials"])
+
+
+def test_assembly_neck_stuffing_note():
+    """头颈缝合步骤带塞棉紧实提示（AmiguRoom 评论区试钩共识）——
+    基于名称的旧路径与装配图路径都要有。"""
+    params = _params_for(["头部", "身体", "手臂", "腿部"])
+    asm = params["assembly_instructions"]
+    if not isinstance(asm, str):
+        asm = "".join(asm)
+    assert "塞棉紧实" in asm and "前倾" in asm

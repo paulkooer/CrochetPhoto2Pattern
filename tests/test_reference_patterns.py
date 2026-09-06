@@ -94,6 +94,11 @@
   环起处先钩普通短针。针法表新增纹理针族 3 词条。
   https://cbfiberworks.com/how-to-make-loop-stitches-for-amigurumi/
   https://yarnhild.com/how-to-crochet-the-loop-stitch/
+- AmiguRoom 俄语熊（Юлия Дейнеги，全文逐字 + 78 条评论）：头部
+  6↔3 等分切换完整实证（(23 сбн, пр)×3 增减两向）——与橘子先生帽子
+  3 等分拓扑跨语言互证；腿部 17 圈漂移减针（语料最长）；尾巴
+  5 起针；评论区试钩共识（颈部塞棉紧实/头部小钩针/尾巴坐姿配重）
+  进组装说明。https://amigurum.ru/2018/04/medvezhonok-amigurumi.html
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1636,3 +1641,146 @@ def test_intl_loop_stitch_texture_rounds_pass():
     result = validate_pattern({"parts": [circle]})
     assert result["ok"], result["issues"]
     assert not result["notes"]      # 6 倍数 ±6 干净系列
+
+
+# ── 国际印证：AmiguRoom 俄语熊（Юлия Дейнеги，全文逐字 + 78 条评论）────────
+# 语料最大的单源之一，三个新结构：
+# ① 头部 6↔3 等分切换完整实证——6 等分增到 72 后 R13-14 用
+#    (23 сбн, пр)×3 / (24, пр)×3 切成 3 等分（72→75→78），收口镜像
+#    R26-27 3 等分减回 72 再 6 等分；身体收尾同为 −3/圈 3 等分递减
+#    （48→45→…→30）——与橘子先生帽子 3 等分拓扑跨语言互证；
+# ② 语料最长"漂移减针"序列：腿部 R13-29 逐圈 −1~−6、减针点逐圈换位
+#    （脚踝塑形）；手臂 R17-24 同法 8 圈；尾巴 5 起针再添一例；
+# ③ 评论区试钩共识进组装说明：头颈缝合处塞棉紧实防头部前倾；
+#    头部用小一号钩针更密实；尾巴可作坐姿配重；耳朵对折缝合不填充。
+# 另：评论区数学混淆线程（пр 当 1 针数 → 12≠18）正是校验器拦截的
+# 误转录类型——加针=1 针目 2 短针的语义再次被社区确认。
+# https://amigurum.ru/2018/04/medvezhonok-amigurumi.html
+# https://vk.com/public142349791（脸颊减针位锚定加针位：塑形位置语义）
+
+def test_intl_ru_deynega_bear_head_sector_transition():
+    """俄语熊头 34 圈：6 等分 → 3 等分（+3/圈）→ 平 → 3 等分 → 6 等分。"""
+    head = {"name": "голова", "type": "cylinder", "color": "коричневый",
+            "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 6},
+                {"row": 2, "stitches": 12, "increase": 6},
+                {"row": 3, "stitches": 18, "increase": 6},
+                {"row": 4, "stitches": 24, "increase": 6},
+                {"row": 5, "stitches": 30, "increase": 6},
+                {"row": 6, "stitches": 36, "increase": 6},
+                {"row": 7, "stitches": 42, "increase": 6},
+                {"row": 8, "stitches": 48, "increase": 6},
+                {"row": 9, "stitches": 54, "increase": 6},
+                {"row": 10, "stitches": 60, "increase": 6},
+                {"row": 11, "stitches": 66, "increase": 6},
+                {"row": 12, "stitches": 72, "increase": 6},
+                {"row": 13, "stitches": 75, "increase": 3,
+                 "notes": "(23 сбн, пр)×3——切换为 3 等分（+3/圈）"},
+                {"row": 14, "stitches": 78, "increase": 3,
+                 "notes": "(24 сбн, пр)×3"},
+                *({"row": r, "stitches": 78} for r in range(15, 26)),
+                {"row": 26, "stitches": 75, "decrease": 3,
+                 "notes": "(24 сбн, уб)×3——3 等分减"},
+                {"row": 27, "stitches": 72, "decrease": 3,
+                 "notes": "(23 сбн, уб)×3——切回 6 等分"},
+                {"row": 28, "stitches": 66, "decrease": 6},
+                {"row": 29, "stitches": 60, "decrease": 6},
+                {"row": 30, "stitches": 54, "decrease": 6},
+                {"row": 31, "stitches": 48, "decrease": 6},
+                {"row": 32, "stitches": 42, "decrease": 6},
+                {"row": 33, "stitches": 36, "decrease": 6},
+                {"row": 34, "stitches": 30, "decrease": 6},
+            ]}
+    result = validate_pattern({"parts": [head]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])   # 75/78
+
+
+def test_intl_ru_deynega_bear_legs_drifting_decreases():
+    """俄语熊腿 R13-30：17 圈漂移减针（减针点逐圈换位塑形脚踝）。"""
+    leg = {"name": "ноги", "type": "cylinder", "color": "коричневый",
+           "magic_ring": False,
+           "rounds": [
+               {"row": 12, "stitches": 36,
+                "notes": "(5 сбн, уб)×6（起于 42 针脚掌）"},
+               {"row": 13, "stitches": 31, "decrease": 5,
+                "notes": "сбн, уб, 11 сбн, (уб, сбн)×2, уб, 11 сбн, уб, сбн"
+                         "——减针位逐圈漂移"},
+               {"row": 14, "stitches": 25, "decrease": 6,
+                "notes": "2 сбн, уб, 6 сбн, (уб, сбн)×3, уб, 6 сбн, уб, 2 сбн"},
+               {"row": 15, "stitches": 25},
+               {"row": 16, "stitches": 25},
+               {"row": 17, "stitches": 25},
+               {"row": 18, "stitches": 25},
+               {"row": 19, "stitches": 24, "decrease": 1,
+                "notes": "5 сбн, уб, 18 сбн"},
+               {"row": 20, "stitches": 23, "decrease": 1,
+                "notes": "11 сбн, уб, 11 сбн"},
+               {"row": 21, "stitches": 22, "decrease": 1,
+                "notes": "16 сбн, уб, 5 сбн"},
+               {"row": 22, "stitches": 21, "decrease": 1,
+                "notes": "20 сбн, уб"},
+               {"row": 23, "stitches": 20, "decrease": 1,
+                "notes": "4 сбн, уб, 15 сбн"},
+               {"row": 24, "stitches": 19, "decrease": 1,
+                "notes": "9 сбн, уб, 9 сбн"},
+               {"row": 25, "stitches": 18, "decrease": 1,
+                "notes": "13 сбн, уб, 4 сбн"},
+               {"row": 26, "stitches": 17, "decrease": 1,
+                "notes": "16 сбн, уб"},
+               {"row": 27, "stitches": 16, "decrease": 1,
+                "notes": "3 сбн, уб, 12 сбн"},
+               {"row": 28, "stitches": 15, "decrease": 1,
+                "notes": "7 сбн, уб, 7 сбн"},
+               {"row": 29, "stitches": 14, "decrease": 1,
+                "notes": "10 сбн, уб, 3 сбн"},
+               {"row": 30, "stitches": 12, "decrease": 2,
+                "notes": "(5 сбн, уб)×2"},
+           ]}
+    result = validate_pattern({"parts": [leg]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+def test_intl_ru_deynega_bear_tail_five_start_and_arms():
+    """俄语熊尾 5 起针（再添一例）+ 臂 R17-24 漂移减针 8 圈。"""
+    tail = {"name": "хвост", "type": "cylinder", "color": "белый",
+            "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 5},
+                {"row": 2, "stitches": 10, "increase": 5},
+                {"row": 3, "stitches": 15, "increase": 5},
+                {"row": 4, "stitches": 15},
+                {"row": 5, "stitches": 15},
+                {"row": 6, "stitches": 15},
+                {"row": 7, "stitches": 15},
+                {"row": 8, "stitches": 10, "decrease": 5,
+                 "notes": "(сбн, уб)×5；尾巴可作坐姿配重（评论区试钩）"},
+            ]}
+    arm = {"name": "ручки", "type": "cylinder", "color": "коричневый",
+           "magic_ring": False,
+           "rounds": [
+               {"row": 17, "stitches": 17, "decrease": 1,
+                "notes": "16 сбн, уб（自 18 针）"},
+               {"row": 18, "stitches": 16, "decrease": 1,
+                "notes": "3 сбн, уб, 12 сбн"},
+               {"row": 19, "stitches": 15, "decrease": 1,
+                "notes": "7 сбн, уб, 7 сбн"},
+               {"row": 20, "stitches": 14, "decrease": 1,
+                "notes": "10 сбн, уб, 3 сбн"},
+               {"row": 21, "stitches": 13, "decrease": 1,
+                "notes": "12 сбн, уб"},
+               {"row": 22, "stitches": 12, "decrease": 1,
+                "notes": "3 сбн, уб, 8 сбн"},
+               {"row": 23, "stitches": 11, "decrease": 1,
+                "notes": "5 сбн, уб, 5 сбн"},
+               {"row": 24, "stitches": 10, "decrease": 1,
+                "notes": "7 сбн, уб, 2 сбн"},
+           ]}
+    result = validate_pattern({"parts": [tail, arm]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])

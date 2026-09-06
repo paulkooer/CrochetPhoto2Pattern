@@ -63,6 +63,25 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Heavyweight Russian verification (AmiguRoom bear, Yulia Deinega)**:
+  full text verbatim plus 78 comment threads of trial-crochet
+  discussion. ① The **complete 6<->3 sector transition** — after
+  growing in 6 sectors to 72, the head switches to 3 sectors via
+  (23 sc, inc) x 3 (72->75->78, +3/round), with the mirrored 3-sector
+  decrease on closing and the body tapering the same way — a
+  cross-language corroboration of Mr. Orange's 3-sector hat and the
+  corpus's first fixture with the transition in both directions (full
+  34-round head); ② the **longest drifting-decrease run** in the
+  corpus: leg rounds 13-30 decrease by 1-6 per round with the decrease
+  point shifting every round (ankle shaping), and 8 more rounds on the
+  arms; ③ a third 5-start tail (works as a sitting counterweight per
+  the comments — into the assembly notes); ④ **the assembly notes now
+  say to pack the neck firmly to keep the head from tipping forward**
+  (both the name-based and assembly-graph paths), test-pinned; ⑤ the
+  comment thread where readers misread пр as one stitch (12≠18)
+  re-confirms the increase semantics the validator enforces.
+  3 fixtures (62 in the file, 828 total).
+
 - **Chart-symbol glyphs + loop-stitch texture family (real-method
   verification)**: ① the quick-reference expander now opens with a
   **crochet chart symbol strip** — the ten base notation glyphs

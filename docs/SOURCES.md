@@ -35,6 +35,7 @@
 | [Shelley Husband US↔UK 对照](https://shelleyhusbandcrochet.com/uk-and-us-crochet-terms-conversion-help-and-chart/) | 错位一级对照链（sc=dc、hdc=htr、dc=tr、tr=dtr、dtr=ttr）——针法表 UK 列 | `test_height_ladder_us_uk_offset_invariant` |
 | [中文图解符号体系（知乎/Reddit 新手指南）](https://zhuanlan.zhihu.com/p/2397749055) | X/T/F/E/V/A 字母记号 ↔ sc/hdc/dc/tr——针法表中文列与符号列 | `tests/test_stitches.py` |
 | [cbfiberworks 圈圈针](https://cbfiberworks.com/how-to-make-loop-stitches-for-amigurumi/) / [Yarnhild](https://yarnhild.com/how-to-crochet-the-loop-stitch/) | 纹理针族：环圈成于反面（反过来钩/front-side 变体）、减针挂 4 环并拉过、双圈内卷警告、费线提示 | `test_intl_loop_stitch_texture_rounds_pass`、`test_loop_stitch_family_entries` |
+| [AmiguRoom 俄语熊](https://amigurum.ru/2018/04/medvezhonok-amigurumi.html)（Юлия Дейнеги） | 头部 6↔3 等分切换增减两向（与橘子先生互证）、17 圈漂移减针、5 起针尾巴；评论区共识：颈部塞棉紧实 → 组装说明 | `test_intl_ru_deynega_bear_*`、`test_assembly_neck_stuffing_note` |
 | [Lion Brand 经典 granny](https://www.lionbrand.com/community/blog/how-to-crochet-a-classic-granny-square/) | 四角拓扑 +12/圈、边圈 76 | `test_intl_lionbrand_classic_granny_passes` |
 
 ### 专业设计工作室 / 独立设计师

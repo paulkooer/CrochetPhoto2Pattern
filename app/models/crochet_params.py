@@ -650,7 +650,9 @@ def build_assembly(part_names, skirt_style: str = "ring",
     # rather than pretending to infer missing connection nodes during import.
     if assembly_plan is None:
         if "头部" in part_names and "身体" in part_names and not one_piece:
-            steps.append("用隐形缝合法将头部接合到身体顶部")
+            steps.append("用隐形缝合法将头部接合到身体顶部；"
+                         "头颈缝合处塞棉紧实，防止头部前倾"
+                         "（AmiguRoom 俄语熊评论区试钩共识）")
         if "手臂" in part_names:
             steps.append(placement(
                 "手臂", f"手臂对称缝合到身体两侧上方{opening_note('手臂')}",
@@ -711,7 +713,9 @@ def build_assembly(part_names, skirt_style: str = "ring",
         connected_sources.add(source)
         target_label = "一体件身体段" if target == _ONE_PIECE_NAME else target
         if source == "头部" and target == "身体":
-            steps.append("用隐形缝合法将头部接合到身体顶部")
+            steps.append("用隐形缝合法将头部接合到身体顶部；"
+                         "头颈缝合处塞棉紧实，防止头部前倾"
+                         "（AmiguRoom 俄语熊评论区试钩共识）")
         elif source == "手臂" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(placement(
                 "手臂", f"手臂对称缝合到{target_label}两侧上方{opening_note('手臂')}",
