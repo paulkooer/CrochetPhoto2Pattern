@@ -2,6 +2,7 @@
 
 CI 之外的成本几乎为零，但能拦住"把 .env 提交上去"这类最常见的泄漏事故。
 """
+import ast
 import re
 import shutil
 import subprocess
@@ -265,11 +266,13 @@ def test_svg_never_flows_into_st_html():
     app_root = _REPO / "app"
     offenders: list[str] = []
     for py in app_root.rglob("*.py"):
-        for lineno, line in enumerate(
-                py.read_text(encoding="utf-8").splitlines(), 1):
-            stripped = line.strip()
-            if stripped.startswith("#"):
-                continue
-            if "st.html(" in line:
-                offenders.append(f"{py.relative_to(_REPO)}:{lineno}: {line.strip()}")
-    assert not offenders, "app 内不得调用 st.html(：" + "; ".join(offenders)
+        source = py.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(py))
+        for node in ast.walk(tree):
+            func = node.func if isinstance(node, ast.Call) else None
+            if (isinstance(func, ast.Attribute) and func.attr == "html"
+                    and isinstance(func.value, ast.Name)
+                    and func.value.id == "st"):
+                offenders.append(
+                    f"{py.relative_to(_REPO)}:{node.lineno}: st.html call")
+    assert not offenders, "app 内不得调用 st.html：" + "; ".join(offenders)

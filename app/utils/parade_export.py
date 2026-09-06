@@ -57,24 +57,25 @@ def _round_tokens(prev_stitches: int, rd: dict[str, Any]) -> list[str] | None:
     本项目生成器的圈均为均匀分组（六等分拓扑/钳制），因此：
     - 无加无减：`Nsc`
     - 加针 inc：`M[base_sc,sc2inc]`（M=inc，base=prev//inc-1，需整除）
-    - 减针 dec：`M[base_sc,sc2tog]`（M=dec，base=prev//dec-1，需整除）
+    - 减针 dec：`M[base_sc,sc2tog]`（M=dec，base=prev//dec-2，需整除）
     返回 None 表示该圈形态超出可译子集（调用方记 warning 并跳过该圈）。
     """
     stitches = int(rd.get("stitches", 0))
     inc = int(rd.get("increase", 0) or 0)
     dec = int(rd.get("decrease", 0) or 0)
     if inc and dec:
-        return None  # 校验器本就禁止；防御
+        return None  # 可钩但超出本导出器的均匀分组子集
     if inc == 0 and dec == 0:
         return [f"{stitches}sc"] if stitches > 0 else None
     groups = inc or dec
     if groups <= 0 or prev_stitches % groups:
         return None
-    base = prev_stitches // groups - 1
+    # 加针组消耗 base+1、产出 base+2；减针组消耗 base+2、产出
+    # base+1。两者不能共用同一个 base 偏移。
+    base = prev_stitches // groups - (1 if inc else 2)
     if base < 0:
         return None
-    # 组 = (base_sc, sc2inc|sc2tog)：消耗 base+1 针，加针产 base+2、减针产 base
-    produced = groups * (base + 2 if inc else base)
+    produced = groups * (base + 2 if inc else base + 1)
     if produced != stitches:
         return None
     if base == 0:
@@ -118,14 +119,11 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
             if tokens is None:
                 warnings.append(
                     f"{name} 第 {rd.get('row')} 圈形态超出可译子集"
-                    f"（{prev}→{rd.get('stitches')}），已跳过")
-                # 已知限制（外部 AI 审核）：跳过圈仍更新 prev，后续圈以
-                # "虚拟前圈"为基础翻译——token 语法可过 lint，但与上一条
-                # 实际发射的圈之间可能存在计数不连续。lint 只查语法不查
-                # 连续性；结构化"可表达性分类"（无损/仅保针数/跳过）为
-                # 改进方向，暂以 warning 留痕。
-                prev = int(rd.get("stitches", prev))
-                continue
+                    f"（{prev}→{rd.get('stitches')}），该圈及后续圈已跳过")
+                # 缺失一次结构变化后，后续 token 即使语法可过 lint，也不再
+                # 与最后实际发射圈连续。只导出当前部件的有效前缀，避免用
+                # "虚拟前圈"制造一份表面合法、针数却断裂的 DSL。
+                break
             color_hex = _hex_of(rd.get("color"))
             # 仅在换色边界输出指令（连续同色圈不重复）——条纹件（如
             # Supergurumi 蜜蜂 55 圈 6 条条纹）从逐圈重复降为每边界一条

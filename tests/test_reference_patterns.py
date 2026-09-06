@@ -70,8 +70,9 @@
   https://www.lionbrand.com/community/blog/how-to-crochet-a-classic-granny-square/
   https://www.marchingnorth.com/solid-crochet-granny-square-pattern/
 - Chibiscraft 小黄人（AlwaysFreeAmigurumi 转载，全文逐字）：迄今语料
-  最密真实减针圈（18 针内 sc4tog+4×sc2tog，减针当量 8 ≤ 9）正面印证
-  "dec ≤ prev//2" 硬规则（保持硬错误，与加针超源降级成对照）；鞋底
+  最密真实减针圈（18 针内 sc4tog+5×sc2tog，净减 8；早期转录注释误写
+  4×，现保留勘误记录）；它虽满足 8 ≤ 9，却不能证明纯 A 配对是通用
+  硬规则，该先验后来由 4→1 的 sc4tog 机械反例推翻；鞋底
   BLO/FLO 交替成型；头身收尾 R39 dec = 18//2 边界值；椭圆起针第三例
   （锁针 6 → [12]）。
   https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/
@@ -328,7 +329,7 @@ def test_published_drops_apple_passes_validation():
     """DROPS 苹果（7 针起环、+7 增圈、非 6 倍数平针）必须通过校验。
 
     默认 gauge（classic）的平滑上限 ±6：+7 圈与 7/14/21/28/35 非等分圈
-    都应降级为 notes；可执行性硬检查（代数/inc≤prev/dec≤prev/2）全过。
+    都应降级为 notes；逐圈代数与有效针数检查全过。
     """
     result = validate_pattern({"parts": _drops_apple_parts()})
     assert result["ok"], result["issues"]
@@ -343,7 +344,7 @@ def test_drops_apple_exports_clean_parade_dsl():
     assert lint_parade_dsl(dsl) == []
     assert "sc7inc" in dsl            # 7 针环形起针（scNinc 形式）
     assert "7[sc,sc2inc]" in dsl      # 14→21：base=1 对齐官方示例写法
-    assert "6[sc,sc2tog]" in dsl      # 12→6 收口（sc2tog 与 CYC 缩写一致）
+    assert "6sc2tog" in dsl           # 12→6：6 次二并一消费 12 个源针
 
 
 def test_drops_stem_chain_start_exports_with_honest_warning():
@@ -424,7 +425,7 @@ def test_kangaroo_baby_asymmetric_rounds_still_translate_to_parade():
     dsl = export_parade_dsl({"params": {"parts": [baby]}})
     assert lint_parade_dsl(dsl) == []
     assert "3[5sc,sc2inc]" in dsl    # 18→21（聚合成 3 组均匀增）
-    assert "3[5sc,sc2tog]" in dsl    # 18→15
+    assert "3[4sc,sc2tog]" in dsl    # 18→15：每组消费 4+2 针
     assert "超出可译子集" not in dsl  # 全圈可译，无需诚实降级
 
 
@@ -568,8 +569,8 @@ def test_bee_body_translates_fully_to_parade():
     dsl = export_parade_dsl({"params": {"parts": [_bee_body_part()]}})
     assert "超出可译子集" not in dsl
     assert "4[3sc,sc2inc]" in dsl    # 16→20（BLO 圈的聚合翻译）
-    assert "6[10sc,sc2tog]" in dsl   # 66→60（错位圈的聚合翻译）
-    assert "3[2sc,sc2tog]" in dsl    # 9→6 收尾
+    assert "6[9sc,sc2tog]" in dsl    # 66→60（每组消费 9+2 针）
+    assert "3[sc,sc2tog]" in dsl     # 9→6 收尾
     assert lint_parade_dsl(dsl) == []
 
 
@@ -944,9 +945,9 @@ def test_intl_elephant_trunk_cone_taper_passes():
     assert result["ok"], result["issues"]
     assert any("非 6 的倍数" in n for n in result["notes"])
     dsl = export_parade_dsl({"params": {"parts": [trunk]}})
-    # -3/圈的减针聚合计数可译为均匀分组（18%3=0 → 3[5sc,sc2tog]）
+    # -3/圈的减针聚合计数可译为均匀分组（18%3=0 → 3[4sc,sc2tog]）
     assert lint_parade_dsl(dsl) == []
-    assert "3[5sc,sc2tog]" in dsl and "3[2sc,sc2tog]" in dsl
+    assert "3[4sc,sc2tog]" in dsl and "3[sc,sc2tog]" in dsl
 
 
 # ── 中文社区印证 4：软糖系列（迷你挂件，编织人生图片图解，视觉转录）──────────
@@ -1287,10 +1288,9 @@ def test_intl_solid_granny_space_increase_downgraded_to_note():
 # 全文逐字抓取（AlwaysFreeAmigurumi 转载，设计师 Febby Pranajaya）。
 # 三个案例：
 # ① 腿 R3 = "BLO 2sc, 2dec, sc4tog, 2dec, 2sc, dec (10)"——18 源针里
-#    sc4tog×1 + sc2tog×4，减针当量 8，恰好 ≤ prev//2 = 9：迄今语料最密
-#    真实减针圈仍不越"dec ≤ prev//2"硬规则 → **减针规则获正面印证，
-#    保持硬错误**（与加针超源被降级形成对照：减针在真实图解中确实
-#    受物理配对限制，最密圈也只踩到 8/9）。
+#    sc4tog×1 + sc2tog×5，净减 3+5=8，故 10 = 18−8。早期转录注释
+#    曾误写 4×sc2tog；勘误记录保留在 CHANGELOG。该圈虽满足 8 ≤ 9，
+#    却不能证明纯 A 配对是通用硬规则；4→1 的 sc4tog 反例后来推翻该先验。
 # ② 鞋底成型：R3 BLO 减 / R5 FLO 增 / R6 BLO 减交替——前后半针换面
 #    翻出鞋底；原文工艺注"BLO 减针用普通减针（非隐形）"。
 # ③ 头身收尾 R35-39：54→45→36→27→18→9（每圈 dec 9），R39"9-dec"
@@ -1300,7 +1300,7 @@ def test_intl_solid_granny_space_increase_downgraded_to_note():
 # https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/
 
 def test_intl_minion_leg_densest_real_decrease_round():
-    """小黄人腿：sc4tog 密集减针圈（dec 8 ≤ 9 硬规则存活）+ 鞋底 BLO/FLO。"""
+    """小黄人腿：sc4tog + 5×sc2tog 净减 8，以及鞋底 BLO/FLO。"""
     leg = {"name": "腿", "type": "cylinder", "color": "黑色",
            "magic_ring": False,
            "rounds": [
@@ -1325,7 +1325,7 @@ def test_intl_minion_leg_densest_real_decrease_round():
            ]}
     result = validate_pattern({"parts": [leg]})
     assert result["ok"], result["issues"]
-    assert not result["issues"]      # dec 8 ≤ 9：硬规则不触发
+    assert not result["issues"]      # 10 = 18 + 0 − (5×1 + 1×3)
     assert result["notes"]           # 18→10 跳变 + 非 6 倍数如实降提示
 
 

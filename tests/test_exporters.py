@@ -87,11 +87,12 @@ def test_repeat_notation_uniform_and_uneven():
     from app.utils.exporters import _repeat_notation
     assert _repeat_notation(18, 12, 6, 0) == "(X,V)×6"
     assert _repeat_notation(12, 6, 6, 0) == "(V)×6"       # 环起首圈全增
-    assert _repeat_notation(6, 12, 0, 6) == "(X,A)×6"     # 收口
+    assert _repeat_notation(6, 12, 0, 6) == "(A)×6"       # 每组消费 2 针
     assert _repeat_notation(21, 18, 3, 0) == "(5X,V)×3"   # 非 6 等分组
     assert _repeat_notation(16, 12, 4, 0) == "(2X,V)×4"
     assert _repeat_notation(24, 24, 0, 0) is None          # 平针圈无重复语义
     assert _repeat_notation(13, 12, 1, 0) == "(11X,V)"     # 单次增（与 parade 单分组同口径）
+    assert _repeat_notation(11, 12, 0, 1) == "(10X,A)"     # 单次减同理消费 2 针
     assert _repeat_notation(25, 24, 6, 0) is None          # 聚合不自洽
 
 

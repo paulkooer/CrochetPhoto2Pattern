@@ -11,17 +11,17 @@
 先验，校验器随之修正——每处修正的
 证据都在下表。仅取针数代数与圈结构，不复制创作文本（遵循各源版权声明）。
 
-## 校验器演进：四先验修正 + 一规则存活
+## 校验器演进：五处先验修正
 
 | # | 规则 | 修正 | 驱动证据 | 夹具 |
 |---|------|------|----------|------|
 | 1 | 非 6 倍数圈 | 硬错误 → notes | Clover AKIHIRO 22 针腿 / 16 针臂 / 9 针尾 | `test_published_akihiro_*` |
-| 2 | 相邻圈跳变 ±6 | 硬错误 → notes（`allow_wide_jump` 白名单保留） | Spin a Yarn 8→16 倍增圈；Ms Premise-Conclusion 理想球体 sin 轮廓 | `test_professional_eight_stitch_ring_start_passes_validation`、`test_ideal_sphere_*` |
+| 2 | 相邻圈跳变 ±6 | 硬错误 → notes（`allow_wide_jump` 只抑制该 note） | Spin a Yarn 8→16 倍增圈；Ms Premise-Conclusion 理想球体 sin 轮廓 | `test_professional_eight_stitch_ring_start_passes_validation`、`test_ideal_sphere_*` |
 | 3 | 同圈加减速混用 | 硬错误 → notes | 紫柚手作垂耳兔眼窝圈 7X,7V,A,7V,7X | `test_cn_rabbit_head_face_shaping_passes` |
 | 4 | 加针 ≤ 上圈源针 | 硬错误 → notes | granny 实心款第 2 圈：+16 加进 4 个锁针角空间（12 源针） | `test_intl_solid_granny_space_increase_downgraded_to_note` |
 | 5 | 减针超纯 A（2并1）配对上限 | 硬错误 → notes（外部 AI 审核确认） | 机械反例：4 针经一次 sc4tog 收到 1 针（3 > 2，完全可钩）；小黄人 8 ≤ 9 的最密圈在纯 A 配对内 | `test_validator_downgrades_incapable_v_and_incapable_a` |
 
-降级 ≠ 放水：硬错误现在只留"代数断裂 + 针数 < 1"；notes 分两类——
+降级 ≠ 放水：硬错误保留代数断裂、空圈、非数字字段与针数 < 1；notes 分两类——
 非 6 倍数/超平滑跳变只提示（正常导出），混圈与超均匀分组表达的圈由
 parade 导出跳过并留 warning。
 
@@ -55,7 +55,7 @@ parade 导出跳过并留 warning。
 | [Craftably Ever After 坐姿熊](https://craftablyeverafter.wordpress.com/2022/04/22/patchy-bear-crochet-pattern/) | 锁针并腿身体 R15=36（13sc+2ch+16sc+2sc+3sc 逐字自报）；椭圆起针 [10]；眼位"帽沿上 2 行、间距 2 针" | `test_intl_patchy_bear_chain_joined_body_passes`、`test_intl_snout_oval_start_verbatim` |
 | [Squirrel Picnic Motley Bear](https://squirrelpicnic.com/2015/04/24/motley-the-bear-crochet-pattern/) | 合圈与螺旋同件混用、起立锁针不计针、(sc,sk)×6 跳针收口、FLO 颈圈 | `test_intl_squirrelpicnic_motley_joined_muzzle_and_skip_close` |
 | [Marching North 实心 granny](https://www.marchingnorth.com/solid-crochet-granny-square-pattern/) | +16/圈、空间加针（先验修正 #4 驱动源） | `test_intl_solid_granny_space_increase_downgraded_to_note` |
-| [Chibiscraft 小黄人](https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/) | 最密真实减针圈（规则存活）、鞋底 BLO/FLO 交替、54→9 收尾踩边界、椭圆起针 [12] | `test_intl_minion_*` |
+| [Chibiscraft 小黄人](https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/) | 5×sc2tog + sc4tog 净减 8 的密集圈（早期 4× 转录注释已勘误；不再视为通用硬规则证据）、鞋底 BLO/FLO 交替、54→9 收尾、椭圆起针 [12] | `test_intl_minion_*` |
 | [Spin a Yarn Rudolph](https://spinayarncrochet.com/rudolph-ornament-free-crochet-pattern/) | 8 起环倍增（先验修正 #2 驱动源） | `test_professional_eight_stitch_ring_start_passes_validation` |
 | [Ms Premise-Conclusion 理想球体](https://mspremiseconclusion.wordpress.com/2010/03/14/the-ideal-crochet-sphere/) | sin 轮廓逐圈对照独立重算；工艺警告落实 | `test_ideal_sphere_*` |
 

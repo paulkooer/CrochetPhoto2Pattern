@@ -180,5 +180,3 @@ def test_grid_written_rows_match_published_heart_chart():
         for color, cnt in blocks:
             expected.extend([name_of(color, seq)] * cnt)
         assert seq == expected, f"对角行 {r}: {seq} != {expected}"
-
-

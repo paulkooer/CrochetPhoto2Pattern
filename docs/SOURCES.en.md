@@ -14,19 +14,21 @@ validator was corrected each time — the evidence for every correction
 is in the table below. Only stitch algebra and round structure are
 taken from each source, never creative text (per each source's terms).
 
-## Validator evolution: four prior corrections + one rule that held
+## Validator evolution: five prior corrections
 
 | # | Rule | Change | Driving evidence | Fixture |
 |---|------|--------|------------------|---------|
 | 1 | Non-6-multiple rounds | hard error → note | Clover AKIHIRO's 22-st legs / 16-st arms / 9-st tail | `test_published_akihiro_*` |
-| 2 | Adjacent-round jump ±6 | hard error → note (`allow_wide_jump` allowlist kept) | Spin a Yarn's 8→16 doubling; Ms Premise-Conclusion's sin-profile sphere | `test_professional_eight_stitch_ring_start_passes_validation`, `test_ideal_sphere_*` |
+| 2 | Adjacent-round jump ±6 | hard error → note (`allow_wide_jump` only suppresses this note) | Spin a Yarn's 8→16 doubling; Ms Premise-Conclusion's sin-profile sphere | `test_professional_eight_stitch_ring_start_passes_validation`, `test_ideal_sphere_*` |
 | 3 | Mixed inc/dec in one round | hard error → note | Ziyou Handmade lop-ear rabbit eye-socket round 7X,7V,A,7V,7X | `test_cn_rabbit_head_face_shaping_passes` |
 | 4 | Increase ≤ source stitches | hard error → note | solid granny round 2: +16 into 4 chain corner spaces (12 source sts) | `test_intl_solid_granny_space_increase_downgraded_to_note` |
 | 5 | Decrease > half of previous (pure-A pairing) | hard error → note (external AI audit) | mechanical counterexample: 4 sts closed by one sc4tog (3 > 2, fully hookable); Minion's 8 ≤ 9 dense round still within pure-A pairing | `test_validator_downgrades_incapable_v_and_incapable_a` |
 
-Downgrading is not loosening: hard errors now contain only "physically
-unhookable" items; notes mean "fully hookable but outside this
-generator's uniform (aX,V)×n grouping — the exporter skips such rounds".
+Downgrading is not loosening: hard errors still cover broken stitch
+algebra, empty rounds, non-numeric fields, and stitch counts below one.
+Notes have two export outcomes: non-6-multiples and wide jumps only warn
+and export normally; mixed inc/dec and rounds beyond the uniform-grouping
+model are skipped by the Parade exporter with a warning.
 
 ## Source list
 
@@ -58,7 +60,7 @@ generator's uniform (aX,V)×n grouping — the exporter skips such rounds".
 | [Craftably Ever After Patchy Bear](https://craftablyeverafter.wordpress.com/2022/04/22/patchy-bear-crochet-pattern/) | chain-joined body R15=36 (13sc+2ch+16sc+2sc+3sc, self-reported); oval start [10]; eye anchor "2 rows above cap edge, 2 sts apart" | `test_intl_patchy_bear_chain_joined_body_passes`, `test_intl_snout_oval_start_verbatim` |
 | [Squirrel Picnic Motley Bear](https://squirrelpicnic.com/2015/04/24/motley-the-bear-crochet-pattern/) | joined and spiral rounds mixed in one piece, uncounted turning chain, (sc,sk)×6 skip close, FLO neck round | `test_intl_squirrelpicnic_motley_joined_muzzle_and_skip_close` |
 | [Marching North solid granny](https://www.marchingnorth.com/solid-crochet-granny-square-pattern/) | +16/round into chain spaces (driving source of prior fix #4) | `test_intl_solid_granny_space_increase_downgraded_to_note` |
-| [Chibiscraft Minion](https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/) | densest real decrease round (rule holds), sole BLO/FLO alternation, 54→9 taper at the 18//2 boundary, oval start [12] | `test_intl_minion_*` |
+| [Chibiscraft Minion](https://blog.alwaysfreeamigurumi.com/cute-minion-amigurumi-free-crochet-pattern/) | dense round with 5×sc2tog + sc4tog for a net decrease of 8 (the early 4× transcription note is retained as errata; no longer treated as evidence for a universal hard rule), sole BLO/FLO alternation, 54→9 taper, oval start [12] | `test_intl_minion_*` |
 | [Spin a Yarn Rudolph](https://spinayarncrochet.com/rudolph-ornament-free-crochet-pattern/) | 8-st doubling start (driving source of prior fix #2) | `test_professional_eight_stitch_ring_start_passes_validation` |
 | [Ms Premise-Conclusion ideal sphere](https://mspremiseconclusion.wordpress.com/2010/03/14/the-ideal-crochet-sphere/) | sin profile vs independently recomputed values; craft-warning handling | `test_ideal_sphere_*` |
 

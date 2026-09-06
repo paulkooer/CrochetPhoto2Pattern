@@ -892,6 +892,16 @@ def test_one_piece_mode_keeps_safety_rows():
     assert "禁用" in eye["quantity"] and "刺绣眼" in eye["quantity"]
 
 
+def test_head_accessory_does_not_trigger_head_or_body_safety_rows():
+    """“头套”是附件，不得因名称子串误获安全眼或配重珠。"""
+    from app.models.crochet_params import _materials
+    head_cover = {"name": "头套",
+                  "rounds": [{"row": 1, "stitches": 6}], "quantity": 1}
+    items = {m["item"] for m in _materials([head_cover], {"头套"})}
+    assert "安全眼" not in items
+    assert "配重珠（可选）" not in items
+
+
 def test_safety_wording_bans_rigid_armatures_for_children():
     """定型线行的儿童措辞不含竹签（硬质内骨架一律禁用）。"""
     from tests.test_crochet_params import _params_for

@@ -40,10 +40,12 @@ def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
     groups = inc or dec
     if groups < 1 or prev % groups:
         return None
-    base = prev // groups - 1
+    # 加针组消耗 base+1、产出 base+2；减针组消耗 base+2、产出
+    # base+1。两者不能共用同一个 base 偏移。
+    base = prev // groups - (1 if inc else 2)
     if base < 0:
         return None
-    produced = groups * (base + 2 if inc else base)
+    produced = groups * (base + 2 if inc else base + 1)
     if produced != st:
         return None
     if base == 0:

@@ -471,14 +471,17 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         item = f"毛线 · {c}" + (f"（{code}）" if code else "")
         materials.append({"item": item, "quantity": f"约 {grams}g（≈{meters}m）",
                           "color": c})
-    # 门控用子串匹配：一体件会把"头部/身体"合并改名"头身（一体）"，
-    # 精确等值匹配会漏掉安全眼与配重珠（外部 AI 审核发现的缺口）。
-    has_head = any("头" in _part_name(p) for p in parts)
-    has_body = any("身" in _part_name(p) for p in parts)
+    # 一体件会把"头部/身体"合并改名"头身（一体）"；显式识别这三个
+    # 语义名称，避免"头套"等附件因子串命中而误获安全眼或配重珠。
+    has_head = any(
+        _part_name(p) in {"头部", _ONE_PIECE_NAME} for p in parts)
+    has_body = any(
+        _part_name(p) in {"身体", _ONE_PIECE_NAME} for p in parts)
     if has_head:
         # 安全眼尺寸随头径分档（固定 8mm 在大/小头径下失真——社区与
         # 专业图解都按玩偶大小配眼）；无头径数据的旧结果兜底 8mm
-        head = next((p for p in parts if "头" in _part_name(p)), None)
+        head = next((p for p in parts
+                     if _part_name(p) in {"头部", _ONE_PIECE_NAME}), None)
         diameter = head.get("diameter_cm") if isinstance(head, dict) else None
         try:
             diameter = float(diameter) if diameter is not None else None
@@ -486,7 +489,7 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
             diameter = None
         materials.append({"item": "安全眼",
                           "quantity": f"一对 ({_safety_eye_mm(diameter)}mm；"
-                                      "3 岁以下儿童及宠物玩偶禁用——珠粒"
+                                      "3 岁以下儿童及宠物玩偶禁用——眼件"
                                       "可能脱落误吞，必须改用刺绣眼)"})
     materials.append({"item": "填充棉", "quantity": "适量"})
     # 配重底（可选）——Grace and Yarn 逐字：约 3/4 杯聚乙烯珠装入丝袜

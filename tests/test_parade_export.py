@@ -26,9 +26,11 @@ def test_export_contains_ring_and_uniform_repeats():
 
 def test_export_translates_decreases():
     text = export_parade_dsl(_result())
-    # 头部收口：36→30→24… 必须译为 6[5sc,sc2tog] 而非跳过
-    assert "6[5sc,sc2tog]" in text
-    assert "6[2sc,sc2tog]" in text
+    # 头部收口：36→30→24…；每个 sc2tog 消费 2 个源针，普通 sc 数
+    # 必须比加针圈再少 1。
+    assert "6[4sc,sc2tog]" in text
+    assert "6[sc,sc2tog]" in text
+    assert "6sc2tog" in text
     assert lint_parade_dsl(text) == []
 
 
@@ -62,6 +64,22 @@ def test_export_warns_on_untranslatable_round():
     head["rounds"][8]["stitches"] = 41
     text = export_parade_dsl(r)
     assert "超出可译子集" in text
+    assert lint_parade_dsl(text) == []
+
+
+def test_untranslatable_round_stops_part_before_virtual_count_drift():
+    """跳过结构变化后只能保留有效前缀，不得从虚拟前圈继续发射。"""
+    result = {"params": {"parts": [{
+        "name": "异形件", "magic_ring": True,
+        "rounds": [
+            {"row": 1, "stitches": 6},
+            {"row": 2, "stitches": 10, "increase": 4},
+            {"row": 3, "stitches": 10},
+        ],
+    }]}}
+    text = export_parade_dsl(result)
+    assert "该圈及后续圈已跳过" in text
+    assert "\n10sc\n" not in text
     assert lint_parade_dsl(text) == []
 
 
