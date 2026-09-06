@@ -23,7 +23,6 @@ from app import PRODUCT_NAME, theme
 # with N, so the rings of a plain +6 sphere sit at equal spacing — that is
 # the mark: a top view of the first six rounds.
 _MARK_ROUNDS = 6
-_MARK_STEP = 6
 
 
 def html_box(content: str, height: int, scroll: bool = False) -> str:
@@ -501,10 +500,6 @@ hr {{
     color: var(--ink-soft);
     font-size: 0.9rem;
     font-variant-numeric: lining-nums tabular-nums;
-}}
-.sheet-footer {{
-    padding: 1rem 0;
-    color: var(--ink-soft);
 }}
 
 /* ── Motion: only answer the maker ──────────────────────────────────── */
