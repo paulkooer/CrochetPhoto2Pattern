@@ -47,6 +47,15 @@
 
 ### Added
 
+- **granny 平面花片拓扑印证与第 4 处校验先验修正**（Lion Brand 经典
+  granny + Marching North 实心 granny，全文逐字）：① 经典款
+  12→24→36→48（每圈 +12：四角 (3dc,ch2,3dc)、边组逐圈 +1）、边圈
+  自报 76；② 实心款 12→28→44→60（每圈 +16）——第 2 圈加针 16
+  超过前圈 12 源针，撞上 "inc ≤ prev" 硬规则。机械核对证实加针进的
+  是锁针角空间而非针目：**加针超源从硬错误降级为 notes**（W
+  "1针目3短针"、贝壳花同理，完全可钩；导出器跳过该圈），减针超源
+  规则暂保留。新增 granny 夹具 2 项（50 项总计，全库 810）。
+
 - **引拔合圈（非螺旋）部件印证**（Tiny Curl「Monsieur Bear」+ Squirrel
   Picnic「Motley the Bear」，全文逐字）：① 贝雷帽原文显式标注
   "joined rnds, not continuous spiral"，起立锁针计针约定

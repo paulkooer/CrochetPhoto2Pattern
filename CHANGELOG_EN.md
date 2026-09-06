@@ -63,6 +63,20 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Granny flat-motif topology and the 4th validator prior correction**
+  (Lion Brand's classic granny square + Marching North's solid granny
+  square, full text verbatim): ① the classic grows 12->24->36->48
+  (+12 per round: four (3dc, ch2, 3dc) corners, one new side group
+  per side per round) with a self-reported 76-st border round; ② the
+  solid version grows 12->28->44->60 (+16 per round) — round 2 adds
+  16 stitches onto only 12 source stitches, tripping the hard
+  "inc <= prev" rule. Mechanical verification shows the increases go
+  into chain corner spaces, not stitches: **inc-exceeding-source is
+  downgraded from a hard error to a note** (same family as W
+  "3 sc in one st" and shell stitches — fully hookable; the exporter
+  skips such rounds). The decrease rule stays hard. 2 new granny
+  fixtures (50 in the file, 810 total).
+
 - **Joined-round (non-spiral) part verification** (Tiny Curl's
   "Monsieur Bear" + Squirrel Picnic's "Motley the Bear", full text
   verbatim): ① the beret is explicitly labeled "joined rnds, not

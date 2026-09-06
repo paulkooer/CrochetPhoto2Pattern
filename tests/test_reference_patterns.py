@@ -64,6 +64,11 @@
   (sc, sk)×6 跳针收口。导出前言的引拔圈说明以此校准。
   https://www.tinycurl.co/monsieur-bear-free-amigurumi-crochet-pattern/
   https://squirrelpicnic.com/2015/04/24/motley-the-bear-crochet-pattern/
+- Lion Brand 经典 granny + Marching North 实心 granny（平面花片
+  四角拓扑，全文逐字）：+12 与 +16 两种每圈节奏；实心款加针进锁针
+  角空间（inc > prev）触发校验器第 4 处先验修正（加针超源降 notes）。
+  https://www.lionbrand.com/community/blog/how-to-crochet-a-classic-granny-square/
+  https://www.marchingnorth.com/solid-crochet-granny-square-pattern/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1339,3 +1344,61 @@ def test_intl_squirrelpicnic_motley_joined_muzzle_and_skip_close():
     result = validate_pattern({"parts": [muzzle, closing]})
     assert result["ok"], result["issues"]
     assert not result["issues"] and not result["notes"]
+
+
+# ── 国际印证：granny 平面花片（四角拓扑，非环形球体）──────────────────────
+# 两篇逐字全文。机械核对：
+# ① Lion Brand 经典款：12→24→36→48（每圈 +12：四角 (3dc,ch2,3dc)、
+#    边组逐圈 +1）；起立 ch-2 计针；边圈自报 76（四角 (2dc,ch1,2dc) +
+#    沿边含 ch-1 空间逐针 1dc）。
+# ② Marching North 实心款：12→28→44→60（每圈 +16：四角各 4 长针
+#    恒定、每边每圈 +4）——第 2 圈加针 16 > 前圈 12 源针：加针进的是
+#    锁针角空间而非针目，撞上"inc ≤ prev"硬规则 → **校验器第 4 处
+#    先验修正**：加针超源降为 notes（W"1针目3短针"、贝壳花同理），
+#    减针规则暂保留。
+# https://www.lionbrand.com/community/blog/how-to-crochet-a-classic-granny-square/
+# https://www.marchingnorth.com/solid-crochet-granny-square-pattern/
+
+def test_intl_lionbrand_classic_granny_passes():
+    """经典 granny：+12/圈四角拓扑 + 边圈 76，跳变与 76 非六倍数降提示。"""
+    granny = {"name": "granny 方格", "type": "flat", "color": "彩色",
+              "magic_ring": False,
+              "rounds": [
+                  {"row": 1, "stitches": 12,
+                   "notes": "锁针 4 引拔成环；ch 2（计为 1 长针）+ 2 长针，"
+                            "(ch 2, 3 长针)×3，ch 2，SL 合圈"},
+                  {"row": 2, "stitches": 24, "increase": 12,
+                   "notes": "四角 ch-2 空间各 (3dc, ch2, 3dc)，"
+                            "边 ch 空间各 3dc"},
+                  {"row": 3, "stitches": 36, "increase": 12},
+                  {"row": 4, "stitches": 48, "increase": 12},
+                  {"row": 5, "stitches": 76, "increase": 28,
+                   "notes": "边圈：沿边逐针 1dc（含 ch-1 空间），"
+                            "四角 (2dc, ch1, 2dc)；原文自报 76"},
+              ]}
+    result = validate_pattern({"parts": [granny]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+    assert any("平滑塑形节奏" in n for n in result["notes"])
+
+
+def test_intl_solid_granny_space_increase_downgraded_to_note():
+    """实心 granny：每边 +4/圈 → 第 2 圈加针 16 > 12 源针，
+    校验器降为 notes（空间加针工艺），整篇通过。"""
+    granny = {"name": "实心 granny 方格", "type": "flat", "color": "绿色",
+              "magic_ring": False,
+              "rounds": [
+                  {"row": 1, "stitches": 12,
+                   "notes": "锁针 4 引拔成环；ch 3（计为 1 长针）+ 2 长针，"
+                            "(ch 2, 3 长针)×3，ch 2，SL 合圈"},
+                  {"row": 2, "stitches": 28, "increase": 16,
+                   "notes": "四角空间各 (ch3, 1dc, ch2, 2dc) 计 4 长针，"
+                            "每边 3 长针——加针进锁针角空间"},
+                  {"row": 3, "stitches": 44, "increase": 16},
+                  {"row": 4, "stitches": 60, "increase": 16},
+              ]}
+    result = validate_pattern({"parts": [granny]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("超过上圈 12 个源针" in n for n in result["notes"])

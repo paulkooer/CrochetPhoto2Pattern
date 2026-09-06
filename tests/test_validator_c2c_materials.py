@@ -179,7 +179,9 @@ def test_validator_does_not_trust_editable_shaping_metadata():
     assert any("平滑塑形节奏 ±6" in note for note in result["notes"])
 
 
-def test_validator_rejects_incapable_v_or_a_even_within_dynamic_cap():
+def test_validator_downgrades_incapable_v_but_keeps_incapable_a():
+    """印证修正：加针超源降为 notes（granny 空间加针/W 可执行）；
+    减针超源仍为硬错误（无对应真实源证据，保持保守）。"""
     gauge = {"stitches_per_10cm": 20.0, "rows_per_10cm": 16.0}
     too_many_increases = {
         "gauge": gauge,
@@ -189,8 +191,10 @@ def test_validator_rejects_incapable_v_or_a_even_within_dynamic_cap():
         ]}],
     }
     result = validate_pattern(too_many_increases)
-    assert not result["ok"]
-    assert any("超过上圈 6 个源针" in issue for issue in result["issues"])
+    assert result["ok"]
+    assert not result["issues"]
+    assert any("超过上圈 6 个源针" in note for note in result["notes"])
+    assert any("granny" in note for note in result["notes"])
 
     too_many_decreases = {
         "gauge": gauge,
