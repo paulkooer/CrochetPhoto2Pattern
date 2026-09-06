@@ -63,6 +63,23 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Batch expansion (+2 full patterns / +4 fixtures)**: ① Stringy
+  DingDing's "Scraptacular Bunnies" (no-sew scrap bunnies, verbatim) —
+  a neck pinch 24->12->24 ("dec around" = 12 sc2tog, exactly 24//2),
+  **eye markers placed during round 3** (colored stitch markers while
+  increasing — the earliest eye anchor in the corpus), a mixed-height
+  flat oval ear [15] (hdc/dc blended in one piece — the T/F rows of
+  our glossary made real), and an MR10 short tail (the bounded
+  counterexample to toruyuri's "10 leaves a hole" — closed and
+  stuffed); the comment section carries the designer's own **resizing
+  rule** (every 2 extra increase rounds -> 3 extra plain rounds). ②
+  Spin a Yarn's "Goose" (verbatim) — a **new FLO/BLO front/back
+  layering topology**: the split round's single-round algebra is not
+  unique, so it is honestly recorded rather than fixtured (same
+  boundary class as across-parts pickup), while the total-count series
+  around the layering point is still verified. 4 fixtures (68 in
+  file, 838 total).
+
 - **Weighted-base materials row and assembly step** (Grace and Yarn /
   The Loopy Lamb verbatim): body-bearing patterns gain an **optional
   weighted-pellets row** (~3/4 cup poly pellets) and an assembly step —

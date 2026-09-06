@@ -99,6 +99,21 @@
   3 等分拓扑跨语言互证；腿部 17 圈漂移减针（语料最长）；尾巴
   5 起针；评论区试钩共识（颈部塞棉紧实/头部小钩针/尾巴坐姿配重）
   进组装说明。https://amigurum.ru/2018/04/medvezhonok-amigurumi.html
+- Yarnspirations Red Heart Bear（Sarah Zimmerman/Repeat Crafter Me，
+  官方 PDF 逐字）：北美大厂锚点——10 起针全程引拔合圈、腰身掐到 12
+  再倍增的一体件；眼距 = 最大圈/6 精确印证（36 针 6 针距，与 Zepiany
+  30 针 5 针距同比例）；12mm 安全眼 @ 23cm；官方密度 13 sc/10cm
+  @ 5mm；脚外撇坐姿支撑（与俄语熊尾巴配重互证）。
+  https://www.yarnspirations.com/products/red-heart-bear-amigurumi
+- StringyDingDing Scraptacular Bunnies（无缝废线兔，全文逐字）：
+  颈口掐细 24→12→24、R3 环内标眼位（语料最早眼位锚定）、混针高
+  平织椭圆耳 [15]、MR10 短尾（toruyuri 露洞警告的限定反例）；评论区
+  设计师亲授放大法则（每多 2 圈增针补 3 圈平针）。
+  https://stringydingding.com/scraptacular-bunnies-free-crochet-pattern/
+- Spin a Yarn Goose（Jillian Hewitt，全文逐字）：FLO/BLO 前后片分离
+  再合流新拓扑——分层圈单圈代数不唯一，如实记录不夹注，分层点前后
+  总针数序列仍整体验证。
+  https://spinayarncrochet.com/goose-amigurumi-free-crochet-pattern/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1927,3 +1942,153 @@ def test_intl_red_heart_bear_five_small_parts():
     assert result["ok"], result["issues"]
     assert not result["issues"]
     assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+# ── 国际印证：StringyDingDing Scraptacular Bunnies（无缝废线兔）───────────
+# 全文逐字。三个新案例：
+# ① 一体件颈口掐细：头 24 → R10 dec×6 掐到 12（颈）→ R11 倍增回 24
+#    再钩身体——比 Red Heart 腰身（12→24→36）更尖锐的真实颈口；
+# ② R3 环内标眼位：加针圈里同步用异色记号标出未来眼睛位置
+#    （"Add different colored st marker to Sc just made"）——语料最早的
+#    眼位锚定（第 3 圈，非比例非解剖锚点而是"钩到哪标哪"）；
+# ③ 混针高平织椭圆耳：锁 7、倒 2 回钩 2Hdc+2Hdc+2Dc、末针 4Dc 端盖、
+#    另一侧 2Dc+3Hdc → [15]——中长针/长针在同一平织件混用（针法表
+#    T/F 的真实部件）。
+# 评论区：设计师亲授放大法则（每多 2 圈增针补 3 圈平针）；起针少于
+# 6 会成三角形（toruyuri 多边形法则的再次印证）；尾巴 MR 10 起
+# （toruyuri "10 会露洞"的反例——短尾填充闭合场景下可用）。
+# https://stringydingding.com/scraptacular-bunnies-free-crochet-pattern/
+
+def test_intl_stringy_bunny_neck_pinch_one_piece():
+    """无缝兔头身一体：颈口 24→12→24 掐细；R11 倍增圈降提示。"""
+    body = {"name": "头身一体", "type": "cylinder", "color": "白色",
+            "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 6},
+                {"row": 2, "stitches": 12, "increase": 6},
+                {"row": 3, "stitches": 18, "increase": 6,
+                 "notes": "(inc, sc)×6 全程，其中两处 sc 挂异色记号标眼位"
+                          "（第 3 圈即锚定眼位）"},
+                {"row": 4, "stitches": 24, "increase": 6},
+                {"row": 5, "stitches": 24},
+                {"row": 6, "stitches": 24},
+                {"row": 7, "stitches": 24},
+                {"row": 8, "stitches": 24},
+                {"row": 9, "stitches": 24},
+                {"row": 10, "stitches": 12, "decrease": 12,
+                 "notes": "dec around（12 次 sc2tog）——颈口掐细；"
+                          "dec 12 恰为 24//2 边界"},
+                {"row": 11, "stitches": 24, "increase": 12,
+                 "notes": "inc×6 倍增回身体（Δ+12 倍增圈）"},
+                {"row": 12, "stitches": 24},
+                {"row": 13, "stitches": 24},
+                {"row": 14, "stitches": 24},
+                {"row": 15, "stitches": 30, "increase": 6,
+                 "notes": "(inc, 3 sc)×6"},
+                {"row": 16, "stitches": 30},
+                {"row": 17, "stitches": 30},
+                {"row": 18, "stitches": 30},
+                {"row": 19, "stitches": 36, "increase": 6,
+                 "notes": "(inc, 4 sc)×6"},
+                {"row": 20, "stitches": 36},
+                {"row": 21, "stitches": 30, "decrease": 6,
+                 "notes": "(dec, 4 sc)×6"},
+                {"row": 22, "stitches": 24, "decrease": 6,
+                 "notes": "(dec, 3 sc)×6"},
+                {"row": 23, "stitches": 18, "decrease": 6,
+                 "notes": "(dec, 2 sc)×6"},
+                {"row": 24, "stitches": 12, "decrease": 6,
+                 "notes": "(dec, sc)×6"},
+                {"row": 25, "stitches": 6, "decrease": 6},
+            ]}
+    result = validate_pattern({"parts": [body]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("平滑塑形节奏" in n for n in result["notes"])   # R11 倍增
+
+
+def test_intl_stringy_bunny_mixed_height_flat_ear():
+    """平织椭圆耳混用中长针/长针：Hdc+Dc+4Dc 端盖 → [15]。"""
+    ear = {"name": "耳朵", "type": "flat", "color": "白色",
+           "magic_ring": False,
+           "rounds": [
+               {"row": 1, "stitches": 15,
+                "notes": "锁 7，倒 2 回钩 2Hdc、2Hdc、2Dc、末针 4Dc，"
+                         "另一侧 2Dc、3Hdc，SL 合拢（原文 [15]）；"
+                         "中长针/长针在同一平织件混用"},
+           ]}
+    result = validate_pattern({"parts": [ear]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+def test_intl_stringy_bunny_mr10_tail_and_tubes():
+    """尾巴 MR 10 起（toruyuri"10 露洞"的填充闭合反例）；臂 6 针素筒。"""
+    tail = {"name": "尾巴", "type": "cylinder", "color": "白色",
+            "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 10,
+                 "notes": "MR 10——短尾填充闭合场景下 10 起针可用"
+                          "（toruyuri 露洞警告的限定反例）"},
+                {"row": 2, "stitches": 10},
+                {"row": 3, "stitches": 10},
+            ]}
+    arm = {"name": "手臂", "type": "cylinder", "color": "白色",
+           "magic_ring": True,
+           "rounds": [
+               {"row": 1, "stitches": 6},
+               {"row": 2, "stitches": 6},
+               {"row": 3, "stitches": 6},
+           ]}
+    result = validate_pattern({"parts": [tail, arm]})
+    assert result["ok"], result["issues"]
+    assert any("非 6 的倍数" in n for n in result["notes"])
+
+
+# ── 国际印证：Spin a Yarn Goose（Jillian Hewitt，全文逐字）─────────────────
+# 新拓扑——**前后片分离再合流**（帽檐式分层）：
+# ① 头 6→48 标准；R15 用 FLO/BLO 分层：FLO 1sc+6inc+1sc=16（前片起）、
+#    BLO 32（后片不动）——同一圈内前后片各自开始成形；
+# ② R16-18 前片独立增宽（16→40）与后片汇合；R28-30 颈部收窄 56→40；
+# ③ 聚合模型边界如实记录：分层圈需把"前/后片"拆成两个逻辑部件，
+#    单一圈代数（st = prev + inc − dec）在分层圈上不唯一——分层圈不
+#    夹注（与 AllAboutAmi 跨部件挑钩同类的如实记录），但分层点前后的
+#    总针数序列（48→48→40→48→56→…）仍可整体验证。
+# https://spinayarncrochet.com/goose-amigurumi-free-crochet-pattern/
+
+def test_intl_spinayarn_goose_layered_flo_blo_boundaries():
+    """鹅分层点前后的总针数序列可整体验证；分层圈本身不夹注。"""
+    head = {"name": "头（分层点前段）", "type": "cylinder", "color": "白",
+            "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 6},
+                {"row": 2, "stitches": 12, "increase": 6},
+                {"row": 3, "stitches": 18, "increase": 6},
+                {"row": 4, "stitches": 24, "increase": 6},
+                {"row": 5, "stitches": 30, "increase": 6},
+                {"row": 6, "stitches": 36, "increase": 6},
+                {"row": 7, "stitches": 42, "increase": 6},
+                {"row": 8, "stitches": 48, "increase": 6},
+                {"row": 9, "stitches": 48},
+                {"row": 10, "stitches": 48},
+                {"row": 11, "stitches": 48},
+                {"row": 12, "stitches": 48},
+                {"row": 13, "stitches": 48},
+                {"row": 14, "stitches": 48},
+                {"row": 15, "stitches": 48,
+                 "notes": "分层圈（不夹注）：FLO 1sc+6inc+1sc=16（前片起），"
+                          "BLO 32（后片不动）——单圈代数在分层圈上不唯一"},
+            ]}
+    neck = {"name": "颈（合流后）", "type": "cylinder", "color": "白",
+            "magic_ring": False,
+            "rounds": [
+                {"row": 26, "stitches": 56},
+                {"row": 27, "stitches": 56},
+                {"row": 28, "stitches": 40, "decrease": 16,
+                 "notes": "(8 sc, dec)×5 左右——颈部收窄原文分 3 圈 56→40"},
+                {"row": 29, "stitches": 40},
+                {"row": 30, "stitches": 40},
+            ]}
+    result = validate_pattern({"parts": [head, neck]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
