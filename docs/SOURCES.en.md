@@ -63,6 +63,10 @@ generator's uniform (aX,V)×n grouping — the exporter skips such rounds".
 | [kruchcom.ru finger puppet](https://kruchcom.ru/archives/22215) | Russian КА/ПРИБ/СБН verbatim — the same standard across languages | `test_russian_finger_puppet_rounds_pass_validation` |
 | [Lovable Loops cherry C2C](https://lovableloops.com/cherry-square-mini-c2c-crochet-pattern/) | 9×9 written block rows, full round-trip | `test_grid_pipeline_reproduces_published_c2c_chart` |
 | [Lovable Loops heart C2C](https://lovableloops.com/mini-heart-square-c2c-crochet-pattern/) | asymmetric rows pin the reading direction (↙RS / ↗WS) | `test_grid_written_rows_match_published_heart_chart` |
+| [Maclafersa wire safety guide](https://maclafersa.com/how-to-add-wire-to-amigurumi-safely-for-posing/) | looped-and-wrapped ends (tape alone unreliable), hand-to-shoulder-to-hand measuring, tails slightly shorter, insert while open, nine common mistakes | `test_materials_wire_row_for_limbs_only` |
+| [Crafty Intentions wire supplies](https://craftyintentions.com/blog/2019/7/8/supplies-wire) | paper-wrapped 18-gauge 18-inch floral wire spec anchor (cloth-wrapped too soft), paper-crumple friction, rust warning | `test_materials_wire_row_for_limbs_only` |
+| [toruyuri circle increase law](https://toruyuri.com/2020/02/02/wanomashime/) | Japanese staggered-increase law (odd rounds at end / even rounds mid-unit; hexagon-vs-circle photo proof); ring-start experiment (3 min, 10 leaves a hole); 4th language notation (dan/me/mashime) | `test_japanese_circle_increase_law_passes`, `test_preamble_mentions_increase_offset_rule` |
+| [Zepiany ES-Bee](https://www.zepiany.com/pages/es-bee1) / [Melonchillo magic-circle law](https://melonchillo.com/anillo-magico/) | 5th language notation (vuelta/pb/aum); symmetric 30-peak sphere; 3rd published contradiction (V1 notation 6 vs prose 8); start-count-per-stitch-height law (sc 6 / hdc 8 / dc 12); safety-eye under-3/pets warning -> materials row | `test_intl_zepiany_es_bee_body_and_contradiction`, `test_intl_melonchillo_dc_circle_start_height_law` |
 
 ### Chinese-language patterns (image charts, vision-transcribed)
 

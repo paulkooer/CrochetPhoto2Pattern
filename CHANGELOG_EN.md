@@ -63,6 +63,23 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Spanish-language verification (5th notation system) + safety-eye
+  age warning**: Zepiany's ES-Bee and Melonchillo's magic-circle law,
+  captured verbatim (vuelta/pb/aum/dis/AM). ① a symmetric 30-peak
+  sphere (6→30, 8 plain rounds, mirror back to 6 — zero notes); ② the
+  **3rd real published contradiction** — round 1 notation "sc x 6 (6)"
+  vs prose "Vamos a tejer 8 puntos bajos": an 8-start breaks round 2
+  algebra (8+6≠12), so (6) is the self-consistent reading — the kind
+  of transcription error the validator catches (fixture records the
+  ruling); round 17's sloppy "(6dec) x 6 (6)" resolved to dec 6 by
+  algebra; ③ a third eye-placement anchor (between rounds 3-4, 5
+  stitches apart); ④ the start-count-per-stitch-height law (sc 6 /
+  hdc 8 / dc 12 / double-treble 18) and the +12/round dc circle
+  (corroborating the granny rhythm); ⑤ **the safety-eye materials row
+  now carries "for children under 3 or pet toys, prefer embroidered
+  eyes"** (from Zepiany's safety warning). 2 fixtures (55 in file,
+  817 total).
+
 - **Japanese-language verification (4th notation system) + increase
   offset reminder**: toruyuri's "circle increase law" captured in full
   verbatim — the Japanese formulation of staggered increases (odd

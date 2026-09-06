@@ -80,6 +80,15 @@
   圆、固定同点成六角形（照片实证）；起针数实验（3 最小、10 露洞、
   5–6 常见）。螺旋自动漂移 vs 引拔需手动错开的提醒已进导出前言。
   https://toruyuri.com/2020/02/02/wanomashime/
+- Zepiany ES-Bee + Melonchillo 圆环法则（西语圈全文逐字，第 5 套
+  语言体系 vuelta/pb/aum/dis/AM）：30 峰对称球；**第 3 例真实出版
+  矛盾**（V1 记号 6 vs 正文 8 puntos bajos——按 8 则代数断裂，
+  校验器可拦）；V17 草率记号 "(6dec) x 6" 按代数裁决；眼位锚点
+  （3-4 圈之间、间距 5 针）；针高→起针数法则（短针 6/中长针 8/
+  长针 12）与长针圆 +12/圈；安全警示（3 岁以下/宠物改刺绣眼）
+  已进安全眼材料行。
+  https://www.zepiany.com/pages/es-bee1
+  https://melonchillo.com/anillo-magico/
 
 印证结论钉死在本文件：真实可钩的图解必须通过本系统校验器；生成器的
 增减针节奏必须与社区通用公式一致；CrochetPARADE 导出与官方示例同构。
@@ -1521,3 +1530,72 @@ def test_japanese_circle_increase_law_passes():
     result = validate_pattern({"parts": [circle]})
     assert result["ok"], result["issues"]
     assert not result["issues"]
+
+
+# ── 国际印证：西语圈（第 5 套语言体系：vuelta/pb/aum/dis/AM）──────────────
+# ① Zepiany ES-Bee（西语全图解，逐字）：30 峰对称球（6→30 平 8 圈→镜像
+#    收到 6）；**第 3 例真实出版矛盾**——V1 记号 "sc x 6 (6)" vs 正文
+#    "Vamos a tejer 8 puntos bajos"：按 8 起针则 V2 代数断裂（8+6≠12），
+#    自洽读法为 (6)，校验器可拦此类误转录；V17 草率记号 "(6dec) x 6 (6)"
+#    按代数裁决为 dec 6（12→6）；眼位锚点第三例（第 3-4 圈之间、
+#    间距 5 针）；黄棕条纹逐圈换色（与 Supergurumi 蜜蜂互证）；
+#    安全警示（3 岁以下儿童/宠物不宜安全眼）已进材料行。
+# ② Melonchillo 圆环法则（长针圆逐字）：12→24→36→48（每圈 +12，与
+#    granny 四角 +12 节奏互证）；**针高→起针数法则**（短针 6 / 中长针 8 /
+#    长针 12 / 双长针 18——针越高圆周需越多起针）；合圈引拔"钩进第一针
+#    真实针目、跳过起立锁针"避免凹槽（起立针不计针的又一佐证）。
+# https://www.zepiany.com/pages/es-bee1
+# https://melonchillo.com/anillo-magico/
+
+def test_intl_zepiany_es_bee_body_and_contradiction():
+    """西语蜜蜂：30 峰对称球 + V1 出版矛盾（8 vs 6）裁决 + V17 草率记号。"""
+    body = {"name": "cuerpo", "type": "cylinder", "color": "amarillo",
+            "magic_ring": True,
+            "rounds": [
+                {"row": 1, "stitches": 6,
+                 "notes": "原文矛盾：记号 sc x 6 (6) vs 正文 8 puntos "
+                          "bajos——按 8 则 V2 断代数（8+6≠12），取 (6)"},
+                {"row": 2, "stitches": 12, "increase": 6},
+                {"row": 3, "stitches": 18, "increase": 6},
+                {"row": 4, "stitches": 24, "increase": 6},
+                {"row": 5, "stitches": 30, "increase": 6},
+                {"row": 6, "stitches": 30},
+                {"row": 7, "stitches": 30, "color": "marrón",
+                 "notes": "条纹：7-9 棕 / 10-12 黄 / 13 起棕（换色圈）"},
+                {"row": 8, "stitches": 30, "color": "marrón"},
+                {"row": 9, "stitches": 30, "color": "marrón"},
+                {"row": 10, "stitches": 30, "color": "amarillo"},
+                {"row": 11, "stitches": 30, "color": "amarillo"},
+                {"row": 12, "stitches": 30, "color": "amarillo"},
+                {"row": 13, "stitches": 30, "color": "marrón",
+                 "notes": "安全眼装于第 3-4 圈之间、间距 5 针（眼位锚点）"},
+                {"row": 14, "stitches": 24, "decrease": 6},
+                {"row": 15, "stitches": 18, "decrease": 6},
+                {"row": 16, "stitches": 12, "decrease": 6},
+                {"row": 17, "stitches": 6, "decrease": 6,
+                 "notes": "原文记号 (6dec) x 6 (6) 草率——按代数 dec 6"},
+            ]}
+    result = validate_pattern({"parts": [body]})
+    assert result["ok"], result["issues"]
+    assert not result["notes"]      # 全程 6 倍数 ±6，零提示
+
+
+def test_intl_melonchillo_dc_circle_start_height_law():
+    """长针圆 +12/圈 + 针高→起针数法则（pb 6 / pma 8 / pa 12 / 双长 18）。"""
+    circle = {"name": "círculo de pa", "type": "flat", "color": "blanco",
+              "magic_ring": True,
+              "rounds": [
+                  {"row": 1, "stitches": 12,
+                   "notes": "起针数按针高：punto bajo 6 / medio alto 8 / "
+                            "alto 12 / doble alto 18；am + 2 辫子（计 1 针）"
+                            " + 11 长针"},
+                  {"row": 2, "stitches": 24, "increase": 12},
+                  {"row": 3, "stitches": 36, "increase": 12,
+                   "notes": "引拔钩进第一针真实长针、跳过起立锁针——避免"
+                            "大圆出现凹槽（起立针不计针佐证）"},
+                  {"row": 4, "stitches": 48, "increase": 12},
+              ]}
+    result = validate_pattern({"parts": [circle]})
+    assert result["ok"], result["issues"]
+    assert not result["issues"]
+    assert any("平滑塑形节奏" in n for n in result["notes"])

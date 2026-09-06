@@ -62,6 +62,7 @@
 | [Maclafersa 定型线安全指南](https://maclafersa.com/how-to-add-wire-to-amigurumi-safely-for-posing/) | 端部折环+包裹防戳（胶带单独不可靠）、比量手→肩→手、尾线略短于成品、开口时放入、九大错误清单 | `test_materials_wire_row_for_limbs_only` |
 | [Crafty Intentions 线材清单](https://craftyintentions.com/blog/2019/7/8/supplies-wire) | 纸包 18 号 18 英寸花艺线规格锚点（布包同号过软）、纸褶摩擦防移位、防锈 | `test_materials_wire_row_for_limbs_only` |
 | [toruyuri 円の増し目の法則](https://toruyuri.com/2020/02/02/wanomashime/) | 日语圈错位加针法则（奇数段段尾/偶数段段中，六角形 vs 圆照片实证）；起针数实验（3 最小、10 露洞）；第 4 套语言 notation（段/目/増し目） | `test_japanese_circle_increase_law_passes`、`test_preamble_mentions_increase_offset_rule` |
+| [Zepiany ES-Bee](https://www.zepiany.com/pages/es-bee1) / [Melonchillo 圆环法则](https://melonchillo.com/anillo-magico/) | 第 5 套语言 notation（vuelta/pb/aum）；30 峰对称球；第 3 例出版矛盾（V1 记号 6 vs 正文 8）；针高→起针数法则（短针 6/中长针 8/长针 12）；安全眼 3 岁以下/宠物警示 → 材料行 | `test_intl_zepiany_es_bee_body_and_contradiction`、`test_intl_melonchillo_dc_circle_start_height_law` |
 
 ### 国内图解（图片图解，视觉转录）
 

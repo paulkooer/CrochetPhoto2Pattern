@@ -481,7 +481,8 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         except (TypeError, ValueError):
             diameter = None
         materials.append({"item": "安全眼",
-                          "quantity": f"一对 ({_safety_eye_mm(diameter)}mm)"})
+                          "quantity": f"一对 ({_safety_eye_mm(diameter)}mm；"
+                                      "3 岁以下儿童或宠物玩偶建议改刺绣眼)"})
     materials.append({"item": "填充棉", "quantity": "适量"})
     # 可弯折四肢的定型线（可选件）——规格锚点：Crafty Intentions 设计师
     # 用纸包 18 号 18 英寸花艺线（布包同号过软不承力），r/CrochetHelp

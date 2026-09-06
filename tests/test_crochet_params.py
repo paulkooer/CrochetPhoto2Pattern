@@ -742,22 +742,22 @@ def test_materials_safety_eye_scales_with_head_diameter():
                 "diameter_cm": 15.0}
     eye = next(m for m in _materials([head_big], {"头部"})
                if m["item"] == "安全眼")
-    assert "(14mm)" in eye["quantity"]
+    assert "(14mm" in eye["quantity"]
     head_small = dict(head_big, diameter_cm=9.0)
     eye = next(m for m in _materials([head_small], {"头部"})
                if m["item"] == "安全眼")
-    assert "(10mm)" in eye["quantity"]
+    assert "(10mm" in eye["quantity"]
     head_legacy = {"name": "头部", "rounds": [{"row": 1, "stitches": 6}]}
     eye = next(m for m in _materials([head_legacy], {"头部"})
                if m["item"] == "安全眼")
-    assert "(8mm)" in eye["quantity"]   # 无头径 → 原固定值兜底
+    assert "(8mm" in eye["quantity"]   # 无头径 → 原固定值兜底
 
 
 def test_generated_params_eye_size_tracks_head_slider():
     """生成链路端到端：头径滑条 15cm → 材料清单安全眼 14mm。"""
     params = _params_for(["头部", "身体"], head_d=15.0)
     eye = next(m for m in params["materials"] if m["item"] == "安全眼")
-    assert "(14mm)" in eye["quantity"]
+    assert "(14mm" in eye["quantity"]
 
 
 # ── 装配说明开口针数（专业图解惯例：缝合前先报开口针数）─────────────────────
@@ -810,7 +810,8 @@ def test_head_notes_eye_size_matches_materials():
     head = next(p for p in params["parts"] if p["name"] == "头部")
     assert "安装安全眼（14mm" in head["notes"]
     eye = next(m for m in params["materials"] if m["item"] == "安全眼")
-    assert "(14mm)" in eye["quantity"]
+    assert "(14mm" in eye["quantity"]
+    assert "刺绣眼" in eye["quantity"]   # 3 岁以下/宠物警示（Zepiany）
     params = _params_for(["头部"], head_d=9.0)
     head = next(p for p in params["parts"] if p["name"] == "头部")
     assert "安装安全眼（10mm" in head["notes"]
