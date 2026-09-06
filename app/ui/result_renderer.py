@@ -153,14 +153,18 @@ def _render_part_progress(
                     _sw = (result.get("gauge") or params.get("gauge") or {})
                     _sw_cm = 10.0 / max(float(_sw.get(
                         "stitches_per_10cm", 13.0)), 1e-6)
-                    st.html(html_box(
-                        render_ring_svg(part, stitch_w_cm=_sw_cm), 330))
+                    # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>；
+                    # st.markdown unsafe_allow_html 不净化（内联 SVG 无空行
+                    # 时不经 markdown 重排）
+                    st.markdown(html_box(
+                        render_ring_svg(part, stitch_w_cm=_sw_cm), 330),
+                        unsafe_allow_html=True)
                     _strip = render_symbol_strip(part)
                     if _strip:
                         st.markdown("**逐圈符号条**（×=短针，V=加针，A=减针）")
-                        st.html(html_box(_strip, min(
+                        st.markdown(html_box(_strip, min(
                             30 + 16 * min(len(part.get("rounds", [])), 24)
-                            + 10, 560), scroll=True))
+                            + 10, 560), scroll=True), unsafe_allow_html=True)
                 except Exception as e:  # 可视化失败不影响主流程
                     st.caption(f"顶视图不可用: {md_safe(e)}")
         if part_data.get("notes"):
@@ -328,10 +332,10 @@ def render_results(result: dict, slot: str) -> None:
                     _wall = [r.stitches for r in _pp.rounds]
                     # 跳过底部圆盘（水平圆盘不计筒壁；旧版误用
                     # _wall[0]//6——魔法环首圈 6 针 → 恒只跳 1 圈）
-                    st.html(html_box(
+                    st.markdown(html_box(
                         render_silhouette_svg(
                             strip_dome(_wall), _gauge, _photo,
-                            _spans.get("身体")), 320))
+                            _spans.get("身体")), 320), unsafe_allow_html=True)
                     st.caption(f"{_pp.name}：逐圈针数反渲染的侧影（蓝）与照片剖面（橙虚线）")
             except Exception as e:  # 可视化失败不影响主流程
                 st.caption(f"轮廓可视化不可用：{md_safe(e)}")
@@ -393,7 +397,9 @@ def render_results(result: dict, slot: str) -> None:
             if _pv:
                 from app.ui.design_system import html_box
 
-                st.html(html_box(_pv, 400), unsafe_allow_javascript=True)
+                # 静态等距 SVG——st.html 的净化器剥 <svg>/<script>，交互
+                # canvas 无可用脚本通道，与其他图形同走 markdown
+                st.markdown(html_box(_pv, 420), unsafe_allow_html=True)
             else:
                 st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):

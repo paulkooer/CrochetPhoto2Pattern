@@ -8,6 +8,23 @@
 
 ## Unreleased
 
+### Fixed
+
+- **`st.html` 净化器剥离 SVG/脚本（浏览器实测发现，两处修复）**：
+  Streamlit 1.60 的 `st.html` 用 DOMPurify 净化——**整个 `<svg>` 元素
+  被剥掉**（hero 环标消失、引导文案掉进标记列挤扁；结果页环图/符号条/
+  侧影全部空白），`<script>` 即使 `unsafe_allow_javascript=True` 也被剥
+  （3D 预览从未绘制，且旧 canvas 固定焦距下 18cm 玩偶仅占 ~44px——
+  两个存量缺陷均因"st.html 图形目检"长期挂起而未被发现）。修复：
+  ① 全部静态 SVG 内容（hero/环图/符号条/侧影/网格图例）改走
+  `st.markdown unsafe_allow_html`（不净化；内联 SVG 无空行时不经
+  markdown 重排）；② 3D 预览重写为**服务端静态等距 SVG**（画家算法 +
+  背面剔除 + Lambert 着色，276 正面多边形），尺寸按整体高度归一化
+  适配画幅（修复图形过小），与令牌系统同源——代价是失去拖拽旋转
+  （脚本通道已不存在）；③ 弃用的 components.v1.html（iframe）不再
+  依赖。浏览器像素目检通过：主题/hero/圈行图解纸/勾选进度/材料
+  （CYC 标注、安全眼 10mm）/装配（开口+捏扁缝合）全部正确渲染。
+
 ### Changed
 
 - **视觉重设计「图解纸」**：整体视觉从通用暖色卡通风改为"一张打印

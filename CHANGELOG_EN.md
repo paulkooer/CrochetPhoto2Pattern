@@ -8,6 +8,31 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed
+
+- **`st.html` sanitizer strips SVG and scripts (found by in-browser
+  inspection, two fixes)**: Streamlit 1.60 sanitizes `st.html` with
+  DOMPurify — the **entire `<svg>` element is removed** (the hero ring
+  mark vanished and the lead text collapsed into the 88px mark column;
+  ring charts, symbol strips and silhouettes on the result page were
+  blank), and `<script>` is stripped even with
+  `unsafe_allow_javascript=True` (the 3D preview never drew, and the old
+  canvas's fixed focal length rendered an 18 cm doll at ~44 px — two
+  latent defects that sat undiscovered while the "visual check of
+  st.html graphics" item stayed open). Fixes: 1) all static SVG content
+  (hero, ring chart, symbol strip, silhouette, grid legend) now renders
+  via `st.markdown unsafe_allow_html` (no sanitizer; block-level inline
+  SVG without blank lines bypasses markdown re-flow); 2) the 3D preview
+  is rewritten as a **server-side static isometric SVG** (painter's
+  algorithm + back-face culling + Lambert shading, 276 front polygons)
+  with height-normalized scaling (fixes the tiny-figure defect) sharing
+  the design tokens — at the cost of drag rotation, since no script
+  channel remains; 3) the deprecated components.v1.html iframe is no
+  longer depended on. Pixel-level browser inspection passes: theme,
+  hero, pattern-sheet rows, check progress, materials (CYC label,
+  10 mm eyes) and assembly (openings + flat-seam hint) all render
+  correctly.
+
 ### Changed
 
 - **Visual redesign: the pattern sheet (图解纸)**. The app's look moves

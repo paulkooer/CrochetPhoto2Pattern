@@ -576,7 +576,9 @@ def apply_design_system() -> None:
 
 def render_hero() -> None:
     """Mark + title + one honest line about what the sheet is."""
-    st.html(
+    # 不用 st.html：其 DOMPurify 净化器会剥掉整个 <svg>（环标消失、
+    # 文本掉进标记列）；st.markdown unsafe_allow_html 不净化
+    st.markdown(
         f"""
         <header class="sheet-hero">
           {ring_mark_svg()}
@@ -590,13 +592,15 @@ def render_hero() -> None:
             </p>
           </div>
         </header>
-        """
+        """,
+        unsafe_allow_html=True,
     )
 
 
 def section_heading(number: int, title: str) -> None:
     """Numbered heading for the result sheet (sections 1–5 are a sequence)."""
-    st.html(
+    st.markdown(
         f'<h2 class="sheet-h"><span class="sheet-h__n">{int(number)}</span>'
-        f'{html.escape(title)}</h2>'
+        f'{html.escape(title)}</h2>',
+        unsafe_allow_html=True,
     )

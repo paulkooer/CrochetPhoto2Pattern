@@ -1,13 +1,19 @@
-"""结构 v2 → 自研轻量 3D 预览（canvas 软渲染，无外部 CDN 依赖）。
+"""结构 v2 → 静态等距 3D 示意（服务端 SVG，零脚本/零外部依赖）。
 
 对照 crogen/CrochetPARADE 的"逐行 → 即时 3D"思路：instances 的归一化
 位置/旋转 + 部件尺寸 → 三角面片 + 画家算法 + Lambert 着色。这是示意性
-结构预览，不是物理仿真；y 按全高、x/z 同尺度缩放为简化假设。保持零
-外部依赖（不引 three.js CDN）以维持应用的离线/隐私立场。
+结构预览，不是物理仿真；y 按全高、x/z 同尺度缩放为简化假设。
+
+历史：v1 是 canvas 软渲染（拖拽旋转/缩放），但 st.html 的 DOMPurify
+净化器剥离 <script>（1.60 实测，unsafe_allow_javascript 也不保留），
+组件 iframe 方案又已过官方弃用线——改为服务端投影出静态等距 SVG，
+与环形图/符号条同走 st.markdown unsafe_allow_html 通道。尺寸按整体
+高度归一化适配画幅（旧 canvas 版固定焦距下 18cm 玩偶仅占 ~44px，
+属未目检的存量缺陷，此处一并修复）。
 """
 from __future__ import annotations
 
-import json
+import math
 from typing import Any
 
 from app import theme
@@ -107,115 +113,186 @@ def build_payload(result: dict) -> dict[str, Any] | None:
     return {"height": height, "items": items}
 
 
-_JS = r"""
-var DATA=__PAYLOAD__;
-var cv=document.getElementById('c2p3d');
-var ctx=cv.getContext('2d');
-var yaw=0.6,pitch=0.35,zoom=1.0,drag=null;
-function resize(){var r=cv.getBoundingClientRect();
-  cv.width=Math.max(1,r.width*devicePixelRatio);
-  cv.height=Math.max(1,r.height*devicePixelRatio);}
-window.addEventListener('resize',function(){resize();draw();});
-cv.addEventListener('mousedown',function(e){drag=[e.clientX,e.clientY];cv.style.cursor='grabbing';});
-window.addEventListener('mouseup',function(){drag=null;cv.style.cursor='grab';});
-window.addEventListener('mousemove',function(e){if(!drag)return;
-  yaw+=(e.clientX-drag[0])*0.01;pitch+=(e.clientY-drag[1])*0.01;
-  pitch=Math.max(-1.4,Math.min(1.4,pitch));drag=[e.clientX,e.clientY];draw();});
-cv.addEventListener('wheel',function(e){e.preventDefault();
-  zoom*=e.deltaY<0?1.1:0.9;zoom=Math.max(0.4,Math.min(3,zoom));draw();},{passive:false});
-function rotY(a,x,z){var c=Math.cos(a),s=Math.sin(a);return [x*c+z*s,-x*s+z*c];}
-function rotX(a,y,z){var c=Math.cos(a),s=Math.sin(a);return [y*c-z*s,y*s+z*c];}
-function hx(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
-function meshSphere(r,seg,ring){var vs=[],fs=[];
-  for(var i=0;i<=ring;i++){var phi=Math.PI*i/ring;
-    for(var j=0;j<=seg;j++){var th=2*Math.PI*j/seg;
-      vs.push([r*Math.sin(phi)*Math.cos(th),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(th)]);}}
-  for(i=0;i<ring;i++)for(var j2=0;j2<seg;j2++){var a=i*(seg+1)+j2,b=a+seg+1;
-    fs.push([a,b,a+1]);fs.push([b,b+1,a+1]);}
-  return {v:vs,f:fs};}
-function meshCyl(r,h,seg,openTop){var vs=[],fs=[];
-  for(var i=0;i<2;i++){var y=i?-h/2:h/2;
-    for(var j=0;j<=seg;j++){var th=2*Math.PI*j/seg;
-      vs.push([r*Math.cos(th),y,r*Math.sin(th)]);}}
-  for(var j3=0;j3<seg;j3++){var a=j3,b=seg+1+j3;
-    fs.push([a,b,a+1]);fs.push([b,b+1,a+1]);}
-  var apexTop=vs.length;vs.push([0,h/2,0]);
-  var apexBot=vs.length;vs.push([0,-h/2,0]);
-  for(var j4=0;j4<seg;j4++){
-    if(!openTop)fs.push([apexTop,j4+1,j4]);
-    fs.push([apexBot,j4+seg+2,j4+seg+1]);}
-  return {v:vs,f:fs};}
-function meshLathe(rad,rowH,seg){var vs=[],fs=[],n=rad.length,h=n*rowH;
-  for(var i=0;i<n;i++){var y=h/2-i*rowH;
-    for(var j=0;j<=seg;j++){var th=2*Math.PI*j/seg;
-      vs.push([rad[i]*Math.cos(th),y,rad[i]*Math.sin(th)]);}}
-  for(i=0;i<n-1;i++)for(var j5=0;j5<seg;j5++){var a2=i*(seg+1)+j5,b2=a2+seg+1;
-    fs.push([a2,b2,a2+1]);fs.push([b2,b2+1,a2+1]);}
-  var c0=[],cs=[];for(var j6=0;j6<=seg;j6++){c0.push(j6);cs.push((n-1)*(seg+1)+j6);}
-  var apexTop=vs.length;vs.push([0,h/2,0]);
-  var apexBot=vs.length;vs.push([0,h/2-h,0]);
-  for(var j7=0;j7<seg;j7++){fs.push([apexTop,c0[j7+1],c0[j7]]);
-    fs.push([apexBot,cs[j7],cs[j7+1]]);}
-  return {v:vs,f:fs};}
-function shade(base,nx,ny,nz){var L=[0.4,0.7,-0.6];
-  var d=Math.max(0,nx*L[0]+ny*L[1]+nz*L[2]);var k=0.55+0.45*d;
-  return 'rgb('+Math.round(base[0]*k)+','+Math.round(base[1]*k)+','+Math.round(base[2]*k)+')';}
-function draw(){resize();var W=cv.width,H2=cv.height;
-  ctx.clearRect(0,0,W,H2);var faces=[];
-  var D=60/zoom,f=2.2*D;
-  DATA.items.forEach(function(item){var rgb=hx(item.color);var m=null;
-    if(item.shape==='sphere'){m=meshSphere(Math.max(item.dims.r,0.4),12,8);}
-    else if(item.shape==='cup'){m=meshCyl(Math.max(item.dims.r,0.4),item.dims.h,12,true);}
-    else if(item.shape==='cylinder'){m=meshCyl(Math.max(item.dims.r,0.4),item.dims.h,12,false);}
-    else if(item.lathe){m=meshLathe(item.lathe.radii,item.lathe.row_h,12);}
-    if(!m)return;
-    item.instances.forEach(function(inst){
-      var rz=(inst.r[2]||0)*Math.PI/180,rx=(inst.r[0]||0)*Math.PI/180;
-      var cz=Math.cos(rz),sz=Math.sin(rz),cx=Math.cos(rx),sx=Math.sin(rx);
-      var wp=m.v.map(function(v){
-        var x1=v[0]*cz-v[1]*sz,y1=v[0]*sz+v[1]*cz,z1=v[2];
-        var y2=y1*cx-z1*sx,z2=y1*sx+z1*cx;
-        var wx=x1+inst.p[0],wy=y2+inst.p[1],wz=z2+inst.p[2];
-        var v1=rotY(yaw,wx,wz);
-        var v2=rotX(pitch,v1[1],v1[0]);
-        return {vx:v1[0],vy:v2[0],vz:v2[1],wx:wx,wy:wy,wz:wz};});
-      m.f.forEach(function(tri){
-        var A=wp[tri[0]],B=wp[tri[1]],C=wp[tri[2]];
-        var ax=B.wx-A.wx,ay=B.wy-A.wy,az=B.wz-A.wz;
-        var bx=C.wx-A.wx,by=C.wy-A.wy,bz=C.wz-A.wz;
-        var nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;
-        var nl=Math.hypot(nx,ny,nz)||1;nx/=nl;ny/=nl;nz/=nl;
-        var vz=(A.vz+B.vz+C.vz)/3;
-        var sc=f/Math.max(4,D+vz);
-        faces.push({z:vz,
-          pts:[[W/2+A.vx*sc,H2/2-A.vy*sc],
-               [W/2+B.vx*sc,H2/2-B.vy*sc],
-               [W/2+C.vx*sc,H2/2-C.vy*sc]],
-          rgb:rgb,nx:nx,ny:ny,nz:nz});});});});
-  faces.sort(function(a,b){return b.z-a.z;});
-  faces.forEach(function(fc){ctx.beginPath();
-    ctx.moveTo(fc.pts[0][0],fc.pts[0][1]);
-    ctx.lineTo(fc.pts[1][0],fc.pts[1][1]);
-    ctx.lineTo(fc.pts[2][0],fc.pts[2][1]);ctx.closePath();
-    ctx.fillStyle=shade(fc.rgb,Math.abs(fc.nx),Math.abs(fc.ny),Math.abs(fc.nz));
-    ctx.fill();ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=0.5;ctx.stroke();});
-  ctx.fillStyle='__INK__';ctx.font=(11*devicePixelRatio)+'px __SANS__';
-  ctx.fillText('示意预览——拖动旋转，滚轮缩放（非物理仿真）',
-    8*devicePixelRatio,16*devicePixelRatio);}
-setTimeout(function(){resize();draw();},50);
-"""
+# ── 静态等距投影（服务端 SVG；视角 = 旧交互版默认 yaw 0.6 / pitch 0.35）──
+_YAW, _PITCH = 0.6, 0.35
+_SEG = 12          # 圆周分段（示意精度）
+_LIGHT = (0.4, 0.7, -0.6)
+
+
+def _hx(h: str) -> tuple[int, int, int]:
+    return (int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16))
+
+
+def _mesh_sphere(r: float) -> tuple[list, list]:
+    vs, fs = [], []
+    ring = 8
+    for i in range(ring + 1):
+        phi = math.pi * i / ring
+        for j in range(_SEG + 1):
+            th = 2 * math.pi * j / _SEG
+            vs.append((r * math.sin(phi) * math.cos(th),
+                       r * math.cos(phi), r * math.sin(phi) * math.sin(th)))
+    for i in range(ring):
+        for j in range(_SEG):
+            a = i * (_SEG + 1) + j
+            b = a + _SEG + 1
+            fs.append((a, b, a + 1))
+            fs.append((b, b + 1, a + 1))
+    return vs, fs
+
+
+def _mesh_cyl(r: float, h: float, open_top: bool) -> tuple[list, list]:
+    vs, fs = [], []
+    for i in range(2):
+        y = -h / 2 if i else h / 2
+        for j in range(_SEG + 1):
+            th = 2 * math.pi * j / _SEG
+            vs.append((r * math.cos(th), y, r * math.sin(th)))
+    for j in range(_SEG):
+        a, b = j, _SEG + 1 + j
+        fs.append((a, b, a + 1))
+        fs.append((b, b + 1, a + 1))
+    top = len(vs)
+    vs.append((0, h / 2, 0))
+    bot = len(vs)
+    vs.append((0, -h / 2, 0))
+    for j in range(_SEG):
+        if not open_top:
+            fs.append((top, j + 1, j))
+        fs.append((bot, j + _SEG + 2, j + _SEG + 1))
+    return vs, fs
+
+
+def _mesh_lathe(radii: list, row_h: float) -> tuple[list, list]:
+    vs, fs = [], []
+    n = len(radii)
+    h = n * row_h
+    for i, rad in enumerate(radii):
+        y = h / 2 - i * row_h
+        for j in range(_SEG + 1):
+            th = 2 * math.pi * j / _SEG
+            vs.append((rad * math.cos(th), y, rad * math.sin(th)))
+    for i in range(n - 1):
+        for j in range(_SEG):
+            a = i * (_SEG + 1) + j
+            b = a + _SEG + 1
+            fs.append((a, b, a + 1))
+            fs.append((b, b + 1, a + 1))
+    c0 = list(range(_SEG + 1))
+    cs = [(n - 1) * (_SEG + 1) + j for j in range(_SEG + 1)]
+    top = len(vs)
+    vs.append((0, h / 2, 0))
+    bot = len(vs)
+    vs.append((0, h / 2 - h, 0))
+    for j in range(_SEG):
+        fs.append((top, c0[j + 1], c0[j]))
+        fs.append((bot, cs[j], cs[j + 1]))
+    return vs, fs
+
+
+def _view(x: float, y: float, z: float) -> tuple[float, float, float]:
+    """世界系 → 视图系（yaw 绕 y，pitch 绕 x）。"""
+    cy, sy = math.cos(_YAW), math.sin(_YAW)
+    x1, z1 = x * cy + z * sy, -x * sy + z * cy
+    cp, sp = math.cos(_PITCH), math.sin(_PITCH)
+    y2, z2 = y * cp - z1 * sp, y * sp + z1 * cp
+    return x1, y2, z2
+
+
+def _rot_instance(v, rz_deg: float, rx_deg: float):
+    cz, sz = math.cos(math.radians(rz_deg)), math.sin(math.radians(rz_deg))
+    cx, sx = math.cos(math.radians(rx_deg)), math.sin(math.radians(rx_deg))
+    x1, y1 = v[0] * cz - v[1] * sz, v[0] * sz + v[1] * cz
+    y2, z2 = y1 * cx - v[2] * sx, y1 * sx + v[2] * cx
+    return (x1, y2, z2)
+
+
+def _render_static_svg(payload: dict) -> str:
+    """payload → 静态等距 SVG（画家算法 + 背面剔除 + Lambert 着色）。
+
+    尺寸按整体高度归一化适配画幅（修复旧 canvas 固定焦距下图形过小）。
+    """
+    W, H = 460, 420
+    faces: list[tuple[float, list, tuple, tuple]] = []
+    ys: list[float] = []
+    for item in payload["items"]:
+        rgb = _hx(item["color"])
+        if item["shape"] == "sphere":
+            vs, fs = _mesh_sphere(max(float(item["dims"]["r"]), 0.4))
+        elif item["shape"] == "cup":
+            vs, fs = _mesh_cyl(max(float(item["dims"]["r"]), 0.4),
+                               float(item["dims"]["h"]), True)
+        elif item["shape"] == "cylinder":
+            vs, fs = _mesh_cyl(max(float(item["dims"]["r"]), 0.4),
+                               float(item["dims"]["h"]), False)
+        elif item.get("lathe"):
+            vs, fs = _mesh_lathe(item["lathe"]["radii"],
+                                 float(item["lathe"]["row_h"]))
+        else:
+            continue
+        for inst in item["instances"]:
+            wp = [_rot_instance(v, inst["r"][2], inst["r"][0]) for v in vs]
+            wp = [(v[0] + inst["p"][0], v[1] + inst["p"][1],
+                   v[2] + inst["p"][2]) for v in wp]
+            ys.extend(v[1] for v in wp)
+            for tri in fs:
+                a, b, c = wp[tri[0]], wp[tri[1]], wp[tri[2]]
+                nx = ((b[1] - a[1]) * (c[2] - a[2])
+                      - (b[2] - a[2]) * (c[1] - a[1]))
+                ny = ((b[2] - a[2]) * (c[0] - a[0])
+                      - (b[0] - a[0]) * (c[2] - a[2]))
+                nz = ((b[0] - a[0]) * (c[1] - a[1])
+                      - (b[1] - a[1]) * (c[0] - a[0]))
+                nl = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
+                nx, ny, nz = nx / nl, ny / nl, nz / nl
+                va, vb, vc = _view(*a), _view(*b), _view(*c)
+                _, _, nvz = _view(nx, ny, nz)
+                if nvz <= 0:      # 背面剔除（视图法线背向相机）
+                    continue
+                vz = (va[2] + vb[2] + vc[2]) / 3.0
+                faces.append((vz,
+                              [(va[0], va[1]), (vb[0], vb[1]),
+                               (vc[0], vc[1])], rgb,
+                              (abs(nx), abs(ny), abs(nz))))
+    if not faces:
+        return ""
+
+    lo, hi = min(ys), max(ys)
+    span = max(hi - lo, 1e-6)
+    scale = 0.86 * H / span          # 高度归一化：图形占画幅 86%
+    cx = W / 2.0
+    cy = H / 2.0 + (hi + lo) / 2.0 * scale   # 居中
+
+    faces.sort(key=lambda f: -f[0])  # 画家算法：远 → 近
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
+        f"font-family='{theme.FONT_SANS}'>",
+        f'<rect width="{W}" height="{H}" fill="{theme.SHEET}"/>',
+    ]
+    for _vz, pts, rgb, nabs in faces:
+        d = max(0.0, sum(nabs[i] * _LIGHT[i] for i in range(3)))
+        k = 0.55 + 0.45 * d
+        fill = (f"rgb({round(rgb[0] * k)},{round(rgb[1] * k)},"
+                f"{round(rgb[2] * k)})")
+        pstr = " ".join(f"{cx + x * scale:.1f},{cy - y * scale:.1f}"
+                        for x, y in pts)
+        parts.append(
+            f'<polygon points="{pstr}" fill="{fill}" '
+            f'stroke="{theme.INK}" stroke-opacity="0.06" stroke-width="0.5"/>')
+    parts.append(
+        f'<text x="10" y="18" font-size="12" fill="{theme.INK_SOFT}">'
+        "示意预览（静态等距视图，非物理仿真）</text>")
+    parts.append("</svg>")
+    return "".join(parts)
 
 
 def structure_preview_html(result: dict) -> str | None:
-    """结构 v2 → 可嵌入 st.html 的预览 HTML；无可渲染实体时返回 None。"""
+    """结构 v2 → 静态等距 SVG；无可渲染实体时返回 None。
+
+    与环形图/符号条同通道：经 st.markdown unsafe_allow_html 渲染
+    （st.html 的净化器剥 <svg> 与 <script>，1.60 实测）。
+    """
     payload = build_payload(result)
     if payload is None:
         return None
-    data = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
-    canvas = ('<canvas id="c2p3d" style="width:100%;height:100%;display:block;'
-              f'background:{theme.SHEET};border:1px solid {theme.RULE};'
-              'border-radius:3px;cursor:grab;"></canvas>')
-    script = (_JS.replace("__PAYLOAD__", data)
-              .replace("__INK__", theme.INK)
-              .replace("__SANS__", theme.FONT_SANS))
-    return canvas + "<script>" + script + "</script>"
+    return _render_static_svg(payload)

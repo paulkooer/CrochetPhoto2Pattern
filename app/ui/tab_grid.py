@@ -347,10 +347,12 @@ def render_tab_grid() -> None:
         col_v1, col_v2 = st.columns([3, 1])
         with col_v1:
             st.subheader("🖼️ 彩色网格预览")
-            # st.html 比 st.markdown(unsafe_allow_html=True) 对 <svg> 的渲染
-            # 更稳定（markdown 管线对内联 SVG 的 sanitize 行为随版本波动）。
-            # components.v1.html 已过弃用线；定高与滚动由 html_box 写进内容。
-            st.html(html_box(view["svg"], 600, scroll=True))
+            # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>（实测 1.60）；
+            # st.markdown unsafe_allow_html 不净化，内联 SVG 无空行时不经
+            # markdown 重排。components.v1.html 已过弃用线；定高与滚动由
+            # html_box 写进内容。
+            st.markdown(html_box(view["svg"], 600, scroll=True),
+                        unsafe_allow_html=True)
         with col_v2:
             st.subheader("📋 颜色图例")
             # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown
