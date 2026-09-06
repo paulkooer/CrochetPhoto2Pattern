@@ -13,7 +13,7 @@ import platform
 import re
 import sys
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Literal
@@ -26,8 +26,8 @@ from app.schemas import PART_NAMES
 from app.utils.images import MAX_UPLOAD_MB, load_image_file
 
 MANIFEST_NAME = "eval_manifest.json"
-MANIFEST_SCHEMA_VERSION = Literal[1]
-REPORT_SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = Literal[2]
+REPORT_SCHEMA_VERSION = 2
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
 ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp"})
@@ -46,7 +46,9 @@ class _StrictModel(BaseModel):
 class DatasetMetadata(_StrictModel):
     name: str = Field(min_length=1, max_length=100)
     version: str = Field(min_length=1, max_length=40)
-    rights_basis: Literal["self_owned", "consented", "licensed", "public_domain"]
+    rights_basis: Literal[
+        "self_owned", "consented", "licensed", "public_domain", "mixed"
+    ]
     evaluation_use_approved: Literal[True]
     contains_personal_data: bool
     retention_policy: str = Field(min_length=1, max_length=500)
@@ -80,10 +82,76 @@ class ExpectedLabels(_StrictModel):
         return value
 
 
+class CaseRightsEvidence(_StrictModel):
+    """Per-image evidence; attribution or takedown promises are not authorization."""
+
+    copyright_basis: Literal[
+        "self_owned", "written_permission", "open_license", "public_domain"
+    ]
+    author_or_rightsholder: str = Field(min_length=1, max_length=200)
+    source_url: str | None = Field(default=None, max_length=1000)
+    license_identifier: str | None = Field(default=None, max_length=100)
+    license_url: str | None = Field(default=None, max_length=1000)
+    permission_reference: str | None = Field(
+        default=None,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+    )
+    verified_on: date
+    depicts_identifiable_person: bool
+    subject_authorization: Literal["not_applicable", "self", "documented_consent"]
+    evaluation_use_approved: Literal[True]
+    redistribution_allowed: bool
+
+    @field_validator("source_url", "license_url")
+    @classmethod
+    def _https_url(cls, value: str | None) -> str | None:
+        if value is not None and not re.fullmatch(r"https://[^\s]+", value):
+            raise ValueError("rights evidence URLs must use https")
+        return value
+
+    @field_validator("verified_on")
+    @classmethod
+    def _not_in_future(cls, value: date) -> date:
+        if value > date.today():
+            raise ValueError("verified_on cannot be in the future")
+        return value
+
+    @model_validator(mode="after")
+    def _evidence_contract(self) -> CaseRightsEvidence:
+        if self.copyright_basis in {"self_owned", "written_permission"}:
+            if self.permission_reference is None:
+                raise ValueError(
+                    "self-owned and permission-based images require a permission_reference"
+                )
+        else:
+            missing = [
+                field
+                for field in ("source_url", "license_identifier", "license_url")
+                if getattr(self, field) is None
+            ]
+            if missing:
+                raise ValueError(
+                    "open-license and public-domain images require source_url, "
+                    "license_identifier, and license_url"
+                )
+
+        if self.depicts_identifiable_person:
+            if self.subject_authorization == "not_applicable":
+                raise ValueError(
+                    "identifiable people require self or documented subject authorization"
+                )
+        elif self.subject_authorization != "not_applicable":
+            raise ValueError(
+                "subject_authorization must be not_applicable when no person is identifiable"
+            )
+        return self
+
+
 class EvaluationCase(_StrictModel):
     id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
     file: str = Field(min_length=1, max_length=255)
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    rights: CaseRightsEvidence
     expected: ExpectedLabels
     tags: list[str] = Field(min_length=1, max_length=12)
     notes: str | None = Field(default=None, max_length=500)
@@ -117,6 +185,7 @@ class EvaluationThresholds(_StrictModel):
     min_flare_accuracy: float = Field(default=0.80, ge=0.0, le=1.0)
     min_color_top3_accuracy: float = Field(default=0.80, ge=0.0, le=1.0)
     min_pattern_valid_rate: float = Field(default=1.0, ge=0.0, le=1.0)
+    min_parade_export_rate: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
 class EvaluationManifest(_StrictModel):
@@ -133,6 +202,29 @@ class EvaluationManifest(_StrictModel):
             raise ValueError("case ids must be unique")
         if len(set(files)) != len(files):
             raise ValueError("case files must be unique")
+
+        dataset_bases = {
+            {
+                "self_owned": "self_owned",
+                "written_permission": "consented",
+                "open_license": "licensed",
+                "public_domain": "public_domain",
+            }[case.rights.copyright_basis]
+            for case in self.cases
+        }
+        expected_basis = next(iter(dataset_bases)) if len(dataset_bases) == 1 else "mixed"
+        if self.dataset.rights_basis != expected_basis:
+            raise ValueError(
+                "dataset rights_basis does not match per-case evidence: "
+                f"expected {expected_basis!r}"
+            )
+        if (
+            any(case.rights.depicts_identifiable_person for case in self.cases)
+            and not self.dataset.contains_personal_data
+        ):
+            raise ValueError(
+                "dataset containing an identifiable person must declare personal data"
+            )
         return self
 
 
@@ -310,11 +402,13 @@ def evaluate_dataset(
                 and (flare_match is not False)
                 and (color_match is not False)
                 and pattern_valid
+                and parade_export_ok
             )
             case_report = {
                 "id": case.id,
                 "file": case.file,
                 "sha256": case.sha256,
+                "rights": case.rights.model_dump(mode="json"),
                 "tags": case.tags,
                 "expected_parts": sorted(expected_parts),
                 "actual_parts": sorted(actual_parts),
@@ -346,6 +440,7 @@ def evaluate_dataset(
                 "id": case.id,
                 "file": case.file,
                 "sha256": case.sha256,
+                "rights": case.rights.model_dump(mode="json"),
                 "tags": case.tags,
                 "expected_parts": sorted(expected_parts),
                 "actual_parts": [],
@@ -360,6 +455,7 @@ def evaluate_dataset(
                 "actual_colors_top3": [],
                 "color_top3_match": color_match,
                 "pattern_valid": False,
+                "parade_export_ok": False,
                 "pattern_issues": [],
                 "passed": False,
                 "error": {"type": type(exc).__name__, "message": str(exc)[:500]},
@@ -389,6 +485,8 @@ def evaluate_dataset(
         and case_pass_rate >= thresholds.min_case_pass_rate
         and pattern_valid_rate is not None
         and pattern_valid_rate >= thresholds.min_pattern_valid_rate
+        and parade_export_rate is not None
+        and parade_export_rate >= thresholds.min_parade_export_rate
         and (flare_accuracy is None or flare_accuracy >= thresholds.min_flare_accuracy)
         and (
             color_top3_accuracy is None
@@ -404,8 +502,8 @@ def evaluate_dataset(
             "python": platform.python_version(),
             "network_images_sent": False,
         },
-        "dataset": manifest.dataset.model_dump(),
-        "thresholds": thresholds.model_dump(),
+        "dataset": manifest.dataset.model_dump(mode="json"),
+        "thresholds": thresholds.model_dump(mode="json"),
         "summary": {
             "cases": len(case_reports),
             "tag_counts": dict(sorted(tag_counts.items())),

@@ -7,10 +7,13 @@ from PIL import Image
 
 from app.evaluation import (
     EvaluationDatasetError,
+    EvaluationManifest,
     evaluate_dataset,
     load_evaluation_dataset,
     main,
 )
+
+_REPO = Path(__file__).resolve().parents[1]
 
 
 def _write_image(path: Path, color: tuple[int, int, int]) -> str:
@@ -29,7 +32,7 @@ def _manifest(cases, **dataset_overrides):
     }
     dataset.update(dataset_overrides)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "dataset": dataset,
         "thresholds": {
             "min_cases": 2,
@@ -39,16 +42,46 @@ def _manifest(cases, **dataset_overrides):
             "min_flare_accuracy": 0.8,
             "min_color_top3_accuracy": 0.8,
             "min_pattern_valid_rate": 1.0,
+            "min_parade_export_rate": 1.0,
         },
         "cases": cases,
     }
 
 
-def _case(case_id, filename, digest, parts, *, flare=None, colors=None, tags=None):
+def _rights(**overrides):
+    rights = {
+        "copyright_basis": "self_owned",
+        "author_or_rightsholder": "fixture-owner",
+        "source_url": None,
+        "license_identifier": None,
+        "license_url": None,
+        "permission_reference": "fixture-owner-attestation",
+        "verified_on": "2026-09-05",
+        "depicts_identifiable_person": False,
+        "subject_authorization": "not_applicable",
+        "evaluation_use_approved": True,
+        "redistribution_allowed": False,
+    }
+    rights.update(overrides)
+    return rights
+
+
+def _case(
+    case_id,
+    filename,
+    digest,
+    parts,
+    *,
+    flare=None,
+    colors=None,
+    tags=None,
+    rights=None,
+):
     return {
         "id": case_id,
         "file": filename,
         "sha256": digest,
+        "rights": rights or _rights(),
         "tags": tags or ["test-fixture"],
         "expected": {
             "parts": parts,
@@ -72,6 +105,17 @@ def _valid_result(parts, colors, *, flare):
             }]
         },
     }
+
+
+def test_example_manifest_uses_current_rights_schema():
+    payload = json.loads(
+        (_REPO / "docs" / "eval_manifest.example.json").read_text(encoding="utf-8")
+    )
+    manifest = EvaluationManifest.model_validate(payload)
+
+    assert manifest.schema_version == 2
+    assert manifest.thresholds.min_parade_export_rate == 1.0
+    assert manifest.cases[0].rights.subject_authorization == "documented_consent"
 
 
 def test_evaluation_aggregates_frozen_cases(tmp_path):
@@ -114,6 +158,8 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
         "passed": True,
     }
     assert all(case["passed"] for case in report["cases"])
+    assert report["report_schema_version"] == 2
+    assert report["cases"][0]["rights"]["copyright_basis"] == "self_owned"
 
 
 def test_hash_mismatch_stops_before_pipeline(tmp_path):
@@ -147,6 +193,17 @@ def test_corrupt_image_is_a_dataset_error(tmp_path):
          "relative path"),
         (lambda payload: payload["cases"][0]["expected"].update(parts=["双手"]),
          "unknown canonical parts"),
+        (lambda payload: payload["cases"][0]["rights"].update(
+            depicts_identifiable_person=True,
+            subject_authorization="not_applicable",
+        ), "identifiable people require"),
+        (lambda payload: payload["cases"][0]["rights"].update(
+            copyright_basis="open_license",
+            permission_reference=None,
+        ), "open-license and public-domain images require"),
+        (lambda payload: payload["cases"][0]["rights"].update(
+            evaluation_use_approved=False,
+        ), "evaluation_use_approved"),
     ],
 )
 def test_manifest_rejects_unsafe_or_ambiguous_contract(tmp_path, mutation, message):
@@ -177,6 +234,87 @@ def test_pipeline_error_is_reported_and_fails_gate(tmp_path):
         "type": "RuntimeError",
         "message": "controlled failure",
     }
+
+
+def test_dataset_rights_basis_must_match_per_case_evidence(tmp_path):
+    digest = _write_image(tmp_path / "photo.png", (255, 255, 255))
+    licensed = _rights(
+        copyright_basis="open_license",
+        author_or_rightsholder="Example Creator",
+        source_url="https://example.test/photo",
+        license_identifier="CC-BY-4.0",
+        license_url="https://creativecommons.org/licenses/by/4.0/",
+        permission_reference=None,
+    )
+    payload = _manifest(
+        [_case("licensed", "photo.png", digest, ["头部"], rights=licensed)]
+    )
+    with pytest.raises(EvaluationDatasetError, match="dataset rights_basis"):
+        (tmp_path / "eval_manifest.json").write_text(
+            json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+        )
+        load_evaluation_dataset(tmp_path)
+
+    payload["dataset"]["rights_basis"] = "licensed"
+    (tmp_path / "eval_manifest.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+    _root, manifest, _prepared = load_evaluation_dataset(tmp_path)
+    assert manifest.cases[0].rights.license_identifier == "CC-BY-4.0"
+
+
+def test_manifest_schema_v1_cannot_serve_as_g3_evidence(tmp_path):
+    digest = _write_image(tmp_path / "legacy.png", (255, 255, 255))
+    payload = _manifest([_case("legacy", "legacy.png", digest, ["头部"])])
+    payload["schema_version"] = 1
+    (tmp_path / "eval_manifest.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+
+    with pytest.raises(EvaluationDatasetError, match="schema_version"):
+        load_evaluation_dataset(tmp_path)
+
+
+def test_identifiable_subject_requires_dataset_personal_data_flag(tmp_path):
+    digest = _write_image(tmp_path / "person.png", (255, 255, 255))
+    rights = _rights(
+        depicts_identifiable_person=True,
+        subject_authorization="self",
+    )
+    payload = _manifest(
+        [_case("person", "person.png", digest, ["头部"], rights=rights)]
+    )
+    (tmp_path / "eval_manifest.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+
+    with pytest.raises(EvaluationDatasetError, match="declare personal data"):
+        load_evaluation_dataset(tmp_path)
+
+
+def test_parade_export_failure_blocks_case_and_release_gate(tmp_path, monkeypatch):
+    digest = _write_image(tmp_path / "photo.png", (255, 255, 255))
+    case = _case("not-exportable", "photo.png", digest, ["头部"])
+    payload = _manifest([case])
+    payload["thresholds"]["min_cases"] = 1
+    (tmp_path / "eval_manifest.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+
+    monkeypatch.setattr(
+        "app.utils.parade_export.export_parade_dsl",
+        lambda _result: (_ for _ in ()).throw(ValueError("unsupported round")),
+    )
+    report = evaluate_dataset(
+        tmp_path,
+        runner=lambda _image: _valid_result(["头部"], ["白色"], flare=False),
+    )
+
+    assert report["summary"]["pattern_valid_rate"] == 1.0
+    assert report["summary"]["parade_export_rate"] == 0.0
+    assert report["summary"]["passed"] is False
+    assert report["cases"][0]["parade_export_ok"] is False
+    assert report["cases"][0]["passed"] is False
 
 
 def test_default_evaluator_runs_complete_local_pipeline(tmp_path):

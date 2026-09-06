@@ -1,0 +1,48 @@
+name: Rights or privacy concern / 内容权利问题
+description: Report copyright, licensing, likeness, privacy, or consent concerns
+title: "[Rights] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach IDs, contracts, source photos, or private contact details to this public issue.
+        请勿在公开 Issue 上传身份证件、合同、人物原图或私密联系方式。
+  - type: input
+    id: location
+    attributes:
+      label: Exact location / 精确位置
+      description: Repository path, commit, release, or exact URL.
+    validations:
+      required: true
+  - type: dropdown
+    id: relationship
+    attributes:
+      label: Relationship to the rights / 与权利的关系
+      options:
+        - Creator or rightsholder / 作者或权利人
+        - Identifiable subject or authorized representative / 被摄者或其授权代表
+        - License or platform representative / 许可证或平台代表
+        - Good-faith reporter / 善意报告者
+    validations:
+      required: true
+  - type: textarea
+    id: basis
+    attributes:
+      label: Rights concern / 权利疑虑
+      description: Describe the right, license, consent scope, and non-sensitive supporting facts.
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: Requested action / 希望采取的措施
+      placeholder: Quarantine, remove, correct attribution, or contact for private review.
+    validations:
+      required: true
+  - type: checkboxes
+    id: declaration
+    attributes:
+      label: Good-faith declaration / 善意声明
+      options:
+        - label: I believe this report is accurate and am submitting it in good faith. / 我相信上述信息准确，并基于善意提交。
+          required: true

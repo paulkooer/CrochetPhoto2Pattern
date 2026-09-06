@@ -8,6 +8,7 @@
 |---|---|---|
 | System status, evidence, and release gates / 系统状态、证据与发布门禁 | [system-status.md](system-status.md) | [system-status.zh-CN.md](system-status.zh-CN.md) |
 | Authorized real-photo evaluation / 授权真实照片评测 | [evaluation.en.md](evaluation.en.md) | [evaluation.md](evaluation.md) |
+| Third-party rights and takedown / 第三方权利与下架 | [policy](../THIRD_PARTY_CONTENT_EN.md) · [process](../NOTICE_AND_TAKEDOWN_EN.md) | [政策](../THIRD_PARTY_CONTENT.md) · [流程](../NOTICE_AND_TAKEDOWN.md) |
 | Physical trials and calibration / 实体试钩与校准 | [physical-trials.en.md](physical-trials.en.md) | [physical-trials.md](physical-trials.md) |
 | Processing flow / 系统处理流程 | [flow.en.md](flow.en.md) | [flow.md](flow.md) |
 | External calibration evidence chain / 外部校准证据链 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
@@ -20,6 +21,8 @@ Root-level user and community documents are also bilingual:
 - [README (English, default)](../README.md) / [README（简体中文）](../README_ZH.md)
 - [贡献指南](../CONTRIBUTING.md) / [Contributing Guide](../CONTRIBUTING_EN.md)
 - [安全策略](../SECURITY.md) / [Security Policy](../SECURITY_EN.md)
+- [第三方内容政策](../THIRD_PARTY_CONTENT.md) / [Third-Party Content Policy](../THIRD_PARTY_CONTENT_EN.md)
+- [通知与下架流程](../NOTICE_AND_TAKEDOWN.md) / [Notice and Takedown Process](../NOTICE_AND_TAKEDOWN_EN.md)
 - [行为准则](../CODE_OF_CONDUCT.md) / [Code of Conduct](../CODE_OF_CONDUCT_EN.md)
 - [变更日志](../CHANGELOG.md) / [Changelog](../CHANGELOG_EN.md)
 

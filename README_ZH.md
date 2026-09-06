@@ -115,6 +115,8 @@ Key + 对应 Base URL”（如 `https://your-relay.example/v1`）；Base URL 不
   数据放入 URL，请勿用于敏感或不希望被接收方保存的内容。
 - `.env`、授权评测照片、评测输出和实体试钩记录默认被 Git 忽略。提交前仍应主动
   检查是否含 API Key、人物照片或个人信息。
+- 网络可见不等于授权；免责声明、致谢或“通知即删”都不能替代许可。第三方照片与
+  资料须遵守[第三方内容政策](THIRD_PARTY_CONTENT.md)和[通知下架流程](NOTICE_AND_TAKEDOWN.md)。
 
 ### 运行
 
@@ -152,8 +154,8 @@ uv run --locked --extra dev pytest tests/ -v
 
 ### 授权真实照片评测
 
-真实评测强制记录数据权利基础、用途批准、SHA-256 和场景标签，并且只运行本地
-视觉路径，不向 LLM 服务发送照片：
+真实评测强制逐图记录版权依据、被摄者同意、用途批准、SHA-256 和场景标签，并且
+只运行本地视觉路径，不向 LLM 服务发送照片：
 
 ```bash
 uv run crochet2pattern-eval --dataset eval_data/release-01 \

@@ -44,12 +44,15 @@ def test_release_metadata_is_consistent():
     readme = (_REPO / "README.md").read_text(encoding="utf-8")
     changelog = (_REPO / "CHANGELOG.md").read_text(encoding="utf-8")
     status = (_REPO / "docs" / "system-status.md").read_text(encoding="utf-8")
+    status_zh = (_REPO / "docs" / "system-status.zh-CN.md").read_text(encoding="utf-8")
 
     match = re.search(r'^version = "(\d+\.\d+\.\d+)b(\d+)"$', pyproject, re.MULTILINE)
     assert match is not None, "Beta 阶段版本必须使用 PEP 440 的 X.Y.ZbN 格式"
     release_name = f"{match.group(1)}-beta.{match.group(2)}"
 
     assert f"## {release_name} - " in changelog
+    assert f"is a **{release_name} engineering candidate**" in status
+    assert f"当前是 **{release_name} 工程候选版**" in status_zh
     assert "Release status: Beta" in readme
     assert 'crochet2pattern-eval = "app.evaluation:main"' in pyproject
     assert 'crochet2pattern-trials = "app.trials:main"' in pyproject
@@ -71,6 +74,10 @@ def test_repository_has_public_contribution_and_security_guidance():
         "CONTRIBUTING_EN.md",
         "SECURITY.md",
         "SECURITY_EN.md",
+        "THIRD_PARTY_CONTENT.md",
+        "THIRD_PARTY_CONTENT_EN.md",
+        "NOTICE_AND_TAKEDOWN.md",
+        "NOTICE_AND_TAKEDOWN_EN.md",
         "README_EN.md",
         "README_ZH.md",
         "CHANGELOG_EN.md",
@@ -85,6 +92,7 @@ def test_repository_has_public_contribution_and_security_guidance():
         ".github/pull_request_template.md",
         ".github/ISSUE_TEMPLATE/bug_report.yml",
         ".github/ISSUE_TEMPLATE/feature_request.yml",
+        ".github/ISSUE_TEMPLATE/rights_concern.yml",
         ".github/ISSUE_TEMPLATE/config.yml",
     )
     for relative in required:
@@ -103,6 +111,8 @@ def test_bilingual_entry_points_cross_link_and_preserve_release_boundaries():
         ("CONTRIBUTING.md", "CONTRIBUTING_EN.md"),
         ("SECURITY.md", "SECURITY_EN.md"),
         ("CODE_OF_CONDUCT.md", "CODE_OF_CONDUCT_EN.md"),
+        ("THIRD_PARTY_CONTENT.md", "THIRD_PARTY_CONTENT_EN.md"),
+        ("NOTICE_AND_TAKEDOWN.md", "NOTICE_AND_TAKEDOWN_EN.md"),
         ("CHANGELOG.md", "CHANGELOG_EN.md"),
         ("docs/system-status.zh-CN.md", "docs/system-status.md"),
         ("docs/evaluation.md", "docs/evaluation.en.md"),

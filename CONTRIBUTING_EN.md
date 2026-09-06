@@ -12,6 +12,9 @@ or maintainability.
 - Do not open a public issue for a vulnerability; follow [SECURITY_EN.md](SECURITY_EN.md).
 - Never commit API keys, `.env`, unauthorized personal photos, raw evaluation images,
   identifying trial data, or patterns whose origin or license is unclear.
+- Third-party material must follow the
+  [Third-Party Content and Authorization Policy](THIRD_PARTY_CONTENT_EN.md). Credit, thanks,
+  disclaimers, and takedown promises do not constitute authorization.
 - For substantial algorithm, format, or product-claim changes, open an issue first and
   describe the problem, evidence, compatibility, and failure modes.
 
@@ -49,8 +52,9 @@ The pose extra is supported only on Python 3.11–3.12 and requires `libEGL.so.1
 3. **Do not equate automation with physical testing.** New algorithms need unit/property
    tests. Claims about crochetability, size, materials, or time also need independent
    evidence under [docs/physical-trials.en.md](docs/physical-trials.en.md).
-4. **Protect evaluation rights.** Real-photo evaluation must follow the authorization,
-   purpose, retention, and hash rules in [docs/evaluation.en.md](docs/evaluation.en.md).
+4. **Protect evaluation rights.** Real-photo evaluation must follow the per-image copyright,
+   subject-consent, purpose, retention, and hash rules in
+   [docs/evaluation.en.md](docs/evaluation.en.md).
 5. **Preserve compatibility.** Version backup/share/pattern/trial format changes, support
    backward reading or document a migration, and update tests and the changelog.
 

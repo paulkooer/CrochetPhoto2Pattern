@@ -3,16 +3,17 @@
 [简体中文](SOURCES.md) | **English**
 
 The domain assumptions in this system are not guessed: every example
-comes from a real, hookable public pattern, transcribed verbatim,
-mechanically verified round by round, and pinned as a runnable test
+comes from a real, hookable public pattern. Necessary stitch-algebra and
+round-structure facts are extracted, mechanically verified, and encoded as a runnable test
 fixture ([`tests/test_reference_patterns.py`](../tests/test_reference_patterns.py),
 fixture count is
 whatever `uv run pytest tests/test_reference_patterns.py
 tests/test_reference_grid.py --collect-only -q` reports — never
 hand-maintained). Real patterns overturned five generator priors, and the
 validator was corrected each time — the evidence for every correction
-is in the table below. Only stitch algebra and round structure are
-taken from each source, never creative text (per each source's terms).
+is in the table below. This is reference validation, not model-weight training or fine-tuning.
+Only stitch algebra and round structure are taken from each source, never source images or
+creative pattern prose (per each source's terms).
 
 ## Validator evolution: five prior corrections
 
