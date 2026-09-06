@@ -61,6 +61,7 @@
 |------|----------|------|
 | [PlanetJune magic ring](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-a-magic-ring/) | 6 起环 +6 公式口径；无痕收口（front loops 拉紧） | `test_generated_sphere_matches_community_formula` |
 | [PlanetJune needlesculpting](https://www.planetjune.com/blog/tutorials/needlesculpting/) | 针塑形（可选组装步骤）：眼窝=横穿头内、两端同孔拉紧打结藏线；隐形走线法（V 形两线间进针）；锚点选择；「内建塑形的图解无需此步」定性 | `test_assembly_optional_needle_sculpting_step` |
+| [Grace and Yarn 配重底](https://www.graceandyarn.com/2019/12/how-to-add-weighted-base-to-your.html) / [The Loopy Lamb](https://theloopylamb.com/how-to-use-poly-pellets-in-amigurumi/) | 配重珠法（可选）：约 3/4 杯聚乙烯珠装丝袜打结、减针开口尚能伸手时置底、丝袜色近玩偶防透出、3 岁以下勿用、可正常水洗 | `test_weighted_base_materials_and_assembly` |
 | [r/Amigurumi 眼睛 wiki](https://www.reddit.com/r/Amigurumi/wiki/faq_eyeqs/) | 安全眼分档（迷你 5–6 / 常规 8–12 / 大型 14–20+ mm） | `test_crochet_params.py` 眼径梯 |
 | [kruchcom.ru 泰迪指偶](https://kruchcom.ru/archives/22215) | 俄语圈 КА/ПРИБ/СБН 逐字——跨语言同一标准 | `test_russian_finger_puppet_rounds_pass_validation` |
 | [Lovable Loops 樱桃 C2C](https://lovableloops.com/cherry-square-mini-c2c-crochet-pattern/) | 9×9 逐行色块全文回写 | `test_grid_pipeline_reproduces_published_c2c_chart` |

@@ -63,6 +63,16 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **Weighted-base materials row and assembly step** (Grace and Yarn /
+  The Loopy Lamb verbatim): body-bearing patterns gain an **optional
+  weighted-pellets row** (~3/4 cup poly pellets) and an assembly step —
+  pour the pellets into a knotted stocking (color close to the doll so
+  it doesn't show through), place it at the bottom while the decrease
+  opening still admits a hand, then stuff normally; safety framing:
+  not for under-3s (pellets can work through stitches), washable as
+  normal. Same optional-hardware pattern as the armature-wire row.
+  1 test (present with a body, absent without; 835 total).
+
 - **Needle sculpting enters the assembly notes** (PlanetJune's tutorial
   page verbatim — the third PlanetJune page in the corpus): for
   head-bearing patterns the assembly now includes an **optional step**

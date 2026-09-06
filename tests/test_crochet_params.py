@@ -857,3 +857,21 @@ def test_assembly_optional_needle_sculpting_step():
     if not isinstance(asm2, str):
         asm2 = "".join(asm2)
     assert "针塑形" not in asm2
+
+
+def test_weighted_base_materials_and_assembly():
+    """有身体时材料行与装配步骤出现配重底（Grace and Yarn 逐字口径：
+    丝袜打结、减针开口时机置底、3 岁以下勿用）；无身体不出现。"""
+    params = _params_for(["头部", "身体", "手臂", "腿部"])
+    rows = [m for m in params["materials"]
+            if m["item"] == "配重珠（可选）"]
+    assert len(rows) == 1
+    q = rows[0]["quantity"]
+    assert "3/4 杯" in q and "丝袜" in q and "勿用" in q
+    asm = params["assembly_instructions"]
+    if not isinstance(asm, str):
+        asm = "".join(asm)
+    assert "配重珠" in asm and "减针" in asm and "可选" in asm
+
+    no_body = _params_for(["头部", "耳朵"])
+    assert all(m["item"] != "配重珠（可选）" for m in no_body["materials"])

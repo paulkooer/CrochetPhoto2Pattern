@@ -484,6 +484,15 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
                           "quantity": f"一对 ({_safety_eye_mm(diameter)}mm；"
                                       "3 岁以下儿童或宠物玩偶建议改刺绣眼)"})
     materials.append({"item": "填充棉", "quantity": "适量"})
+    # 配重底（可选）——Grace and Yarn 逐字：约 3/4 杯聚乙烯珠装入丝袜
+    # 打结置于底部（丝袜色近玩偶防透出），在开始减针、开口尚能伸手时
+    # 放入；3 岁以下勿用（珠粒可能透过针缝）；可正常水洗。
+    if "身体" in part_names:
+        materials.append({
+            "item": "配重珠（可选）",
+            "quantity": "约 3/4 杯——装入丝袜打结后置底再正常填充；"
+                        "3 岁以下儿童玩偶勿用",
+        })
     # 可弯折四肢的定型线（可选件）——规格锚点：Crafty Intentions 设计师
     # 用纸包 18 号 18 英寸花艺线（布包同号过软不承力），r/CrochetHelp
     # 共识 16–20 号；端部折环包裹、儿童玩具改毛条/竹签出自 Maclafersa
@@ -640,6 +649,11 @@ def build_assembly(part_names, skirt_style: str = "ring",
 
     one_piece = _ONE_PIECE_NAME in part_names
     steps: list[str] = ["按各部件标注数量分别完成并填充棉花"]
+    if "身体" in part_names or one_piece:
+        steps.append(
+            "可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始"
+            "减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；"
+            "3 岁以下儿童玩偶勿用）")
     if one_piece:
         steps.append("一体件钩完头部后先填充头部再继续钩身体（分阶段填充）")
     if "头部" in part_names or one_piece:
