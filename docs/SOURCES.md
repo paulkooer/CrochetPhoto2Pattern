@@ -32,6 +32,8 @@
 | [CYC 纱线重量系统](https://www.craftyarncouncil.com/standards/yarn-weight-system) | gauge 层 cyc_label 七档映射 | `test_gauge.py` |
 | [CYC Project Levels](https://www.craftyarncouncil.com/standards/skill-levels) | 难度四级标签对齐 | `test_schemas.py` |
 | [CYC 缩写规范](https://www.craftyarncouncil.com/standards/crochet-abbreviations) | CrochetPARADE DSL 令牌一致性 | `test_parade_tokens_align_with_cyc_abbreviations` |
+| [Shelley Husband US↔UK 对照](https://shelleyhusbandcrochet.com/uk-and-us-crochet-terms-conversion-help-and-chart/) | 错位一级对照链（sc=dc、hdc=htr、dc=tr、tr=dtr、dtr=ttr）——针法表 UK 列 | `test_height_ladder_us_uk_offset_invariant` |
+| [中文图解符号体系（知乎/Reddit 新手指南）](https://zhuanlan.zhihu.com/p/2397749055) | X/T/F/E/V/A 字母记号 ↔ sc/hdc/dc/tr——针法表中文列与符号列 | `tests/test_stitches.py` |
 | [Lion Brand 经典 granny](https://www.lionbrand.com/community/blog/how-to-crochet-a-classic-granny-square/) | 四角拓扑 +12/圈、边圈 76 | `test_intl_lionbrand_classic_granny_passes` |
 
 ### 专业设计工作室 / 独立设计师

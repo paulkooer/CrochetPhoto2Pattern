@@ -63,6 +63,20 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Added
 
+- **System-wide stitch glossary** (`app/models/stitches.py`, 18 entries
+  × 5 systems): previously scattered stitch knowledge consolidated
+  into a single source — Chinese letter notation (X/T/F/E/V/A/W/M/B),
+  official US abbreviations (checked against CYC's full chart verbatim,
+  including pc/ps/bo/CL, FLO/BLO, FP/BP families), UK traditional terms
+  (one-level offset: US sc=UK dc, US dc=UK tr, per Shelley Husband/
+  KnitPro charts), Japanese names (saibi/cho/mashime), and each
+  stitch's **count semantics** (consumed→produced ratio: the inc/dec
+  family 1→2/2→1/3→1/4→1; the cluster family — bobble/puff/popcorn —
+  count-neutral; edge decoration — picot/crab — not counted). The
+  export legend gains two lines (height ladder + cluster/edge
+  families); entry integrity, the US↔UK pairing invariant, cluster
+  neutrality, and the export wiring all have tests (4 new, 821 total).
+
 - **Spanish-language verification (5th notation system) + safety-eye
   age warning**: Zepiany's ES-Bee and Melonchillo's magic-circle law,
   captured verbatim (vuelta/pb/aum/dis/AM). ① a symmetric 30-peak

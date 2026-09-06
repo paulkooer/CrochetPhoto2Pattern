@@ -106,6 +106,8 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         "进出各1针——不改变针数）；"
         "(4X,V)×6 = “4短针+1加针”重复 6 次"
     )
+    from app.models.stitches import glossary_note_lines
+    lines.extend(glossary_note_lines())
     lines.append(">")
     lines.append(
         "> 钩法：螺旋钩（不引拔、不翻转），每圈第一针挂记号扣；"
