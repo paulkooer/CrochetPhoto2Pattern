@@ -23,7 +23,7 @@ jobs:
       # 只构建不推送：防止 Dockerfile / 依赖图腐化（锁定安装、非 root、
       # HEALTHCHECK 的组合已在本仓库验证过容器冒烟）
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: false
