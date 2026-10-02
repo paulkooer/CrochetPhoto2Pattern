@@ -10,6 +10,65 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed
 
+- **Assembly prose, download backoff, and resource-bound review**: edited assembly
+  text no longer leaks internal instance ids (e.g. "尾巴（tail）") into the Chinese
+  prose; lone instances merge into one complete sentence while custom ids of multiple
+  edited copies are kept for distinguishability. After one failed pose-model download,
+  the process skips further attempts for 300 seconds (a valid cache always bypasses
+  this; success clears it). Pattern part dimensions now share the structure layer's
+  (0, 200] bound, and the schema documents emit `maximum`. Legacy structures reject
+  duplicate part names and non-string names; both formats cap parts at 64. Validation
+  and rebuild gain resource bounds of 2000 rounds per part and 100000 stitches per
+  round, reporting the excess instead of grinding through pathological JSON. The
+  head/body proportions line is generated and rewritten through one shared prefix
+  constant, and the share decompression limit constant is renamed to reflect its
+  byte semantics.
+
+- **Physical input bounds and preview rotation**: generation validates both legacy
+  and v2 structure dimensions before building rounds. Boolean, non-finite, non-positive,
+  and over-200cm dimensions are rejected; legacy numeric strings are normalized and
+  optional null dimensions use the existing fallback. Direct `Gauge` construction
+  enforces the existing 6–40 stitches / 8–50 rows per 10cm bounds; mapping/UI fallback
+  and clamping remain supported. Pattern dimensions must be finite and positive;
+  invalid backups require correction before import. The preview now applies Y rotation
+  after Z and X, retaining previous two-axis orientations.
+
+- **Edited counts and assembly connections**: model rebuilding, validation, and Parade
+  share lossless integer decoding; booleans cannot become valid stitch or part counts.
+  Empty rounds and duplicate row/part identities are rejected before edits/imports
+  replace the current result or its cached exports. Legacy integer strings and integral
+  floats remain supported; backups with empty parts or duplicate identities need JSON
+  correction before import. Assembly text follows edited anchors, methods, and individual
+  copies, distinguishes head/body regions in one-piece patterns, and reports quantity/graph mismatches.
+
+- **Shared, repeatable photo observations**: silhouette, palette, and color bands reuse
+  one segmentation per generation, including failed extraction. New runs recompute
+  observations after image edits. Seeded GrabCut initialization prevents repeat-run
+  drift, and out-of-bounds face seeds are ignored. Pose downloads use unique staging
+  files, verified atomic replacement, an in-process thread lock, size/deadline checks,
+  and cleanup on failure. Explicit head resizing now uses the requested absolute
+  diameter; size controls retain existing values outside their usual slider ranges.
+
+- **Gauge and structure edit consistency**: edited `params.gauge` now drives materials,
+  exports, previews, and regeneration, with legacy result-level fallback and normalized
+  numeric strings. Non-finite and boolean gauge inputs use the default. Resizing scales
+  the existing graph while retaining quantities, poses, connections, colors, and part
+  edits. Cylinder diameters, cup depths, skirt hems, and explicit colors now affect the
+  pattern. Tapered skirts use valid decreasing rounds; an empty edited structure fails
+  explicitly instead of restoring the detected parts.
+  Applying local edits clears stale PDF/share caches; complete backups carry their
+  schema version and oversized shares direct users to the backup download.
+
+- **2026-09-07 input, batch, and export review**: allocate collision-free batch output
+  names even when generated suffixes collide with source stems; isolate corrupt-image
+  `SystemExit` failures, skip directories with image extensions, and validate the input
+  directory before creating outputs. Reject fractional, boolean, non-finite, negative,
+  and empty stitch inputs without changing valid non-six-sector or compound-decrease
+  semantics. Fix Parade plain-round arithmetic, invalid starts, first-round colors,
+  and dangling part separators. Require complete single-stream share payloads and
+  symmetric byte limits; reject unknown backup versions and non-object history JSON.
+  Evidence: [review record (Chinese)](docs/optimization-review-20260907.md).
+
 - **Executable correctness is now a gate, not only a reported metric**: authorized-photo
   evaluation adds `min_parade_export_rate` (100% by default). A failed complete
   CrochetPARADE export now makes both the case and overall `passed=false`, preventing an

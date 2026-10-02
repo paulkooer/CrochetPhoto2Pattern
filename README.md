@@ -45,7 +45,8 @@ convention.
 - Photo upload, plus manual and 2D grid workflows.
 - Free local-vision fallback: face-based proportion estimation and silhouette analysis
   without an LLM API key.
-- GrabCut subject segmentation for body-focused palette and profile extraction.
+- GrabCut subject segmentation shared once per generation across palette, profile,
+  and color bands, with repeatable initialization and fallback when extraction fails.
 - Optional pose landmarks on Python 3.11–3.12 for shoulder/hip/knee measurement; Linux
   also requires EGL/GLESv2 and safely falls back when the native runtime is unavailable.
 - Photo-derived yarn palettes, longitudinal color bands, and CIEDE2000 color matching.
@@ -61,6 +62,7 @@ convention.
 - Correct multiplicity accounting for paired arms, legs, and ears across stitches,
   materials, time estimates, exports, and progress.
 - Strictly validated advanced structure editing without another AI call.
+- Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
 - Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows.
 - Stitch-arithmetic validation, ring charts, progress tracking, per-color bills of
   materials, share links, SQLite history, JSON backup, Markdown, and optional PDF export.
