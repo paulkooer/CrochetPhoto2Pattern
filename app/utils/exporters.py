@@ -73,9 +73,11 @@ def export_markdown(params: dict, analysis: dict | None = None) -> str:
         lines.append("")
     # U24（升级）：密度是复现图解的第一要素（所有针数由它推导），
     # 必须随图解导出——缺失时给兜底声明并提示重新生成
-    g = params.get("gauge") or {}
-    st_g, rw_g = g.get("stitches_per_10cm"), g.get("rows_per_10cm")
-    if st_g and rw_g:
+    from app.models.gauge import gauge_from_mapping
+
+    g = gauge_from_mapping(params.get("gauge"))
+    st_g, rw_g = g.stitches_per_10cm, g.rows_per_10cm
+    if params.get("gauge"):
         lines.append(f"> 密度（小样）：10cm × {st_g:g} 针 × {rw_g:g} 行——"
                      f"请先试钩核对，所有 cm 标注由它推导。"
                      f"若你的小样密度不同，请在侧栏改密度后重新生成")

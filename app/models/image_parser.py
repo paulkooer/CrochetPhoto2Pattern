@@ -13,6 +13,7 @@ from PIL import Image
 
 from ..schemas import ImageAnalysis, VisionOutput
 from .colors import nearest_yarn
+from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +169,8 @@ def _image_to_base64(image: Image.Image, max_size: int = 1024) -> str:
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def extract_color_palette(image: Image.Image, n_colors: int = 5) -> list[str]:
+def extract_color_palette(image: Image.Image, n_colors: int = 5, *,
+                          subject: SubjectObservation | None = None) -> list[str]:
     """Extract dominant colors from an image and map to yarn color names.
 
     主体像素上做 S3 直量化（coverage 直选毛线色 + CIEDE2000 分配）——
@@ -188,7 +190,7 @@ def extract_color_palette(image: Image.Image, n_colors: int = 5) -> list[str]:
         # 主体掩码可用 → 只统计主体像素（背景剔除比色彩距离阈值更稳）
         try:
             from .subject import extract_subject
-            res = extract_subject(image, max_side=150)
+            res = subject.extract(image) if subject is not None else extract_subject(image, max_side=150)
             if res is not None:
                 mask, small = res
                 subj = np.asarray(small)[mask]
@@ -259,6 +261,8 @@ class ImageParser:
         image: Image.Image,
         geometry_profile: list[float] | None = None,
         geometry_observed: bool = False,
+        *,
+        subject: SubjectObservation | None = None,
     ) -> ImageAnalysis:
         """Local no-LLM analysis: face detection + proportion estimation.
 
@@ -272,6 +276,7 @@ class ImageParser:
             image,
             geometry_profile=geometry_profile,
             geometry_observed=geometry_observed,
+            subject=subject,
         )
         self.last_local_meta = meta
         return analysis
@@ -291,7 +296,8 @@ class ImageParser:
         return self._mock_analysis()
 
     def parse_image(self, image: Image.Image,
-                    span_hints: str | None = None) -> ImageAnalysis:
+                    span_hints: str | None = None, *,
+                    subject: SubjectObservation | None = None) -> ImageAnalysis:
         """Parse an image and return structured analysis.
 
         Tries Anthropic first; if that call fails, falls back to OpenAI.
@@ -305,7 +311,7 @@ class ImageParser:
         self.last_local_meta = {}  # 每次解析重置，防止上次的来源信息泄漏
         self._span_hints = span_hints
         img_b64 = _image_to_base64(image)
-        colors = extract_color_palette(image)
+        colors = extract_color_palette(image, subject=subject)
 
         result: ImageAnalysis | None = None
         provider: str | None = None

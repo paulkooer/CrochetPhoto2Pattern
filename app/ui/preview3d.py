@@ -17,6 +17,7 @@ import math
 from typing import Any
 
 from app import theme
+from app.models.gauge import gauge_from_result
 
 # 单色部件的占位色（skin/body 不是毛线色名）→ 中性示意色
 _PLACEHOLDER_HEX = {"skin": "#e8bfa8", "body": "#9aa7b8"}
@@ -49,9 +50,9 @@ def build_payload(result: dict) -> dict[str, Any] | None:
         return None
     analysis = result.get("analysis") or {}
     height = float(analysis.get("height_cm") or 18.0)
-    gauge = result.get("gauge") or {}
-    stitch_w = 10.0 / max(float(gauge.get("stitches_per_10cm", 13.0)), 1e-6)
-    row_h = 10.0 / max(float(gauge.get("rows_per_10cm", 16.0)), 1e-6)
+    gauge = gauge_from_result(result)
+    stitch_w = gauge.stitch_w_cm
+    row_h = gauge.row_h_cm
 
     hex_by_name = _hex_by_name(result)
     rounds_by_name: dict[str, list] = {}
@@ -199,12 +200,14 @@ def _view(x: float, y: float, z: float) -> tuple[float, float, float]:
     return x1, y2, z2
 
 
-def _rot_instance(v, rz_deg: float, rx_deg: float):
+def _rot_instance(v, rz_deg: float, rx_deg: float, ry_deg: float = 0.0):
+    """Apply template Euler rotations in Z → X → Y order."""
     cz, sz = math.cos(math.radians(rz_deg)), math.sin(math.radians(rz_deg))
     cx, sx = math.cos(math.radians(rx_deg)), math.sin(math.radians(rx_deg))
     x1, y1 = v[0] * cz - v[1] * sz, v[0] * sz + v[1] * cz
     y2, z2 = y1 * cx - v[2] * sx, y1 * sx + v[2] * cx
-    return (x1, y2, z2)
+    cy, sy = math.cos(math.radians(ry_deg)), math.sin(math.radians(ry_deg))
+    return (x1 * cy + z2 * sy, y2, -x1 * sy + z2 * cy)
 
 
 def _render_static_svg(payload: dict) -> str:
@@ -231,7 +234,7 @@ def _render_static_svg(payload: dict) -> str:
         else:
             continue
         for inst in item["instances"]:
-            wp = [_rot_instance(v, inst["r"][2], inst["r"][0]) for v in vs]
+            wp = [_rot_instance(v, inst["r"][2], inst["r"][0], inst["r"][1]) for v in vs]
             wp = [(v[0] + inst["p"][0], v[1] + inst["p"][1],
                    v[2] + inst["p"][2]) for v in wp]
             ys.extend(v[1] for v in wp)

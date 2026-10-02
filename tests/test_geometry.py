@@ -25,7 +25,7 @@ def _analysis():
 def test_geometry_observation_is_versioned_and_dimensionless(monkeypatch):
     profile = [0.2 + i / 50 for i in range(40)]
     monkeypatch.setattr("app.models.geometry.silhouette_profile",
-                        lambda _image: profile)
+                        lambda _image, **kwargs: profile)
     observation = observe_geometry(Image.new("RGB", (40, 80)))
     assert observation.schema_version == "1.0"
     assert observation.view_mode == "single_front_assumed"
@@ -38,7 +38,7 @@ def test_geometry_observation_is_versioned_and_dimensionless(monkeypatch):
 def test_ai_pipeline_consumes_same_geometry_profile_as_local(monkeypatch):
     profile = [0.3] * 12 + [0.5] * 12 + [1.0] * 16
     monkeypatch.setattr("app.models.geometry.silhouette_profile",
-                        lambda _image: profile)
+                        lambda _image, **kwargs: profile)
     orchestrator = PipelineOrchestrator(openai_key="test-key")
     with patch.object(ImageParser, "parse_image", return_value=_analysis()):
         result = orchestrator.run_full_pipeline(Image.new("RGB", (80, 160)))
@@ -60,7 +60,7 @@ def test_local_pipeline_reuses_one_geometry_observation(monkeypatch):
         profile=[0.5] * 40, flare=False))
     calls = []
 
-    def _observe(_image):
+    def _observe(_image, **kwargs):
         calls.append(1)
         return observation
 

@@ -108,6 +108,18 @@ def test_density_line_has_regen_hint():
     assert "改密度后重新生成" in md
 
 
+def test_exports_normalize_numeric_string_gauge():
+    from app.utils.exporters import export_markdown
+
+    params = _params()
+    params["gauge"] = {"stitches_per_10cm": "20", "rows_per_10cm": "16"}
+    assert "20 针 × 16 行" in export_markdown(params)
+    pytest.importorskip("reportlab")
+    from app.utils.pdf_export import export_pdf
+
+    assert export_pdf(params).startswith(b"%PDF-")
+
+
 def test_export_explains_gauge_dependent_shaping_limit():
     from app.utils.exporters import export_markdown
 

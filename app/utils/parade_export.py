@@ -25,6 +25,7 @@ import re
 from typing import Any
 
 from app.models.colors import YARN_COLORS
+from app.utils.counts import integer_count as _integer_count
 
 _HEX_BY_NAME = {name: f"#{r:02x}{g:02x}{b:02x}" for (r, g, b), name in YARN_COLORS}
 
@@ -60,9 +61,16 @@ def _round_tokens(prev_stitches: int, rd: dict[str, Any]) -> list[str] | None:
     - 减针 dec：`M[base_sc,sc2tog]`（M=dec，base=prev//dec-2，需整除）
     返回 None 表示该圈形态超出可译子集（调用方记 warning 并跳过该圈）。
     """
-    stitches = int(rd.get("stitches", 0))
-    inc = int(rd.get("increase", 0) or 0)
-    dec = int(rd.get("decrease", 0) or 0)
+    if not isinstance(rd, dict):
+        return None
+    try:
+        stitches = _integer_count(rd.get("stitches", 0))
+        inc = _integer_count(0 if rd.get("increase") is None else rd["increase"])
+        dec = _integer_count(0 if rd.get("decrease") is None else rd["decrease"])
+    except (ValueError, OverflowError):
+        return None
+    if stitches < 1 or inc < 0 or dec < 0 or stitches != prev_stitches + inc - dec:
+        return None
     if inc and dec:
         return None  # 可钩但超出本导出器的均匀分组子集
     if inc == 0 and dec == 0:
@@ -89,11 +97,19 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
     """单个部件 → DSL 行；数量 >1 的部件按 start_anew 重复输出。"""
     name = str(part.get("name", "?"))
     rounds = part.get("rounds") or []
-    if not rounds:
+    if not isinstance(rounds, list) or not rounds:
         warnings.append(f"{name}: 没有可导出的圈")
         return []
-    quantity = max(1, int(part.get("quantity", 1)))
-    hex_color = _hex_of(part.get("color"))
+    first = rounds[0]
+    try:
+        quantity = _integer_count(part.get("quantity", 1))
+        n_first = _integer_count(first.get("stitches", 0))
+        if quantity < 1 or quantity > 20 or n_first < 1:
+            raise ValueError("无效的数量或起针数")
+    except (AttributeError, ValueError, OverflowError):
+        warnings.append(f"{name}: 数量或首圈针数无效，该部件已跳过")
+        return []
+    hex_color = _hex_of(first.get("color")) or _hex_of(part.get("color"))
 
     lines: list[str] = []
     for copy in range(quantity):
@@ -105,21 +121,21 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
             lines.append(f"COLOR: {hex_color}")
         last_color = hex_color
         # 魔法环行 + 首圈（首圈全部针目放入环：scNinc）
-        first = rounds[0]
-        n_first = int(first.get("stitches", 0))
         if not part.get("magic_ring", False):
             warnings.append(
                 f"{name}: 首圈非魔法环（{n_first} 针环起），按 ring+sc{n_first}inc 导出，"
                 "请对照原说明核对引拔/开口处理")
         lines.append("ring")
-        lines.append(f"sc{n_first}inc" if n_first > 0 else "ring")
+        lines.append(f"sc{n_first}inc")
         prev = n_first
-        for rd in rounds[1:]:
+        for index, rd in enumerate(rounds[1:], 2):
             tokens = _round_tokens(prev, rd)
             if tokens is None:
+                row = rd.get("row", index) if isinstance(rd, dict) else index
+                stitches = rd.get("stitches") if isinstance(rd, dict) else "?"
                 warnings.append(
-                    f"{name} 第 {rd.get('row')} 圈形态超出可译子集"
-                    f"（{prev}→{rd.get('stitches')}），该圈及后续圈已跳过")
+                    f"{name} 第 {row} 圈形态超出可译子集"
+                    f"（{prev}→{stitches}），该圈及后续圈已跳过")
                 # 缺失一次结构变化后，后续 token 即使语法可过 lint，也不再
                 # 与最后实际发射圈连续。只导出当前部件的有效前缀，避免用
                 # "虚拟前圈"制造一份表面合法、针数却断裂的 DSL。
@@ -173,7 +189,7 @@ def export_parade_dsl(result: dict[str, Any]) -> str:
     """
     params = result.get("params") or {}
     parts = params.get("parts") or []
-    if not parts:
+    if not isinstance(parts, list) or not parts:
         raise ValueError("结果缺少 params.parts，无法导出 CrochetPARADE DSL")
 
     warnings: list[str] = []
@@ -181,10 +197,12 @@ def export_parade_dsl(result: dict[str, Any]) -> str:
     exported_any = False
     for part in parts:
         if not isinstance(part, dict):
+            warnings.append("部件格式无效，该部件已跳过")
             continue
         lines = _part_lines(part, warnings)
-        if lines:
-            exported_any = True
+        if not lines:
+            continue
+        exported_any = True
         if body:
             body.append("# ── 下一部件 ──")
             body.append("start_anew")

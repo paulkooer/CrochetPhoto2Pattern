@@ -1,9 +1,27 @@
 import json
 from collections.abc import Mapping
 from enum import StrEnum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, Field, field_validator
+
+from app.utils.counts import integer_count
+from app.utils.numbers import finite_float
+
+# 物理尺寸的工程输入上界，与分析层身高上限一致；这是输入边界，不代表
+# 成品可行性或材料消耗已获上界证明。
+MAX_PART_DIMENSION_CM = 200.0
+# 导入资源边界：病态 JSON 不应拖垮校验/重建（validator 对每圈做代数检查，
+# 重建对每部件做 pydantic 校验）。上限远高于生成器的合法输出
+# （200cm ÷ 最低行高 0.2cm = 1000 圈），只拦截明显病态的输入。
+MAX_PATTERN_PARTS = 64
+MAX_PART_ROUNDS = 2000
+MAX_ROUND_STITCHES = 100_000
+
+IntegerCount = Annotated[int, BeforeValidator(integer_count)]
+FiniteMeasurement = Annotated[float, BeforeValidator(finite_float)]
+PositiveMeasurement = Annotated[
+    float, Field(gt=0, le=MAX_PART_DIMENSION_CM), BeforeValidator(finite_float)]
 
 Difficulty = Literal["easy", "medium", "hard"]
 
@@ -84,10 +102,10 @@ PART_NAMES = tuple(PART_LABELS_ZH[k] for k in PartKind)
 
 
 class CrochetStitch(BaseModel):
-    row: int = Field(gt=0)
-    stitches: int = Field(ge=1)
-    increase: int = Field(default=0, ge=0)
-    decrease: int = Field(default=0, ge=0)
+    row: IntegerCount = Field(gt=0)
+    stitches: IntegerCount = Field(ge=1)
+    increase: IntegerCount = Field(default=0, ge=0)
+    decrease: IntegerCount = Field(default=0, ge=0)
     notes: str | None = None
     # 本圈使用的毛线色（照片配色设计；无图/单色部件为 None）
     color: str | None = None
@@ -97,19 +115,27 @@ class CrochetStitch(BaseModel):
     allow_wide_jump: bool = False
 
 class CrochetPart(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     type: str  # sphere, cylinder, cone, etc.
     # 一个逻辑图解可要求制作多个相同实物（如左右手臂/腿/耳朵）。
     # 旧备份没有该字段时按 1 兼容；派生针数、材料和时长必须乘此数量。
-    quantity: int = Field(default=1, ge=1, le=20)
-    diameter_cm: float | None = None
-    height_cm: float | None = None
+    quantity: IntegerCount = Field(default=1, ge=1, le=20)
+    diameter_cm: PositiveMeasurement | None = None
+    height_cm: PositiveMeasurement | None = None
     # 圈数不再作为存储字段：一律由 len(rounds) 派生，避免两者失同步
     # （历史 JSON 中多余的 "rows" 键会被 pydantic 静默忽略）。
-    rounds: list[CrochetStitch]
+    rounds: list[CrochetStitch] = Field(min_length=1, max_length=MAX_PART_ROUNDS)
     color: str
     notes: str | None = None
     magic_ring: bool = False
+
+    @field_validator("rounds")
+    @classmethod
+    def _unique_row_numbers(cls, value: list[CrochetStitch]) -> list[CrochetStitch]:
+        rows = [rd.row for rd in value]
+        if len(rows) != len(set(rows)):
+            raise ValueError("同一部件的圈号不能重复")
+        return value
 
     @property
     def rows(self) -> int:
@@ -120,10 +146,10 @@ class ImageAnalysis(BaseModel):
     body_type: str
     # 值域是"硬安全上限"，比 prompt（头径 4–20 / 身高 10–60，软目标）宽松：
     # prompt 约束指导模型输出常规玩偶尺寸，schema 只拦截明显离谱的值。
-    head_diameter_cm: float = Field(
+    head_diameter_cm: FiniteMeasurement = Field(
         gt=0, le=50,
         description="Head diameter on a reference scale; pipeline applies target cm")
-    height_cm: float = Field(
+    height_cm: FiniteMeasurement = Field(
         gt=0, le=200,
         description="Reference height from photo parser or explicit target height")
     main_features: list[str]
@@ -269,6 +295,13 @@ class PatternResult(BaseModel):
     result_id: str | None = None
     title: str | None = None
     schema_version: str = SCHEMA_VERSION
+
+    @field_validator("schema_version")
+    @classmethod
+    def _supported_schema_version(cls, value: str) -> str:
+        if value != SCHEMA_VERSION:
+            raise ValueError(f"不支持的 schema_version: {value}（当前 {SCHEMA_VERSION}）")
+        return value
 
     @classmethod
     def from_result(cls, data: Mapping[str, Any]) -> "PatternResult":

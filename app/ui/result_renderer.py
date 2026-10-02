@@ -13,7 +13,8 @@ import uuid
 import streamlit as st
 
 from app.models.colors import YARN_COLORS
-from app.schemas import PART_NAMES, difficulty_label
+from app.models.gauge import gauge_from_result
+from app.schemas import PART_NAMES, PatternResult, difficulty_label
 from app.ui import result_logic
 from app.ui.design_system import section_heading
 from app.ui.result_logic import rebuild_params, result_profile
@@ -150,9 +151,7 @@ def _render_part_progress(
                     )
                     from app.ui.design_system import html_box
 
-                    _sw = (result.get("gauge") or params.get("gauge") or {})
-                    _sw_cm = 10.0 / max(float(_sw.get(
-                        "stitches_per_10cm", 13.0)), 1e-6)
+                    _sw_cm = gauge_from_result(result).stitch_w_cm
                     # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>；
                     # st.markdown unsafe_allow_html 不净化（内联 SVG 无空行
                     # 时不经 markdown 重排）
@@ -317,15 +316,10 @@ def render_results(result: dict, slot: str) -> None:
         with st.expander("📐 轮廓对应验证（生成侧影 vs 照片剖面）", expanded=False):
             try:
                 from app.models.color_design import PART_SPAN as _SPAN
-                from app.models.gauge import Gauge as _G
                 from app.models.profile_shaping import render_silhouette_svg, strip_dome
                 from app.ui.design_system import html_box
 
-                # gauge 优先取 result 层（生成时写入）；导入的旧备份没有
-                # result["gauge"]，回退 params 里随备份保存的 gauge
-                _gd = result.get("gauge") or params.get("gauge") or {}
-                _gauge = _G(_gd.get("stitches_per_10cm", 13.0),
-                            _gd.get("rows_per_10cm", 16.0))
+                _gauge = gauge_from_result(result)
                 _photo = result_profile(result)
                 _spans = result.get("spans") or _SPAN
                 for _pp in profile_parts:
@@ -553,16 +547,21 @@ def render_results(result: dict, slot: str) -> None:
     # 生成时的 style/gauge/色带随 result 透传，重生成与首次行为一致；
     # 纯本地计算，无 API 成本，比手改 JSON 快且不会改坏结构。
     with st.expander("📏 快速调整尺寸（不重新识别照片）", expanded=False):
+        st.caption("保留已编辑的部件、数量、位姿、连接与颜色；头径使用指定值，其他尺寸按比例缩放。")
+        _current_head = next((p.get("diameter_cm") for p in structure.get("parts", [])
+                              if p.get("name") == "头部" and p.get("diameter_cm")), None)
+        _current_head = float(_current_head or analysis.get("head_diameter_cm") or 9.0)
+        _current_height = float(analysis.get("height_cm") or 18.0)
         _sz_c1, _sz_c2 = st.columns(2)
         with _sz_c1:
             _new_head = st.slider(
-                "头部直径 (cm)", 4.0, 20.0,
-                float(analysis.get("head_diameter_cm") or 9.0), 0.5,
+                "头部直径 (cm)", min(4.0, _current_head), max(20.0, _current_head),
+                _current_head, 0.5,
                 key=f"sz_head_{result_key}")
         with _sz_c2:
             _new_height = st.slider(
-                "整体高度 (cm)", 10.0, 60.0,
-                float(analysis.get("height_cm") or 18.0), 0.5,
+                "整体高度 (cm)", min(10.0, _current_height), max(60.0, _current_height),
+                _current_height, 0.5,
                 key=f"sz_height_{result_key}")
         if st.button("📐 按新尺寸重新生成", key=f"sz_go_{result_key}"):
             try:
@@ -628,6 +627,10 @@ def render_results(result: dict, slot: str) -> None:
             try:
                 corrected = json.loads(correction_json)
                 st.session_state[slot]["params"] = rebuild_params(corrected)
+                st.session_state[slot]["gauge"] = st.session_state[slot]["params"].get("gauge")
+                # These artifacts describe the old pattern until explicitly rebuilt.
+                st.session_state.pop(f"pdf_{result_key}", None)
+                st.session_state.pop(f"share_token_{result_key}", None)
                 st.session_state[_ok_flag] = True
                 st.rerun()
             except Exception as e:
@@ -676,11 +679,9 @@ def render_results(result: dict, slot: str) -> None:
     # ── 完整结果备份/导入（刷新会丢 session，备份 JSON 可跨会话恢复）───────
     # F24：备份键集走 _BACKUP_KEYS 与分享同构——旧版只写三键，导入后
     # 快速调尺寸会把一体件拆回分件、egg 退化 ladder（style/spans 全丢）
-    backup_json = json.dumps(
-        {k: (serializable_params if k == "params" else result.get(k))
-         for k in _BACKUP_KEYS},
-        ensure_ascii=False,
-    )
+    backup_json = json.dumps(PatternResult.from_result({
+        **result, "params": serializable_params,
+    }).to_backup(), ensure_ascii=False)
     col_bk1, col_bk2, col_bk3 = st.columns(3)
     with col_bk1:
         st.download_button(
@@ -725,7 +726,9 @@ def render_results(result: dict, slot: str) -> None:
                    if k not in ("params", "preview")},
                 "params": serializable_params})
         _share_token = st.session_state.get(_share_state)
-        if _share_token is None:
+        if _share_state in st.session_state and _share_token is None:
+            st.info("图解超过分享链接大小上限，请使用「备份完整结果」文件分享。")
+        elif _share_token is None:
             st.caption("🔗 点「生成分享链接」得到可分享的 URL 参数；"
                        "图解过大时会提示改用「备份完整结果」文件")
         else:
@@ -741,6 +744,7 @@ def render_results(result: dict, slot: str) -> None:
                 from app.utils import history
                 saved = dict(result)
                 saved["params"] = rebuild_params(json.loads(correction_json))
+                saved["gauge"] = saved["params"].get("gauge")
                 _title = (st.session_state.get(f"hist_title_{result_key}")
                           or "").strip() or None
                 history.save_result(saved, title=_title)

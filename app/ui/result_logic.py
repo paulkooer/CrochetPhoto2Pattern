@@ -8,14 +8,15 @@ st.rerun。
 """
 from __future__ import annotations
 
+from copy import deepcopy
+from dataclasses import asdict
 from typing import Any
 
 from app.models.crochet_params import CrochetParamsGenerator, refresh_derived
-from app.models.gauge import Gauge, ShapingStyle
-from app.models.geometry import normalize_structure
+from app.models.gauge import ShapingStyle, gauge_from_result
+from app.models.geometry import PROPORTIONS_HEAD_BODY_PREFIX, normalize_structure
 from app.models.sizing import sizing_meta_for_analysis
-from app.models.structure_designer import StructureDesigner
-from app.schemas import ImageAnalysis, PatternResult
+from app.schemas import MAX_PATTERN_PARTS, ImageAnalysis, PatternResult
 
 # 与侧栏"塑形选项（进阶）"的默认值同源；result["style"] 缺失时兜底
 STYLE_DEFAULTS: dict[str, Any] = {
@@ -36,12 +37,39 @@ def result_profile(result: dict) -> list[float] | None:
     return profile if isinstance(profile, list) and profile else None
 
 
-def _result_gauge(result: dict) -> Gauge:
-    # gauge 优先取 result 层（生成时写入）；导入的旧备份没有
-    # result["gauge"]，回退 params 里随备份保存的 gauge
-    raw = result.get("gauge") or (result.get("params") or {}).get("gauge") or {}
-    return Gauge(float(raw.get("stitches_per_10cm", 13.0)),
-                 float(raw.get("rows_per_10cm", 16.0)))
+def _resize_structure(result: dict, analysis: ImageAnalysis) -> dict:
+    """Scale physical dimensions while retaining the user's edited graph.
+
+    Diameters and round accessories follow head size; other lengths follow
+    the remaining body height, matching the template's two sizing anchors.
+    Normalized positions, rotations, connections, counts and colors stay as edited.
+    """
+    previous = ImageAnalysis(**result["analysis"])
+    structure = deepcopy(normalize_structure(result["structure"]))
+    previous_head = next((part.get("diameter_cm") for part in structure["parts"]
+                          if part["name"] == "头部" and part.get("diameter_cm")), None)
+    previous_head = float(previous_head or previous.head_diameter_cm)
+    head_scale = analysis.head_diameter_cm / previous_head
+    body_scale = (max(analysis.height_cm - analysis.head_diameter_cm, 0.1)
+                  / max(previous.height_cm - previous_head, 0.1))
+    for part in structure["parts"]:
+        round_accessory = part.get("shape") == "sphere" or part["name"] in ("头部", "帽子", "耳朵")
+        for key in ("diameter_cm", "height_cm", "length_cm"):
+            if part.get(key) is not None:
+                scale = head_scale if key == "diameter_cm" or round_accessory else body_scale
+                part[key] = float(part[key]) * scale
+        # The resize control specifies an absolute head diameter, even when a
+        # previous advanced edit changed it independently of analysis metadata.
+        if part["name"] == "头部":
+            part["diameter_cm"] = analysis.head_diameter_cm
+    if str(structure.get("proportions", "")).startswith(PROPORTIONS_HEAD_BODY_PREFIX):
+        by_name = {part["name"]: part for part in structure["parts"]}
+        head = by_name.get("头部", {}).get("diameter_cm")
+        body = by_name.get("身体", {}).get("height_cm")
+        if head and body:
+            structure["proportions"] = (
+                f"{PROPORTIONS_HEAD_BODY_PREFIX}{head / body:.1f} 倍，Q 版卡通比例")
+    return normalize_structure(structure)
 
 
 def _result_style(result: dict) -> ShapingStyle:
@@ -54,20 +82,30 @@ def rebuild_params(corrected: dict) -> dict:
     CrochetPart 只作校验器：重建后立即 dump 回 dict——params["parts"]
     的内存形态与落盘/分享/历史形态一致（双态收敛，见 _build_result）。
     """
-    from app.schemas import CrochetPart, CrochetStitch
+    from app.schemas import CrochetPart
 
+    if (not isinstance(corrected, dict) or not isinstance(corrected.get("parts"), list)
+            or not corrected["parts"]):
+        raise ValueError("图解必须包含非空 parts 部件列表")
+    if len(corrected["parts"]) > MAX_PATTERN_PARTS:
+        raise ValueError(f"部件数量超过上限 {MAX_PATTERN_PARTS}")
     rebuilt_parts = []
-    for p in corrected.get("parts", []):
+    names: set[str] = set()
+    for p in corrected["parts"]:
+        if not isinstance(p, dict):
+            raise ValueError("每个部件必须是对象")
         p = dict(p)  # 不原地改动用户输入
-        raw_rounds = p.pop("rounds", [])
         # rows 由 len(rounds) 派生（schema 已无该字段），丢弃过期值防失同步。
         p.pop("rows", None)
-        rounds = [CrochetStitch(**r) for r in raw_rounds]
-        rebuilt_parts.append(CrochetPart(rounds=rounds, **p).model_dump())
-    corrected["parts"] = rebuilt_parts
+        part = CrochetPart(**p)
+        if part.name in names:
+            raise ValueError(f"部件名称不能重复: {part.name}")
+        names.add(part.name)
+        rebuilt_parts.append(part.model_dump())
+    rebuilt = {**corrected, "parts": rebuilt_parts}
     # 时长/总针数/材料克数是 parts 的派生量，必须随编辑重算。
-    refresh_derived(corrected)
-    return corrected
+    refresh_derived(rebuilt)
+    return rebuilt
 
 
 def validate_backup(data: dict) -> tuple[dict, dict]:
@@ -95,12 +133,13 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
         **result["analysis"],
         "head_diameter_cm": new_head, "height_cm": new_height,
     })
-    structure = StructureDesigner.design_3d_structure(analysis)
+    structure = _resize_structure(result, analysis)
+    gauge = gauge_from_result(result)
     params = CrochetParamsGenerator.generate_params(
         analysis, structure,
         color_bands=result.get("color_bands"),
         body_profile=result_profile(result),
-        gauge=_result_gauge(result), style=_result_style(result),
+        gauge=gauge, style=_result_style(result),
         spans=result.get("spans"))
     old_sizing = result.get("sizing") or {}
     sizing = sizing_meta_for_analysis(
@@ -111,6 +150,7 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
         "analysis": analysis.model_dump(),
         "structure": structure,
         "params": params,
+        "gauge": asdict(gauge),
         "sizing": sizing,
     }).to_result_dict()
 
@@ -119,16 +159,18 @@ def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
     """StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI。"""
     structure = normalize_structure(corrected_structure)
     analysis = ImageAnalysis(**result["analysis"])
+    gauge = gauge_from_result(result)
     params = CrochetParamsGenerator.generate_params(
         analysis, structure,
         color_bands=result.get("color_bands"),
         body_profile=result_profile(result),
-        gauge=_result_gauge(result), style=_result_style(result),
+        gauge=gauge, style=_result_style(result),
         spans=result.get("spans"))
     return PatternResult.from_result({
         **result,
         "structure": structure,
         "params": params,
+        "gauge": asdict(gauge),
     }).to_result_dict()
 
 
@@ -140,11 +182,17 @@ def import_backup(data: dict, result_id: str) -> dict:
     → None 兜底）；analysis/structure/params 先经校验/重建。
     """
     analysis, structure = validate_backup(data)
-    params = rebuild_params(dict(data["params"]))
+    raw_params = dict(data["params"])
+    gauge = None
+    if raw_params.get("gauge") or data.get("gauge"):
+        gauge = asdict(gauge_from_result(data))
+        raw_params["gauge"] = gauge
+    params = rebuild_params(raw_params)
     return PatternResult.from_result({
         **data,
         "analysis": analysis,
         "structure": structure,
         "params": params,
+        "gauge": gauge,
         "result_id": result_id,
     }).to_result_dict()

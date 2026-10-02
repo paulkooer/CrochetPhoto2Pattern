@@ -19,6 +19,7 @@ from PIL import Image
 
 from ..schemas import PART_LABELS_ZH, PartKind
 from .colors import nearest_yarn
+from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,8 @@ def estimate_background(px) -> tuple[int, int, int]:
     return ((m >> 16) & 255) * 16 + 8, ((m >> 8) & 255) * 16 + 8, (m & 255) * 16 + 8
 
 
-def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> list[dict]:
+def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
+                         subject: SubjectObservation | None = None) -> list[dict]:
     """把照片纵向切成 n_bands 个横带，返回每带的毛线色（自上而下）。
 
     主体判定优先 GrabCut 分割（subject.extract_subject，对双色/相近背景
@@ -87,7 +89,7 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> list[dict]:
             return []
         # 主体掩码：GrabCut 优先（掩码与小图对齐），退化/不可用回退阈值法
         from .subject import extract_subject
-        res = extract_subject(image, max_side=160)
+        res = subject.extract(image) if subject is not None else extract_subject(image, max_side=160)
         mask = None if res is None else res[0]
         if mask is not None and mask.shape[0] == h:
             # 每带取主体像素均值；无主体像素的带（纯背景带）不落回整带
@@ -97,10 +99,10 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> list[dict]:
             for i in range(n_bands):
                 y0, y1 = h * i // n_bands, h * (i + 1) // n_bands
                 block = px[y0:y1].reshape(-1, 3)
-                subject = block[mask[y0:y1].reshape(-1)]
+                subject_pixels = block[mask[y0:y1].reshape(-1)]
                 colors.append(
-                    nearest_yarn(*(int(v) for v in subject.mean(axis=0)))[0]
-                    if len(subject) else None)
+                    nearest_yarn(*(int(v) for v in subject_pixels.mean(axis=0)))[0]
+                    if len(subject_pixels) else None)
             filled: list[str | None] = list(colors)
             last: str | None = None
             for i, c in enumerate(colors):     # 前向填充
@@ -127,12 +129,12 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10) -> list[dict]:
             y0, y1 = h * i // n_bands, h * (i + 1) // n_bands
             block = px[y0:y1].reshape(-1, 3)
             dist = np.abs(block - bg).sum(axis=1)
-            subject = block[dist > _BG_DIST_THRESHOLD]
-            subject_total += len(subject)
+            subject_pixels = block[dist > _BG_DIST_THRESHOLD]
+            subject_total += len(subject_pixels)
             pixel_total += len(block)
             # 主体像素不足的带兜底用整带均值（背景带），但若全图几乎无主体
             # → 视为"没有可分析的物体"，返回空让上层降级为单色
-            mean = subject.mean(axis=0) if len(subject) else block.mean(axis=0)
+            mean = subject_pixels.mean(axis=0) if len(subject_pixels) else block.mean(axis=0)
             name, _rgb = nearest_yarn(*(int(v) for v in mean))
             bands.append({
                 "start": i / n_bands,

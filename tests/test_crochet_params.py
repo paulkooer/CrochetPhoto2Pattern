@@ -147,12 +147,13 @@ def test_assembly_wording_follows_edited_physical_quantity():
     arms = next(part for part in params["parts"] if part["name"] == "手臂")
     arms["quantity"] = 1
     refresh_derived(params)
-    assert "手臂缝合到身体一侧上方" in params["assembly_instructions"]
+    assert "手臂共 1 个，连接图记录 2 个实例" in params["assembly_instructions"]
     assert "手臂对称" not in params["assembly_instructions"]
 
     arms["quantity"] = 3
     refresh_derived(params)
     assert "手臂共 3 个" in params["assembly_instructions"]
+    assert "核对数量和连接位置" in params["assembly_instructions"]
 
 
 def test_structure_v2_attachments_reach_assembly_plan():

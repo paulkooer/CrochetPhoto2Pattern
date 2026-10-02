@@ -20,12 +20,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..schemas import MAX_PART_ROUNDS, MAX_PATTERN_PARTS, MAX_ROUND_STITCHES
+from ..utils.counts import integer_count as _integer_count
 from .gauge import gauge_from_mapping
-
-
-def _rounds_of(part: dict[str, Any]) -> list[dict[str, Any]]:
-    """parts 已统一为 dict 形态（见 crochet_params._build_result 双态收敛）。"""
-    return list(part.get("rounds", []))
 
 
 def shaping_policy_for_pattern(params: dict[str, Any]) -> dict[str, Any]:
@@ -58,21 +55,75 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
     checked = 0
     shaping_policy = shaping_policy_for_pattern(params)
     max_change = int(shaping_policy["max_stitch_change"])
-    for part in params.get("parts", []):
+    parts = params.get("parts")
+    seen_names: set[str] = set()
+    if not isinstance(parts, list) or not parts:
+        issues.append("图解缺少有效的部件列表")
+        parts = []
+    elif len(parts) > MAX_PATTERN_PARTS:
+        issues.append(
+            f"部件数量 {len(parts)} 超过上限 {MAX_PATTERN_PARTS}，仅检查前 "
+            f"{MAX_PATTERN_PARTS} 个")
+        parts = parts[:MAX_PATTERN_PARTS]
+    for index, part in enumerate(parts, 1):
+        if not isinstance(part, dict):
+            issues.append(f"第 {index} 个部件：必须是对象")
+            continue
         name = part.get("name", "?")
-        rounds = _rounds_of(part)
-        if not rounds:
-            issues.append(f"{name}: 没有任何圈")
+        if isinstance(name, str) and name != "?":
+            if name in seen_names:
+                issues.append(f"{name}: 部件名称不能重复")
+            seen_names.add(name)
+        try:
+            quantity = _integer_count(part.get("quantity", 1))
+            if not 1 <= quantity <= 20:
+                raise ValueError("部件数量超出范围")
+        except ValueError:
+            issues.append(f"{name}: 部件数量必须是 1–20 的整数（不能是布尔值）")
+        rounds = part.get("rounds")
+        if not isinstance(rounds, list) or not rounds:
+            issues.append(f"{name}: 没有任何圈或圈列表格式无效")
+            continue
+        if len(rounds) > MAX_PART_ROUNDS:
+            issues.append(
+                f"{name}: 圈数 {len(rounds)} 超过上限 {MAX_PART_ROUNDS}，"
+                "跳过逐圈代数检查")
             continue
         checked += len(rounds)
         prev_stitches = None
+        seen_rows: set[int] = set()
         for i, rd in enumerate(rounds, 1):
+            if not isinstance(rd, dict):
+                issues.append(f"{name} 第 {i} 圈：必须是对象")
+                prev_stitches = None
+                continue
+            # Legacy dict patterns may omit row labels; explicit labels must
+            # be positive and unique to keep progress-widget identities valid.
+            if "row" in rd:
+                try:
+                    row = _integer_count(rd["row"])
+                    if row < 1 or row in seen_rows:
+                        raise ValueError("圈号无效或重复")
+                    seen_rows.add(row)
+                except ValueError:
+                    issues.append(f"{name} 第 {i} 圈：圈号必须是正整数且不能重复")
             try:
-                st = int(rd.get("stitches", 0))
-                inc = int(rd.get("increase") or 0)
-                dec = int(rd.get("decrease") or 0)
-            except (TypeError, ValueError):
-                issues.append(f"{name} 第 {i} 圈：针数/加减针不是数字")
+                st = _integer_count(rd.get("stitches", 0))
+                inc = _integer_count(0 if rd.get("increase") is None else rd["increase"])
+                dec = _integer_count(0 if rd.get("decrease") is None else rd["decrease"])
+            except (TypeError, ValueError, OverflowError):
+                issues.append(f"{name} 第 {i} 圈：针数/加减针必须是有限整数（不能是布尔值）")
+                prev_stitches = None
+                continue
+            if inc < 0 or dec < 0:
+                issues.append(f"{name} 第 {i} 圈：加减针不能为负数")
+                prev_stitches = None
+                continue
+            if st > MAX_ROUND_STITCHES:
+                # 病态输入（如手改 JSON 写入 1e99）会污染后续所有代数消息；
+                # 报上限并重置相邻链，让之后的圈恢复可读诊断。
+                issues.append(f"{name} 第 {i} 圈：针数 {st} 超出上限 {MAX_ROUND_STITCHES}")
+                prev_stitches = None
                 continue
             if inc > 0 and dec > 0:
                 # 印证修正：真实图解的面部/异形塑形常在同圈混用加减速
@@ -133,7 +184,7 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
                         f"{name} 第 {i} 圈：相邻圈跳变 {prev_stitches}→{st} "
                         f"超过本生成器的平滑塑形节奏 ±{max_change}——"
                         "确认为有意工艺（如倍增圈）即可照钩")
-            prev_stitches = st
+            prev_stitches = st if st > 0 else None
 
     return {"ok": not issues, "issues": issues, "notes": notes,
             "checked": checked,

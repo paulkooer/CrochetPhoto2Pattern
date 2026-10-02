@@ -60,9 +60,11 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -
             f"目标高 {esc(analysis.get('height_cm', '—'))}cm · "
             f"难度 {esc(difficulty_label(str(analysis.get('difficulty', '—'))))}", small))
     # U24（升级）：密度随图解导出 + 兜底声明
-    g = params.get("gauge") or {}
-    st_g, rw_g = g.get("stitches_per_10cm"), g.get("rows_per_10cm")
-    if st_g and rw_g:
+    from app.models.gauge import gauge_from_mapping
+
+    g = gauge_from_mapping(params.get("gauge"))
+    st_g, rw_g = g.stitches_per_10cm, g.rows_per_10cm
+    if params.get("gauge"):
         story.append(Paragraph(
             f"密度（小样）：10cm × {st_g:g} 针 × {rw_g:g} 行——请先试钩核对。"
             f"若你的小样密度不同，请改密度后重新生成", small))

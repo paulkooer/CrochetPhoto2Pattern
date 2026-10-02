@@ -20,6 +20,7 @@ from ..schemas import ImageAnalysis
 from .geometry import has_bottom_flare as _has_bottom_flare
 from .geometry import silhouette_profile as _silhouette_profile
 from .image_parser import extract_color_palette
+from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
 
@@ -66,18 +67,20 @@ def analyze(
     n_colors: int = 5,
     geometry_profile: list[float] | None = None,
     geometry_observed: bool = False,
+    *,
+    subject: SubjectObservation | None = None,
 ) -> tuple[ImageAnalysis, dict[str, Any]]:
     """Estimate an ImageAnalysis from the photo without any LLM call.
 
     Returns (analysis, meta)；meta 描述估算来源与依据，供 UI 透明展示。
     """
-    colors = extract_color_palette(image, n_colors=n_colors)
+    colors = extract_color_palette(image, n_colors=n_colors, subject=subject)
     H = image.size[1]
     box = _detect_face(image)
     # 轮廓剖面：下摆展开 → 主体是裙形，自动补"裙子"部件
     # Orchestrator 已建立 provider-neutral geometry 时复用同一观测，避免
     # GrabCut/背景分割做两遍。直接调用 analyze() 仍保持原有独立行为。
-    profile = geometry_profile if geometry_observed else _silhouette_profile(image)
+    profile = geometry_profile if geometry_observed else _silhouette_profile(image, subject=subject)
     parts = list(_CANONICAL_PARTS)
     # 完整剖面由 provider-neutral geometry 结果持久化；本地语义层
     # 只消费 flare 来补部件，不再把几何数据塞进 vision_meta。

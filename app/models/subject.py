@@ -13,11 +13,14 @@
 色集合的距离"三档（阈值 = clamp(Otsu(距离分布), 16, 96)），haar 人脸框
 （检出时）作为确定性前景种子锚定头部。失败回退：cv2 缺失/图过小/分割
 退化（主体占比 <5% 或 >95%）→ None，调用方走旧的背景阈值启发式。
-全流程确定性（颜色统计 + Otsu + haar 均无随机性）。
+颜色统计、Otsu 与 haar 不使用随机初始化；GrabCut 的 GMM 初始化固定 RNG
+种子，同一运行环境内重复分割可复现（不承诺跨 OpenCV 版本逐像素一致）。
 """
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING
 
 from PIL import Image
@@ -40,6 +43,31 @@ _T_CEIL = 96
 # 恰好漏掉（头部被吞、色板只剩衣服色——N-G）。144 ≈ 全距的 19%，低于它
 # 不足以判"确定前景"（JPEG 噪声 <48），高于它的浅色主体可靠捕获。
 _FGD_FLOOR = 144
+
+
+@dataclass
+class SubjectObservation:
+    """One pipeline run's shared subject pixels, including failed extraction.
+
+    The 160px mask is used by silhouette, palette and color bands so they do
+    not independently segment different subjects at different resolutions.
+    This object is transient and must not be reused after editing its image.
+    """
+
+    image: Image.Image
+
+    @cached_property
+    def segmentation(self) -> tuple[np.ndarray, Image.Image] | None:
+        try:
+            return extract_subject(self.image, max_side=160)
+        except Exception as exc:
+            logger.debug("shared subject observation unavailable: %s", exc)
+            return None
+
+    def extract(self, image: Image.Image) -> tuple[np.ndarray, Image.Image] | None:
+        if image is not self.image:
+            raise ValueError("主体观测只能用于创建它的图片")
+        return self.segmentation
 
 
 def _otsu_threshold(values) -> int | None:
@@ -181,7 +209,8 @@ def extract_subject(
         box = _face_box(img)
         if box is not None:
             fx, fy, fw, fh = box
-            if 0.003 <= (fw * fh) / (w * h) <= 0.5:
+            if (0 <= fx < fx + fw <= w and 0 <= fy < fy + fh <= h
+                    and 0.003 <= (fw * fh) / (w * h) <= 0.5):
                 mask[fy:fy + fh, fx:fx + fw] = cv2.GC_FGD
         # 确定性背景条带最后强制写入：种子展开不得覆盖（否则 GMM 样本
         # 为空，grabCut 直接断言失败）
@@ -190,6 +219,10 @@ def extract_subject(
         mask[:, w - ks:] = cv2.GC_BGD
         bgd = np.zeros((1, 65), np.float64)
         fgd = np.zeros((1, 65), np.float64)
+        # GrabCut initializes GMMs with randomized k-means++. OpenCV's default
+        # RNG is thread-local (core.hpp: theRNG), so this keeps repeated and
+        # concurrent runs reproducible without serializing image processing.
+        cv2.setRNGSeed(0)
         # rect=None 在 GC_INIT_WITH_MASK 模式下合法；opencv 无官方类型桩
         cv2.grabCut(arr, mask, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)  # type: ignore[call-overload]
         subject = (mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD)

@@ -53,6 +53,15 @@ def test_gauge_from_ui_custom_and_fallback():
     assert (clamped.stitches_per_10cm, clamped.rows_per_10cm) == (40.0, 8.0)
 
 
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), True, "nan"])
+def test_gauge_mapping_rejects_non_finite_or_boolean_values(value):
+    from app.models.gauge import gauge_from_mapping
+
+    for key in ("stitches_per_10cm", "rows_per_10cm"):
+        raw = {"stitches_per_10cm": 20, "rows_per_10cm": 16, key: value}
+        assert gauge_from_mapping(raw) == DEFAULT
+
+
 def test_shaping_limit_is_derived_then_quantized_to_six_sectors():
     """连续几何值与可发布图解的六等分步长是两个不同概念。"""
     assert DEFAULT.shaping_continuous_delta == pytest.approx(5.105, abs=0.01)

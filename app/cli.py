@@ -146,19 +146,53 @@ def run_batch(args) -> int:
     """
     from concurrent.futures import ThreadPoolExecutor
     from pathlib import Path as _P
+    from unicodedata import normalize
 
     in_dir = _P(args.batch_dir)
     out_dir = _P(args.out_dir) if args.out_dir else in_dir
-    out_dir.mkdir(parents=True, exist_ok=True)
-    images = sorted(p for p in in_dir.iterdir()
-                    if p.suffix.lower() in (".jpg", ".jpeg", ".png"))
+    try:
+        images = sorted(p for p in in_dir.iterdir()
+                        if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png"))
+    except OSError as e:
+        print(f"无法读取批量目录 {in_dir}: {e}", file=sys.stderr)
+        return 1
     if not images:
         print(f"目录中没有图片: {in_dir}", file=sys.stderr)
         return 1
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        print(f"无法创建输出目录 {out_dir}: {e}", file=sys.stderr)
+        return 1
+
+    # Allocate every name before starting workers. Reserve natural candidates
+    # too: doll.png + doll.jpg + doll_png.png must not race on doll_png.json.
+    # Normalize/casefold so allocations also work on macOS/Windows volumes.
+    def name_key(name: str) -> str:
+        return normalize("NFC", name).casefold()
+
+    from collections import Counter
+
+    stem_counts = Counter(name_key(img.stem) for img in images)
+    candidates = {
+        img: (img.stem if stem_counts[name_key(img.stem)] == 1
+              else f"{img.stem}_{img.suffix.lstrip('.')}")
+        for img in images
+    }
+    reserved = {name_key(name) for name in candidates.values()}
+    allocated: set[str] = set()
+    output_stems: dict[Path, str] = {}
+    for img, candidate in candidates.items():
+        stem = candidate
+        suffix = 2
+        while name_key(stem) in allocated or (stem != candidate and name_key(stem) in reserved):
+            stem = f"{candidate}_{suffix}"
+            suffix += 1
+        output_stems[img] = stem
+        allocated.add(name_key(stem))
 
     def _one(img):
-        stem = img.stem if len(stem_groups[img.stem]) == 1 \
-            else f"{img.stem}_{img.suffix.lstrip('.')}"
+        stem = output_stems[img]
         ns = argparse.Namespace(**{**vars(args), "image": str(img),
                                    "out": str(out_dir / f"{stem}.json"),
                                    "md": str(out_dir / f"{stem}.md"),
@@ -170,15 +204,9 @@ def run_batch(args) -> int:
         try:
             rc = main(ns)
             return img.name, rc, None
-        except Exception as e:
+        except (Exception, SystemExit) as e:
             return img.name, 1, e
 
-    # F27：同名不同扩展（doll.png / doll.jpg）→ 输出名带扩展消歧，
-    # 防并发写同一文件静默覆盖
-    from collections import defaultdict
-    stem_groups = defaultdict(list)
-    for img in images:
-        stem_groups[img.stem].append(img)
     ok = 0
     with ThreadPoolExecutor(max_workers=4) as pool:
         for name, rc, err in pool.map(_one, images):

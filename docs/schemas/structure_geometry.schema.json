@@ -38,7 +38,7 @@
       "type": "object"
     },
     "EulerRotation": {
-      "description": "Approximate template orientation in degrees.",
+      "description": "Approximate template orientation in degrees; applied in Z → X → Y order.",
       "properties": {
         "x": {
           "default": 0.0,
@@ -125,6 +125,7 @@
           "anyOf": [
             {
               "exclusiveMinimum": 0,
+              "maximum": 200.0,
               "type": "number"
             },
             {
@@ -138,6 +139,7 @@
           "anyOf": [
             {
               "exclusiveMinimum": 0,
+              "maximum": 200.0,
               "type": "number"
             },
             {
@@ -159,6 +161,7 @@
           "anyOf": [
             {
               "exclusiveMinimum": 0,
+              "maximum": 200.0,
               "type": "number"
             },
             {
