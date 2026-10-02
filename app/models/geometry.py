@@ -2,14 +2,25 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from PIL import Image
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
+from ..schemas import MAX_PART_DIMENSION_CM, MAX_PATTERN_PARTS, IntegerCount
+from ..utils.counts import integer_count
+from ..utils.numbers import finite_float
 from .color_design import _BG_DIST_THRESHOLD
+from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
+
+PartDimension = Annotated[
+    float, Field(gt=0, le=MAX_PART_DIMENSION_CM), BeforeValidator(finite_float)]
+
+# 头身比说明行由 StructureDesigner 生成、调尺寸时按新比例重写；两端共享
+# 前缀常量，避免文案一处改动后另一端的 startswith 识别静默失灵。
+PROPORTIONS_HEAD_BODY_PREFIX = "头部直径约为身体高度的 "
 
 
 class SilhouetteObservation(BaseModel):
@@ -44,7 +55,7 @@ class NormalizedPosition(BaseModel):
 
 
 class EulerRotation(BaseModel):
-    """Approximate template orientation in degrees."""
+    """Approximate template orientation in degrees; applied in Z → X → Y order."""
 
     x: float = Field(default=0.0, ge=-180.0, le=180.0)
     y: float = Field(default=0.0, ge=-180.0, le=180.0)
@@ -76,11 +87,11 @@ class PartGeometry(BaseModel):
     part_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     shape: str = Field(min_length=1)
-    diameter_cm: float | None = Field(default=None, gt=0)
-    height_cm: float | None = Field(default=None, gt=0)
-    length_cm: float | None = Field(default=None, gt=0)
+    diameter_cm: PartDimension | None = None
+    height_cm: PartDimension | None = None
+    length_cm: PartDimension | None = None
     color: str = Field(default="body", min_length=1)
-    count: int = Field(default=1, ge=1, le=20)
+    count: IntegerCount = Field(default=1, ge=1, le=20)
     mirror_group: str | None = None
     instances: list[PartInstance] = Field(min_length=1)
     source: Literal["template_inferred"] = "template_inferred"
@@ -155,19 +166,46 @@ def normalize_structure(structure: Any) -> dict[str, Any]:
 
     Declaring schema_version=2.0 opts into the complete graph contract.  Older
     payloads remain readable with their historical minimal ``parts/name``
-    contract so existing backups are not force-migrated or silently rewritten.
+    contract without inventing graph nodes. Physical dimensions and quantities
+    are decoded before any generation loops, including legacy inputs.
     """
     if (not isinstance(structure, dict)
             or not isinstance(structure.get("parts"), list)
-            or not all(isinstance(part, dict) and part.get("name")
+            or not all(isinstance(part, dict)
+                       and isinstance(part.get("name"), str) and part["name"]
                        for part in structure["parts"])):
         raise ValueError("structure 字段无效（应为含 parts 列表的对象）")
+    if len(structure["parts"]) > MAX_PATTERN_PARTS:
+        raise ValueError(
+            f"部件数量 {len(structure['parts'])} 超过上限 {MAX_PATTERN_PARTS}")
     if structure.get("schema_version") == "2.0":
         return StructureGeometry(**structure).model_dump(exclude_none=True)
-    return structure
+    names: set[str] = set()
+    parts = []
+    for source in structure["parts"]:
+        name = source["name"]
+        if name in names:
+            raise ValueError(f"部件名称不能重复: {name}")
+        names.add(name)
+        part = dict(source)
+        for field in ("diameter_cm", "height_cm", "length_cm"):
+            if part.get(field) is None:
+                part.pop(field, None)
+                continue
+            value = finite_float(part[field])
+            if not 0 < value <= MAX_PART_DIMENSION_CM:
+                raise ValueError(f"{part['name']} 的 {field} 必须大于 0 且不超过 200 cm")
+            part[field] = value
+        if "count" in part:
+            part["count"] = integer_count(part["count"])
+            if not 1 <= part["count"] <= 20:
+                raise ValueError("部件数量必须是 1–20 的整数")
+        parts.append(part)
+    return {**structure, "parts": parts}
 
 
-def silhouette_profile(image: Image.Image, n_rows: int = 40) -> list[float] | None:
+def silhouette_profile(image: Image.Image, n_rows: int = 40, *,
+                       subject: SubjectObservation | None = None) -> list[float] | None:
     """Measure normalized subject width from top to bottom.
 
     GrabCut subject extraction is preferred; a corner-background colour model
@@ -180,7 +218,7 @@ def silhouette_profile(image: Image.Image, n_rows: int = 40) -> list[float] | No
         return None
     try:
         from .subject import extract_subject
-        res = extract_subject(image, max_side=120)
+        res = subject.extract(image) if subject is not None else extract_subject(image, max_side=120)
         if res is not None:
             mask, _small = res
             if mask.shape[0] >= n_rows and mask.shape[1] >= 4:
@@ -234,9 +272,9 @@ def has_bottom_flare(profile: list[float]) -> bool:
     return (sum(lower) / len(lower)) > 1.25 * (sum(middle) / len(middle))
 
 
-def observe_geometry(image: Image.Image) -> GeometryObservation:
+def observe_geometry(image: Image.Image, *, subject: SubjectObservation | None = None) -> GeometryObservation:
     """Build the provider-neutral geometry observation used by shaping."""
-    profile = silhouette_profile(image)
+    profile = silhouette_profile(image, subject=subject)
     if profile is None:
         return GeometryObservation(
             silhouette=None,

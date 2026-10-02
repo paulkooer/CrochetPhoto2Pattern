@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from ..schemas import PART_LABELS_ZH, PART_NAMES, ImageAnalysis
 from .geometry import (
+    PROPORTIONS_HEAD_BODY_PREFIX,
     AttachmentSpec,
     EulerRotation,
     NormalizedPosition,
@@ -204,7 +205,7 @@ class StructureDesigner:
         body_ratio = round(head_d / max(body_h * 0.5, 0.1), 1)
         return StructureGeometry(
             parts=parts,
-            proportions=f"头部直径约为身体高度的 {body_ratio} 倍，Q 版卡通比例",
+            proportions=f"{PROPORTIONS_HEAD_BODY_PREFIX}{body_ratio} 倍，Q 版卡通比例",
             notes=(
                 "基于单图语义与模板先验；位置、旋转、背面深度和连接锚点"
                 "不是照片实测值，生成前可人工确认"

@@ -52,6 +52,18 @@ def test_history_missing_id_rejected(tmp_db):
         history.save_result({"analysis": {}})
 
 
+@pytest.mark.parametrize("blob", ["[]", "null", "123", '"broken"'])
+def test_history_non_object_json_returns_none(tmp_db, blob):
+    from app.utils import history
+
+    r = _result()
+    r["params"] = {"parts": []}
+    history.save_result(r)
+    with history._connection() as conn:
+        conn.execute("UPDATE patterns SET blob = ? WHERE rid = ?", (blob, "r1"))
+    assert history.load_result("r1") is None
+
+
 def test_pdf_export_renders_chinese(tmp_db):
     """PDF 生成成功且包含中文图解内容（reportlab CID 字体路径）。"""
     pytest.importorskip("reportlab")

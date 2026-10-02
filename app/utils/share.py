@@ -14,7 +14,9 @@ from typing import Any
 from ..schemas import RESULT_KEYS, SCHEMA_VERSION, PatternResult
 
 _MAX_TOKEN_CHARS = 6000
-_MAX_DECOMPRESSED_CHARS = 2 << 20  # 解压后 2MB 上限（F29）
+# 解压后 2MB 上限（F29）。按字节计：blob 已 UTF-8 编码，zlib 的
+# max_length 与 len(unpacked) 都以字节为单位。
+_MAX_DECOMPRESSED_BYTES = 2 << 20
 
 
 # F24/F26/F27 根因修复：结果 dict 的顶层键集此前在 6 条路径（生成/
@@ -37,8 +39,10 @@ def encode_result(result: dict[str, Any]) -> str | None:
     """
     payload = PatternResult.from_result(result).to_backup()
     payload.pop("preview", None)
-    blob = json.dumps(payload, ensure_ascii=False)
-    token = base64.urlsafe_b64encode(zlib.compress(blob.encode("utf-8"), 9)).decode()
+    blob = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    if len(blob) > _MAX_DECOMPRESSED_BYTES:
+        return None
+    token = base64.urlsafe_b64encode(zlib.compress(blob, 9)).decode()
     if len(token) > _MAX_TOKEN_CHARS:
         return None
     return token
@@ -48,18 +52,22 @@ def decode_result(token: str) -> dict[str, Any] | None:
     """token → 结果 dict；格式/校验失败返回 None（导入侧再深度校验）。
 
     F29：decode 端与 encode 端对称门控——token 长度上限 + zlib 解压
-    上限（decompressobj.decompress(data, max_length) 在 3.9 可用），
-    防 ~770× 压缩放大的内存尖峰；超限截断后 json.loads 必然失败，
-    走既有 except 兜底。
+    上限，防压缩放大的内存尖峰；同时要求完整的单一 zlib 流，
+    避免截断、缺失校验和或尾随数据被当成有效分享。
     """
     if not token or len(token) > _MAX_TOKEN_CHARS:
         return None
     try:
-        raw = base64.urlsafe_b64decode(token.encode())
-        blob = zlib.decompressobj().decompress(
-            raw, _MAX_DECOMPRESSED_CHARS).decode("utf-8", errors="strict")
+        raw = base64.b64decode(token.encode(), altchars=b"-_", validate=True)
+        decoder = zlib.decompressobj()
+        unpacked = decoder.decompress(raw, _MAX_DECOMPRESSED_BYTES + 1)
+        if (len(unpacked) > _MAX_DECOMPRESSED_BYTES or not decoder.eof
+                or decoder.unused_data or decoder.unconsumed_tail):
+            return None
+        blob = unpacked.decode("utf-8", errors="strict")
         data = json.loads(blob)
-        if not all(k in data for k in ("analysis", "structure", "params")):
+        if not isinstance(data, dict) or not all(
+                isinstance(data.get(k), dict) for k in ("analysis", "structure", "params")):
             return None
         # 未来 schema 版本的结果不猜测兼容性；旧 token（无版本键）
         # 保留兼容，缺 V4 新键时由渲染层默认值兜底。

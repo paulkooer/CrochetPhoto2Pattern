@@ -23,7 +23,11 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import tempfile
+import threading
+import time
 import urllib.request
+from contextlib import suppress
 from ctypes.util import find_library
 from pathlib import Path
 from typing import Any
@@ -37,6 +41,15 @@ MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/"
 # 供应链完整性：固定版本模型（float16/1）的 SHA256（T1）。下载后不匹配
 # 即删除并回退先验 span——绝不使用被篡改的权重。
 MODEL_SHA256 = "59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a"
+_MODEL_MAX_BYTES = 16 << 20
+_MODEL_IO_TIMEOUT_SECONDS = 10.0
+_MODEL_TRANSFER_SECONDS = 30.0
+_MODEL_LOCK = threading.Lock()
+# Process-level negative cache: after one failed download, skip further
+# attempts for a while so an offline batch run does not serialize N timeout
+# windows behind the lock. A valid cache always bypasses this backoff.
+_MODEL_FAILURE_BACKOFF_SECONDS = 300.0
+_download_retry_after = 0.0
 
 # 关键点 index（MediaPipe Pose 规范）
 _NOSE, _EYE_L, _EYE_R = 0, 2, 5
@@ -74,30 +87,59 @@ def model_path() -> Path | None:
 
     CROCHET_POSE_MODEL 指向用户自备模型时不校验（信任本地文件）。
     """
-    env = os.getenv("CROCHET_POSE_MODEL")
-    if env:
-        p = Path(env)
-        return p if p.is_file() else None
-    cache = Path.home() / ".cache" / "crochet_photo2pattern"
-    path = cache / "pose_landmarker_lite.task"
-    if path.is_file():
-        if _sha256_of(path) == MODEL_SHA256:
-            return path
-        logger.warning("缓存的 pose 模型校验失败，重新下载")
-        path.unlink()
+    global _download_retry_after
+    tmp: Path | None = None
     try:
-        cache.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        urllib.request.urlretrieve(MODEL_URL, tmp)  # noqa: S310 固定 URL
-        if _sha256_of(tmp) != MODEL_SHA256:
-            logger.warning("pose 模型校验和不匹配，拒绝使用（回退先验 span）")
-            tmp.unlink()
-            return None
-        tmp.replace(path)
-        return path
+        env = os.getenv("CROCHET_POSE_MODEL")
+        if env:
+            p = Path(env)
+            return p if p.is_file() else None
+        cache = Path.home() / ".cache" / "crochet_photo2pattern"
+        path = cache / "pose_landmarker_lite.task"
+        # Batch/UI threads in this process wait for the same verified model.
+        # Separate processes use distinct staging files and atomic replacement.
+        with _MODEL_LOCK:
+            if path.is_file():
+                if _sha256_of(path) == MODEL_SHA256:
+                    return path
+                logger.warning("缓存的 pose 模型校验失败，重新下载")
+            if _download_retry_after and time.monotonic() < _download_retry_after:
+                logger.info("pose 模型近期下载失败，暂时跳过重试（回退先验 span）")
+                return None
+            cache.mkdir(parents=True, exist_ok=True)
+            started = time.monotonic()
+            with tempfile.NamedTemporaryFile(
+                    dir=cache, prefix="pose-", suffix=".tmp", delete=False) as output:
+                tmp = Path(output.name)
+                with urllib.request.urlopen(
+                        MODEL_URL, timeout=_MODEL_IO_TIMEOUT_SECONDS) as response:
+                    size = 0
+                    while True:
+                        # read1 returns after one underlying read, allowing the
+                        # overall deadline to stop a peer that trickles bytes.
+                        chunk = response.read1(1 << 20)
+                        if time.monotonic() - started > _MODEL_TRANSFER_SECONDS:
+                            raise TimeoutError("pose 模型下载超过时间上限")
+                        if not chunk:
+                            break
+                        size += len(chunk)
+                        if size > _MODEL_MAX_BYTES:
+                            raise ValueError("pose 模型下载超过大小上限")
+                        output.write(chunk)
+            if _sha256_of(tmp) != MODEL_SHA256:
+                raise ValueError("pose 模型校验和不匹配")
+            tmp.replace(path)
+            _download_retry_after = 0.0
+            return path
     except Exception as e:
-        logger.info("pose 模型下载失败（回退先验 span）: %s", e)
+        _download_retry_after = time.monotonic() + _MODEL_FAILURE_BACKOFF_SECONDS
+        logger.info("pose 模型不可用（回退先验 span，%.0f 秒内不再重试）: %s",
+                    _MODEL_FAILURE_BACKOFF_SECONDS, e)
         return None
+    finally:
+        if tmp is not None:
+            with suppress(OSError):
+                tmp.unlink(missing_ok=True)
 
 
 def get_body_landmarks(image) -> dict[str, Any] | None:

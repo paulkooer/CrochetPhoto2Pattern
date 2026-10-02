@@ -595,6 +595,9 @@ def refresh_derived(params: dict) -> dict:
     # 材料克数/钩针标签依赖 gauge：必须用生成时的密度（存在 params 里），
     # 否则非默认密度下 JSON 修正后克重漂移、钩针标签换成错误规格
     gauge = _gauge_from_params(params)
+    if params.get("gauge"):
+        params["gauge"] = {"stitches_per_10cm": gauge.stitches_per_10cm,
+                           "rows_per_10cm": gauge.rows_per_10cm}
     params["materials"] = _materials(
         parts, {_part_name(p) for p in parts}, gauge=gauge)
     params["shaping"] = _shaping_meta(gauge)
@@ -728,7 +731,9 @@ def build_assembly(part_names, skirt_style: str = "ring",
         if (not source or not target or source == target
                 or source not in part_names or target not in part_names):
             continue
-        key = (source, target, str(connection.get("method") or "sewn"))
+        # Preserve the original target region when head/body become one piece.
+        key = (source, target, str(connection.get("method") or "sewn"),
+               str(connection.get("target_part_name") or ""))
         grouped.setdefault(key, []).append(connection)
 
     connected_sources = set()
@@ -737,33 +742,69 @@ def build_assembly(part_names, skirt_style: str = "ring",
         "waist": "腰部", "side_left": "左侧", "side_right": "右侧",
         "upper_left": "左侧上方", "upper_right": "右侧上方",
         "bottom_left": "左侧底部", "bottom_right": "右侧底部",
+        "inner_end": "内端", "base": "根部", "opening": "开口", "tip": "末端",
     }
-    for (source, target, method), connections in grouped.items():
+    # Familiar prose is valid only for the actual template edge configuration.
+    # An edited anchor/method must reach the generic per-instance instructions.
+    defaults = {
+        "头部": ("身体", "sewn", "bottom", {"top"}),
+        "手臂": ("身体", "sewn", "inner_end", {"upper_left", "upper_right"}),
+        "腿部": ("身体", "sewn", "top", {"bottom_left", "bottom_right"}),
+        "耳朵": ("头部", "sewn", "base", {"side_left", "side_right"}),
+        "帽子": ("头部", "worn", "opening", {"top"}),
+        "裙子": ("身体", "crocheted_or_sewn", "opening", {"waist"}),
+        "尾巴": ("身体", "sewn", "base", {"back"}),
+    }
+    instances_by_source: dict[str, set[str]] = {}
+    for (source, *_), connections in grouped.items():
+        instances_by_source.setdefault(source, set()).update(
+            str(item.get("source_instance_id") or "") for item in connections)
+    for source, instance_ids in instances_by_source.items():
+        quantity = max(1, int(quantities.get(source, 1)))
+        if quantity != len(instance_ids):
+            steps.append(f"{source}共 {quantity} 个，连接图记录 {len(instance_ids)} 个实例；"
+                         "请在部件结构中核对数量和连接位置")
+
+    for (source, target, method, original_target), connections in grouped.items():
         connected_sources.add(source)
-        target_label = "一体件身体段" if target == _ONE_PIECE_NAME else target
-        if source == "头部" and target == "身体":
+        target_label = (f"一体件{original_target}段" if target == _ONE_PIECE_NAME else target)
+        default = defaults.get(source)
+        anchors = {str(item.get("target_anchor") or "") for item in connections}
+        quantity = max(1, int(quantities.get(source, 1)))
+        distinct_instances = {item.get("source_instance_id") for item in connections}
+        same_sides = all(
+            not str(item.get("source_instance_id") or "").endswith(suffix)
+            or str(item.get("target_anchor") or "").endswith(suffix)
+            for item in connections for suffix in ("_left", "_right"))
+        canonical = (default is not None and original_target == default[0]
+                     and method == default[1] and anchors == default[3]
+                     and len(anchors) == len(connections) == quantity
+                     and len(distinct_instances) == quantity and same_sides
+                     and len(instances_by_source[source]) == quantity
+                     and all(item.get("self_anchor") == default[2] for item in connections))
+        if canonical and source == "头部" and target == "身体":
             steps.append("用隐形缝合法将头部接合到身体顶部；"
                          "头颈缝合处塞棉紧实，防止头部前倾"
                          "（AmiguRoom 俄语熊评论区试钩共识）")
-        elif source == "手臂" and target in ("身体", _ONE_PIECE_NAME):
+        elif canonical and source == "手臂" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(placement(
                 "手臂", f"手臂对称缝合到{target_label}两侧上方{opening_note('手臂')}",
                 f"手臂缝合到{target_label}一侧上方{opening_note('手臂')}",
                 f"均匀缝合到{target_label}上部{opening_note('手臂')}"))
-        elif source == "腿部" and target in ("身体", _ONE_PIECE_NAME):
+        elif canonical and source == "腿部" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(placement(
                 "腿部", f"腿部对称缝合到{target_label}底部{opening_note('腿部')}",
                 f"腿部缝合到{target_label}底部{opening_note('腿部')}",
                 f"均匀缝合到{target_label}底部{opening_note('腿部')}"))
-        elif source == "耳朵" and target in ("头部", _ONE_PIECE_NAME):
+        elif canonical and source == "耳朵" and target in ("头部", _ONE_PIECE_NAME):
             steps.append(placement(
                 "耳朵", "耳朵对称缝合在头部两侧",
                 "耳朵缝合在头部一侧", "均匀缝合在头部周围"))
-        elif source == "帽子" and target in ("头部", _ONE_PIECE_NAME):
+        elif canonical and source == "帽子" and target in ("头部", _ONE_PIECE_NAME):
             hat_n = openings.get("帽子")
             hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
             steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
-        elif source == "裙子" and target in ("身体", _ONE_PIECE_NAME):
+        elif canonical and source == "裙子" and target in ("身体", _ONE_PIECE_NAME):
             if skirt_style == "attached":
                 steps.append(f"裙子已挑后半针钩在{target_label}腰部，无需缝合")
             else:
@@ -771,10 +812,10 @@ def build_assembly(part_names, skirt_style: str = "ring",
                 skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
                 steps.append(f"裙筒腰部{skirt_open}套入{target_label}后缝合固定"
                              "（腰部为开口起针）")
-        elif source == "尾巴" and target in ("身体", _ONE_PIECE_NAME):
+        elif canonical and source == "尾巴" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(f"尾巴缝合在{target_label}后方")
         else:
-            anchors = list(dict.fromkeys(
+            labels = list(dict.fromkeys(
                 anchor_labels.get(str(item.get("target_anchor")),
                                   str(item.get("target_anchor") or "指定位置"))
                 for item in connections))
@@ -783,8 +824,34 @@ def build_assembly(part_names, skirt_style: str = "ring",
                 "worn": "佩戴到",
                 "crocheted_or_sewn": "挑针钩接或缝合到",
             }.get(method, "连接到")
-            steps.append(
-                f"{source}{action}{target_label}的{'、'.join(anchors)}")
+            opening = opening_note(source)
+            details = []
+            for connection in connections:
+                instance_id = str(connection.get("source_instance_id") or "")
+                if instance_id.endswith("_left"):
+                    instance_label = f"左{source}"
+                elif instance_id.endswith("_right"):
+                    instance_label = f"右{source}"
+                elif len(connections) > 1 and instance_id not in ("", source):
+                    # Edited copies keep their ids so instances stay
+                    # distinguishable; a lone instance's template id would
+                    # only leak an internal identifier into the prose.
+                    instance_label = f"{source}（{instance_id}）"
+                else:
+                    instance_label = source
+                self_anchor = str(connection.get("self_anchor") or "指定连接点")
+                target_anchor = str(connection.get("target_anchor") or "指定位置")
+                details.append(
+                    f"{instance_label}的{anchor_labels.get(self_anchor, self_anchor)}"
+                    f"{action}{target_label}的{anchor_labels.get(target_anchor, target_anchor)}")
+            if len(details) == 1:
+                # One instance: merge the summary into the single detail line
+                # instead of emitting near-duplicate prose.
+                steps.append(f"{details[0]}{opening}")
+            else:
+                steps.append(
+                    f"{source}{action}{target_label}的{'、'.join(labels)}{opening}")
+                steps.extend(details)
 
     roots = {_ONE_PIECE_NAME, "身体"}
     if "身体" not in part_names and not one_piece:
@@ -820,6 +887,9 @@ class CrochetParamsGenerator:
         spans（S1）：姿态关键点实测部件占比；None 回退 PART_SPAN 先验。
         """
         style = style or DEFAULT_STYLE
+        if "parts" in structure:
+            from .geometry import normalize_structure
+            structure = normalize_structure(structure)
         struct_parts: dict[str, dict] = {
             p["name"]: p for p in structure.get("parts", [])
         }
@@ -827,9 +897,10 @@ class CrochetParamsGenerator:
 
         crochet_parts: list[CrochetPart] = []
 
-        # 以结构层部件清单为准（structure 可能按 clothing_type 补了裙子，
-        # 只遍历 analysis.parts 会漏掉）；结构为空时回退 analysis.parts。
-        part_order = [p["name"] for p in structure.get("parts", [])] or analysis.parts
+        # Explicit structure edits are authoritative, including deletion of all
+        # parts (the generation gate then reports an empty pattern).
+        part_order = ([p["name"] for p in structure["parts"]]
+                      if "parts" in structure else analysis.parts)
         for part_name in part_order:
             sp = struct_parts.get(part_name, {})
             is_head = part_name == "头部"
@@ -887,9 +958,12 @@ class CrochetParamsGenerator:
                 # F1 修复：裙子必须腰部开口（闭口圆盘套不进身体）。
                 # 构造方向：腰部环形开口起针 → 逐圈+6 展开到裙摆 → 直钩。
                 length = sp.get("height_cm") or sp.get("length_cm") or 5.0
-                waist_st = _stitches_for_diameter(head_d * BODY_HEAD_RATIO, gauge)
-                hem_st = _stitches_for_diameter(head_d * BODY_HEAD_RATIO * SKIRT_BODY_RATIO, gauge)
-                flare = max(0, (hem_st - waist_st) // 6)  # 每圈+6 的展开圈数
+                body_d = struct_parts.get("身体", {}).get("diameter_cm") or head_d * BODY_HEAD_RATIO
+                waist_st = _stitches_for_diameter(body_d, gauge)
+                hem_st = _stitches_for_diameter(
+                    sp.get("diameter_cm") or body_d * SKIRT_BODY_RATIO, gauge)
+                shaping = bridge_rounds(waist_st, hem_st)
+                flare = len(shaping)
                 total_target = max(flare + 2, gauge.rounds_for_height(length))
                 straight = total_target - flare
                 rounds_raw = [{
@@ -897,13 +971,16 @@ class CrochetParamsGenerator:
                     "stitches": waist_st,
                     "notes": f"腰部环形起针{waist_st}X成环（引拔连接，开口勿收口）",
                 }]
-                for i in range(1, flare + 1):
+                before = waist_st
+                for i, stitches in enumerate(shaping, 1):
                     rounds_raw.append({
                         "row": i + 1,
-                        "stitches": waist_st + 6 * i,
-                        "increase": 6,
-                        "notes": _inc_note_by_before(waist_st + 6 * (i - 1)),
+                        "stitches": stitches,
+                        "increase": max(0, stitches - before),
+                        "decrease": max(0, before - stitches),
+                        "notes": _change_note(before, stitches),
                     })
+                    before = stitches
                 for j in range(1, straight + 1):
                     rounds_raw.append({
                         "row": flare + 1 + j,
@@ -957,7 +1034,7 @@ class CrochetParamsGenerator:
                 # （0.6–0.7cm，无法佩戴）。侧壁深度 = 直径×0.6 的轴向高度，
                 # 下限 3 圈保证可佩戴。
                 wall_rounds = max(3, gauge.rounds_for_height(
-                    diameter * HAT_DEPTH_RATIO))
+                    sp.get("height_cm") or sp.get("length_cm") or diameter * HAT_DEPTH_RATIO))
                 rounds_raw = _cup_rounds(max_stitches=max_st,
                                          depth_rounds=wall_rounds)
                 # F36：高度口径与圆柱统一——只计轴向筒壁。帽顶加针段是
@@ -984,7 +1061,8 @@ class CrochetParamsGenerator:
                 # 照片驱动身体（M1.2）：剖面 + 圆形截面 = 旋转体，逐圈针数
                 # 随照片宽度变化（梨形/收腰不再是等粗圆柱）。
                 height = sp.get("height_cm", 9.0)
-                ref_st = _stitches_for_diameter(head_d * BODY_HEAD_RATIO, gauge)
+                ref_st = _stitches_for_diameter(
+                    sp.get("diameter_cm") or head_d * BODY_HEAD_RATIO, gauge)
                 body_span = (spans or PART_SPAN).get(
                     "身体", PART_SPAN["身体"])
                 wall = profile_to_rounds(
@@ -1022,7 +1100,8 @@ class CrochetParamsGenerator:
             elif part_name == "身体":
                 height = sp.get("height_cm", 9.0)
                 # 身体针数随头径缩放（旧硬编码 24 针在头 20cm 时严重比例失调）
-                max_st = _stitches_for_diameter(head_d * BODY_HEAD_RATIO, gauge)
+                max_st = _stitches_for_diameter(
+                    sp.get("diameter_cm") or head_d * BODY_HEAD_RATIO, gauge)
                 body_r = max(4, gauge.rounds_for_height(height))
                 rounds_raw = _cylinder_rounds(max_stitches=max_st, body_rounds=body_r)
                 # 标注高度只计"竖直筒壁"圈（直钩+收针）：起底加针段是水平
@@ -1046,7 +1125,8 @@ class CrochetParamsGenerator:
                 # Limbs, tails and any other slim cylinder: sized from head
                 # diameter (旧硬编码 12 针不随尺寸缩放)。
                 length = sp.get("length_cm") or sp.get("height_cm") or 5.0
-                max_st = _stitches_for_diameter(head_d * LIMB_HEAD_RATIO, gauge)
+                max_st = _stitches_for_diameter(
+                    sp.get("diameter_cm") or head_d * LIMB_HEAD_RATIO, gauge)
                 limb_r = max(2, gauge.rounds_for_height(length))
                 rounds_raw = _cylinder_rounds(max_stitches=max_st, body_rounds=limb_r)
                 n_dome = max_st // 6  # 起底圆盘圈不计高度（同身体口径）
@@ -1065,7 +1145,14 @@ class CrochetParamsGenerator:
             if sem:
                 from .colors import YARN_COLORS
                 _sem_in_table = sem in {name for _rgb, name in YARN_COLORS}
-            if (sem and color_bands and _sem_in_table
+            explicit_color = sp.get("color")
+            if explicit_color and explicit_color not in ("skin", "body"):
+                # Structure color edits are user intent; photo observations
+                # remain fallback inputs for the template placeholders only.
+                part.color = explicit_color
+                for rd in part.rounds:
+                    rd.color = explicit_color
+            elif (sem and color_bands and _sem_in_table
                     and part.name in (spans or PART_SPAN)):
                 # M3.13 融合：分段结构保留，最近段吸附为语义色（红裙白边）
                 CrochetParamsGenerator._apply_color_plan(part, color_bands,

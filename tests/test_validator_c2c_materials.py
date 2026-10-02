@@ -275,7 +275,7 @@ def test_orchestrator_passes_hints_to_parser(monkeypatch):
                                       "wrist": 0.5})
     captured = {}
 
-    def fake_parse(self, image, span_hints=None):
+    def fake_parse(self, image, span_hints=None, **kwargs):
         captured["hints"] = span_hints
         from app.models.image_parser import ImageParser as IP
         return IP._mock_analysis()

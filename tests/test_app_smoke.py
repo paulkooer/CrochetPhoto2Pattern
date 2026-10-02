@@ -6,6 +6,7 @@ app.models 的单元测试永远不会执行 main.py——这类冒烟测试专�
 """
 from pathlib import Path
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
 from app.models.crochet_params import CrochetParamsGenerator
@@ -122,6 +123,9 @@ def test_manual_regenerate_applies_edited_json():
         "parts": [{**p, "rows": 999} for p in params["parts"]],
     }
     edited["parts"][0]["rounds"] = edited["parts"][0]["rounds"][:3]
+    edited["gauge"] = {"stitches_per_10cm": "20", "rows_per_10cm": "16"}
+    at.session_state[f"pdf_{rid}"] = b"%PDF-cached-old-pattern"
+    at.session_state[f"share_token_{rid}"] = "cached-old-pattern"
 
     import json as _json
     at.text_area(key=f"json_edit_{rid}").set_value(
@@ -133,6 +137,11 @@ def test_manual_regenerate_applies_edited_json():
     head = [p for p in at.session_state["manual_result"]["params"]["parts"]
             if p["name"] == "头部"][0]
     assert len(head["rounds"]) == 3
+    updated = at.session_state["manual_result"]
+    assert updated["gauge"] == updated["params"]["gauge"] == {
+        "stitches_per_10cm": 20.0, "rows_per_10cm": 16.0}
+    assert f"pdf_{rid}" not in at.session_state
+    assert f"share_token_{rid}" not in at.session_state
     # 过期的 rows=999 不得复活：rows 不再是存储字段（由 len(rounds) 派生）
     assert "rows" not in head
     # A5 回归：成功提示通过 session 标志在 rerun 后真实可见
@@ -141,6 +150,43 @@ def test_manual_regenerate_applies_edited_json():
     assert at.session_state["manual_result"]["params"]["estimated_time_minutes"] <= 30 + 2.5 * (
         sum(len(p["rounds"]) for p in at.session_state["manual_result"]["params"]["parts"]) - 3
     )
+
+
+@pytest.mark.parametrize("invalid", ["bool_count", "duplicate_parts", "empty_rounds", "infinite_size"])
+@pytest.mark.parametrize("route", ["edit", "import"])
+def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, route):
+    import json
+    from copy import deepcopy
+
+    original = _mock_result("reject-edit")
+    edited = deepcopy(original["params"])
+    if invalid == "bool_count":
+        edited["parts"][0]["rounds"][0]["stitches"] = True
+    elif invalid == "duplicate_parts":
+        edited["parts"].append(deepcopy(edited["parts"][0]))
+    elif invalid == "infinite_size":
+        edited["parts"][0]["diameter_cm"] = float("inf")
+    else:
+        edited["parts"][0]["rounds"] = []
+    at = AppTest.from_file(_APP, default_timeout=30)
+    at.session_state["result"] = deepcopy(original)
+    at.session_state["pdf_reject-edit"] = b"existing-pdf"
+    at.session_state["share_token_reject-edit"] = "existing-share"
+    at.run()
+    if route == "edit":
+        at.text_area(key="json_edit_reject-edit").set_value(json.dumps(edited)).run()
+        at.button(key="regen_reject-edit").click().run()
+        error = "解析/应用失败"
+    else:
+        backup = {**original, "params": edited}
+        at.text_area(key="import_reject-edit").set_value(json.dumps(backup)).run()
+        at.button(key="importbtn_reject-edit").click().run()
+        error = "导入失败"
+    assert not at.exception
+    assert any(error in str(item.value) for item in at.error)
+    assert at.session_state["result"] == original
+    assert at.session_state["pdf_reject-edit"] == b"existing-pdf"
+    assert at.session_state["share_token_reject-edit"] == "existing-share"
 
 
 def test_grid_view_renders_from_stored_strings():
@@ -605,6 +651,26 @@ def test_quick_size_regen_without_ai():
     assert max(r["stitches"] for r in head["rounds"]) > 36
     # 成功提示可见
     assert any("新尺寸" in str(s.value) for s in at.success)
+
+
+def test_quick_size_controls_preserve_large_edited_dimensions():
+    result = _mock_result("large-edited-size")
+    result["analysis"]["height_cm"] = 75.0
+    head = next(part for part in result["structure"]["parts"] if part["name"] == "头部")
+    head["diameter_cm"] = 22.0
+    at = AppTest.from_file(_APP, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    assert not at.exception
+    assert at.slider(key="sz_head_large-edited-size").value == 22.0
+    assert at.slider(key="sz_height_large-edited-size").value == 75.0
+    at.button(key="sz_go_large-edited-size").click().run()
+    assert not at.exception
+    resized = at.session_state["result"]
+    head = next(part for part in resized["structure"]["parts"] if part["name"] == "头部")
+    assert head["diameter_cm"] == 22.0
+    assert resized["analysis"]["height_cm"] == 75.0
+    assert resized["structure"]["parts"] == result["structure"]["parts"]
 
 
 def test_photo_result_carries_style_and_bands():

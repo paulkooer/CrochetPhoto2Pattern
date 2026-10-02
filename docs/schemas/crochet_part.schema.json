@@ -70,6 +70,8 @@
     "diameter_cm": {
       "anyOf": [
         {
+          "exclusiveMinimum": 0,
+          "maximum": 200.0,
           "type": "number"
         },
         {
@@ -82,6 +84,8 @@
     "height_cm": {
       "anyOf": [
         {
+          "exclusiveMinimum": 0,
+          "maximum": 200.0,
           "type": "number"
         },
         {
@@ -97,6 +101,7 @@
       "type": "boolean"
     },
     "name": {
+      "minLength": 1,
       "title": "Name",
       "type": "string"
     },
@@ -123,6 +128,8 @@
       "items": {
         "$ref": "#/$defs/CrochetStitch"
       },
+      "maxItems": 2000,
+      "minItems": 1,
       "title": "Rounds",
       "type": "array"
     },

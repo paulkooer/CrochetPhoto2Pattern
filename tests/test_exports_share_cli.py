@@ -288,3 +288,84 @@ def test_cli_batch_stem_collision_disambiguated(tmp_path):
     files = sorted(p.name for p in out_dir.iterdir())
     assert "doll_png.json" in files and "doll_jpg.json" in files
     assert len(files) == 4
+
+
+def test_cli_batch_secondary_collision_preserves_every_image(tmp_path, monkeypatch):
+    from app import cli
+
+    names = ["doll.png", "doll.jpg", "doll_png.png", "doll_png_2.png"]
+    for name in names:
+        (tmp_path / name).touch()
+    out_dir = tmp_path / "out"
+
+    def fake_run(args):
+        result = _full_result()
+        result["analysis"]["body_type"] = Path(args.image).name
+        return result
+
+    monkeypatch.setattr(cli, "run", fake_run)
+    assert cli.main(["--batch-dir", str(tmp_path), "--out-dir", str(out_dir), "--quiet"]) == 0
+    payloads = [json.loads(p.read_text()) for p in out_dir.glob("*.json")]
+    assert sorted(p["analysis"]["body_type"] for p in payloads) == sorted(names)
+    assert len(list(out_dir.glob("*.md"))) == len(names)
+
+
+def test_cli_batch_corrupt_image_does_not_stop_other_images(tmp_path, capsys):
+    from app import cli
+
+    (tmp_path / "a-broken.png").write_bytes(b"not an image")
+    Image.new("RGB", (20, 40)).save(tmp_path / "b-valid.png")
+    (tmp_path / "directory.png").mkdir()
+    out_dir = tmp_path / "out"
+    assert cli.main(["--batch-dir", str(tmp_path), "--out-dir", str(out_dir),
+                     "--local", "--quiet"]) == 1
+    assert (out_dir / "b-valid.json").exists()
+    assert not (out_dir / "a-broken.json").exists()
+    assert "批量完成 1/2" in capsys.readouterr().err
+
+
+def test_cli_batch_missing_input_does_not_create_it(tmp_path, capsys):
+    from app import cli
+
+    missing = tmp_path / "missing"
+    assert cli.main(["--batch-dir", str(missing)]) == 1
+    assert not missing.exists()
+    assert "无法读取批量目录" in capsys.readouterr().err
+
+
+def test_share_rejects_incomplete_or_extra_compressed_data():
+    import base64
+    import zlib
+
+    from app.utils.share import decode_result, encode_result
+
+    raw = base64.urlsafe_b64decode(encode_result(_full_result()))
+    for damaged in (raw[:-4], raw + b"junk", raw + zlib.compress(b"{}")):
+        assert decode_result(base64.urlsafe_b64encode(damaged).decode()) is None
+
+
+def test_share_encode_respects_decoder_uncompressed_limit():
+    from app.utils.share import _MAX_DECOMPRESSED_BYTES, encode_result
+
+    # Keep the compressed token below 6000 characters so only the decoded
+    # byte budget can reject this otherwise tiny result.
+    result = {"analysis": {}, "structure": {},
+              "params": {"notes": "x" * _MAX_DECOMPRESSED_BYTES}}
+    assert encode_result(result) is None
+
+
+def test_share_byte_limit_is_inclusive(monkeypatch):
+    import base64
+    import zlib
+
+    from app.utils import share
+
+    result = {"analysis": {}, "structure": {}, "params": {"notes": "中文"}}
+    token = share.encode_result(result)
+    size = len(zlib.decompress(base64.urlsafe_b64decode(token)))
+    monkeypatch.setattr(share, "_MAX_DECOMPRESSED_BYTES", size)
+    assert share.encode_result(result) == token
+    assert share.decode_result(token)["params"]["notes"] == "中文"
+    monkeypatch.setattr(share, "_MAX_DECOMPRESSED_BYTES", size - 1)
+    assert share.encode_result(result) is None
+    assert share.decode_result(token) is None

@@ -183,6 +183,8 @@ def load_result(rid: str) -> dict[str, Any] | None:
         import logging
         logging.getLogger(__name__).warning("历史记录 %s 损坏: %s", rid, e)
         return None
+    if not isinstance(data, dict):
+        return None
     # 未来 schema 版本的历史记录不猜测兼容性；旧记录（无版本键）照常载入
     version = data.get("schema_version")
     if version is not None and version != SCHEMA_VERSION:

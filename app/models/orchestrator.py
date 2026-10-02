@@ -13,6 +13,7 @@ from .geometry import mock_geometry, observe_geometry
 from .image_parser import ImageParser
 from .sizing import scale_analysis_to_target_height
 from .structure_designer import StructureDesigner
+from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,7 @@ class PipelineOrchestrator:
                 progress_cb(pct, text=text)
 
         logger.info("Pipeline started (vision_mode=%s)", vision_mode)
+        subject = SubjectObservation(image)
 
         # 真正的 AI/本地照片路径先做一次 provider-neutral 几何观测；Mock
         # 路径跳过，保证演示数据不消费照片几何且不浪费分割。
@@ -90,7 +92,7 @@ class PipelineOrchestrator:
         if vision_mode != "mock" and (
                 vision_mode == "local"
                 or self.parser.openai_key or self.parser.anthropic_key):
-            geometry_observation = observe_geometry(image)
+            geometry_observation = observe_geometry(image, subject=subject)
 
         # S1：姿态关键点实测部件 span（可选能力，失败回退 PART_SPAN 先验）。
         # 对本地/LLM 两条路径同样适用——span 是纯几何量，与解析方式无关；
@@ -120,7 +122,7 @@ class PipelineOrchestrator:
                        if geometry_observation is not None
                        and geometry_observation.silhouette is not None else None)
             analysis = self.parser.parse_image_local(
-                image, geometry_profile=profile, geometry_observed=True)
+                image, geometry_profile=profile, geometry_observed=True, subject=subject)
             self.parser.last_usage = {}
         elif vision_mode == "mock":
             _report(10, "Step 1/3: Mock 演示数据生成中（不调用 API）...")
@@ -128,7 +130,7 @@ class PipelineOrchestrator:
             self.parser.last_usage = {}
         else:
             _report(10, "Step 1/3: AI 视觉解析中...")
-            analysis = self.parser.parse_image(image, span_hints=span_hints)
+            analysis = self.parser.parse_image(image, span_hints=span_hints, subject=subject)
         analysis, sizing = scale_analysis_to_target_height(
             analysis, target_height_cm, source=target_height_source)
         source = (self.parser.last_local_meta or {}).get("source")
@@ -137,7 +139,7 @@ class PipelineOrchestrator:
         elif geometry_observation is None:
             # Library/tests may inject a parser without provider keys; keep the
             # contract correct even when source provenance is supplied externally.
-            geometry_observation = observe_geometry(image)
+            geometry_observation = observe_geometry(image, subject=subject)
         logger.info("Image parsed: %s body, %d parts", analysis.body_type, len(analysis.parts))
 
         _report(40, "Step 2/3: 部件结构设计中...")
@@ -152,7 +154,7 @@ class PipelineOrchestrator:
 
         gauge = gauge or DEFAULT_GAUGE
         style = style or DEFAULT_STYLE
-        color_bands = vertical_color_bands(image)
+        color_bands = vertical_color_bands(image, subject=subject)
         # U8：小缩略图（历史列表/分享预览用），随 result 持久化
         preview = None
         try:

@@ -13,9 +13,15 @@
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
+
+from ..utils.numbers import finite_float
+
+MIN_GAUGE_STITCHES, MAX_GAUGE_STITCHES = 6.0, 40.0
+MIN_GAUGE_ROWS, MAX_GAUGE_ROWS = 8.0, 50.0
 
 BASE_GRAMS_PER_STITCH = 0.08
 BASE_STITCH_AREA_CM2 = 0.785 * 0.625
@@ -45,6 +51,18 @@ _CYC_CATEGORIES: tuple[tuple[float, str, str], ...] = (
 class Gauge:
     stitches_per_10cm: float  # 10cm 宽度内的短针数
     rows_per_10cm: float      # 10cm 高度内的行/圈数
+
+    def __post_init__(self) -> None:
+        # Explicit library input must not silently become another geometry.
+        # Legacy mapping/UI adapters retain their documented fallback/clamping.
+        stitches = finite_float(self.stitches_per_10cm)
+        rows = finite_float(self.rows_per_10cm)
+        if not MIN_GAUGE_STITCHES <= stitches <= MAX_GAUGE_STITCHES:
+            raise ValueError("10cm 小样针数必须在 6–40 之间")
+        if not MIN_GAUGE_ROWS <= rows <= MAX_GAUGE_ROWS:
+            raise ValueError("10cm 小样行数必须在 8–50 之间")
+        object.__setattr__(self, "stitches_per_10cm", stitches)
+        object.__setattr__(self, "rows_per_10cm", rows)
 
     @property
     def stitch_w_cm(self) -> float:
@@ -201,13 +219,30 @@ def gauge_from_mapping(raw: Mapping[str, Any] | None) -> Gauge:
     this function so an invalid payload cannot create a different geometry in
     each consumer.  Missing or malformed legacy payloads use classic gauge.
     """
-    data = raw or {}
+    data = raw if isinstance(raw, Mapping) else {}
     try:
-        stitches = max(6.0, min(40.0, float(data["stitches_per_10cm"])))
-        rows = max(8.0, min(50.0, float(data["rows_per_10cm"])))
+        values = (data["stitches_per_10cm"], data["rows_per_10cm"])
+        if any(isinstance(value, bool) for value in values):
+            return DEFAULT
+        stitches, rows = (float(value) for value in values)
+        if not math.isfinite(stitches) or not math.isfinite(rows):
+            return DEFAULT
+        stitches = max(MIN_GAUGE_STITCHES, min(MAX_GAUGE_STITCHES, stitches))
+        rows = max(MIN_GAUGE_ROWS, min(MAX_GAUGE_ROWS, rows))
         return Gauge(stitches, rows)
-    except (KeyError, TypeError, ValueError):
+    except (KeyError, TypeError, ValueError, OverflowError):
         return DEFAULT
+
+
+def gauge_from_result(result: Mapping[str, Any]) -> Gauge:
+    """Use the pattern's gauge; older backups may store it only at result level.
+
+    Editing params changes the actual pattern. Result-level metadata must not
+    override that edit in resizing or previews.
+    """
+    params = result.get("params")
+    raw = params.get("gauge") if isinstance(params, Mapping) else None
+    return gauge_from_mapping(raw or result.get("gauge"))
 
 
 def gauge_from_ui(preset: str, stitches: float | None,

@@ -86,3 +86,39 @@ def test_untranslatable_round_stops_part_before_virtual_count_drift():
 def test_lint_flags_unknown_tokens():
     issues = lint_parade_dsl("ring\nsc6inc\nfrobnicate\n")
     assert any("frobnicate" in i for i in issues)
+
+
+@pytest.mark.parametrize("rd", [
+    {"stitches": 12}, {"stitches": 6.9},
+    {"stitches": 6, "increase": -1, "decrease": -1},
+])
+def test_export_stops_on_invalid_plain_round(rd):
+    text = export_parade_dsl({"params": {"parts": [{
+        "magic_ring": True, "rounds": [{"stitches": 6}, rd, {"stitches": 6}],
+    }]}})
+    assert "该圈及后续圈已跳过" in text
+    instructions = [line for line in text.splitlines() if line and not line.startswith("#")]
+    assert instructions == ["ring", "sc6inc"]
+
+
+def test_first_round_color_is_used_for_every_copy():
+    text = export_parade_dsl({"params": {"parts": [{
+        "magic_ring": True, "quantity": 2, "color": "#000000",
+        "rounds": [{"stitches": 6, "color": "#ff0000"},
+                   {"stitches": 6, "color": "#0000ff"}],
+    }]}})
+    assert text.count("COLOR: #ff0000\nring\nsc6inc") == 2
+    assert "COLOR: #000000" not in text
+
+
+def test_empty_trailing_part_does_not_create_dangling_start():
+    text = export_parade_dsl({"params": {"parts": [
+        {"magic_ring": True, "rounds": [{"stitches": 6}]}, {"rounds": []},
+    ]}})
+    assert not text.rstrip().endswith("start_anew")
+
+
+@pytest.mark.parametrize("count", [0, -6, 6.9, True, float("inf")])
+def test_invalid_first_round_is_not_exported(count):
+    with pytest.raises(ValueError, match="未能导出"):
+        export_parade_dsl({"params": {"parts": [{"rounds": [{"stitches": count}]}]}})
