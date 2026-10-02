@@ -17,12 +17,14 @@ from datetime import UTC, date, datetime
 from importlib.metadata import PackageNotFoundError, version
 from importlib.resources import files as resource_files
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
 
 from app.models.crochet_params import SECONDS_PER_ROUND_OVERHEAD, SECONDS_PER_STITCH
 from app.models.gauge import BASE_GRAMS_PER_STITCH, BASE_STITCH_AREA_CM2
+from app.utils.counts import integer_count
+from app.utils.numbers import finite_float
 
 TRIAL_SCHEMA_VERSION = Literal[2]
 TRIAL_REPORT_SCHEMA_VERSION = 3
@@ -48,26 +50,32 @@ class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
+# 与 schemas.py 同一约定：布尔值不是测量值，截断小数不是整数。试钩记录
+# 会进入校准统计，静默强转（true→1、2.9→2）会污染所有下游中位数。
+TrialInt = Annotated[int, BeforeValidator(integer_count)]
+TrialFloat = Annotated[float, BeforeValidator(finite_float)]
+
+
 class TrialGauge(_StrictModel):
-    stitches_per_10cm: float = Field(ge=6.0, le=40.0)
-    rows_per_10cm: float = Field(ge=8.0, le=50.0)
+    stitches_per_10cm: TrialFloat = Field(ge=6.0, le=40.0)
+    rows_per_10cm: TrialFloat = Field(ge=8.0, le=50.0)
 
 
 class PatternSource(_StrictModel):
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     application_version: str = Field(min_length=1, max_length=80)
-    target_height_cm: float = Field(gt=0.0, le=200.0)
+    target_height_cm: TrialFloat = Field(gt=0.0, le=200.0)
     gauge: TrialGauge
-    total_stitches: int = Field(gt=0)
-    total_physical_rounds: int = Field(gt=0)
-    estimated_time_minutes: int = Field(gt=0)
+    total_stitches: TrialInt = Field(gt=0)
+    total_physical_rounds: TrialInt = Field(gt=0)
+    estimated_time_minutes: TrialInt = Field(gt=0)
 
 
 class SwatchMeasurement(_StrictModel):
     measured: bool = False
-    stitches_per_10cm: float = Field(ge=6.0, le=40.0)
-    rows_per_10cm: float = Field(ge=8.0, le=50.0)
-    hook_mm: float | None = Field(default=None, gt=0.0, le=20.0)
+    stitches_per_10cm: TrialFloat = Field(ge=6.0, le=40.0)
+    rows_per_10cm: TrialFloat = Field(ge=8.0, le=50.0)
+    hook_mm: TrialFloat | None = Field(default=None, gt=0.0, le=20.0)
     yarn_brand: str | None = Field(default=None, max_length=100)
     yarn_line: str | None = Field(default=None, max_length=100)
     yarn_lot: str | None = Field(default=None, max_length=100)
@@ -76,10 +84,10 @@ class SwatchMeasurement(_StrictModel):
 
 class TrialObservation(_StrictModel):
     completed_on: date
-    overall_height_cm: float = Field(gt=0.0, le=300.0)
-    yarn_used_grams: float = Field(gt=0.0, le=5000.0)
-    yarn_used_meters: float | None = Field(default=None, gt=0.0, le=100_000.0)
-    active_minutes: int = Field(gt=0, le=100_000)
+    overall_height_cm: TrialFloat = Field(gt=0.0, le=300.0)
+    yarn_used_grams: TrialFloat = Field(gt=0.0, le=5000.0)
+    yarn_used_meters: TrialFloat | None = Field(default=None, gt=0.0, le=100_000.0)
+    active_minutes: TrialInt = Field(gt=0, le=100_000)
     time_scope: Literal["round_crochet_baseline", "full_project"]
     pattern_modified: bool
     modifications: list[str] = Field(default_factory=list, max_length=50)
@@ -135,15 +143,15 @@ class ExternalObservation(_StrictModel):
     project_label: str = Field(min_length=1, max_length=120)
     project_type: Literal["amigurumi", "other_crochet"]
     measurement_scope: Literal["single_item", "pair", "source_aggregate"]
-    finished_height_cm: float | None = Field(default=None, gt=0.0, le=300.0)
-    finished_length_cm: float | None = Field(default=None, gt=0.0, le=300.0)
-    yarn_used_grams: float | None = Field(default=None, gt=0.0, le=5000.0)
-    yarn_used_meters: float | None = Field(default=None, gt=0.0, le=100_000.0)
-    completion_minutes_median: int | None = Field(default=None, gt=0, le=100_000)
-    completion_minutes_min: int | None = Field(default=None, gt=0, le=100_000)
-    completion_minutes_max: int | None = Field(default=None, gt=0, le=100_000)
-    stitches_per_10cm: float | None = Field(default=None, ge=1.0, le=100.0)
-    hook_mm: float | None = Field(default=None, gt=0.0, le=30.0)
+    finished_height_cm: TrialFloat | None = Field(default=None, gt=0.0, le=300.0)
+    finished_length_cm: TrialFloat | None = Field(default=None, gt=0.0, le=300.0)
+    yarn_used_grams: TrialFloat | None = Field(default=None, gt=0.0, le=5000.0)
+    yarn_used_meters: TrialFloat | None = Field(default=None, gt=0.0, le=100_000.0)
+    completion_minutes_median: TrialInt | None = Field(default=None, gt=0, le=100_000)
+    completion_minutes_min: TrialInt | None = Field(default=None, gt=0, le=100_000)
+    completion_minutes_max: TrialInt | None = Field(default=None, gt=0, le=100_000)
+    stitches_per_10cm: TrialFloat | None = Field(default=None, ge=1.0, le=100.0)
+    hook_mm: TrialFloat | None = Field(default=None, gt=0.0, le=30.0)
 
     @model_validator(mode="after")
     def _measurement_contract(self) -> ExternalObservation:
@@ -186,7 +194,7 @@ class ExternalEvidenceSource(_StrictModel):
         "published_pattern_specification",
     ]
     verification: Literal["source_claim", "raw_records_reviewed", "user_authorized_export"]
-    declared_sample_size: int | None = Field(default=None, gt=0, le=1_000_000)
+    declared_sample_size: TrialInt | None = Field(default=None, gt=0, le=1_000_000)
     raw_records_available: bool
     methodology_available: bool
     reuse_basis: Literal[
@@ -277,8 +285,8 @@ def _application_version() -> str:
 
 def _part_quantity(part: dict[str, Any]) -> int:
     try:
-        return max(1, int(part.get("quantity", 1)))
-    except (TypeError, ValueError):
+        return max(1, integer_count(part.get("quantity", 1)))
+    except ValueError:
         raise TrialDataError("pattern part quantity must be an integer") from None
 
 
@@ -295,7 +303,9 @@ def _pattern_counts(parts: list[dict[str, Any]]) -> tuple[int, int]:
         total_rounds += len(rounds) * quantity
         for crochet_round in rounds:
             try:
-                stitches = int(crochet_round["stitches"])
+                # integer_count also catches the OverflowError that raw int()
+                # raises on JSON Infinity/1e400 payloads.
+                stitches = integer_count(crochet_round["stitches"])
             except (KeyError, TypeError, ValueError):
                 raise TrialDataError("every pattern round must contain integer stitches") from None
             if stitches <= 0:
@@ -329,11 +339,11 @@ def create_trial_draft(
         source = PatternSource(
             sha256=_sha256(path),
             application_version=_application_version(),
-            target_height_cm=float(analysis["height_cm"]),
+            target_height_cm=finite_float(analysis["height_cm"]),
             gauge=TrialGauge.model_validate(gauge),
             total_stitches=total_stitches,
             total_physical_rounds=total_rounds,
-            estimated_time_minutes=int(params["estimated_time_minutes"]),
+            estimated_time_minutes=integer_count(params["estimated_time_minutes"]),
         )
         draft = TrialRecord(
             schema_version=2,  # == TRIAL_SCHEMA_VERSION
@@ -982,11 +992,17 @@ def main(argv: list[str] | None = None) -> int:
             args.external_evidence,
             curated_external_evidence=args.curated_external_evidence,
         )
-    except TrialDataError as exc:
-        print(f"试钩数据无效: {exc}", file=sys.stderr)
+    except (TrialDataError, OSError) as exc:
+        # write_json 的目标路径不可写也走同一条友好错误出口，而不是 traceback。
+        label = "试钩数据无效" if isinstance(exc, TrialDataError) else "试钩文件读写失败"
+        print(f"{label}: {exc}", file=sys.stderr)
         return 1
     if args.out:
-        path = write_json(report, args.out)
+        try:
+            path = write_json(report, args.out)
+        except OSError as exc:
+            print(f"试钩文件读写失败: {exc}", file=sys.stderr)
+            return 1
         print(f"试钩报告: {path}", file=sys.stderr)
     else:
         print(json.dumps(report, ensure_ascii=False, indent=2))

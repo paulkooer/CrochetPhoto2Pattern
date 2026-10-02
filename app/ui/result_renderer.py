@@ -25,9 +25,9 @@ from app.utils.share import _BACKUP_KEYS
 # 其余后跟 `rid` 本体）。旧结果被替换时用 purge_result_state 清理。
 _WIDGET_KEY_PREFIXES = (
     "chk_", "all_", "clear_", "json_edit_", "regen_", "dl_json_", "dl_md_",
-    "dl_backup_", "import_", "importbtn_", "sz_head_", "sz_height_", "sz_go_",
-    "pdf_", "dl_pdf_", "hist_save_", "pdf_gen_", "sz_", "share_",
-    "hist_title_", "struct_edit_", "struct_go_", "struct_",
+    "dl_backup_", "dl_parade_", "import_", "importbtn_", "sz_head_",
+    "sz_height_", "sz_go_", "pdf_", "dl_pdf_", "hist_save_", "pdf_gen_",
+    "sz_", "share_", "hist_title_", "struct_edit_", "struct_go_", "struct_",
     # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
     "share_token_",
 )
@@ -67,6 +67,50 @@ def md_safe(value) -> str:
     text = _strip_invisible(str(value))
     text = text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
     return html.escape(text)
+
+
+def _confidence_text(silhouette: dict) -> str:
+    """轮廓置信度仅是展示性溯源数据——备份可控的非法值不得崩掉渲染。"""
+    try:
+        return f"{float(silhouette.get('confidence', 0)):.0%}"
+    except (TypeError, ValueError, OverflowError):
+        return md_safe(silhouette.get("confidence"))
+
+
+def _ratio_text(sizing: dict) -> str:
+    """照片头身比仅是展示性溯源数据——备份可控的非法值不得崩掉渲染。"""
+    raw = sizing["photo_head_to_height_ratio"]
+    try:
+        return f"{float(raw):.3f}"
+    except (TypeError, ValueError, OverflowError):
+        return md_safe(raw)
+
+
+def _silhouette_verifications(result: dict) -> list[tuple[str, str]]:
+    """照片驱动（type="profile"）部件 → (部件名, 侧影 SVG) 列表。
+
+    params["parts"] 在双态收敛后是纯 dict 形态；旧的 getattr 过滤器永远
+    匹配不上，整个「轮廓对应验证」区域被静默禁用。
+    """
+    params = result.get("params") or {}
+    profile_parts = [p for p in params.get("parts", [])
+                     if isinstance(p, dict) and p.get("type") == "profile"]
+    if not profile_parts:
+        return []
+    from app.models.color_design import PART_SPAN
+    from app.models.profile_shaping import render_silhouette_svg, strip_dome
+
+    gauge = gauge_from_result(result)
+    photo = result_profile(result)
+    spans = result.get("spans") or PART_SPAN
+    return [
+        (str(part.get("name", "?")),
+         render_silhouette_svg(
+             strip_dome([r.get("stitches", 0) for r in part.get("rounds", [])
+                         if isinstance(r, dict)]),
+             gauge, photo, spans.get("身体")))
+        for part in profile_parts
+    ]
 
 
 def _yarn_chip_html(name: str) -> str:
@@ -231,10 +275,10 @@ def render_results(result: dict, slot: str) -> None:
         st.metric("目标整体高度", f"{analysis['height_cm']} cm")
     sizing = result.get("sizing") or {}
     if sizing.get("photo_head_to_height_ratio") is not None:
-        ratio = sizing["photo_head_to_height_ratio"]
+        ratio = _ratio_text(sizing)
         clamp_note = "（已限制到可生成范围）" if sizing.get("ratio_clamped") else ""
         st.caption(
-            f"📏 照片头径/身高比例约 {ratio:.3f}{clamp_note}；"
+            f"📏 照片头径/身高比例约 {ratio}{clamp_note}；"
             "照片不提供绝对厘米尺度，以上尺寸来自生成时选择的目标高度。")
     elif sizing.get("note"):
         st.caption(f"📏 {md_safe(sizing['note'])}")
@@ -242,7 +286,7 @@ def render_results(result: dict, slot: str) -> None:
     silhouette = geometry.get("silhouette") or {}
     if silhouette:
         st.caption(
-            f"📐 单图轮廓观测 · 置信度 {float(silhouette.get('confidence', 0)):.0%}"
+            f"📐 单图轮廓观测 · 置信度 {_confidence_text(silhouette)}"
             "；深度按旋转体假设补充，可在尺寸与结构区继续修正。")
     st.text("主要特征: "
             + ", ".join(_plain_text(f) for f in analysis["main_features"]))
@@ -277,9 +321,9 @@ def render_results(result: dict, slot: str) -> None:
             "openai": "🤖 OpenAI Vision（AI 语义解析）",
             "opencv-face": "🧮 本地视觉估算（人脸检测）",
             "default": "🧮 本地默认估算",
-        }.get(source, f"解析来源：{source}")
-        ratio = vmeta.get("body_ratio")
-        ratio_str = f"，身高/头径 ≈ {ratio}" if ratio else ""
+        }.get(source, f"解析来源：{md_safe(source)}")
+        body_ratio = vmeta.get("body_ratio")
+        ratio_str = f"，身高/头径 ≈ {body_ratio}" if body_ratio else ""
         st.caption(f"{label}{ratio_str} — {md_safe(vmeta.get('note', ''))}")
 
     # S1/F15：分段来源诚实标注——实测覆盖的部件逐一列出，其余为先验
@@ -310,29 +354,19 @@ def render_results(result: dict, slot: str) -> None:
 
     # Section 2: Structure
     section_heading(2, "部件结构设计（基础形状）")
-    profile_parts = [p for p in params.get("parts", [])
-                     if getattr(p, "type", None) == "profile"]
-    if profile_parts:
+    try:
+        _verifications = _silhouette_verifications(result)
+    except Exception as e:  # 可视化失败不影响主流程
+        _verifications = None
+        st.caption(f"轮廓可视化不可用：{md_safe(e)}")
+    if _verifications:
         with st.expander("📐 轮廓对应验证（生成侧影 vs 照片剖面）", expanded=False):
-            try:
-                from app.models.color_design import PART_SPAN as _SPAN
-                from app.models.profile_shaping import render_silhouette_svg, strip_dome
-                from app.ui.design_system import html_box
+            from app.ui.design_system import html_box
 
-                _gauge = gauge_from_result(result)
-                _photo = result_profile(result)
-                _spans = result.get("spans") or _SPAN
-                for _pp in profile_parts:
-                    _wall = [r.stitches for r in _pp.rounds]
-                    # 跳过底部圆盘（水平圆盘不计筒壁；旧版误用
-                    # _wall[0]//6——魔法环首圈 6 针 → 恒只跳 1 圈）
-                    st.markdown(html_box(
-                        render_silhouette_svg(
-                            strip_dome(_wall), _gauge, _photo,
-                            _spans.get("身体")), 320), unsafe_allow_html=True)
-                    st.caption(f"{_pp.name}：逐圈针数反渲染的侧影（蓝）与照片剖面（橙虚线）")
-            except Exception as e:  # 可视化失败不影响主流程
-                st.caption(f"轮廓可视化不可用：{md_safe(e)}")
+            for _name, _svg in _verifications:
+                st.markdown(html_box(_svg, 320), unsafe_allow_html=True)
+                st.caption(f"{md_safe(_name)}：逐圈针数反渲染的侧影（蓝）"
+                           "与照片剖面（橙虚线）")
     rows = []
     id_to_name = {
         part.get("part_id"): part.get("name", "?")

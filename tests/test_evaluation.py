@@ -342,3 +342,38 @@ def test_cli_exit_code_reflects_quality_gate(tmp_path, monkeypatch):
     assert main(["--dataset", "unused", "--out", str(output)]) == 2
     assert json.loads(output.read_text(encoding="utf-8")) == report
     assert main(["--dataset", "unused", "--out", str(output), "--allow-fail"]) == 0
+
+
+def test_file_replaced_during_evaluation_is_never_scored(tmp_path, monkeypatch):
+    import json as _json
+
+    from app import evaluation as _evaluation
+
+    blue_hash = _write_image(tmp_path / "blue.png", (0, 120, 215))
+    red_hash = _write_image(tmp_path / "red.png", (220, 50, 50))
+    red_bytes = (tmp_path / "red.png").read_bytes()
+    cases = [
+        _case("blue-doll", "blue.png", blue_hash, ["头部"], flare=False, colors=[]),
+        _case("red-doll", "red.png", red_hash, ["头部"], flare=False, colors=[]),
+    ]
+    (tmp_path / "eval_manifest.json").write_text(
+        _json.dumps(_manifest(cases), ensure_ascii=False), encoding="utf-8")
+
+    real_load = _evaluation.load_image_file
+
+    def load_and_swap(path):
+        image = real_load(path)
+        # 模拟数据集载入与逐例评测之间，另一个进程替换了冻结的源图。
+        if path.name == "blue.png":
+            (tmp_path / "blue.png").write_bytes(red_bytes)
+        return image
+
+    monkeypatch.setattr(_evaluation, "load_image_file", load_and_swap)
+    report = evaluate_dataset(
+        tmp_path,
+        runner=lambda _image: _valid_result(["头部"], ["蓝色"], flare=False))
+    blue = next(c for c in report["cases"] if c["id"] == "blue-doll")
+    red = next(c for c in report["cases"] if c["id"] == "red-doll")
+    assert blue["passed"] is False
+    assert "changed during evaluation" in blue["error"]["message"]
+    assert red["passed"] is True

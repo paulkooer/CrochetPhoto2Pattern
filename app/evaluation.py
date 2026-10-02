@@ -360,6 +360,14 @@ def evaluate_dataset(
             if image is None:
                 raise EvaluationDatasetError(f"unable to decode image: {case.file}")
             try:
+                # 每例打分前重校验冻结哈希：数据集在载入与评测之间被同步
+                # 进程替换时，报告不得把分数归因到旧哈希上。
+                actual_sha = _sha256(image_path)
+                if actual_sha != case.sha256:
+                    raise EvaluationDatasetError(
+                        f"{case.id}: dataset file changed during evaluation: {case.file}; "
+                        f"expected {case.sha256}, got {actual_sha}"
+                    )
                 result = run_case(image)
             finally:
                 image.close()
@@ -552,7 +560,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"评测数据集无效: {exc}", file=sys.stderr)
         return 1
     if args.out:
-        path = write_evaluation_report(report, args.out)
+        try:
+            path = write_evaluation_report(report, args.out)
+        except OSError as exc:
+            print(f"无法写入评测报告: {exc}", file=sys.stderr)
+            return 1
         print(f"评测报告: {path}", file=sys.stderr)
     else:
         print(json.dumps(report, ensure_ascii=False, indent=2))

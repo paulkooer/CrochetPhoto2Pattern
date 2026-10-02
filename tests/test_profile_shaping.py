@@ -130,3 +130,12 @@ def test_sample_at_linear_interpolation():
     ramp = [i / 7.0 for i in range(8)]
     samples = [_sample_at(ramp, (j + 0.5) / 15) for j in range(15)]
     assert all(b > a for a, b in zip(samples, samples[1:]))  # noqa: B905
+
+
+def test_render_silhouette_svg_survives_pure_dome_and_empty_parts():
+    """纯球部件 strip_dome 后为空：渲染必须降级而不是 max() 抛 ValueError。"""
+    from app.models.gauge import DEFAULT as GAUGE
+
+    photo = [0.5, 1.0, 0.5]
+    assert render_silhouette_svg([], GAUGE, photo, (0.1, 0.9)).startswith("<svg")
+    assert render_silhouette_svg([6, 12], GAUGE, photo, (0.1, 0.9)).startswith("<svg")

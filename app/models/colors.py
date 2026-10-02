@@ -249,7 +249,8 @@ def nearest_yarn_batch(rgbs: np.ndarray) -> tuple[list[str], list[RGB]]:
     return names, rgbs_out
 
 
-# Precomputed Lab values for the table (module import time, 24 entries)
+# Precomputed Lab values for the table (module import time; length follows
+# YARN_COLORS — tests pin the count, so the comment cannot go stale)
 _YARN_LAB: list[tuple[LAB, str, RGB]] = [
     (srgb_to_lab(*rgb), name, rgb) for rgb, name in YARN_COLORS
 ]

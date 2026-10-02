@@ -227,10 +227,11 @@ def test_purge_covers_pdf_gen_and_sz_prefixes():
     from app.ui.result_renderer import _WIDGET_KEY_PREFIXES
     assert any(p == "pdf_gen_" for p in _WIDGET_KEY_PREFIXES)
     assert any(p == "sz_" for p in _WIDGET_KEY_PREFIXES)
+    assert any(p == "dl_parade_" for p in _WIDGET_KEY_PREFIXES)
     result = {"result_id": "purge-x"}
     state = {"pdf_gen_purge-x": 1, "pdf_purge-x": 2, "sz_head_purge-x": 3,
              "sz_purge-x_ok": True, "chk_purge-x_头部_0": True,
-             "unrelated": 9}
+             "dl_parade_purge-x": 4, "unrelated": 9}
     # 模拟 session_state 清理（purge 操作 st.session_state）
     import app.ui.result_renderer as rr
     class FakeState(dict):
@@ -246,6 +247,7 @@ def test_purge_covers_pdf_gen_and_sz_prefixes():
     assert "pdf_gen_purge-x" not in fs and "pdf_purge-x" not in fs
     assert "sz_head_purge-x" not in fs and "sz_purge-x_ok" not in fs
     assert "chk_purge-x_头部_0" not in fs   # 同 rid 的勾选本就该清
+    assert "dl_parade_purge-x" not in fs    # Parade 下载键同样随 rid 清理
     assert fs["unrelated"] == 9
 
 
