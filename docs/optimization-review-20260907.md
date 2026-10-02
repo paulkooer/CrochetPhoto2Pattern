@@ -195,13 +195,48 @@ Ruff、mypy（90 源文件）通过，文档记录与实际一致。随后按"�
   `CROCHET_EVAL_DIR` 的授权真实照片评测；未运行远程矩阵或发行包重建。
   修改保留在未提交工作树。
 
+## 第七轮：独立复审 · 未覆盖模块扫描 · 2026-10-02
+
+起点为第六轮提交（6428d56/f7828c7）后的干净树，复核基线 **1060 passed, 1 skipped**。
+本轮以两个独立扫描代理覆盖前六轮未深审的 UI 层与辅助层（trials、evaluation、
+images、colors、main 等 ~5200 行），同时人工复审核心算法模块（stitches、sizing、
+profile_shaping、ring_chart、structure_designer、grid_pattern）及第六轮自身改动。
+
+| 发现 | 最终行为 | 证据 |
+|---|---|---|
+| 「轮廓对应验证」折叠区被 `getattr` 过滤器静默禁用（params 部件恒为 dict，属性访问恒 None）——照片驱动的核心可视化从未真正展示 | 提取 `_silhouette_verifications` 纯函数（dict 访问），折叠区复活；病态圈行由渲染层容错降级 | `tests/test_result_renderer.py` |
+| `geometry`/`sizing` 是备份可控的自由字段：`confidence: null/"abc"` → `float()` TypeError；头身比非数值 → 格式化 ValueError——导入坏备份后下一帧渲染整页崩溃且无法就地恢复 | 展示层容错解码（`_confidence_text`/`_ratio_text`），非法值转义显示为字面量 | 同上 |
+| trials.py 裸 `int()` 遇 JSON `Infinity`/`1e400` 抛 OverflowError 越过 except 元组 → CLI 直接 traceback（友好错误契约失守）；布尔/小数静默强转（`true`→1、`2.9`→2）会污染校准统计 | quantity/stitches/时长改用 `integer_count`，身高改用 `finite_float`；试钩记录模型全部数值字段改用 `TrialInt`/`TrialFloat`（与 schemas 同一约定：拒绝布尔，保留整数字符串/整数浮点） | `tests/test_trials.py` 六项参数化 + 两项记录模型回归 |
+| evaluation.py 冻结哈希只在数据集载入时校验，评测循环重新读文件（TOCTOU）——源图被并发替换时报告仍把分数归因到旧哈希 | 每例打分前重校验 SHA256，不匹配记为该例错误、不计分 | `test_evaluation.py` 中途替换用例 |
+| trials/evaluation 共三处 `write_json`/`write_evaluation_report` 的 OSError 以 traceback 暴露 | 统一友好错误 + 退出码 1 | 修复为纯防御包装（权限类故障难以稳定注入，无专属回归） |
+| `render_silhouette_svg` 对纯球部件（strip_dome 后为空列表）在两处 `max()` 抛 ValueError | `default=` 守卫，空列表降级渲染 | `test_profile_shaping.py` 空列表用例 |
+| `vision_meta.source` 兜底文案未过 `md_safe`（分享/备份可控的 markdown 注入面）；`dl_parade_` 键未进 purge 前缀表（旧键随结果替换持续累积）；sidebar 损坏记录提示「可点删」却先 `st.stop()` 使删除键当轮不可达；tab_grid 升级前遗留会话缓存缺 `legend_html`/`c2c` 键会 KeyError | 全部修复：来源文案转义、purge 前缀补录、载入失败改 try/except/else 不中断渲染、旧缓存 `.get` 回退 | `test_audit_fixes.py` purge 断言扩展；其余为渲染路径小改 |
+| colors.py 注释声称 24 色实际 30 色 | 注释改为跟随 `YARN_COLORS` 长度（由测试钉住） | 既有色表计数测试 |
+
+核心算法模块复审结论：stitches（纯数据词条）、sizing（有界钳制）、grid_pattern
+（严格导入、单元上限、C2C 坐标翻转正确）、ring_chart（转义齐全、整数算子分布）、
+structure_designer（连接目标不在图内时不出边、重复 id 去重）未发现新问题；
+profile_shaping 两处空列表边界如上修复。第六轮自身改动复查：装配文案合并、
+pose 下载退避、资源上限交互未见回归。
+
+### 验证记录
+
+- 新增用例先复现：死代码过滤、trials OverflowError 均在修复前于 REPL 复现；
+  修复后定向集通过。profile_shaping 第二处 `max()` 边界由新用例在修复后
+  仍失败而暴露（同函数相邻行），随即补修。
+- 最终全量 `.venv/bin/pytest -q` → **1074 passed, 1 skipped，22.70s**，
+  较本轮起点新增 14 项通过。
+- `.venv/bin/ruff check .`、`.venv/bin/mypy app tests`（91 源文件）、
+  `git diff --check` 通过。跳过项仍为未配置 `CROCHET_EVAL_DIR` 的授权
+  真实照片评测。未运行远程矩阵、发行包重建或实体试钩；修改保留在未提交工作树。
+
 ## 下一轮需继续核查
 
-1. 照片处理：共享观测、失败回退、线程隔离、模型缓存异常与失败下载退避均已
-   覆盖；还需在授权照片上比较统一缩放尺寸后的质量，并实测可选 Pose 检测
-   本身的每图开销。
-2. 生成与显示契约：导入圈列表长度、部件总数与单圈针数的资源边界已建立
-   （本轮）；还需核查非标准形状及连接方法与塑形选项组合在生成、预览、
-   导出中的一致性。当前测试不能证明所有第三方输入组合都已覆盖。
+1. 照片处理：共享观测、失败回退、失败下载退避与模型缓存异常均已覆盖；还需在
+   授权照片上比较统一缩放尺寸后的质量，并实测可选 Pose 检测本身的每图开销。
+2. 生成与显示契约：导入圈列表长度、部件总数与单圈针数的资源边界已建立；
+   非标准形状及连接方法与塑形选项组合的一致性仍靠组合矩阵测试近似覆盖，
+   当前测试不能证明所有第三方输入组合都已覆盖。UI 层与辅助层已完成一轮
+   同等强度扫描（本轮）。
 3. 发布验证：授权真实照片与独立实体试钩基线仍缺失。当前修复不解除 G3/G4，
    也不替代支持版本矩阵或新的发行包验证。

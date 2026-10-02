@@ -22,11 +22,12 @@ named commit; the new branch must repeat the protected checks before merge.
 
 Local review through 2026-10-02 (Python 3.12.13): after input/export, gauge/structure,
 shared photo observation, model-cache, edited-count, assembly-connection, physical-input,
-preview-rotation fixes, and a follow-up review round (assembly prose no longer leaks
-internal instance ids, failed pose downloads back off within the process, part-count /
-round-count / per-round stitch resource bounds, pattern dimensions bounded to (0, 200]),
-the full suite reports **1060 passed, 1 skipped in 20.52s**.
-Ruff, mypy app tests (90 files), schema-document synchronization, and `git diff --check` pass.
+preview-rotation fixes, a follow-up review round (assembly prose, pose-download backoff,
+resource bounds, pattern dimension caps), and a seventh sweep of the previously
+unaudited UI/auxiliary modules (silhouette verification revived, provenance fields
+crash-proofed, trial-CLI numeric decoding, evaluation re-hashing), the full suite
+reports **1074 passed, 1 skipped in 22.70s**.
+Ruff, mypy app tests (91 files), schema-document synchronization, and `git diff --check` pass.
 In a synthetic comparison, shared segmentation reduced median pipeline time from
 0.1074s to 0.0543s; this does not establish real-photo quality.
 The skipped test requires `CROCHET_EVAL_DIR`.

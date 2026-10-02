@@ -10,6 +10,21 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed
 
+- **Round-7 review (UI and auxiliary layers)**: the "silhouette verification"
+  visualization had been silently disabled by a dict/attribute access mismatch and
+  now renders again with graceful degradation. Invalid provenance values in
+  imported backups (`geometry`/`sizing` confidence and photo ratio) render
+  escaped instead of crashing the whole page. Trial CLI: JSON `Infinity`/`1e400`
+  payloads that escaped raw `int()` with OverflowError now produce the friendly
+  error; booleans and fractional numbers are no longer silently coerced (trial
+  model numeric fields follow the project-wide decoding convention); unwritable
+  output paths exit 1 with a message. The evaluation loop re-verifies the frozen
+  SHA256 before scoring each case, so sources replaced mid-run are never scored.
+  Silhouette rendering degrades for pure-dome parts instead of raising. Source
+  labels are escaped, the Parade download key is purged with its result, the
+  delete escape hatch for corrupted history records is reachable again, and
+  pre-upgrade grid caches fall back instead of raising KeyError.
+
 - **Assembly prose, download backoff, and resource-bound review**: edited assembly
   text no longer leaks internal instance ids (e.g. "尾巴（tail）") into the Chinese
   prose; lone instances merge into one complete sentence while custom ids of multiple
