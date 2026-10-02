@@ -355,14 +355,18 @@ def render_tab_grid() -> None:
                         unsafe_allow_html=True)
         with col_v2:
             st.subheader("📋 颜色图例")
-            # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown
-            st.markdown(view["legend_html"], unsafe_allow_html=True)
+            # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown。
+            # 升级前遗留的会话缓存只有 Markdown 图例，回退显示而不是 KeyError。
+            st.markdown(view.get("legend_html") or view.get("legend", ""),
+                        unsafe_allow_html=True)
 
         st.subheader("📝 文字符号图表")
         with st.expander("展开查看 / 复制到聊天", expanded=False):
             st.code(view["chart"], language="")
         with st.expander("🧶 C2C 逐行指令（对角行）", expanded=False):
-            st.code(view["c2c"], language="")
+            st.code(view.get("c2c")
+                    or "旧版缓存网格未包含 C2C 指令；重新生成后可用。",
+                    language="")
 
         # Downloads（复用已渲染的字符串，不再二次渲染）
         col_d1, col_d2, col_d3 = st.columns(3)

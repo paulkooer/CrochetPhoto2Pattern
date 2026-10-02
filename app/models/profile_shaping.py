@@ -177,13 +177,13 @@ def render_silhouette_svg(
     # profile_to_rounds 的区间归一同口径，剖面峰值与生成侧影最宽处重合）
     if photo_profile and span:
         span_s, span_e = span
-        ref_d_cm = max(s * stitch_w / math.pi for s in stitches)
+        ref_d_cm = max((s * stitch_w / math.pi for s in stitches), default=1.0)
         vals = []
         for j in range(n_rounds):
             f = (j + 0.5) / n_rounds
             frac = span_e - (span_e - span_s) * f   # 自底向上（R1=照片低处）
             vals.append(_sample_at(photo_profile, frac))
-        vpeak = max(vals) or 1.0
+        vpeak = max(vals, default=0.0) or 1.0
         pts = [(cx + v / vpeak * (ref_d_cm / 2.0) * scale_x, y_of(j))
                for j, v in enumerate(vals)]
         pts += [(2 * cx - x, y) for (x, y) in reversed(pts)]

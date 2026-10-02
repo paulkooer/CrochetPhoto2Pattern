@@ -435,3 +435,49 @@ def test_cli_creates_validation_draft_and_can_require_holdout(tmp_path):
     args = ["analyze", "--records", str(records)]
     assert main(args) == 0
     assert main(args + ["--require-validation"]) == 2
+
+
+def _write_pattern(tmp_path, payload):
+    path = tmp_path / "pattern.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+@pytest.mark.parametrize("mutate", [
+    pytest.param(lambda p: p["params"]["parts"][0].update(quantity=1e400),
+                 id="quantity-infinity"),
+    pytest.param(lambda p: p["params"]["parts"][0]["rounds"][0].update(
+                     stitches=float("inf")),
+                 id="stitches-infinity"),
+    pytest.param(lambda p: p["params"]["parts"][0].update(quantity=True),
+                 id="quantity-bool"),
+    pytest.param(lambda p: p["params"]["parts"][0]["rounds"][0].update(stitches=6.9),
+                 id="stitches-fractional"),
+    pytest.param(lambda p: p["analysis"].update(height_cm=True),
+                 id="height-bool"),
+    pytest.param(lambda p: p["params"].update(estimated_time_minutes=44.9),
+                 id="time-fractional"),
+])
+def test_pattern_numeric_garbage_gets_friendly_error(tmp_path, mutate):
+    # 1e400/Infinity 会让裸 int() 抛 OverflowError 越过 except 元组，
+    # 直接以 traceback 落到 CLI；布尔与小数按全系统约定拒绝。
+    payload = _pattern_payload()
+    mutate(payload)
+    path = _write_pattern(tmp_path, payload)
+    with pytest.raises(TrialDataError):
+        create_trial_draft(path, trial_id="t-garbage", maker_id="m-1")
+
+
+def test_trial_record_rejects_boolean_measurements():
+    from pydantic import ValidationError
+
+    payload = _record(1)
+    payload["observation"]["active_minutes"] = True
+    with pytest.raises(ValidationError):
+        TrialRecord.model_validate(payload)
+
+
+def test_trial_record_accepts_integral_float_counts():
+    payload = _record(1)
+    payload["pattern"]["total_stitches"] = 1000.0
+    assert TrialRecord.model_validate(payload).pattern.total_stitches == 1000

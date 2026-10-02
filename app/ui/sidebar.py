@@ -144,7 +144,9 @@ def render_sidebar() -> None:
                     else:
                         # V5：与备份导入同等待遇——历史记录可能是当初
                         # 存入的坏结果（JSON 修正改坏后存档），直接入库
-                        # 会崩在渲染层；在此校验并给出 st.error + 删除出路
+                        # 会崩在渲染层；在此校验并给出 st.error + 删除出路。
+                        # 不用 st.stop：那会让下方同行「删」按钮在本轮
+                        # 永远渲染不出来，提示里的出路形同虚设。
                         try:
                             from app.ui.result_logic import (
                                 rebuild_params,
@@ -156,12 +158,12 @@ def render_sidebar() -> None:
                             data["structure"] = structure
                         except Exception as e:
                             st.error(f"该记录已损坏，无法载入（可点「删」清除）: {md_safe(e)}")
-                            st.stop()
-                        if "result" in st.session_state:
-                            purge_result_state(st.session_state["result"])
-                        data.setdefault("result_id", it["rid"])
-                        st.session_state["result"] = data
-                        st.rerun()
+                        else:
+                            if "result" in st.session_state:
+                                purge_result_state(st.session_state["result"])
+                            data.setdefault("result_id", it["rid"])
+                            st.session_state["result"] = data
+                            st.rerun()
                 if c_h3.button("删", key=f"hist_del_{it['rid']}"):
                     history.delete_result(it["rid"])
                     st.rerun()
