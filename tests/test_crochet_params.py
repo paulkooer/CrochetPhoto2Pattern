@@ -911,3 +911,19 @@ def test_safety_wording_bans_rigid_armatures_for_children():
                 if m["item"] == "定型线（可选）")
     assert "竹签" not in wire["quantity"]
     assert "硬质" in wire["quantity"]
+
+
+def test_opening_detection_recognizes_negated_closing_variants():
+    from app.models.crochet_params import _openings_by_part
+
+    def part(note):
+        return {"name": "手臂",
+                "rounds": [{"row": 1, "stitches": 12, "notes": note}]}
+
+    # "未收口/没收口/别收口" 与 "不收口/勿收口" 同为开口声明，不得误判
+    for note in ("开口保留…未收口", "此处没收口", "勿收口", "不收口"):
+        assert _openings_by_part([part(note)]) == {"手臂": 12}, note
+    # 真正的闭合语义仍然不计开口
+    assert _openings_by_part([part("无痕收口，藏线头")]) == {}
+    assert _openings_by_part([part("勒紧收口")]) == {}
+    assert _openings_by_part([part("")]) == {"手臂": 12}

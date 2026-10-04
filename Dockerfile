@@ -2,7 +2,10 @@
 # 旧版 `pip install .` 会现场解析最新兼容版（openai/anthropic 无上界），
 # 与 uv.lock 脱节；现在镜像与 CI/本地共用同一把锁。uv 经 pip 装入临时
 # venv，避免为构建阶段引入第二个基础镜像。
-FROM python:3.12-slim AS builder
+# 基础镜像按 OCI index 摘要固定（供应链防篡改；2026-10-03 核对）。
+# 刷新方式：docker buildx imagetools inspect python:3.12-slim 取新摘要，
+# 更新两处并重建验证——这是有意的维护动作，不随 tag 自动漂移。
+FROM python:3.12-slim@sha256:dddfd7e07f9d15aeeca61529320492139d21cac7f0070c00609243e51e4e0016 AS builder
 
 # 弱网/受限出口下的稳健参数：延长 HTTP 超时、降低下载并发
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy \
@@ -22,7 +25,7 @@ COPY README.md LICENSE ./
 RUN /opt/uv-venv/bin/uv sync --locked --no-dev
 
 # ── 运行阶段：非 root + 健康检查 ────────────────────────────────────────
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:dddfd7e07f9d15aeeca61529320492139d21cac7f0070c00609243e51e4e0016
 
 # opencv-headless 在 slim 基础镜像需要 libglib
 RUN (apt-get update || (sleep 5 && apt-get update)) \
@@ -39,6 +42,8 @@ ENV PATH="/app/.venv/bin:$PATH" \
     # 图解历史写 ~/.crochet_photo2pattern（appuser 家目录，可写）
     HOME=/home/appuser \
     STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+# 内存参考：上传解码上限 2048px（utils.images MAX_DECODED_SIDE），典型容器
+# 预算 512MB–1GB 即可；大图网格量化/GrabCut 峰值另见 docs/system-status.md。
 
 USER appuser
 EXPOSE 8501

@@ -207,3 +207,21 @@ def test_history_fully_migrated_schema_reconnects(tmp_path, monkeypatch):
                                "analysis": a.model_dump(),
                                "structure": {"parts": []}, "params": p})
     assert rid == "full-1"
+
+
+def test_history_drops_non_jpeg_preview_payload():
+    from app.utils import history
+
+    rid = history.save_result({
+        "result_id": "pv-1", "analysis": {"x": 1}, "structure": {"parts": []},
+        "params": {"parts": []},
+        "preview": "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=",
+    })
+    assert history.load_result(rid)["preview"] is None
+
+    rid2 = history.save_result({
+        "result_id": "pv-2", "analysis": {"x": 1}, "structure": {"parts": []},
+        "params": {"parts": []},
+        "preview": "data:image/jpeg;base64,AAAA",
+    })
+    assert history.load_result(rid2)["preview"] == "data:image/jpeg;base64,AAAA"

@@ -153,9 +153,10 @@ def _srgb_to_lab_vec(rgb: np.ndarray) -> np.ndarray:
     x = (rl * 0.4124564 + gl * 0.3575761 + bl * 0.1804375) / 0.95047
     y = (rl * 0.2126729 + gl * 0.7151522 + bl * 0.0721750)
     z = (rl * 0.0193339 + gl * 0.1191920 + bl * 0.9503041) / 1.08883
-    f = np.where(np.stack([x, y, z], axis=1) > 0.008856,
-                 np.clip(np.stack([x, y, z], axis=1), 1e-12, None) ** (1 / 3),
-                 7.787 * np.stack([x, y, z], axis=1) + 16.0 / 116.0)
+    xyz = np.stack([x, y, z], axis=1)
+    f = np.where(xyz > 0.008856,
+                 np.clip(xyz, 1e-12, None) ** (1 / 3),
+                 7.787 * xyz + 16.0 / 116.0)
     fx, fy, fz = f[:, 0], f[:, 1], f[:, 2]
     return np.stack([116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)],
                     axis=1)

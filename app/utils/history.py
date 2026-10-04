@@ -23,6 +23,12 @@ from typing import Any
 
 from ..schemas import SCHEMA_VERSION, PatternResult
 
+# LIKE 转义子句用固定常量而非字符串拼接生成（安全但不易审计——外部
+# 审查建议）；转义符与 _like_escape 内的 "!" 必须一致。
+_SQL_LIKE_ESCAPE_CLAUSE = "ESCAPE '!'"
+
+_PREVIEW_DATA_URL_PREFIX = "data:image/jpeg;base64,"
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS patterns (
     rid        TEXT PRIMARY KEY,
@@ -136,7 +142,7 @@ def list_results(limit: int = 30, query: str | None = None,
     # query 只搜 summary+title（blob 是 JSON 序列化文本，键名必含 "_"，
     # 搜它会让 "_" 命中全部记录）；按色筛选仍走 blob（U26 结构化筛选）
     esc_ch = "!"
-    escape_clause = "ESCAPE '" + esc_ch + "'"
+    escape_clause = _SQL_LIKE_ESCAPE_CLAUSE
 
     def _like_escape(text: str) -> str:
         return (text.replace(esc_ch, esc_ch * 2)
@@ -185,6 +191,13 @@ def load_result(rid: str) -> dict[str, Any] | None:
         return None
     if not isinstance(data, dict):
         return None
+    # preview 只是历史列表的缩略图展示字段；手改 DB 注入非 JPEG data URL
+    # 的内容时直接丢弃，不让 UI 渲染未验证数据（不影响图解本体）
+    preview = data.get("preview")
+    if preview is not None and (
+            not isinstance(preview, str)
+            or not preview.startswith(_PREVIEW_DATA_URL_PREFIX)):
+        data["preview"] = None
     # 未来 schema 版本的历史记录不猜测兼容性；旧记录（无版本键）照常载入
     version = data.get("schema_version")
     if version is not None and version != SCHEMA_VERSION:

@@ -177,3 +177,25 @@ def load_uploaded_image_cached(uploaded_file) -> Image.Image | None:
             cache.clear()
         cache[key] = image
     return image
+
+
+def thumbnail_data_url(image: Image.Image, max_side: int = 96,
+                       quality: int = 70) -> str | None:
+    """RGB JPEG 缩略图 data URL（历史列表/分享预览用）；失败返回 None。
+
+    从 orchestrator 抽出的展示层关注点：缩略图只进 preview 字段，不参与
+    图解生成；输入可能是共享缓存图，必须 copy 后再做原地 thumbnail。
+    """
+    try:
+        import base64
+        import io
+
+        thumb = image.convert("RGB").copy()
+        thumb.thumbnail((max_side, max_side))
+        buf = io.BytesIO()
+        thumb.save(buf, format="JPEG", quality=quality)
+        return ("data:image/jpeg;base64,"
+                + base64.b64encode(buf.getvalue()).decode())
+    except Exception as e:
+        logger.debug("preview thumbnail failed: %s", e)
+        return None

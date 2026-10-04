@@ -80,12 +80,10 @@ class Gauge:
     @property
     def stitches_per_cm_diameter(self) -> float:
         """针数 / 直径 cm（历史 STITCHES_PER_CM 口径：π/针宽）。"""
-        import math
         return math.pi / self.stitch_w_cm
 
     def stitches_for_diameter(self, diameter_cm: float) -> int:
         """直径 → 6 的倍数针数（半步向上取整，避免银行家舍入）。"""
-        import math
         raw_groups = math.pi * diameter_cm / self.stitch_w_cm / 6
         return max(6, int(raw_groups + 0.5) * 6)
 
@@ -102,7 +100,6 @@ class Gauge:
         continuous value; published patterns in this project keep six-way
         symmetry and therefore need a separate six-stitch quantization.
         """
-        import math
         return 2.0 * math.pi * self.row_h_cm / self.stitch_w_cm
 
     @property
@@ -113,7 +110,6 @@ class Gauge:
         continuous rate near 8 while preserving six-sector stitch notation.
         Classic's 5.1 remains +6; DK/fine's 7.6–7.9 permit up to +12.
         """
-        import math
         groups = math.ceil((self.shaping_continuous_delta - 1e-9) / 6.0)
         return max(6, groups * 6)
 
