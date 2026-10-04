@@ -1,7 +1,7 @@
-import re
 from typing import Any
 
 from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis
+from .assembly import _openings_by_part, build_assembly
 from .color_design import (
     PART_SPAN,
     blocks_summary_text,
@@ -16,7 +16,15 @@ from .gauge import (
     gauge_from_mapping,
     next_shaping_stitch_count,
 )
-from .profile_shaping import profile_to_rounds, rounds_to_notes, strip_dome
+from .materials import _materials, _safety_eye_mm
+from .parts import _SKIN_PARTS, _part_name, _part_quantity, _part_rounds, _round_stitches
+from .profile_shaping import profile_to_rounds, rounds_to_notes
+from .time_estimate import (  # noqa: F401
+    SECONDS_PER_ROUND_OVERHEAD,
+    SECONDS_PER_STITCH,  # noqa: F401 —— trials 兼容再导出
+    estimate_minutes,
+    time_estimate_basis,
+)
 from .validator import validate_pattern
 
 # 圈针说明依据的通行规范（非自行设计）：
@@ -32,14 +40,6 @@ from .validator import validate_pattern
 HEAD_REF_DIAMETER_CM = 9.0
 STITCHES_PER_CM = DEFAULT_GAUGE.stitches_per_cm_diameter  # ≈ 4.1 针/cm(直径)
 BODY_ROUNDS_PER_CM = 1.0 / DEFAULT_GAUGE.row_h_cm         # ≈ 1.6 圈/cm
-# U23（升级版，按 Opus 5 校准）：时长 = 针数×单针 + 圈数×每圈固定开销
-# （起头/记号扣/换线等固定动作）。物理驱动量是针数（每针一个手部动作）；
-# 单针耗时跨密度近似恒定。结构 v2 后，classic 默认玩偶按头/身各一件、
-# 手/腿各两件计为 1224 针/66 个实际圈次，约 144 分钟；旧版 121 分钟
-# 漏算了第二只手臂和腿。跨密度仍使用同一物理模型。
-# 数值为经验估算，不署名任何标准机构（V6 教训）。
-SECONDS_PER_STITCH = 6.5
-SECONDS_PER_ROUND_OVERHEAD = 10.0
 # 注意：四肢不再用独立的 1.2 圈/cm——行高是纱线属性，不随部件变（fable5 #15）
 
 # ── 部件相对头径的比例假设（Q 版 Amigurumi）────────────────────────────────
@@ -52,8 +52,6 @@ SKIRT_BODY_RATIO = 1.25      # 裙摆直径相对身体放大
 # 自端部起针的部件（R1 对应照片低处）：照片配色映射自底向上
 _BOTTOM_UP_PARTS = frozenset({"身体", "手臂", "腿部"})
 
-# 头身一体件：粗略计入两组用线（实际占比取决于配色，可试钩后修正）
-_ONE_PIECE_NAME = "头身（一体）"
 
 
 def _semantic_color(part_name: str, analysis) -> str | None:
@@ -73,9 +71,6 @@ def _semantic_color(part_name: str, analysis) -> str | None:
         return bottom or top
     return None
 
-# 材料分组：哪些部件用肤色线 / 主体色线
-_SKIN_PARTS = frozenset({"头部", "手臂", "腿部", "耳朵"})
-_BODY_PARTS = frozenset({"身体", "帽子", "裙子", "尾巴"})
 
 
 def _stitches_for_diameter(diameter_cm: float, gauge: Gauge = DEFAULT_GAUGE) -> int:
@@ -334,24 +329,6 @@ def _cup_rounds(max_stitches: int, depth_rounds: int) -> list[dict[str, Any]]:
     return _increase_rounds(max_stitches) + constant
 
 
-def _part_name(part: dict[str, Any]) -> str:
-    return part["name"]
-
-
-def _part_rounds(part: dict[str, Any]) -> list[dict[str, Any]]:
-    return part.get("rounds", [])
-
-
-def _part_quantity(part: dict[str, Any]) -> int:
-    """Physical copies represented by one logical part pattern (legacy = 1)."""
-    try:
-        return max(1, min(20, int(part.get("quantity", 1))))
-    except (TypeError, ValueError):
-        return 1
-
-
-def _round_stitches(rd: dict[str, Any]) -> int:
-    return int(rd.get("stitches", 0))
 
 
 def structure_connection_plan(structure: dict[str, Any]) -> dict[str, Any] | None:
@@ -405,127 +382,6 @@ def structure_connection_plan(structure: dict[str, Any]) -> dict[str, Any] | Non
     }
 
 
-def _safety_eye_mm(head_diameter_cm: float | None) -> int:
-    """头径 → 安全眼直径分档（mm）——对齐社区口径与专业图解锚点。
-
-    r/Amigurumi 眼睛 wiki（2026-09 抓取）：迷你件 5–6mm、常规玩偶
-    （15–25cm）8–12mm、大型件（30cm+）14–20mm+。专业锚点：约 10cm 头径
-    均配 12mm 安全眼（Supergurumi 蜜蜂 12.6in/32cm、StringyDingDing
-    袋鼠 9in/23cm）——本分档取社区区间中值偏保守，待 G4 实体试钩校准。
-    """
-    if head_diameter_cm is None:
-        return 8
-    if head_diameter_cm < 5:
-        return 6
-    if head_diameter_cm < 8:
-        return 8
-    if head_diameter_cm < 11:
-        return 10
-    if head_diameter_cm < 14:
-        return 12
-    return 14
-
-
-def _materials(parts: list[dict[str, Any]], part_names: set,
-                gauge: Gauge = DEFAULT_GAUGE) -> list[dict[str, str]]:
-    """材料清单随实际部件生成（parts 为 dict 形态，见 _build_result）。
-
-    克重按针数×单针克重估算；米数按针宽分档的**经验估算值**换算
-    （gauge.meters_per_100g，非标准机构数据——CYC 标准不含长度信息），
-    供购买参考——两者都是需试钩校准的启发式。
-    除肤色系/主体色两组汇总外，另按**具体毛线色**逐色给出用量（T2，
-    十字绣界按色号给量的通行惯例；跨部件同色自动合并）。
-    """
-    materials: list[dict[str, str]] = []
-    _skin = _SKIN_PARTS | {_ONE_PIECE_NAME}
-    _body = _BODY_PARTS | {_ONE_PIECE_NAME}
-    for group, label in ((_skin, "肤色系毛线"), (_body, "主体色毛线")):
-        group_parts = [p for p in parts if _part_name(p) in group]
-        if not group_parts:
-            continue
-        grams = max(20, round(sum(
-            _round_stitches(rd) * _part_quantity(p)
-            for p in group_parts for rd in _part_rounds(p)
-        ) * gauge.grams_per_stitch))
-        meters = round(grams / 100.0 * gauge.meters_per_100g)
-        materials.append({"item": label, "quantity": f"约 {grams}g（≈{meters}m）"})
-
-    # T2：逐色用量（跨部件聚合；色来自逐圈配色）。内部占位符不是毛线
-    # 色名（单色部件回退 p.color 会把 "skin"/"body" 写进材料清单）——排除
-    _PLACEHOLDER_COLORS = {"skin", "body"}
-    color_stitches: dict[str, int] = {}
-    for p in parts:
-        quantity = _part_quantity(p)
-        for rd in _part_rounds(p):
-            c = rd.get("color") or None
-            if c is None:
-                c = p.get("color") or None
-            if c and c not in _PLACEHOLDER_COLORS:
-                color_stitches[c] = (
-                    color_stitches.get(c, 0) + _round_stitches(rd) * quantity)
-    from .colors import brand_code
-    for c in sorted(color_stitches, key=lambda k: -color_stitches[k]):
-        grams = max(5, round(color_stitches[c] * gauge.grams_per_stitch))
-        meters = round(grams / 100.0 * gauge.meters_per_100g)
-        code = brand_code(c)
-        item = f"毛线 · {c}" + (f"（{code}）" if code else "")
-        materials.append({"item": item, "quantity": f"约 {grams}g（≈{meters}m）",
-                          "color": c})
-    # 一体件会把"头部/身体"合并改名"头身（一体）"；显式识别这三个
-    # 语义名称，避免"头套"等附件因子串命中而误获安全眼或配重珠。
-    has_head = any(
-        _part_name(p) in {"头部", _ONE_PIECE_NAME} for p in parts)
-    has_body = any(
-        _part_name(p) in {"身体", _ONE_PIECE_NAME} for p in parts)
-    if has_head:
-        # 安全眼尺寸随头径分档（固定 8mm 在大/小头径下失真——社区与
-        # 专业图解都按玩偶大小配眼）；无头径数据的旧结果兜底 8mm
-        head = next((p for p in parts
-                     if _part_name(p) in {"头部", _ONE_PIECE_NAME}), None)
-        diameter = head.get("diameter_cm") if isinstance(head, dict) else None
-        try:
-            diameter = float(diameter) if diameter is not None else None
-        except (TypeError, ValueError):
-            diameter = None
-        materials.append({"item": "安全眼",
-                          "quantity": f"一对 ({_safety_eye_mm(diameter)}mm；"
-                                      "3 岁以下儿童及宠物玩偶禁用——眼件"
-                                      "可能脱落误吞，必须改用刺绣眼)"})
-    materials.append({"item": "填充棉", "quantity": "适量"})
-    # 配重底（可选）——Grace and Yarn 逐字：约 3/4 杯聚乙烯珠装入丝袜
-    # 打结置于底部（丝袜色近玩偶防透出），在开始减针、开口尚能伸手时
-    # 放入；3 岁以下勿用（珠粒可能透过针缝）；可正常水洗。
-    if has_body:
-        materials.append({
-            "item": "配重珠（可选）",
-            "quantity": "约 3/4 杯——装入丝袜打结后置底再正常填充；"
-                        "3 岁以下儿童玩偶勿用",
-        })
-    # 可弯折四肢的定型线（可选件）——规格锚点：Crafty Intentions 设计师
-    # 用纸包 18 号 18 英寸花艺线（布包同号过软不承力），r/CrochetHelp
-    # 共识 16–20 号；端部折环包裹出自 Maclafersa 安全指南（端口折环 +
-    # 软物缠绕，胶带单独不可靠）。儿童玩具不应使用任何硬质内骨架
-    # （含竹签——可能断裂戳出），改用毛条等软质填充。
-    limb_count = sum(
-        _part_quantity(p) for p in parts
-        if any(k in _part_name(p) for k in ("手臂", "腿", "尾")))
-    if limb_count:
-        materials.append({
-            "item": "定型线（可选）",
-            "quantity": f"18号（≈1.2mm）纸包花艺线 {limb_count} 根——"
-                        "端部折回成环并包裹防戳；儿童玩具勿用任何硬质"
-                        "内骨架，改毛条等软质填充",
-        })
-    # CYC 分档是"密度→档位"参考（见 Gauge.cyc_label）：前者是玩偶紧钩
-    # 惯例的钩针建议，后者是同密度的 CYC 标准钩针区间——并列展示而非混淆。
-    materials.append({
-        "item": f"{gauge.hook_yarn_label}（{gauge.cyc_label}）",
-        "quantity": "1 把",
-    })
-    materials.append({"item": "缝合针", "quantity": "1 根"})
-    return materials
-
-
 def _gauge_from_params(params: dict) -> Gauge:
     """从 params 恢复生成时的 gauge（JSON 修正/备份导入路径的单一来源）。
 
@@ -542,40 +398,6 @@ def _shaping_meta(gauge: Gauge) -> dict[str, Any]:
         "max_stitch_change": gauge.max_shaping_change,
         "quantization": "ceil_to_six_stitch_sectors",
         "note": "连续几何变化率按六等分针法向上量化；实际圈可使用更小的6针步长",
-    }
-
-
-def estimate_minutes(parts: list[Any]) -> int:
-    """U23：共用时长估算（refresh_derived 与 _build_result 共用，消除
-    两份重复实现的失同步风险）。时长 = 针数×单针 + 圈数×每圈固定开销；
-    下限 30 分钟（含备料/收针/藏线头等固定开销——极小样本上线性模型
-    必然低估）。经验估算值。"""
-    total_stitches = sum(
-        _round_stitches(rd) * _part_quantity(p)
-        for p in parts for rd in _part_rounds(p))
-    total_rounds = sum(
-        len(_part_rounds(p)) * _part_quantity(p) for p in parts)
-    return max(30, round((total_stitches * SECONDS_PER_STITCH
-                          + total_rounds * SECONDS_PER_ROUND_OVERHEAD) / 60.0))
-
-
-def time_estimate_basis() -> dict[str, Any]:
-    """Describe the deliberately narrow, currently uncalibrated time model."""
-    return {
-        "scope": "round_crochet_baseline",
-        "confidence": "low_uncalibrated",
-        "included": ["stitch_count", "physical_round_overhead"],
-        "excluded": [
-            "assembly",
-            "stuffing",
-            "color_changes",
-            "embroidery",
-            "rework",
-            "breaks",
-        ],
-        "seconds_per_stitch": SECONDS_PER_STITCH,
-        "seconds_per_round_overhead": SECONDS_PER_ROUND_OVERHEAD,
-        "minimum_minutes": 30,
     }
 
 
@@ -610,255 +432,7 @@ def refresh_derived(params: dict) -> dict:
     return params
 
 
-# 末圈注记里的闭合语义："收口/勒紧收口/无痕收口"=已闭合；"不收口/勿收口"
-# 是开口声明——负向断言排除后者（中文社区头套"开口保留…不收口"）
-_CLOSING_RE = re.compile(r"(?<![不勿])收口")
 
-
-def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
-    """各部件的开口针数（末圈针数）——完全收口的部件不计入。
-
-    专业图解装配段的通行惯例：缝合前先报开口针数（"sew the remaining
-    12 sts to the body"）。球体头部以"无痕收口"完全闭合，无开口；
-    圆柱四肢以"断线留15cm用于缝合"收尾留口；帽/裙明确不收口。
-    """
-    openings: dict[str, int] = {}
-    for p in parts:
-        rounds = _part_rounds(p)
-        if not rounds:
-            continue
-        last = rounds[-1]
-        # "收口"=闭合无开口；但"不收口/勿收口"是明确的开口声明
-        #（真实图解如中文社区头套"开口保留…不收口"），不得误判
-        if _CLOSING_RE.search(str(last.get("notes") or "")):
-            continue
-        openings[_part_name(p)] = _round_stitches(last)
-    return openings
-
-
-def build_assembly(part_names, skirt_style: str = "ring",
-                   quantities: dict[str, int] | None = None,
-                   assembly_plan: dict[str, Any] | None = None,
-                   openings: dict[str, int] | None = None) -> str:
-    """Build assembly text from the v2 graph, with a legacy name fallback."""
-    quantities = quantities or {}
-    openings = openings or {}
-
-    def opening_note(name: str) -> str:
-        n = openings.get(name)
-        if not n:
-            return ""
-        # 垂耳兔等社区图解惯例：极小开口捏扁缝合（可免填充）
-        flat = "，小开口可捏扁缝合" if n <= 6 else ""
-        return f"（开口 {n} 针{flat}）"
-
-    def placement(name: str, paired: str, single: str, many: str) -> str:
-        quantity = max(1, int(quantities.get(name, 1)))
-        if quantity == 1:
-            return single
-        if quantity == 2:
-            return paired
-        return f"{name}共 {quantity} 个，{many}"
-
-    one_piece = _ONE_PIECE_NAME in part_names
-    steps: list[str] = ["按各部件标注数量分别完成并填充棉花"]
-    if "身体" in part_names or one_piece:
-        steps.append(
-            "可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始"
-            "减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；"
-            "3 岁以下儿童玩偶勿用）")
-    if one_piece:
-        steps.append("一体件钩完头部后先填充头部再继续钩身体（分阶段填充）")
-    if "头部" in part_names or one_piece:
-        steps.append("头部安装安全眼（第2/3高度处）")
-        steps.append("用黑色毛线绣鼻子和嘴巴")
-        steps.append(
-            "可选：针塑形（needle sculpting）——长针带同色线自一侧眼位"
-            "入针、横穿头内至对侧眼位再穿回，两端自同一针孔拉紧打结藏线，"
-            "形成眼窝凹陷（PlanetJune needlesculpting；本图解塑形已内建，"
-            "此步仅在想要更立体五官时使用）")
-
-    # Old backups have no graph.  Keep their established name-based behavior
-    # rather than pretending to infer missing connection nodes during import.
-    if assembly_plan is None:
-        if "头部" in part_names and "身体" in part_names and not one_piece:
-            steps.append("用隐形缝合法将头部接合到身体顶部；"
-                         "头颈缝合处塞棉紧实，防止头部前倾"
-                         "（AmiguRoom 俄语熊评论区试钩共识）")
-        if "手臂" in part_names:
-            steps.append(placement(
-                "手臂", f"手臂对称缝合到身体两侧上方{opening_note('手臂')}",
-                f"手臂缝合到身体一侧上方{opening_note('手臂')}",
-                f"均匀缝合到身体上部{opening_note('手臂')}"))
-        if "腿部" in part_names:
-            steps.append(placement(
-                "腿部", f"腿部对称缝合到身体底部{opening_note('腿部')}",
-                f"腿部缝合到身体底部{opening_note('腿部')}",
-                f"均匀缝合到身体底部{opening_note('腿部')}"))
-        if "耳朵" in part_names:
-            steps.append(placement(
-                "耳朵", "耳朵对称缝合在头部两侧",
-                "耳朵缝合在头部一侧", "均匀缝合在头部周围"))
-        if "帽子" in part_names:
-            hat_n = openings.get("帽子")
-            hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
-            steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
-        if "裙子" in part_names:
-            if skirt_style == "attached":
-                steps.append("裙子已挑后半针钩在身体腰部，无需缝合")
-            else:
-                skirt_n = openings.get("裙子")
-                skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
-                steps.append(f"裙筒腰部{skirt_open}套入身体后缝合固定"
-                             "（腰部为开口起针）")
-        if "尾巴" in part_names:
-            steps.append("尾巴缝合在身体后方")
-        return "\n".join(f"{i}. {s}" for i, s in enumerate(steps, 1))
-
-    def effective_name(name: str) -> str:
-        if one_piece and name in ("头部", "身体"):
-            return _ONE_PIECE_NAME
-        return name
-
-    raw_connections = (assembly_plan.get("connections", [])
-                       if isinstance(assembly_plan, dict) else [])
-    grouped: dict[tuple, list[dict[str, Any]]] = {}
-    for connection in raw_connections:
-        if not isinstance(connection, dict):
-            continue
-        source = effective_name(str(connection.get("source_part_name") or ""))
-        target = effective_name(str(connection.get("target_part_name") or ""))
-        if (not source or not target or source == target
-                or source not in part_names or target not in part_names):
-            continue
-        # Preserve the original target region when head/body become one piece.
-        key = (source, target, str(connection.get("method") or "sewn"),
-               str(connection.get("target_part_name") or ""))
-        grouped.setdefault(key, []).append(connection)
-
-    connected_sources = set()
-    anchor_labels = {
-        "top": "顶部", "bottom": "底部", "back": "后方", "front": "前方",
-        "waist": "腰部", "side_left": "左侧", "side_right": "右侧",
-        "upper_left": "左侧上方", "upper_right": "右侧上方",
-        "bottom_left": "左侧底部", "bottom_right": "右侧底部",
-        "inner_end": "内端", "base": "根部", "opening": "开口", "tip": "末端",
-    }
-    # Familiar prose is valid only for the actual template edge configuration.
-    # An edited anchor/method must reach the generic per-instance instructions.
-    defaults = {
-        "头部": ("身体", "sewn", "bottom", {"top"}),
-        "手臂": ("身体", "sewn", "inner_end", {"upper_left", "upper_right"}),
-        "腿部": ("身体", "sewn", "top", {"bottom_left", "bottom_right"}),
-        "耳朵": ("头部", "sewn", "base", {"side_left", "side_right"}),
-        "帽子": ("头部", "worn", "opening", {"top"}),
-        "裙子": ("身体", "crocheted_or_sewn", "opening", {"waist"}),
-        "尾巴": ("身体", "sewn", "base", {"back"}),
-    }
-    instances_by_source: dict[str, set[str]] = {}
-    for (source, *_), connections in grouped.items():
-        instances_by_source.setdefault(source, set()).update(
-            str(item.get("source_instance_id") or "") for item in connections)
-    for source, instance_ids in instances_by_source.items():
-        quantity = max(1, int(quantities.get(source, 1)))
-        if quantity != len(instance_ids):
-            steps.append(f"{source}共 {quantity} 个，连接图记录 {len(instance_ids)} 个实例；"
-                         "请在部件结构中核对数量和连接位置")
-
-    for (source, target, method, original_target), connections in grouped.items():
-        connected_sources.add(source)
-        target_label = (f"一体件{original_target}段" if target == _ONE_PIECE_NAME else target)
-        default = defaults.get(source)
-        anchors = {str(item.get("target_anchor") or "") for item in connections}
-        quantity = max(1, int(quantities.get(source, 1)))
-        distinct_instances = {item.get("source_instance_id") for item in connections}
-        same_sides = all(
-            not str(item.get("source_instance_id") or "").endswith(suffix)
-            or str(item.get("target_anchor") or "").endswith(suffix)
-            for item in connections for suffix in ("_left", "_right"))
-        canonical = (default is not None and original_target == default[0]
-                     and method == default[1] and anchors == default[3]
-                     and len(anchors) == len(connections) == quantity
-                     and len(distinct_instances) == quantity and same_sides
-                     and len(instances_by_source[source]) == quantity
-                     and all(item.get("self_anchor") == default[2] for item in connections))
-        if canonical and source == "头部" and target == "身体":
-            steps.append("用隐形缝合法将头部接合到身体顶部；"
-                         "头颈缝合处塞棉紧实，防止头部前倾"
-                         "（AmiguRoom 俄语熊评论区试钩共识）")
-        elif canonical and source == "手臂" and target in ("身体", _ONE_PIECE_NAME):
-            steps.append(placement(
-                "手臂", f"手臂对称缝合到{target_label}两侧上方{opening_note('手臂')}",
-                f"手臂缝合到{target_label}一侧上方{opening_note('手臂')}",
-                f"均匀缝合到{target_label}上部{opening_note('手臂')}"))
-        elif canonical and source == "腿部" and target in ("身体", _ONE_PIECE_NAME):
-            steps.append(placement(
-                "腿部", f"腿部对称缝合到{target_label}底部{opening_note('腿部')}",
-                f"腿部缝合到{target_label}底部{opening_note('腿部')}",
-                f"均匀缝合到{target_label}底部{opening_note('腿部')}"))
-        elif canonical and source == "耳朵" and target in ("头部", _ONE_PIECE_NAME):
-            steps.append(placement(
-                "耳朵", "耳朵对称缝合在头部两侧",
-                "耳朵缝合在头部一侧", "均匀缝合在头部周围"))
-        elif canonical and source == "帽子" and target in ("头部", _ONE_PIECE_NAME):
-            hat_n = openings.get("帽子")
-            hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
-            steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
-        elif canonical and source == "裙子" and target in ("身体", _ONE_PIECE_NAME):
-            if skirt_style == "attached":
-                steps.append(f"裙子已挑后半针钩在{target_label}腰部，无需缝合")
-            else:
-                skirt_n = openings.get("裙子")
-                skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
-                steps.append(f"裙筒腰部{skirt_open}套入{target_label}后缝合固定"
-                             "（腰部为开口起针）")
-        elif canonical and source == "尾巴" and target in ("身体", _ONE_PIECE_NAME):
-            steps.append(f"尾巴缝合在{target_label}后方")
-        else:
-            labels = list(dict.fromkeys(
-                anchor_labels.get(str(item.get("target_anchor")),
-                                  str(item.get("target_anchor") or "指定位置"))
-                for item in connections))
-            action = {
-                "sewn": "缝合到",
-                "worn": "佩戴到",
-                "crocheted_or_sewn": "挑针钩接或缝合到",
-            }.get(method, "连接到")
-            opening = opening_note(source)
-            details = []
-            for connection in connections:
-                instance_id = str(connection.get("source_instance_id") or "")
-                if instance_id.endswith("_left"):
-                    instance_label = f"左{source}"
-                elif instance_id.endswith("_right"):
-                    instance_label = f"右{source}"
-                elif len(connections) > 1 and instance_id not in ("", source):
-                    # Edited copies keep their ids so instances stay
-                    # distinguishable; a lone instance's template id would
-                    # only leak an internal identifier into the prose.
-                    instance_label = f"{source}（{instance_id}）"
-                else:
-                    instance_label = source
-                self_anchor = str(connection.get("self_anchor") or "指定连接点")
-                target_anchor = str(connection.get("target_anchor") or "指定位置")
-                details.append(
-                    f"{instance_label}的{anchor_labels.get(self_anchor, self_anchor)}"
-                    f"{action}{target_label}的{anchor_labels.get(target_anchor, target_anchor)}")
-            if len(details) == 1:
-                # One instance: merge the summary into the single detail line
-                # instead of emitting near-duplicate prose.
-                steps.append(f"{details[0]}{opening}")
-            else:
-                steps.append(
-                    f"{source}{action}{target_label}的{'、'.join(labels)}{opening}")
-                steps.extend(details)
-
-    roots = {_ONE_PIECE_NAME, "身体"}
-    if "身体" not in part_names and not one_piece:
-        roots.add("头部")
-    for name in sorted(part_names - roots - connected_sources):
-        steps.append(f"{name}未设置连接关系，暂按独立部件保留")
-    return "\n".join(f"{i}. {s}" for i, s in enumerate(steps, 1))
 
 
 class CrochetParamsGenerator:
@@ -1175,98 +749,15 @@ class CrochetParamsGenerator:
             crochet_parts.append(part)
 
         if style.one_piece:
-            crochet_parts = CrochetParamsGenerator._merge_head_body(
+            # 延迟导入：onepiece 引用本模块针法代数（bridge_rounds 等）
+            from .onepiece import merge_head_body
+
+            crochet_parts = merge_head_body(
                 crochet_parts, gauge)
 
         return CrochetParamsGenerator._build_result(
             analysis, crochet_parts, gauge, style, structure)
 
-    @staticmethod
-    def _merge_head_body(parts: list[CrochetPart], gauge: Gauge) -> list[CrochetPart]:
-        """头身一体钩（M2.10）：头顶起针→颈部不断线→身体向下→底部收口。
-
-        头部保留到颈围（与身体顶端口径一致的减针链），身体筒壁反转成自顶
-        向下（几何不变，加减针说明按新方向重算），末端补收口圆盘。
-        配色退化为整段单色（一体件的分段配色映射口径复杂，后续再议）。
-        """
-        head = next((p for p in parts if p.name == "头部"), None)
-        body = next((p for p in parts if p.name == "身体"), None)
-        if head is None or body is None:
-            return parts
-
-        body_sts = [r.stitches for r in body.rounds]
-        # F16：dome 剥离必须用 strip_dome（+6 前缀），不能用
-        # body_sts[0]//6——首圈是魔法环 6 针，恒得 1（N4 同款错误），
-        # 会把 dome 加针圈混进"筒壁"，一体件底部出现第二个假 dome。
-        wall = strip_dome(body_sts)                    # 自底向上
-        neck = wall[-1] if wall else 24                # 身体顶端（近颈）针数
-
-        # 头部保留至减针链中 ≥ neck 的最后一圈，丢弃更小的收口圈
-        head_kept: list[int] = []
-        for r in head.rounds:
-            head_kept.append(r.stitches)
-            if r.stitches >= neck and (r.decrease or 0) > 0:
-                break
-        while len(head_kept) > 1 and head_kept[-1] < neck:
-            head_kept.pop()
-        if head_kept[-1] != neck:
-            # F13：颈围对齐必须按当前密度逐圈桥接，禁止无依据直接跳变（旧实现
-            # head_kept.append(neck) 会产生 42→30 之类的 12 针跳变，
-            # 且 increase/decrease 字段只声明 6——文字/针数/代数三方矛盾）
-            head_kept.extend(bridge_rounds(
-                head_kept[-1], neck, gauge.max_shaping_change))
-
-        # 身体壁自顶向下 = wall 反转，首圈对齐颈围后按动态上限重钳制
-        top_down = [neck] + list(reversed(wall[:-1])) if len(wall) > 1 else [neck]
-        merged_sts = head_kept[:]
-        for t in top_down[1:]:
-            prev = merged_sts[-1]
-            merged_sts.append(next_shaping_stitch_count(
-                prev, max(6, t), gauge.max_shaping_change))
-        # 底部收口：向下递减到 6
-        while merged_sts[-1] > 6:
-            merged_sts.append(next_shaping_stitch_count(
-                merged_sts[-1], 6, gauge.max_shaping_change))
-
-        rounds_raw: list[dict[str, Any]] = []
-        for i, n in enumerate(merged_sts):
-            if i == 0:
-                notes = f"魔法环起{n}针（X×{n}）"
-            else:
-                before = merged_sts[i - 1]
-                notes = _change_note(before, n)
-                if i == len(head_kept) - 1 and i > 0:
-                    notes += "；此处为颈部，不断线直接钩身体"
-            rounds_raw.append({
-                "row": i + 1, "stitches": n, "notes": notes,
-                "increase": max(0, n - merged_sts[i - 1]) if i else 0,
-                "decrease": max(0, merged_sts[i - 1] - n) if i else 0,
-            })
-        rounds_raw = _mark_staggered(rounds_raw)
-        last = rounds_raw[-1]
-        last["notes"] = (last.get("notes") or "") + (
-            "；断线留10cm，穿末圈每针前半针后拉紧（无痕收口）藏线头")
-
-        eye_round = next((i + 1 for i, r in enumerate(rounds_raw)
-                          if r["stitches"] == max(merged_sts)), 2) + 1
-        # F16：高度口径与独立身体一致——只计轴向堆叠圈（头部成品到颈 +
-        # 筒壁），底部收口圈是径向圆盘不计高。merged 结构 = head_kept +
-        # top_down[1:] + 收口（top_down[0]=颈围与 head_kept[-1] 同圈）。
-        _axial_rounds = len(head_kept) + max(0, len(top_down) - 1)
-        merged = CrochetPart(
-            name=_ONE_PIECE_NAME,
-            type="onepiece",
-            height_cm=round(_axial_rounds * gauge.row_h_cm, 1),
-            rounds=[CrochetStitch(**r) for r in rounds_raw],
-            color=head.color,
-            magic_ring=True,
-            notes=(
-                f"头身一体钩（最大 {max(merged_sts)} 针）：头顶起针钩至颈部后"
-                f"不断线直接向下钩身体，末端收口；第 {eye_round} 圈安装安全眼。"
-                "钩完头部先填充再继续。配色为整段单色（一体件分段换线建议自行规划）。"
-            ),
-        )
-        return [merged] + [p for p in parts if p.name not in ("头部", "身体")]
 
     @staticmethod
     def _apply_color_plan(part: CrochetPart, bands: list[dict],
