@@ -8,7 +8,26 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed
+
+- **crochet_params module split** (1396 → 892 lines): materials, assembly,
+  time estimation, and the one-piece merge moved into dedicated
+  `materials` / `assembly` / `time_estimate` / `onepiece` modules, with the
+  micro part-access helpers and part-name constants sunk into a
+  dependency-free `parts` base. Previously public names remain importable
+  via re-exports; zero behavior change.
+
 ### Fixed
+
+- **External-audit adoptions**: the Lab conversion no longer builds the same
+  xyz array three times via `np.stack` (grid-quantization hot path);
+  "未收口/没收口/别收口" closing-note variants are no longer misjudged as
+  closed, which silently dropped real openings from assembly text; the
+  history LIKE ESCAPE clause is a named constant and `load_result` drops
+  preview values that are not JPEG data URLs; thumbnail generation moved to
+  `utils.images` with pose optional-dependency failures logged separately
+  from runtime errors; the Docker base image is pinned by OCI digest with
+  an in-file refresh procedure.
 
 - **Round-7 review (UI and auxiliary layers)**: the "silhouette verification"
   visualization had been silently disabled by a dict/attribute access mismatch and
