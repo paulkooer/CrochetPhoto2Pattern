@@ -312,3 +312,17 @@ G3/G4 继续阻断，不以合成图、已有单元测试或外部公开资料�
 2. G4：精确图解哈希绑定的实际试钩记录、小样、用线克数、尺寸及分口径工时。
    校准与独立留出图解哈希必须隔离，数量/制作者多样性见 `docs/physical-trials.md`。
 3. 修复本身不构成新提交的远端版本矩阵、依赖漏洞审计或发行包验证。
+
+### GitHub 发布补充：HTTPX2 安全更新
+
+创建 PR #10 时，GitHub 默认分支报告高危告警 GHSA-8xx6-hgc6-gc2m（流式响应解压
+内存放大）。通过 GitHub 告警 API 核实受影响版本 `<2.12.0`、修复版 `2.12.0`，
+按 `uv lock --upgrade-package httpx2==2.12.0` 更新锁文件，仅改变 httpx2/httpcore2
+两包版本，并重新同步 dev/pdf/pose 环境。该更新在同一 PR 内重新执行受保护检查
+及依赖审计；本记录不把早先提交的绿灯当作新锁文件的验证结果。
+
+PR：https://github.com/paulkooer/CrochetPhoto2Pattern/pull/10
+告警：https://github.com/advisories/GHSA-8xx6-hgc6-gc2m
+
+安全更新后的本地验证：1103 passed、1 skipped（42.44s）；Ruff、mypy app tests
+（99 文件）、`uv lock --check` 与 `git diff --check` 通过。

@@ -10,6 +10,9 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed — 2026-10-04 audit
 
+- Patch GHSA-8xx6-hgc6-gc2m discovered during GitHub publication: update locked
+  `httpx2` and matching `httpcore2` from 2.11.0 to 2.12.0; other dependency versions stay unchanged.
+
 - Correct validation messages and reject arithmetic errors before applying edits, imports,
   or printable exports; failed edits preserve the current result and cached exports.
 - Route shares, history, and backups through one import boundary with nested metadata
