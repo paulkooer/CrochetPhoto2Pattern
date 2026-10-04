@@ -20,18 +20,20 @@ The current pre-PR checkout passes the complete local suite, Ruff, mypy, and dif
 The table below remains the latest published multi-Python/extras snapshot and is tied to its
 named commit; the new branch must repeat the protected checks before merge.
 
-Local review through 2026-10-02 (Python 3.12.13): after input/export, gauge/structure,
+Local review through 2026-10-04 (Python 3.12.13): after input/export, gauge/structure,
 shared photo observation, model-cache, edited-count, assembly-connection, physical-input,
-preview-rotation fixes, a follow-up review round (assembly prose, pose-download backoff,
-resource bounds, pattern dimension caps), and a seventh sweep of the previously
-unaudited UI/auxiliary modules (silhouette verification revived, provenance fields
-crash-proofed, trial-CLI numeric decoding, evaluation re-hashing), the full suite
-reports **1074 passed, 1 skipped in 22.70s**.
-Ruff, mypy app tests (91 files), schema-document synchronization, and `git diff --check` pass.
+preview-rotation fixes, two follow-up review rounds (rounds 6-7: assembly prose,
+pose-download backoff, resource bounds, provenance hardening, trials CLI decoding,
+evaluation re-hashing), and an external-audit round (round 8: crochet_params split
+into parts/materials/assembly/time_estimate/onepiece with zero behavior change,
+Lab-conversion allocation fix, closing-note variants, history/preview hardening,
+digest-pinned base image), the full suite reports **1079 passed, 1 skipped in 23.45s**.
+Ruff, mypy app tests (96 files), schema-document synchronization, and `git diff --check` pass.
 In a synthetic comparison, shared segmentation reduced median pipeline time from
 0.1074s to 0.0543s; this does not establish real-photo quality.
 The skipped test requires `CROCHET_EVAL_DIR`.
-These uncommitted changes have not run through the remote matrix and do not replace
+These changes are committed on the local main branch but have not run through the remote
+matrix and do not replace
 the commit-bound evidence below. See the [review record (Chinese)](optimization-review-20260907.md).
 
 | Check | Result | Notes |

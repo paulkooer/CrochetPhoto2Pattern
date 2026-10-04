@@ -8,7 +8,20 @@
 
 ## Unreleased
 
+### Changed
+
+- **crochet_params 模块拆分**（1396 行 → 892 行）：材料清单、装配说明、
+  时长估算与头身一体合并分别迁入 `materials` / `assembly` / `time_estimate` /
+  `onepiece`，微型部件访问助手与部件名常量下沉到无依赖的 `parts`。
+  原有公开名经再导出保持可导入，零行为变化。
+
 ### Fixed
+
+- **外部审计采纳项**：Lab 转换消除三连 `np.stack`（网格量化热路径）；
+  「未收口/没收口/别收口」不再被误判为已闭合而丢失装配开口说明；
+  历史库 LIKE ESCAPE 子句常量化、载入时丢弃非 JPEG data URL 的 preview；
+  缩略图生成移至 `utils.images`、pose 可选依赖缺失与其他运行时错误分级
+  记录；Docker 基础镜像按 OCI 摘要固定并附刷新流程。
 
 - **第七轮复审（UI 与辅助层）**：「轮廓对应验证」侧影可视化此前因 dict/属性
   访问错位被静默禁用，现已复活并容错。导入的备份中 `geometry`/`sizing`
