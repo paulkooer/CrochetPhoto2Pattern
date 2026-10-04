@@ -19,6 +19,10 @@
 
 ### Fixed — 2026-10-04 审核修复
 
+- PR #13 发布时 GitHub 新报告 4 条依赖告警：锁定 `urllib3 2.8.0`
+  （GHSA-8988-9cw3-xx77、GHSA-vxq7-64xx-v4gw、GHSA-gh4c-6fx4-qh6g）与
+  `GitPython 3.1.62`（GHSA-59cr-6r3x-644w）；仅更新这两个包，联合环境审计无已知漏洞。
+
 - GitHub 发布前发现 GHSA-8xx6-hgc6-gc2m：锁文件中的 `httpx2` 与配套
   `httpcore2` 从 2.11.0 更新至修复版 2.12.0；其余依赖版本不变。
 
