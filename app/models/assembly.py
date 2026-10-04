@@ -9,9 +9,10 @@ from typing import Any
 
 from .parts import _ONE_PIECE_NAME, _part_name, _part_rounds, _round_stitches
 
-# 末圈注记里的闭合语义："收口/勒紧收口/无痕收口"=已闭合；"不收口/勿收口"
-# 是开口声明——负向断言排除后者（中文社区头套"开口保留…不收口"）
-_CLOSING_RE = re.compile(r"(?<![不勿])收口")
+# 末圈注记里的闭合语义："收口/勒紧收口/无痕收口"=已闭合；"不收口/勿收口/
+# 未收口/没收口"是开口声明——负向断言排除这些前导字（中文社区头套
+# "开口保留…不收口"；"未收口"变体此前会被误判为已闭合而丢失开口）
+_CLOSING_RE = re.compile(r"(?<![不勿未没别])收口")
 
 
 def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:

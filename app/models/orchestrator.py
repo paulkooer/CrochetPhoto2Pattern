@@ -113,6 +113,9 @@ class PipelineOrchestrator:
                 spans_measured = sorted(measured)
                 span_hints = format_span_hints(measured)
                 logger.info("Pose spans measured: %s", spans_measured)
+        except ImportError as e:
+            # 可选依赖缺失（[pose] extra / EGL 运行库）是配置状态而非错误
+            logger.info("pose 可选依赖缺失，回退先验 span: %s", e)
         except Exception as e:
             logger.debug("pose spans unavailable: %s", e)
 
@@ -155,19 +158,10 @@ class PipelineOrchestrator:
         gauge = gauge or DEFAULT_GAUGE
         style = style or DEFAULT_STYLE
         color_bands = vertical_color_bands(image, subject=subject)
-        # U8：小缩略图（历史列表/分享预览用），随 result 持久化
-        preview = None
-        try:
-            import base64
-            import io as _io
-            _thumb = image.convert("RGB").copy()
-            _thumb.thumbnail((96, 96))
-            _buf = _io.BytesIO()
-            _thumb.save(_buf, format="JPEG", quality=70)
-            preview = ("data:image/jpeg;base64,"
-                       + base64.b64encode(_buf.getvalue()).decode())
-        except Exception as e:
-            logger.debug("preview thumbnail failed: %s", e)
+        # U8：小缩略图（历史列表/分享预览用），随 result 持久化——
+        # 展示层关注点在 utils.images，失败只影响缩略图不影响图解
+        from ..utils.images import thumbnail_data_url
+        preview = thumbnail_data_url(image)
         # Provider-neutral geometry：AI/本地真实照片共用同一剖面；Mock
         # 明确不读照片。旧版只从 local vision_meta 取值，AI 模式静默丢失。
         body_profile = None

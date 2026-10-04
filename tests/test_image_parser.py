@@ -716,3 +716,23 @@ def test_explicit_mock_parse_never_calls_api(monkeypatch):
     assert analysis.body_type == "标准"
     assert parser.last_usage == {}
     assert parser.last_local_meta["source"] == "mock"
+
+
+def test_parse_response_rejects_non_finite_numbers():
+    """Python 的 json.loads 默认接受 NaN/Infinity——LLM 偶发输出这类字面量，
+    必须被有限数值校验拦截（报错），而不是静默变成异常几何。"""
+    payload = dict(VALID_JSON, head_diameter_cm=float("nan"))
+    with pytest.raises(RuntimeError):
+        ImageParser._parse_response(json.dumps(payload))
+
+
+def test_parse_response_valid_object_after_long_garbage_prefix():
+    """长噪声前缀后的合法对象仍被提取（扫描不因前缀长度退化失败）。"""
+    junk = "好的，以下是分析结果：" + "谢谢谢谢" * 20_000 + "\n"
+    result = ImageParser._parse_response(junk + json.dumps(VALID_JSON))
+    assert result.head_diameter_cm == 9.0
+
+
+def test_parse_response_garbage_without_any_object_raises():
+    with pytest.raises(RuntimeError):
+        ImageParser._parse_response("抱歉，我无法解析这张图片。" * 200)
