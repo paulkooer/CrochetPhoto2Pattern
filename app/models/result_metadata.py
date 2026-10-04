@@ -42,10 +42,43 @@ class VisionMetadata(Metadata):
     silhouette: LegacySilhouette | None = None
 
 
+class AttemptMetadata(Metadata):
+    provider: str
+    model: str
+    status: str
+    seconds: Finite = Field(ge=0)
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    usage_known: bool = False
+    error_type: str | None = None
+
+
+class StageMetadata(Metadata):
+    stage: str
+    seconds: Finite = Field(ge=0)
+    status: str
+
+
+class TraceMetadata(Metadata):
+    budget_seconds: Finite | None = Field(default=None, gt=0, le=600)
+    active_seconds: Finite | None = Field(default=None, ge=0)
+    budget_mode: str | None = None
+    stages: list[StageMetadata] = Field(default_factory=list, max_length=100)
+    fallbacks: list[str] = Field(default_factory=list, max_length=100)
+
+
+class DiagnosticsMetadata(TraceMetadata):
+    exports: dict[Literal["markdown", "pdf"], TraceMetadata] = Field(default_factory=dict)
+
+
 class UsageMetadata(Metadata):
     provider: str | None = None
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
+
+
+    usage_complete: bool | None = None
+    attempts: list[AttemptMetadata] = Field(default_factory=list, max_length=100)
 
 
 class StyleMetadata(BaseModel):
@@ -68,7 +101,7 @@ def validate_result_metadata(data: dict[str, Any]) -> None:
     for key, model in (
         ("geometry", GeometryObservation), ("sizing", SizingMetadata),
         ("vision_meta", VisionMetadata), ("usage", UsageMetadata),
-        ("style", StyleMetadata),
+        ("style", StyleMetadata), ("diagnostics", DiagnosticsMetadata),
     ):
         if data.get(key) is not None:
             data[key] = model.model_validate(data[key]).model_dump(mode="json", exclude_unset=True)

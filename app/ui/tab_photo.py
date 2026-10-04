@@ -1,6 +1,7 @@
 """Tab 1: photo upload + AI pipeline."""
 from __future__ import annotations
 
+import hashlib
 import logging
 import uuid
 
@@ -82,9 +83,9 @@ def render_tab_photo() -> None:
                  "再按这个目标高度生成图解。",
         )
         st.caption("📏 照片只用于估算相对比例，绝对尺寸由上面的目标高度决定。")
-        st.caption("🔒 隐私说明：选择 AI 解析时照片会发送至对应的模型服务商"
-                   "（OpenAI/Anthropic 或你的中转站）；本地估算/Mock 模式照片"
-                   "不离开本机。本工具自身没有服务器，图解历史只存在你的电脑上。")
+        st.caption("🔒 上传的照片会传到运行此应用的主机；只有在自己电脑部署时才是本机处理。"
+                   "本地估算／Mock 不向模型服务商发送照片；AI 模式会发送至所选服务商或中转站。"
+                   "历史记录默认关闭，启用后保存于部署主机的磁盘。")
         with st.expander("➕ 多角度照片（规划中）", expanded=False):
             st.caption("上传侧面/背面照片以辅助 3D 结构推理——尚未开放；"
                        "当前可用结果页的「快速调整尺寸」与姿态实测分段弥补部分场景。")
@@ -117,6 +118,8 @@ def render_tab_photo() -> None:
 
     with col_preview:
         if uploaded_file is None:
+            st.session_state.pop("photo_draft", None)
+            st.session_state.pop("photo_fingerprint", None)
             st.markdown(
                 "<div class='sheet-empty'>上传照片后，这里显示预览；"
                 "生成的图解会出现在下方。</div>",
@@ -126,38 +129,75 @@ def render_tab_photo() -> None:
     if uploaded_file:
         image = load_uploaded_image_cached(uploaded_file)
         if image is not None:
-            with col_preview:
-                st.image(image, caption="上传的照片", width="stretch")
-
-            if st.button("🚀 生成钩织图解", type="primary",
-                         width="stretch", key="btn_photo"):
-                orchestrator = _build_orchestrator()
-                progress = st.progress(0, text="准备中...")
-                try:
-                    result = orchestrator.run_full_pipeline(
-                        image, progress_cb=progress.progress,
-                        vision_mode=vision_mode,
-                        gauge=gauge_from_ui(
-                            st.session_state.get("gauge_preset", "classic"),
-                            st.session_state.get("gauge_st_input"),
-                            st.session_state.get("gauge_rw_input"),
-                        ),
-                        style=_style_from_session(),
-                        target_height_cm=target_height,
-                        target_height_source="user_photo_target",
-                    )
-                    # 替换旧结果前清掉它命名空间下的 widget 状态，防累积
-                    if "result" in st.session_state:
-                        purge_result_state(st.session_state.result)
-                    result["result_id"] = uuid.uuid4().hex[:12]
-                    st.session_state.result = result
-                    # 结果区本身即完成反馈：清掉进度条，避免"100% 完成条"
-                    # 常驻在页面上方造成 clutter
-                    progress.empty()
-                except Exception as e:
-                    progress.empty()  # 失败时移除进度条，避免"40% + 报错"同屏矛盾
-                    st.error(f"生成失败: {md_safe(e)}")
-                    logger.exception("Pipeline failed")
+            from app.models.photo_review import crop_photo
+            from app.ui.photo_review import render_photo_review
+            fingerprint = hashlib.sha256(uploaded_file.getvalue()).hexdigest()[:16]
+            # One active crop/draft per session; replaced uploads do not accumulate.
+            if st.session_state.get("photo_fingerprint") != fingerprint:
+                for old_key in list(st.session_state):
+                    if isinstance(old_key, str) and old_key.startswith(("review_", "crop_")):
+                        del st.session_state[old_key]
+                st.session_state.pop("photo_draft", None)
+                st.session_state["photo_fingerprint"] = fingerprint
+            with col_upload:
+                horizontal = st.slider("裁剪左右范围（%）", 0, 100, (0, 100), key="crop_x")
+                vertical = st.slider("裁剪上下范围（%）", 0, 100, (0, 100), key="crop_y")
+                st.caption("保留完整主体；裁剪范围外的像素不会发送给视觉模型。")
+            signature = (fingerprint, horizontal, vertical, vision_mode)
+            cached = st.session_state.get("photo_draft")
+            if cached and cached[0] != signature:
+                st.session_state.pop("photo_draft", None)
+                for old_key in list(st.session_state):
+                    if isinstance(old_key, str) and old_key.startswith("review_"):
+                        del st.session_state[old_key]
+                cached = None
+            try:
+                cropped = crop_photo(image, horizontal, vertical)
+                with col_preview:
+                    st.image(cropped, caption="将用于识别的裁剪照片", width="stretch")
+                budget = st.number_input("单次任务运行预算（秒，不含人工确认时间）", 15, 600, 180,
+                                         key="photo_budget")
+                st.caption("预算在阶段边界检查，并约束 API 请求超时；本地计算无法中途强制终止。")
+                if st.button("① 识别照片，进入确认", type="primary", width="stretch", key="btn_photo"):
+                    progress = st.progress(0, text="识别中…")
+                    orchestrator = None
+                    try:
+                        orchestrator = _build_orchestrator()
+                        draft = orchestrator.prepare_photo(
+                            cropped, progress_cb=progress.progress, vision_mode=vision_mode,
+                            budget_seconds=float(budget))
+                        # New recognition means a fresh review, including when the image is unchanged.
+                        for old_key in list(st.session_state):
+                            if isinstance(old_key, str) and old_key.startswith("review_"):
+                                del st.session_state[old_key]
+                        cached = (signature, draft, uuid.uuid4().hex[:12])
+                        st.session_state["photo_draft"] = cached
+                        st.session_state.pop("photo_failure", None)
+                    except Exception as exc:
+                        st.error(f"识别失败（{type(exc).__name__}），原有图解已保留。请检查配置后重试。")
+                        logger.warning("Photo recognition failed (%s)", type(exc).__name__)
+                        if orchestrator:
+                            st.session_state["photo_failure"] = {
+                                "diagnostics": orchestrator.last_diagnostics,
+                                "usage": orchestrator.parser.last_usage}
+                    finally:
+                        progress.empty()
+                if st.session_state.get("photo_failure"):
+                    with st.expander("最近一次失败的诊断"):
+                        st.json(st.session_state["photo_failure"])
+                if cached:
+                    result = render_photo_review(
+                        cached[1], cached[2], target_height=target_height, style=_style_from_session(),
+                        gauge=gauge_from_ui(st.session_state.get("gauge_preset", "classic"),
+                                            st.session_state.get("gauge_st_input"),
+                                            st.session_state.get("gauge_rw_input")))
+                    if result is not None:
+                        if "result" in st.session_state:
+                            purge_result_state(st.session_state.result)
+                        result["result_id"] = uuid.uuid4().hex[:12]
+                        st.session_state.result = result
+            except ValueError as exc:
+                st.warning(md_safe(exc))
 
     # Render outside the `if uploaded_file` block so the last result stays
     # visible even after the uploader is cleared.

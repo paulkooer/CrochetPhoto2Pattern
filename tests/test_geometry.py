@@ -31,7 +31,7 @@ def test_geometry_observation_is_versioned_and_dimensionless(monkeypatch):
     assert observation.view_mode == "single_front_assumed"
     assert observation.silhouette is not None
     assert observation.silhouette.profile == [round(value, 3) for value in profile]
-    assert 0.0 < observation.silhouette.confidence < 1.0
+    assert observation.silhouette.confidence is None
     assert all("cm" not in key for key in observation.silhouette.model_dump())
 
 

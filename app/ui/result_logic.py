@@ -145,6 +145,7 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
         body_profile=result_profile(result),
         gauge=gauge, style=_result_style(result),
         spans=result.get("spans"))
+    _preserve_yarn_spec(result, params)
     old_sizing = result.get("sizing") or {}
     sizing = sizing_meta_for_analysis(
         analysis, "user_resize",
@@ -171,6 +172,7 @@ def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
         body_profile=result_profile(result),
         gauge=gauge, style=_result_style(result),
         spans=result.get("spans"))
+    _preserve_yarn_spec(result, params)
     return PatternResult.from_result({
         **result,
         "generator_version": software_version(),
@@ -208,3 +210,9 @@ def import_backup(data: dict, result_id: str) -> dict:
         "gauge": gauge,
         "result_id": result_id,
     }).to_result_dict()
+
+
+def _preserve_yarn_spec(result: dict, params: dict) -> None:
+    if result.get("params", {}).get("yarn_spec") is not None:
+        params["yarn_spec"] = deepcopy(result["params"]["yarn_spec"])
+        refresh_derived(params)

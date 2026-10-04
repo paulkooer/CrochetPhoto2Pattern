@@ -107,7 +107,7 @@ def test_provider_exception_never_leaks_keys(monkeypatch, caplog):
     assert real not in str(exc.value)
     assert relay not in str(exc.value)
     assert real not in caplog.text and relay not in caplog.text
-    assert "relay 500" in caplog.text  # 状态码等诊断信息保留
+    assert "RuntimeError" in caplog.text  # 记录异常类型，不记录供应商自由文本/图片回显
 
 
 def test_sanitize_masks_generic_tokens_but_keeps_urls():

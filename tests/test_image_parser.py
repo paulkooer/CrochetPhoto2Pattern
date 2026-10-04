@@ -345,7 +345,7 @@ def test_anthropic_success_records_usage(monkeypatch):
     parser = ImageParser(anthropic_key="k")
     result = parser._parse_with_anthropic("x")
     assert result.body_type == "标准"
-    assert parser.last_usage == {
+    assert {k: parser.last_usage[k] for k in ("provider", "input_tokens", "output_tokens")} == {
         "provider": "anthropic", "input_tokens": 1200, "output_tokens": 340,
     }
 
@@ -382,7 +382,7 @@ def test_openai_success_records_usage(monkeypatch):
 
     parser = ImageParser(openai_key="k")
     parser._parse_with_openai("b64")
-    assert parser.last_usage == {
+    assert {k: parser.last_usage[k] for k in ("provider", "input_tokens", "output_tokens")} == {
         "provider": "openai", "input_tokens": 900, "output_tokens": 210,
     }
 

@@ -132,7 +132,7 @@ def test_structure_v2_has_machine_readable_coordinate_contract():
     assert result["coordinate_system"]["units"] == "normalized_template_space"
     assert result["coordinate_system"]["z_axis"] == "back_negative_front_positive"
     assert all(part["source"] == "template_inferred" for part in result["parts"])
-    assert all(part["confidence"] < 0.5 for part in result["parts"])
+    assert all(part.get("confidence") is None for part in result["parts"])
 
 
 def test_symmetric_parts_have_two_mirrored_attached_instances():

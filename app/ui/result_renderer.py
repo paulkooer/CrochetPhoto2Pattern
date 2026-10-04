@@ -9,6 +9,7 @@ import html
 import json
 import re
 import uuid
+from copy import deepcopy
 
 import streamlit as st
 
@@ -29,7 +30,7 @@ _WIDGET_KEY_PREFIXES = (
     "sz_height_", "sz_go_", "pdf_", "dl_pdf_", "hist_save_", "pdf_gen_",
     "sz_", "share_", "hist_title_", "struct_edit_", "struct_go_", "struct_",
     # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
-    "share_token_",
+    "share_token_", "edit_", "export_trace_",
 )
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
@@ -70,13 +71,8 @@ def md_safe(value) -> str:
 
 
 def _confidence_text(silhouette: dict) -> str:
-    """轮廓置信度仅是展示性溯源数据——备份可控的非法值不得崩掉渲染。"""
-    if not isinstance(silhouette, dict):
-        return "未知"
-    try:
-        return f"{float(silhouette.get('confidence', 0)):.0%}"
-    except (TypeError, ValueError, OverflowError):
-        return md_safe(silhouette.get("confidence"))
+    """Historical numeric confidence values are not calibrated probabilities."""
+    return "启发式估算（未经校准）"
 
 
 def _ratio_text(sizing: dict) -> str:
@@ -256,6 +252,9 @@ def render_results(result: dict, slot: str) -> None:
     # Fallback to the stable slot name — id(result) may be reused across reruns.
     result_key = result.get("result_id") or slot
 
+    from app.ui.edit_history import get_history
+    get_history(slot, result)
+
     st.divider()
     st.markdown(
         "<p class='sheet-note'>图解已生成。"
@@ -288,7 +287,7 @@ def render_results(result: dict, slot: str) -> None:
     silhouette = geometry.get("silhouette") or {}
     if silhouette:
         st.caption(
-            f"📐 单图轮廓观测 · 置信度 {_confidence_text(silhouette)}"
+            f"📐 单图轮廓观测 · {_confidence_text(silhouette)}"
             "；深度按旋转体假设补充，可在尺寸与结构区继续修正。")
     st.text("主要特征: "
             + ", ".join(_plain_text(f) for f in analysis["main_features"]))
@@ -307,12 +306,21 @@ def render_results(result: dict, slot: str) -> None:
     usage = result.get("usage") or {}
     if usage.get("input_tokens") is not None:
         st.caption(
-            f"📊 Vision 用量（{usage.get('provider', '?')}）："
+            f"📊 Vision 已返回的累计用量（{md_safe(usage.get('provider', '?'))}）："
             f"输入 {usage['input_tokens']} tok · 输出 {usage.get('output_tokens', '?')} tok"
         )
 
+    if usage.get("usage_complete") is False:
+        st.caption("部分请求未返回用量；以上合计不代表完整账单，失败与重试也可能计费。")
+    if result.get("diagnostics") or usage.get("attempts"):
+        with st.expander("运行耗时、回退原因与 API 尝试记录"):
+            st.caption("耗时只计运行阶段，不含人工确认停留时间；预算在阶段边界检查。")
+            st.json({"diagnostics": result.get("diagnostics", {}), "api_usage": usage})
+
     # 解析来源透明展示：AI（LLM）/ 本地估算 / Mock 三类（vision_meta）
     vmeta = result.get("vision_meta") or {}
+    if vmeta.get("reviewed_by_user"):
+        st.caption("✓ 比例与部件已经过人工确认；原始解析来源保留如下。")
     if vmeta.get("source") == "mock":
         st.caption("🎬 Mock 演示数据（体型与部件为固定演示值，"
                    "配色与分段参考照片，仅供体验流程）")
@@ -493,6 +501,9 @@ def render_results(result: dict, slot: str) -> None:
 
     st.write("**所需材料**:")
     st.caption("克重/米数为估算值（请以实际线标为准）；品牌色号仅收录已核实条目")
+    from app.models.materials import material_summary_text
+    if summary := material_summary_text(params):
+        st.caption(md_safe(summary))
     for mat in params.get("materials", []):
         # JSON 编辑器可能把材料改坏（如纯字符串）——渲染层降级显示而非崩溃
         if isinstance(mat, dict):
@@ -577,7 +588,10 @@ def render_results(result: dict, slot: str) -> None:
         st.success("✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！")
     if st.session_state.pop(_struct_ok_flag, False):
         st.success("✅ 已按修正后的部件结构重新生成图解与装配说明！")
-    st.info("可直接编辑下方 JSON，修改针数或比例后点击 '重新生成'")
+    from app.ui.edit_history import commit_edit
+    from app.ui.pattern_editor import render_pattern_editor
+    render_pattern_editor(result, slot)
+    st.caption("也可使用下方尺寸滑块或高级 JSON 编辑。")
 
     # ── 快速调整尺寸（不重新调用 AI）：改头径/身高 → 结构+参数层重算 ──────
     # 生成时的 style/gauge/色带随 result 透传，重生成与首次行为一致；
@@ -604,13 +618,8 @@ def render_results(result: dict, slot: str) -> None:
                 # 业务逻辑在 result_logic（纯函数，可离线单测）
                 _new_result = result_logic.regenerate_with_size(
                     result, _new_head, _new_height)
-                _new_rid = uuid.uuid4().hex[:12]
-                _new_result["result_id"] = _new_rid
-                if slot in st.session_state:
-                    purge_result_state(st.session_state[slot])
-                st.session_state[slot] = _new_result
-                # 成功标志必须以"新" result_id 为键：rerun 后 render_results
-                # 按新 rid 组键弹出（旧 rid 已被替换，旧键永远弹不出来）
+                _installed = commit_edit(slot, result, _new_result)
+                _new_rid = _installed["result_id"]
                 st.session_state[f"sz_{_new_rid}_ok"] = True
                 st.rerun()
             except Exception as e:
@@ -634,11 +643,8 @@ def render_results(result: dict, slot: str) -> None:
                 # 校验 + 重生成在 result_logic（纯函数，可离线单测）
                 _updated = result_logic.regenerate_with_structure(
                     result, json.loads(structure_json))
-                new_result_id = uuid.uuid4().hex[:12]
-                _updated["result_id"] = new_result_id
-                if slot in st.session_state:
-                    purge_result_state(st.session_state[slot])
-                st.session_state[slot] = _updated
+                _installed = commit_edit(slot, result, _updated)
+                new_result_id = _installed["result_id"]
                 st.session_state[f"struct_{new_result_id}_ok"] = True
                 st.rerun()
             except Exception as e:
@@ -655,19 +661,28 @@ def render_results(result: dict, slot: str) -> None:
         key=f"json_edit_{result_key}",
     )
 
-    md_content = export_markdown(params, analysis, result=result) if _v["ok"] else ""
+    from app.models.runtime import timed_export
+    export_record = st.session_state.setdefault(f"export_trace_{result_key}", {})
+    md_content = ""
+    md_ready = False
+    if _v["ok"]:
+        try:
+            md_content = timed_export(
+                export_record, "markdown", lambda: export_markdown(params, analysis, result=result))
+            md_ready = True
+        except Exception as exc:
+            st.error(f"Markdown 生成失败：{md_safe(exc)}")
 
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     with col_btn1:
         if st.button("🔄 重新生成", key=f"regen_{result_key}"):
             try:
                 corrected = json.loads(correction_json)
-                st.session_state[slot]["params"] = rebuild_params(corrected)
-                st.session_state[slot]["gauge"] = st.session_state[slot]["params"].get("gauge")
-                # These artifacts describe the old pattern until explicitly rebuilt.
-                st.session_state.pop(f"pdf_{result_key}", None)
-                st.session_state.pop(f"share_token_{result_key}", None)
-                st.session_state[_ok_flag] = True
+                candidate = deepcopy(result)
+                candidate["params"] = rebuild_params(corrected)
+                candidate["gauge"] = candidate["params"].get("gauge")
+                installed = commit_edit(slot, result, candidate)
+                st.session_state[f"regen_{installed['result_id']}_ok"] = True
                 st.rerun()
             except Exception as e:
                 st.error(f"解析/应用失败: {md_safe(e)}")
@@ -686,7 +701,7 @@ def render_results(result: dict, slot: str) -> None:
             file_name="amigurumi_pattern.md",
             mime="text/markdown",
             key=f"dl_md_{result_key}",
-            disabled=not _v["ok"],
+            disabled=not md_ready,
         )
 
     # ── CrochetPARADE 导出（3D 验证）：独立 DSL 出口的差异化功能 ──────────
@@ -742,8 +757,8 @@ def render_results(result: dict, slot: str) -> None:
         if st.button("🖨 生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
             try:
                 from app.utils.pdf_export import export_pdf
-                st.session_state[f"pdf_{result_key}"] = export_pdf(
-                    params, analysis, result=result)
+                st.session_state[f"pdf_{result_key}"] = timed_export(
+                    export_record, "pdf", lambda: export_pdf(params, analysis, result=result))
             except ImportError:
                 st.caption("PDF 导出需安装 reportlab："
                            "pip install crochet-photo2pattern[pdf]")
@@ -786,7 +801,7 @@ def render_results(result: dict, slot: str) -> None:
 
         if st.button("🗂 存入历史", key=f"hist_save_{result_key}",
                      disabled=not history.history_enabled() or not _v["ok"],
-                     help="保存到本机图解历史，可在侧栏随时载回"):
+                     help="保存到部署主机的图解历史，可在侧栏随时载回"):
             try:
                 saved = dict(result)
                 saved["params"] = rebuild_params(json.loads(correction_json))
@@ -817,6 +832,9 @@ def render_results(result: dict, slot: str) -> None:
                     st.rerun()
                 except Exception as e:
                     st.error(f"导入失败: {md_safe(e)}")
+
+    with st.expander("最近一次导出耗时"):
+        st.json(export_record.get("diagnostics", {}))
 
     # Inline Markdown preview
     with st.expander("📋 预览 Markdown 图解", expanded=False):

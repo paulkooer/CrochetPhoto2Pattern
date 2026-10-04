@@ -4,13 +4,15 @@
 """
 from __future__ import annotations
 
+import math
 from typing import Any
+
+from pydantic import BaseModel, Field, model_validator
 
 from .colors import brand_code
 from .gauge import DEFAULT as DEFAULT_GAUGE
 from .gauge import Gauge
 from .parts import (
-    _BODY_PARTS,
     _ONE_PIECE_NAME,
     _SKIN_PARTS,
     _part_name,
@@ -41,50 +43,68 @@ def _safety_eye_mm(head_diameter_cm: float | None) -> int:
     return 14
 
 
-def _materials(parts: list[dict[str, Any]], part_names: set,
-                gauge: Gauge = DEFAULT_GAUGE) -> list[dict[str, str]]:
-    """材料清单随实际部件生成（parts 为 dict 形态，见 _build_result）。
+class YarnSpec(BaseModel):
+    """One yarn specification shared by all colours; swatch must use that yarn."""
+    ball_weight_g: float = Field(gt=0, le=2000, allow_inf_nan=False)
+    ball_length_m: float = Field(gt=0, le=10000, allow_inf_nan=False)
+    swatch_weight_g: float | None = Field(default=None, gt=0, le=2000, allow_inf_nan=False)
+    swatch_stitches: int | None = Field(default=None, ge=1, le=1000, strict=True)
+    swatch_rows: int | None = Field(default=None, ge=1, le=1000, strict=True)
+    waste_percent: float = Field(default=10, ge=0, le=100, allow_inf_nan=False)
 
-    克重按针数×单针克重估算；米数按针宽分档的**经验估算值**换算
-    （gauge.meters_per_100g，非标准机构数据——CYC 标准不含长度信息），
-    供购买参考——两者都是需试钩校准的启发式。
-    除肤色系/主体色两组汇总外，另按**具体毛线色**逐色给出用量（T2，
-    十字绣界按色号给量的通行惯例；跨部件同色自动合并）。
-    """
-    materials: list[dict[str, str]] = []
-    _skin = _SKIN_PARTS | {_ONE_PIECE_NAME}
-    _body = _BODY_PARTS | {_ONE_PIECE_NAME}
-    for group, label in ((_skin, "肤色系毛线"), (_body, "主体色毛线")):
-        group_parts = [p for p in parts if _part_name(p) in group]
-        if not group_parts:
-            continue
-        grams = max(20, round(sum(
-            _round_stitches(rd) * _part_quantity(p)
-            for p in group_parts for rd in _part_rounds(p)
-        ) * gauge.grams_per_stitch))
-        meters = round(grams / 100.0 * gauge.meters_per_100g)
-        materials.append({"item": label, "quantity": f"约 {grams}g（≈{meters}m）"})
+    @model_validator(mode="after")
+    def complete_swatch(self):
+        fields = (self.swatch_weight_g, self.swatch_stitches, self.swatch_rows)
+        if any(x is not None for x in fields) and not all(x is not None for x in fields):
+            raise ValueError("试片必须同时提供克重、每行针数和行数")
+        return self
 
-    # T2：逐色用量（跨部件聚合；色来自逐圈配色）。内部占位符不是毛线
-    # 色名（单色部件回退 p.color 会把 "skin"/"body" 写进材料清单）——排除
-    _PLACEHOLDER_COLORS = {"skin", "body"}
+
+def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
+                      yarn_spec: dict | None = None) -> tuple[list[dict], dict]:
+    """Count every stitch exactly once; the summary is not another purchase item."""
+    spec = YarnSpec.model_validate(yarn_spec) if yarn_spec is not None else None
+    per_stitch = gauge.grams_per_stitch
+    if spec and spec.swatch_weight_g is not None:
+        assert spec.swatch_stitches is not None and spec.swatch_rows is not None
+        per_stitch = spec.swatch_weight_g / (spec.swatch_stitches * spec.swatch_rows)
+    meters_per_g = spec.ball_length_m / spec.ball_weight_g if spec else gauge.meters_per_100g / 100
+    waste = spec.waste_percent / 100 if spec else 0.1
     color_stitches: dict[str, int] = {}
-    for p in parts:
-        quantity = _part_quantity(p)
-        for rd in _part_rounds(p):
-            c = rd.get("color") or None
-            if c is None:
-                c = p.get("color") or None
-            if c and c not in _PLACEHOLDER_COLORS:
-                color_stitches[c] = (
-                    color_stitches.get(c, 0) + _round_stitches(rd) * quantity)
-    for c in sorted(color_stitches, key=lambda k: -color_stitches[k]):
-        grams = max(5, round(color_stitches[c] * gauge.grams_per_stitch))
-        meters = round(grams / 100.0 * gauge.meters_per_100g)
-        code = brand_code(c)
-        item = f"毛线 · {c}" + (f"（{code}）" if code else "")
-        materials.append({"item": item, "quantity": f"约 {grams}g（≈{meters}m）",
-                          "color": c})
+    for part in parts:
+        for rd in _part_rounds(part):
+            color = rd.get("color") or part.get("color")
+            if not color or color in ("skin", "body"):
+                skin = color == "skin" or (not color and _part_name(part) in _SKIN_PARTS)
+                color = "肤色（待选色）" if skin else "主体色（待选色）"
+            color_stitches[color] = color_stitches.get(color, 0) + _round_stitches(rd) * _part_quantity(part)
+    rows: list[dict[str, Any]] = []
+    for color, stitches in sorted(color_stitches.items(), key=lambda pair: -pair[1]):
+        grams = stitches * per_stitch * (1 + waste)
+        meters = grams * meters_per_g
+        code = brand_code(color)
+        item = f"毛线 · {color}" + (f"（{code}）" if code else "")
+        balls = math.ceil(grams / spec.ball_weight_g) if spec else None
+        quantity = f"约 {grams:.1f}g（≈{meters:.1f}m）"
+        if balls is not None and spec is not None:
+            quantity += f"，购买 {balls} 团（每团 {spec.ball_weight_g:g}g）"
+        rows.append({"item": item, "quantity": quantity, "color": color,
+                     "stitches": stitches, "grams": round(grams, 2),
+                     "meters": round(meters, 2), "balls": balls})
+    summary = {"total_stitches": sum(color_stitches.values()),
+               "grams": round(sum(row["grams"] for row in rows), 2),
+               "meters": round(sum(row["meters"] for row in rows), 2),
+               "balls": sum(row["balls"] for row in rows) if spec else None,
+               "waste_percent": round(waste * 100, 2),
+               "basis": "measured_swatch" if spec and spec.swatch_weight_g else "heuristic",
+               "note": "小计已含下列逐色毛线，请勿重复购买；试片与线标适用于所有颜色"}
+    return rows, summary
+
+
+def _materials(parts: list[dict[str, Any]], part_names: set,
+                gauge: Gauge = DEFAULT_GAUGE, yarn_spec: dict | None = None) -> list[dict[str, Any]]:
+    """One purchasable yarn list, followed by accessories. No duplicate group totals."""
+    materials, _ = yarn_requirements(parts, gauge, yarn_spec)
     # 一体件会把"头部/身体"合并改名"头身（一体）"；显式识别这三个
     # 语义名称，避免"头套"等附件因子串命中而误获安全眼或配重珠。
     has_head = any(
@@ -138,3 +158,13 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
     })
     materials.append({"item": "缝合针", "quantity": "1 根"})
     return materials
+
+
+def material_summary_text(params: dict) -> str:
+    summary = params.get("material_summary")
+    if not isinstance(summary, dict) or not summary:
+        return ""
+    basis = "实测试片" if summary.get("basis") == "measured_swatch" else "经验估算，未经校准"
+    return (f"毛线小计：{summary.get('grams')}g / {summary.get('meters')}m；"
+            f"含 {summary.get('waste_percent')}% 预留，依据：{basis}。"
+            "小计已含下列逐色毛线，请勿重复购买；线标与试片适用于所有颜色。")

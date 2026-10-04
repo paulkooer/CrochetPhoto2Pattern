@@ -1,36 +1,47 @@
+"""Photo analysis and deterministic generation, with an optional human review pause."""
+
+from __future__ import annotations
+
 import logging
 from collections.abc import Callable
+from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any
 
 from PIL import Image
 
 from app import software_version
 
-from ..schemas import (  # noqa: F401 – ImageAnalysis kept for re-export convenience
-    ImageAnalysis,
-    PatternResult,
-)
+from ..schemas import ImageAnalysis, PatternResult
 from .crochet_params import CrochetParamsGenerator
-from .geometry import mock_geometry, observe_geometry
+from .geometry import GeometryObservation, mock_geometry, observe_geometry
 from .image_parser import ImageParser
+from .runtime import RunTrace
 from .sizing import scale_analysis_to_target_height
 from .structure_designer import StructureDesigner
 from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
-
-# 进度回调：(percent, text)，直接对接 st.progress(...).progress；
-# 返回值（DeltaGenerator）被丢弃，故用 Callable[..., Any]
 ProgressCB = Callable[..., Any]
-
-# 显式三态解析模式：库层不再靠"有没有 Key"隐式推导（环境里任何非空
-# Key 都会静默切进计费路径）。"mock" 无论 Key 是否存在都不发起 API 调用。
 VISION_MODES = ("ai", "local", "mock")
 
 
-class PipelineOrchestrator:
-    """Orchestrate the full photo-to-pattern pipeline."""
+@dataclass
+class PhotoDraft:
+    """Session-only analysis. Contains no API credentials or parser/client objects."""
 
+    image: Image.Image
+    subject: SubjectObservation
+    analysis: ImageAnalysis
+    geometry: GeometryObservation
+    spans: dict | None
+    spans_measured: list[str]
+    usage: dict
+    vision_meta: dict
+    trace: RunTrace
+
+
+class PipelineOrchestrator:
     def __init__(
         self,
         openai_key: str | None = None,
@@ -46,6 +57,185 @@ class PipelineOrchestrator:
         )
         self.structure_designer = StructureDesigner()
         self.params_generator = CrochetParamsGenerator()
+        self.last_diagnostics: dict = {}
+
+    def prepare_photo(
+        self,
+        image: Image.Image,
+        *,
+        vision_mode: str = "ai",
+        progress_cb: ProgressCB | None = None,
+        subject: SubjectObservation | None = None,
+        budget_seconds: float = 180,
+    ) -> PhotoDraft:
+        if vision_mode not in VISION_MODES:
+            raise ValueError(f"vision_mode 必须是 {'/'.join(VISION_MODES)}，得到 {vision_mode!r}")
+        trace = RunTrace(budget_seconds)
+        subject = subject or SubjectObservation(image)
+        if subject.image is not image:
+            raise ValueError("主体观测与照片不匹配")
+        try:
+            return self._prepare(image, subject, vision_mode, trace, progress_cb)
+        finally:
+            self.last_diagnostics = trace.payload()
+
+    def _prepare(self, image, subject, vision_mode, trace, progress_cb) -> PhotoDraft:
+        geometry = None
+        with trace.stage("geometry"):
+            if vision_mode != "mock" and (
+                vision_mode == "local" or self.parser.openai_key or self.parser.anthropic_key
+            ):
+                geometry = observe_geometry(image, subject=subject)
+        spans, measured_names, hints = None, [], None
+        with trace.stage("pose"):
+            try:
+                from .pose import format_span_hints, get_body_landmarks, measured_spans
+
+                landmarks = get_body_landmarks(image)
+                if landmarks is not None:
+                    from .color_design import PART_SPAN
+
+                    measured = measured_spans(landmarks)
+                    spans = {**PART_SPAN, **measured}
+                    measured_names = sorted(measured)
+                    hints = format_span_hints(measured)
+                else:
+                    trace.fallbacks.append("姿态关键点不可用；使用部件分段先验")
+            except Exception:
+                trace.fallbacks.append("姿态估算失败；使用部件分段先验")
+        if progress_cb:
+            progress_cb(10, text="Step 1/3: 解析照片中...")
+        with trace.stage("vision"):
+            if vision_mode == "local":
+                profile = geometry.silhouette.profile if geometry and geometry.silhouette else None
+                analysis = self.parser.parse_image_local(
+                    image, geometry_profile=profile, geometry_observed=True, subject=subject
+                )
+                self.parser.last_usage = {}
+            elif vision_mode == "mock":
+                analysis = self.parser.parse_image_mock()
+                self.parser.last_usage = {}
+            else:
+                self.parser.request_budget_seconds = trace.remaining()
+                analysis = self.parser.parse_image(image, span_hints=hints, subject=subject)
+            source = (self.parser.last_local_meta or {}).get("source")
+            if source == "mock":
+                geometry = mock_geometry()
+            elif geometry is None:
+                geometry = observe_geometry(image, subject=subject)
+        if source == "default":
+            trace.fallbacks.append("未检出头部；比例来自默认模板，请人工确认")
+        if source != "mock" and geometry.silhouette is None:
+            trace.fallbacks.append("主体分割不可用；形状回退模板")
+        attempts = self.parser.last_usage.get("attempts", [])
+        if any(a.get("status") != "success" for a in attempts):
+            trace.fallbacks.append("视觉请求曾失败、拒绝或返回无效内容；已重试或切换服务商，详见尝试记录")
+        if source != "mock" and geometry.silhouette is not None and subject.segmentation is None:
+            trace.fallbacks.append("主体分割不可用；轮廓采用背景颜色差异启发式")
+        if source not in ("mock", "opencv-face", "default"):
+            with trace.stage("review_head_detection"):
+                from .subject import _face_box
+
+                small = image.copy()
+                small.thumbnail((640, 640))
+                box = _face_box(small)
+                if box:
+                    self.parser.last_local_meta["face_box"] = [
+                        round(box[0] * image.width / small.width),
+                        round(box[1] * image.height / small.height),
+                        round(box[2] * image.width / small.width),
+                        round(box[3] * image.height / small.height),
+                    ]
+        return PhotoDraft(
+            image,
+            subject,
+            analysis,
+            geometry,
+            spans,
+            measured_names,
+            deepcopy(self.parser.last_usage),
+            deepcopy(self.parser.last_local_meta),
+            trace,
+        )
+
+    @staticmethod
+    def generate_from_draft(
+        draft: PhotoDraft,
+        *,
+        analysis: ImageAnalysis | None = None,
+        gauge=None,
+        style=None,
+        target_height_cm: float = 18,
+        target_height_source: str = "default_reference",
+        progress_cb: ProgressCB | None = None,
+        run_trace: RunTrace | None = None,
+    ) -> dict[str, Any]:
+        """Generate locally from reviewed data; never contacts a vision provider.
+
+        Budget covers active stages only, so time spent by the user reviewing the
+        draft does not exhaust it. Local native calls stop at the next checkpoint.
+        """
+        trace = run_trace or deepcopy(draft.trace)
+        from .color_design import vertical_color_bands
+        from .gauge import DEFAULT, DEFAULT_STYLE
+
+        gauge, style = gauge or DEFAULT, style or DEFAULT_STYLE
+        with trace.stage("structure"):
+            chosen = ImageAnalysis.model_validate((analysis or draft.analysis).model_dump())
+            if not chosen.parts:
+                raise ValueError("请至少保留一个部件")
+            chosen, sizing = scale_analysis_to_target_height(
+                chosen, target_height_cm, source=target_height_source
+            )
+            if progress_cb:
+                progress_cb(40, text="Step 2/3: 部件结构设计中...")
+            structure = StructureDesigner.design_3d_structure(chosen)
+        with trace.stage("colors"):
+            bands = vertical_color_bands(draft.image, subject=draft.subject)
+            if not bands:
+                trace.fallbacks.append("未取得纵向配色；使用部件语义色或默认色")
+        with trace.stage("pattern"):
+            if progress_cb:
+                progress_cb(70, text="Step 3/3: 生成钩织参数...")
+            profile = draft.geometry.silhouette.profile if draft.geometry.silhouette else None
+            params = CrochetParamsGenerator.generate_params(
+                chosen,
+                structure,
+                color_bands=bands or None,
+                body_profile=profile,
+                gauge=gauge,
+                style=style,
+                spans=draft.spans,
+            )
+        with trace.stage("preview"):
+            from ..utils.images import thumbnail_data_url
+
+            preview = thumbnail_data_url(draft.image)
+        meta = deepcopy(draft.vision_meta)
+        if analysis is not None:
+            meta["reviewed_by_user"] = True
+        return PatternResult(
+            generator_version=software_version(),
+            analysis=chosen.model_dump(),
+            structure=structure,
+            params=params,
+            usage=draft.usage,
+            vision_meta=meta,
+            gauge={"stitches_per_10cm": gauge.stitches_per_10cm, "rows_per_10cm": gauge.rows_per_10cm},
+            style={
+                "sphere_mode": style.sphere_mode,
+                "one_piece": style.one_piece,
+                "skirt_style": style.skirt_style,
+                "ruffle_hem": style.ruffle_hem,
+            },
+            color_bands=bands or None,
+            preview=preview,
+            spans=draft.spans,
+            spans_measured=draft.spans_measured,
+            sizing=sizing,
+            geometry=draft.geometry.model_dump(),
+            diagnostics=trace.payload(),
+        ).to_result_dict()
 
     def run_full_pipeline(
         self,
@@ -57,146 +247,27 @@ class PipelineOrchestrator:
         target_height_cm: float = 18.0,
         target_height_source: str = "default_reference",
         vision_mode: str = "ai",
+        budget_seconds: float = 180,
     ) -> dict[str, Any]:
-        """Run the complete pipeline: parse → design → generate params.
-
-        Args:
-            image:        PIL Image to analyze
-            progress_cb:  optional callback invoked as progress_cb(percent, text)
-                          after each stage (UI 进度条由调用方注入，模型层不依赖 Streamlit)
-            local_vision: 旧签名兼容参数；True 等价 vision_mode="local"。
-                          新代码请用 vision_mode。
-            vision_mode:  显式三态："ai"（Vision 模型，计费）/"local"
-                          （本地人脸检测估算，免费）/"mock"（固定演示数据，
-                          不发起任何 API 调用）
-            target_height_cm: 用户选择的成品目标高度；照片仅提供头身比例
-
-        Returns:
-            Dict with 'analysis', 'structure', 'params', 'usage' and
-            'vision_meta' keys（PatternResult 契约，见 schemas.py）
-        """
+        # Keep the original public API and explicit mode validation.
         if vision_mode not in VISION_MODES:
-            raise ValueError(
-                f"vision_mode 必须是 {'/'.join(VISION_MODES)}，得到 {vision_mode!r}")
-        if local_vision is True:
-            vision_mode = "local"
-
-        def _report(pct: int, text: str) -> None:
-            if progress_cb is not None:
-                progress_cb(pct, text=text)
-
-        logger.info("Pipeline started (vision_mode=%s)", vision_mode)
-        subject = SubjectObservation(image)
-
-        # 真正的 AI/本地照片路径先做一次 provider-neutral 几何观测；Mock
-        # 路径跳过，保证演示数据不消费照片几何且不浪费分割。
-        geometry_observation = None
-        if vision_mode != "mock" and (
-                vision_mode == "local"
-                or self.parser.openai_key or self.parser.anthropic_key):
-            geometry_observation = observe_geometry(image, subject=subject)
-
-        # S1：姿态关键点实测部件 span（可选能力，失败回退 PART_SPAN 先验）。
-        # 对本地/LLM 两条路径同样适用——span 是纯几何量，与解析方式无关；
-        # 在解析**之前**计算，实测分段作为 hints 进入 Vision prompt（T6）。
-        spans = None
-        spans_measured: list = []
-        span_hints = None
-        try:
-            from .pose import format_span_hints, get_body_landmarks, measured_spans
-            _lm = get_body_landmarks(image)
-            if _lm is not None:
-                measured = measured_spans(_lm)
-                # F15：有效 span = 先验 ∪ 实测（实测覆盖先验）。旧实现把
-                # 部分实测 dict 直接下传——未测部件（如膝盖不可见时无
-                # 腿部/裙子）会失去照片配色，比不启用 pose 更差。
-                from .color_design import PART_SPAN
-                spans = {**PART_SPAN, **measured}
-                spans_measured = sorted(measured)
-                span_hints = format_span_hints(measured)
-                logger.info("Pose spans measured: %s", spans_measured)
-        except ImportError as e:
-            # 可选依赖缺失（[pose] extra / EGL 运行库）是配置状态而非错误
-            logger.info("pose 可选依赖缺失，回退先验 span: %s", e)
-        except Exception as e:
-            logger.debug("pose spans unavailable: %s", e)
-
-        if vision_mode == "local":
-            _report(10, "Step 1/3: 本地视觉估算中（无 LLM）...")
-            profile = (geometry_observation.silhouette.profile
-                       if geometry_observation is not None
-                       and geometry_observation.silhouette is not None else None)
-            analysis = self.parser.parse_image_local(
-                image, geometry_profile=profile, geometry_observed=True, subject=subject)
-            self.parser.last_usage = {}
-        elif vision_mode == "mock":
-            _report(10, "Step 1/3: Mock 演示数据生成中（不调用 API）...")
-            analysis = self.parser.parse_image_mock()
-            self.parser.last_usage = {}
-        else:
-            _report(10, "Step 1/3: AI 视觉解析中...")
-            analysis = self.parser.parse_image(image, span_hints=span_hints, subject=subject)
-        analysis, sizing = scale_analysis_to_target_height(
-            analysis, target_height_cm, source=target_height_source)
-        source = (self.parser.last_local_meta or {}).get("source")
-        if source == "mock":
-            geometry_observation = mock_geometry()
-        elif geometry_observation is None:
-            # Library/tests may inject a parser without provider keys; keep the
-            # contract correct even when source provenance is supplied externally.
-            geometry_observation = observe_geometry(image, subject=subject)
-        logger.info("Image parsed: %s body, %d parts", analysis.body_type, len(analysis.parts))
-
-        _report(40, "Step 2/3: 部件结构设计中...")
-        structure = self.structure_designer.design_3d_structure(analysis)
-        logger.info("Structure designed: %d parts", len(structure.get("parts", [])))
-
-        _report(70, "Step 3/3: 生成钩织参数...")
-        # 照片纵向色带 → 逐圈配色（让针法配色来自照片本身）
-        from .color_design import vertical_color_bands
-        from .gauge import DEFAULT as DEFAULT_GAUGE
-        from .gauge import DEFAULT_STYLE
-
-        gauge = gauge or DEFAULT_GAUGE
-        style = style or DEFAULT_STYLE
-        color_bands = vertical_color_bands(image, subject=subject)
-        # U8：小缩略图（历史列表/分享预览用），随 result 持久化——
-        # 展示层关注点在 utils.images，失败只影响缩略图不影响图解
-        from ..utils.images import thumbnail_data_url
-        preview = thumbnail_data_url(image)
-        # Provider-neutral geometry：AI/本地真实照片共用同一剖面；Mock
-        # 明确不读照片。旧版只从 local vision_meta 取值，AI 模式静默丢失。
-        body_profile = None
-        if geometry_observation.silhouette is not None:
-            body_profile = [float(value) for value in
-                            geometry_observation.silhouette.profile]
-        params = self.params_generator.generate_params(
-            analysis, structure, color_bands=color_bands or None,
-            body_profile=body_profile, gauge=gauge, style=style, spans=spans,
+            raise ValueError(f"vision_mode 必须是 {'/'.join(VISION_MODES)}，得到 {vision_mode!r}")
+        draft = self.prepare_photo(
+            image,
+            vision_mode="local" if local_vision is True else vision_mode,
+            progress_cb=progress_cb,
+            budget_seconds=budget_seconds,
         )
-        logger.info("Parameters generated: %d parts, difficulty=%s, %d color bands",
-                    len(params.get("parts", [])), params.get("difficulty"),
-                    len(color_bands))
-
-        # 单一契约出口：键集由 PatternResult 定义（schemas.py），
-        # 5 处手写字典的失同步问题在此收口。
-        return PatternResult(
-            generator_version=software_version(),
-            analysis=analysis.model_dump(),
-            structure=structure,
-            params=params,
-            usage=self.parser.last_usage,
-            vision_meta=self.parser.last_local_meta,
-            gauge={"stitches_per_10cm": gauge.stitches_per_10cm,
-                   "rows_per_10cm": gauge.rows_per_10cm},
-            style={"sphere_mode": style.sphere_mode,
-                   "one_piece": style.one_piece,
-                   "skirt_style": style.skirt_style,
-                   "ruffle_hem": style.ruffle_hem},
-            color_bands=color_bands or None,
-            preview=preview,
-            spans=spans,
-            spans_measured=spans_measured,
-            sizing=sizing,
-            geometry=geometry_observation.model_dump(),
-        ).to_result_dict()
+        trace = deepcopy(draft.trace)
+        try:
+            return self.generate_from_draft(
+                draft,
+                gauge=gauge,
+                style=style,
+                target_height_cm=target_height_cm,
+                target_height_source=target_height_source,
+                progress_cb=progress_cb,
+                run_trace=trace,
+            )
+        finally:
+            self.last_diagnostics = trace.payload()

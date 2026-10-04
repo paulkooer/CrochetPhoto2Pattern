@@ -16,7 +16,7 @@ from .gauge import (
     gauge_from_mapping,
     next_shaping_stitch_count,
 )
-from .materials import _materials, _safety_eye_mm
+from .materials import YarnSpec, _materials, _safety_eye_mm, yarn_requirements
 from .parts import _SKIN_PARTS, _part_name, _part_quantity, _part_rounds, _round_stitches
 from .profile_shaping import profile_to_rounds, rounds_to_notes
 from .time_estimate import (  # noqa: F401
@@ -420,8 +420,11 @@ def refresh_derived(params: dict) -> dict:
     if params.get("gauge"):
         params["gauge"] = {"stitches_per_10cm": gauge.stitches_per_10cm,
                            "rows_per_10cm": gauge.rows_per_10cm}
+    if params.get("yarn_spec") is not None:
+        params["yarn_spec"] = YarnSpec.model_validate(params["yarn_spec"]).model_dump()
     params["materials"] = _materials(
-        parts, {_part_name(p) for p in parts}, gauge=gauge)
+        parts, {_part_name(p) for p in parts}, gauge=gauge, yarn_spec=params.get("yarn_spec"))
+    params["material_summary"] = yarn_requirements(parts, gauge, params.get("yarn_spec"))[1]
     params["shaping"] = _shaping_meta(gauge)
     # 装配说明同样是 parts 的函数：删部件后不得残留对应步骤（F5）；
     # 裙子做法按生成时的口径保留
@@ -864,6 +867,7 @@ class CrochetParamsGenerator:
 
         result = {
             "materials": _materials(part_dicts, part_names, gauge),
+            "material_summary": yarn_requirements(part_dicts, gauge)[1],
             "parts": part_dicts,
             "assembly_instructions": assembly,
             "difficulty": analysis.difficulty,

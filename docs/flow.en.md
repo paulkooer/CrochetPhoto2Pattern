@@ -10,17 +10,18 @@ photo upload
 1. image preprocessing (Pillow resize, orientation, RGB conversion)
    ↓
 2. provider-independent geometric observation + semantic parsing
-   geometry: versioned width profile, flare, confidence, single-view limitations
+   geometry: versioned width profile, flare, uncalibrated provenance, single-view limitations
    semantics: body type, parts, features, pose, relative proportions, difficulty
    ↓
-3. target-size transform
+3. human review (Photo UI): head box/proportion and parts; no second provider call
+   then target-size transform
    no absolute centimetres are inferred from a single photo; relative proportions are
    scaled to the user's selected finished height
    ↓
 4. part structure design
    StructureGeometry v2 template skeleton, not a reconstructed 3D mesh:
    shape/ratio, normalized position, Euler rotation, instances, mirrored groups,
-   attachment anchors, logical quantity, and template-inference confidence
+   attachment anchors, logical quantity, and template-inference provenance
    ↓
 5. crochet parameter generation
    per-logical-part rounds, stitch counts, increases/decreases, materials, assembly

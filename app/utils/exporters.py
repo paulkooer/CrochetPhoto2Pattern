@@ -157,6 +157,10 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     lines.append("")
     lines.append("> 克重/米数为估算值（请以实际线标为准）；品牌色号仅收录已核实条目")
     lines.append("")
+    from app.models.materials import material_summary_text
+    summary_text = material_summary_text(params)
+    if summary_text:
+        lines.extend(["> " + _md_cell(summary_text), ""])
     for mat in params.get("materials", []):
         # 与渲染层同口径：JSON 编辑器改坏材料（纯字符串/缺字段）时降级为
         # '?' 或原样输出，导出不崩溃

@@ -267,7 +267,7 @@ SCHEMA_VERSION = "1"
 # to_backup 注入。字段顺序即历史备份的键序，勿打乱（快照 diff 稳定性）。
 RESULT_KEYS = ("analysis", "structure", "params", "style", "gauge",
                "color_bands", "spans", "spans_measured", "vision_meta",
-               "preview", "usage", "sizing", "geometry", "generator_version")
+               "preview", "usage", "sizing", "geometry", "generator_version", "diagnostics")
 
 
 class PatternResult(BaseModel):
@@ -292,6 +292,7 @@ class PatternResult(BaseModel):
     sizing: dict[str, Any] | None = None
     geometry: dict[str, Any] | None = None
     generator_version: str | None = None  # Legacy imports must not invent a version.
+    diagnostics: dict[str, Any] = Field(default_factory=dict)
     # 会话/存储层字段（不在 RESULT_KEYS 中）
     result_id: str | None = None
     title: str | None = None

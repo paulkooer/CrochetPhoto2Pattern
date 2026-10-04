@@ -31,6 +31,16 @@ Local validation: **1103 passed, 1 skipped in 48.39s** (Python 3.12.13); Ruff,
 mypy app tests (99 files), schema-document synchronization and diff checks pass.
 See the [review record (Chinese)](optimization-review-20260907.md).
 
+The 2026-10-04 round-10 checkout adds photo crop/review, part forms and round-table editing,
+bounded undo/redo, single-count yarn purchases with measured swatches, and runtime/API-attempt
+diagnostics. It also corrects deployment-host privacy wording and removes uncalibrated confidence defaults.
+Final local verification: **1131 passed, 1 skipped in 81.31s; 91.49% coverage** (Python 3.12.13).
+Ruff, mypy app tests (105 files), schema-document synchronization, and diff checks pass.
+The 28 new regressions cover review without another API call, crop invalidation, preserved results
+on failures, undo/redo, yarn accounting, and budget boundaries. This snapshot does not substitute
+for this PR's remote CI. The previous audit was merged through
+[PR #10](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/10).
+
 The prior round-8 local snapshot was 1079 passed, 1 skipped (Python 3.12.13). The real-photo
 skip still requires `CROCHET_EVAL_DIR`; no authorized-photo or physical-trial baseline is
 present in this workspace. G3/G4 remain blocked. Earlier syntax-only Parade reports must
