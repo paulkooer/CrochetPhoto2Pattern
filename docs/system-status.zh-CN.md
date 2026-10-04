@@ -35,6 +35,8 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 81.31s，覆盖率 91.49%**（Python 3.12.13）；Ruff、mypy app tests（105 个文件）、
 Schema 文档同步与差异检查通过。新增 28 项回归覆盖照片确认不重复调用 AI、裁剪失效、
 错误保留、撤销／重做、用量去重与计时边界。本快照不替代本轮 PR 的远端 CI。
+发布本轮 PR 时另补充 `urllib3 2.8.0` 与 `GitPython 3.1.62`，处理 GitHub 报告的
+4 条依赖告警；按锁文件同步 core/dev/pdf/pose 后，`pip-audit 2.10.1` 未发现已知漏洞。
 上一轮审核修复已通过 [PR #10](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/10) 合并。
 
 此前第八轮本地快照为 1079 passed、1 skipped（Python 3.12.13）。真实照片跳过项

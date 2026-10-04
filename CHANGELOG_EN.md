@@ -20,6 +20,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed — 2026-10-04 audit
 
+- Address four additional GitHub alerts reported while publishing PR #13: lock `urllib3 2.8.0`
+  (GHSA-8988-9cw3-xx77, GHSA-vxq7-64xx-v4gw, GHSA-gh4c-6fx4-qh6g) and `GitPython 3.1.62`
+  (GHSA-59cr-6r3x-644w). Only these two packages change; the combined environment audit finds no known vulnerabilities.
+
 - Patch GHSA-8xx6-hgc6-gc2m discovered during GitHub publication: update locked
   `httpx2` and matching `httpcore2` from 2.11.0 to 2.12.0; other dependency versions stay unchanged.
 

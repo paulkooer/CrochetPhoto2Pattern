@@ -38,7 +38,9 @@ Final local verification: **1131 passed, 1 skipped in 81.31s; 91.49% coverage** 
 Ruff, mypy app tests (105 files), schema-document synchronization, and diff checks pass.
 The 28 new regressions cover review without another API call, crop invalidation, preserved results
 on failures, undo/redo, yarn accounting, and budget boundaries. This snapshot does not substitute
-for this PR's remote CI. The previous audit was merged through
+for this PR's remote CI. Publication also updates only `urllib3` to 2.8.0 and `GitPython` to
+3.1.62 for four newly reported GitHub alerts; pip-audit 2.10.1 finds no known vulnerabilities
+after synchronizing locked core/dev/pdf/pose dependencies. The previous audit was merged through
 [PR #10](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/10).
 
 The prior round-8 local snapshot was 1079 passed, 1 skipped (Python 3.12.13). The real-photo
