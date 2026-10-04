@@ -347,6 +347,7 @@ def evaluate_dataset(
     color_matches: list[float] = []
     pattern_valid_values: list[float] = []
     parade_export_values: list[float] = []
+    parade_syntax_values: list[float] = []
     case_pass_values: list[float] = []
     pipeline_errors = 0
     tag_counts: dict[str, int] = {}
@@ -398,12 +399,18 @@ def evaluate_dataset(
             # tier-2（CrochetBench 口径）：结果能否翻译为 CrochetPARADE DSL——
             # 代数自检之外的"可执行正确性"最近似代理（其官方 translator 为
             # GPL，不作依赖；这里校验导出 + emitter-level 语法自检）
-            from app.utils.parade_export import export_parade_dsl, lint_parade_dsl
+            from app.utils.parade_export import export_parade_report, lint_parade_dsl
 
+            parade_detail = None
             try:
-                _parade = export_parade_dsl(result)
-                parade_export_ok = bool(not lint_parade_dsl(_parade))
+                from dataclasses import asdict
+
+                parade = export_parade_report(result)
+                parade_syntax_ok = not lint_parade_dsl(parade.text)
+                parade_export_ok = bool(parade_syntax_ok and parade.complete)
+                parade_detail = {k: v for k, v in asdict(parade).items() if k != "text"}
             except Exception:
+                parade_syntax_ok = False
                 parade_export_ok = False
             case_passed = bool(
                 recall >= thresholds.min_case_part_recall
@@ -432,6 +439,8 @@ def evaluate_dataset(
                 "color_top3_match": color_match,
                 "pattern_valid": pattern_valid,
                 "parade_export_ok": parade_export_ok,
+                "parade_syntax_ok": parade_syntax_ok,
+                "parade_export": parade_detail,
                 "pattern_issues": validation["issues"],
                 "passed": case_passed,
                 "error": None,
@@ -443,6 +452,7 @@ def evaluate_dataset(
             color_match = False if case.expected.dominant_colors else None
             pattern_valid = False
             parade_export_ok = False
+            parade_syntax_ok = False
             case_passed = False
             case_report = {
                 "id": case.id,
@@ -464,6 +474,8 @@ def evaluate_dataset(
                 "color_top3_match": color_match,
                 "pattern_valid": False,
                 "parade_export_ok": False,
+                "parade_syntax_ok": False,
+                "parade_export": None,
                 "pattern_issues": [],
                 "passed": False,
                 "error": {"type": type(exc).__name__, "message": str(exc)[:500]},
@@ -476,6 +488,7 @@ def evaluate_dataset(
             color_matches.append(float(color_match))
         pattern_valid_values.append(float(pattern_valid))
         parade_export_values.append(float(parade_export_ok))
+        parade_syntax_values.append(float(parade_syntax_ok))
         case_pass_values.append(float(case_passed))
         case_reports.append(case_report)
 
@@ -524,6 +537,7 @@ def evaluate_dataset(
             "color_top3_accuracy": color_top3_accuracy,
             "pattern_valid_rate": pattern_valid_rate,
             "parade_export_rate": parade_export_rate,
+            "parade_syntax_rate": _mean(parade_syntax_values),
             "passed": passed,
         },
         "cases": case_reports,

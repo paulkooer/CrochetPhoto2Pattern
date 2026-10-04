@@ -71,6 +71,8 @@ def md_safe(value) -> str:
 
 def _confidence_text(silhouette: dict) -> str:
     """轮廓置信度仅是展示性溯源数据——备份可控的非法值不得崩掉渲染。"""
+    if not isinstance(silhouette, dict):
+        return "未知"
     try:
         return f"{float(silhouette.get('confidence', 0)):.0%}"
     except (TypeError, ValueError, OverflowError):
@@ -479,11 +481,11 @@ def render_results(result: dict, slot: str) -> None:
         st.success(
             f"✅ 针数代数与相邻圈跳变检查通过（已检查 {_v['checked']} 圈）")
         st.caption("该检查不等同于成品形状、部件连接或实际可钩性验证。")
-    if _v.get("notes"):
-        st.caption("ℹ️ " + "；".join(md_safe(n) for n in _v["notes"]))
     else:
         st.warning("⚠️ 图解自检发现问题（可在局部修正中修复）：\n"
                    + "\n".join(md_safe(issue) for issue in _v["issues"]))
+    if _v.get("notes"):
+        st.caption("ℹ️ " + "；".join(md_safe(n) for n in _v["notes"]))
     st.caption(
         f"塑形口径：当前密度的连续几何变化率约 "
         f"{_v['shaping_continuous_delta']:.2f} 针/圈，按六等分针法向上量化为 "
@@ -653,7 +655,7 @@ def render_results(result: dict, slot: str) -> None:
         key=f"json_edit_{result_key}",
     )
 
-    md_content = export_markdown(params, analysis)
+    md_content = export_markdown(params, analysis, result=result) if _v["ok"] else ""
 
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     with col_btn1:
@@ -684,6 +686,7 @@ def render_results(result: dict, slot: str) -> None:
             file_name="amigurumi_pattern.md",
             mime="text/markdown",
             key=f"dl_md_{result_key}",
+            disabled=not _v["ok"],
         )
 
     # ── CrochetPARADE 导出（3D 验证）：独立 DSL 出口的差异化功能 ──────────
@@ -694,8 +697,15 @@ def render_results(result: dict, slot: str) -> None:
             "\"过松/过紧针目\"物理分析与逐针动画——本应用代数自检之外的"
             "独立验证层。语法映射基于其官方手册的已核对子集。")
         try:
-            from app.utils.parade_export import export_parade_dsl, lint_parade_dsl
-            _parade_text = export_parade_dsl(result)
+            if not _v["ok"]:
+                raise ValueError("请先修复图解自检错误")
+            from app.utils.parade_export import export_parade_report, lint_parade_dsl
+            _parade = export_parade_report(result)
+            _parade_text = _parade.text
+            if not _parade.complete:
+                st.warning("仅导出部分图解；不可视为完整验证："
+                           f"{_parade.exported_rounds}/{_parade.requested_rounds} 圈次，"
+                           f"{_parade.exported_parts}/{_parade.requested_parts} 个完整实体部件。")
             _parade_issues = lint_parade_dsl(_parade_text)
             if _parade_issues:
                 st.warning("导出自检提示：\n" + "\n".join(md_safe(i)
@@ -729,18 +739,18 @@ def render_results(result: dict, slot: str) -> None:
     with col_bk2:
         # PDF（S4）：点"生成"才构建（避免每次 rerun 都渲染 PDF），
         # 字节缓存进 session 后出现下载按钮
-        if st.button("🖨 生成 PDF 图解", key=f"pdf_gen_{result_key}"):
+        if st.button("🖨 生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
             try:
                 from app.utils.pdf_export import export_pdf
                 st.session_state[f"pdf_{result_key}"] = export_pdf(
-                    params, analysis)
+                    params, analysis, result=result)
             except ImportError:
                 st.caption("PDF 导出需安装 reportlab："
                            "pip install crochet-photo2pattern[pdf]")
             except Exception as e:
                 st.error(f"PDF 生成失败: {md_safe(e)}")
         _pdf_bytes = st.session_state.get(f"pdf_{result_key}")
-        if _pdf_bytes:
+        if _pdf_bytes and _v["ok"]:
             st.download_button("📄 下载 PDF", _pdf_bytes,
                                file_name="amigurumi_pattern.pdf",
                                mime="application/pdf",
@@ -772,10 +782,12 @@ def render_results(result: dict, slot: str) -> None:
             with st.expander("📎 展开分享链接", expanded=False):
                 st.code(f"?p={_share_token}", language=None)
         # 历史持久化（S4）：SQLite 单文件，跨会话在侧栏"我的图解"恢复
+        from app.utils import history
+
         if st.button("🗂 存入历史", key=f"hist_save_{result_key}",
+                     disabled=not history.history_enabled() or not _v["ok"],
                      help="保存到本机图解历史，可在侧栏随时载回"):
             try:
-                from app.utils import history
                 saved = dict(result)
                 saved["params"] = rebuild_params(json.loads(correction_json))
                 saved["gauge"] = saved["params"].get("gauge")

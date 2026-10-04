@@ -32,6 +32,12 @@ details before a fix is available.
 
 ## Security-sensitive boundaries
 
+History persistence is disabled by default, including at the database access boundary.
+`CROCHET_HISTORY_MODE=single_user` explicitly declares a trusted single-user installation;
+it does not add authentication or record ownership checks. Shared/public installations
+must keep history disabled and use session results/downloaded backups. Before enabling
+an existing database, check that its contents may be exposed to that installation's user.
+
 - API keys, redacted error output, and custom OpenAI/Anthropic Base URL isolation.
 - Malicious or oversized images, EXIF, backup JSON, grid projects, share URLs, and
   Markdown/PDF exports.

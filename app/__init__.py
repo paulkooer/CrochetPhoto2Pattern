@@ -4,3 +4,12 @@
 统一从这里读取，避免仓库/包名与展示名各说各话（fable5.1 审核意见）。
 """
 PRODUCT_NAME = "CrochetPhoto2Pattern"
+
+
+def software_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("crochet-photo2pattern")
+    except PackageNotFoundError:
+        return "source-tree"

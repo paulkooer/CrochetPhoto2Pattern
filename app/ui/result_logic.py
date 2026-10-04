@@ -12,6 +12,7 @@ from copy import deepcopy
 from dataclasses import asdict
 from typing import Any
 
+from app import software_version
 from app.models.crochet_params import CrochetParamsGenerator, refresh_derived
 from app.models.gauge import ShapingStyle, gauge_from_result
 from app.models.geometry import PROPORTIONS_HEAD_BODY_PREFIX, normalize_structure
@@ -103,6 +104,9 @@ def rebuild_params(corrected: dict) -> dict:
         names.add(part.name)
         rebuilt_parts.append(part.model_dump())
     rebuilt = {**corrected, "parts": rebuilt_parts}
+    from app.models.validator import require_valid_pattern
+
+    require_valid_pattern(rebuilt)
     # 时长/总针数/材料克数是 parts 的派生量，必须随编辑重算。
     refresh_derived(rebuilt)
     return rebuilt
@@ -147,6 +151,7 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
         photo_head_to_height_ratio=old_sizing.get("photo_head_to_height_ratio"))
     return PatternResult.from_result({
         **result,
+        "generator_version": software_version(),
         "analysis": analysis.model_dump(),
         "structure": structure,
         "params": params,
@@ -168,6 +173,7 @@ def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
         spans=result.get("spans"))
     return PatternResult.from_result({
         **result,
+        "generator_version": software_version(),
         "structure": structure,
         "params": params,
         "gauge": asdict(gauge),
@@ -181,6 +187,12 @@ def import_backup(data: dict, result_id: str) -> dict:
     把 style/gauge 等全写 None。键集由 PatternResult 定义（旧格式缺键
     → None 兜底）；analysis/structure/params 先经校验/重建。
     """
+    from app.models.result_metadata import validate_result_metadata
+
+    data = PatternResult.from_result(data).to_backup() | {
+        "title": data.get("title"),
+    }
+    validate_result_metadata(data)
     analysis, structure = validate_backup(data)
     raw_params = dict(data["params"])
     gauge = None

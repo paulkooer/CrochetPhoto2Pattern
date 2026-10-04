@@ -46,6 +46,15 @@ _INITIALIZED: set = set()
 _INIT_LOCK = threading.Lock()
 
 
+def history_enabled() -> bool:
+    """Persistence requires the operator to explicitly choose single-user mode.
+
+    Unset/unknown modes fail closed. This is not a multi-user access-control
+    system: public/shared deployments must leave history disabled.
+    """
+    return os.getenv("CROCHET_HISTORY_MODE", "disabled") == "single_user"
+
+
 def _db_path() -> Path:
     env = os.getenv("CROCHET_HISTORY_DB")
     if env:
@@ -54,6 +63,8 @@ def _db_path() -> Path:
 
 
 def _connect() -> sqlite3.Connection:
+    if not history_enabled():
+        raise PermissionError("历史记录未启用（仅单用户部署可开启）")
     path = _db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))

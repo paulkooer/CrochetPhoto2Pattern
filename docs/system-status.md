@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-02. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-04. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -20,21 +20,21 @@ The current pre-PR checkout passes the complete local suite, Ruff, mypy, and dif
 The table below remains the latest published multi-Python/extras snapshot and is tied to its
 named commit; the new branch must repeat the protected checks before merge.
 
-Local review through 2026-10-04 (Python 3.12.13): after input/export, gauge/structure,
-shared photo observation, model-cache, edited-count, assembly-connection, physical-input,
-preview-rotation fixes, two follow-up review rounds (rounds 6-7: assembly prose,
-pose-download backoff, resource bounds, provenance hardening, trials CLI decoding,
-evaluation re-hashing), and an external-audit round (round 8: crochet_params split
-into parts/materials/assembly/time_estimate/onepiece with zero behavior change,
-Lab-conversion allocation fix, closing-note variants, history/preview hardening,
-digest-pinned base image), the full suite reports **1079 passed, 1 skipped in 23.45s**.
-Ruff, mypy app tests (96 files), schema-document synchronization, and `git diff --check` pass.
-In a synthetic comparison, shared segmentation reduced median pipeline time from
-0.1074s to 0.0543s; this does not establish real-photo quality.
-The skipped test requires `CROCHET_EVAL_DIR`.
-These changes are committed on the local main branch but have not run through the remote
-matrix and do not replace
-the commit-bound evidence below. See the [review record (Chinese)](optimization-review-20260907.md).
+The 2026-10-04 round-9 working tree fixes validation messages, rejects arithmetic
+errors at edit/import/printable-export boundaries, validates nested imported metadata,
+requires complete Parade exports for evaluation, and preserves source/version labels in
+Markdown/PDF. History is now disabled by default; only trusted single-user installations
+may set `CROCHET_HISTORY_MODE=single_user`. Shared deployments must keep it disabled.
+This local snapshot precedes the GitHub publication PR. Remote matrix results must be
+checked on that PR before merge; the table below remains historical commit-bound evidence.
+Local validation: **1103 passed, 1 skipped in 48.39s** (Python 3.12.13); Ruff,
+mypy app tests (99 files), schema-document synchronization and diff checks pass.
+See the [review record (Chinese)](optimization-review-20260907.md).
+
+The prior round-8 local snapshot was 1079 passed, 1 skipped (Python 3.12.13). The real-photo
+skip still requires `CROCHET_EVAL_DIR`; no authorized-photo or physical-trial baseline is
+present in this workspace. G3/G4 remain blocked. Earlier syntax-only Parade reports must
+be rerun before claiming 100% complete export.
 
 | Check | Result | Notes |
 |---|---|---|

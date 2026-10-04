@@ -25,6 +25,13 @@ from ..utils.counts import integer_count as _integer_count
 from .gauge import gauge_from_mapping
 
 
+def require_valid_pattern(params: dict[str, Any]) -> None:
+    """Reject arithmetic errors at edit/import and printable export boundaries."""
+    validation = validate_pattern(params)
+    if not validation["ok"]:
+        raise ValueError("图解自检失败: " + "；".join(validation["issues"]))
+
+
 def shaping_policy_for_pattern(params: dict[str, Any]) -> dict[str, Any]:
     """Derive trusted shaping policy from gauge, never editable metadata."""
     gauge = gauge_from_mapping(params.get("gauge"))

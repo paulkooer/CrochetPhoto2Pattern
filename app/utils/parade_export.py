@@ -22,6 +22,7 @@ GPLv3，本项目 MIT——保持单向文本出口即可，无需许可合并�
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from typing import Any
 
 from app.models.colors import YARN_COLORS
@@ -93,21 +94,44 @@ def _round_tokens(prev_stitches: int, rd: dict[str, Any]) -> list[str] | None:
     return [f"{groups}[{body}]"]
 
 
-def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
+@dataclass
+class ParadeExportReport:
+    text: str = ""
+    complete: bool = True
+    requested_parts: int = 0  # Physical copies, not logical part definitions.
+    exported_parts: int = 0  # Only completely exported copies.
+    requested_rounds: int = 0
+    exported_rounds: int = 0
+    warnings: list[str] = field(default_factory=list)
+
+
+def _part_lines(part: dict[str, Any], report: ParadeExportReport) -> list[str]:
     """单个部件 → DSL 行；数量 >1 的部件按 start_anew 重复输出。"""
     name = str(part.get("name", "?"))
+    warnings = report.warnings
+    try:
+        quantity = _integer_count(part.get("quantity", 1))
+        if not 1 <= quantity <= 20:
+            raise ValueError("无效的数量")
+    except (ValueError, OverflowError):
+        warnings.append(f"{name}: 数量无效，该部件已跳过")
+        report.complete = False
+        return []
+    report.requested_parts += quantity
     rounds = part.get("rounds") or []
     if not isinstance(rounds, list) or not rounds:
         warnings.append(f"{name}: 没有可导出的圈")
+        report.complete = False
         return []
+    report.requested_rounds += quantity * len(rounds)
     first = rounds[0]
     try:
-        quantity = _integer_count(part.get("quantity", 1))
         n_first = _integer_count(first.get("stitches", 0))
-        if quantity < 1 or quantity > 20 or n_first < 1:
-            raise ValueError("无效的数量或起针数")
+        if n_first < 1:
+            raise ValueError("无效的起针数")
     except (AttributeError, ValueError, OverflowError):
         warnings.append(f"{name}: 数量或首圈针数无效，该部件已跳过")
+        report.complete = False
         return []
     hex_color = _hex_of(first.get("color")) or _hex_of(part.get("color"))
 
@@ -127,10 +151,12 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
                 "请对照原说明核对引拔/开口处理")
         lines.append("ring")
         lines.append(f"sc{n_first}inc")
+        report.exported_rounds += 1
         prev = n_first
         for index, rd in enumerate(rounds[1:], 2):
             tokens = _round_tokens(prev, rd)
             if tokens is None:
+                report.complete = False
                 row = rd.get("row", index) if isinstance(rd, dict) else index
                 stitches = rd.get("stitches") if isinstance(rd, dict) else "?"
                 warnings.append(
@@ -147,7 +173,10 @@ def _part_lines(part: dict[str, Any], warnings: list[str]) -> list[str]:
                 lines.append(f"COLOR: {color_hex}")
                 last_color = color_hex
             lines.extend(tokens)
+            report.exported_rounds += 1
             prev = int(rd.get("stitches", prev))
+        else:
+            report.exported_parts += 1
     return lines
 
 
@@ -181,8 +210,8 @@ def lint_parade_dsl(text: str) -> list[str]:
     return issues
 
 
-def export_parade_dsl(result: dict[str, Any]) -> str:
-    """result dict → CrochetPARADE DSL 文本。
+def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
+    """Return DSL, completeness, physical-copy counts and structured warnings.
 
     raises:
         ValueError: 结果缺 params.parts 或所有部件都不可译。
@@ -192,14 +221,16 @@ def export_parade_dsl(result: dict[str, Any]) -> str:
     if not isinstance(parts, list) or not parts:
         raise ValueError("结果缺少 params.parts，无法导出 CrochetPARADE DSL")
 
-    warnings: list[str] = []
+    report = ParadeExportReport()
+    warnings = report.warnings
     body: list[str] = []
     exported_any = False
     for part in parts:
         if not isinstance(part, dict):
             warnings.append("部件格式无效，该部件已跳过")
+            report.complete = False
             continue
-        lines = _part_lines(part, warnings)
+        lines = _part_lines(part, report)
         if not lines:
             continue
         exported_any = True
@@ -216,4 +247,10 @@ def export_parade_dsl(result: dict[str, Any]) -> str:
         for w in warnings:
             text += f"# - {w}\n"
     text += "\n".join(body) + "\n"
-    return text
+    report.text = text
+    return report
+
+
+def export_parade_dsl(result: dict[str, Any]) -> str:
+    """Compatibility text API; partial exports carry warnings in the text."""
+    return export_parade_report(result).text

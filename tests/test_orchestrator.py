@@ -23,7 +23,7 @@ def test_full_pipeline_returns_three_stage_result():
     assert set(result.keys()) == {
         "analysis", "structure", "params", "usage", "vision_meta", "gauge",
         "style", "color_bands", "spans", "spans_measured", "preview",
-        "sizing", "geometry",
+        "sizing", "geometry", "generator_version",
     }
     assert result["analysis"]["body_type"] == "标准"
     assert len(result["structure"]["parts"]) == 2

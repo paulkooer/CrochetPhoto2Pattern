@@ -16,6 +16,7 @@ import json
 import sys
 from pathlib import Path
 
+from app import software_version
 from app.models.crochet_params import CrochetParamsGenerator
 from app.models.gauge import ShapingStyle, gauge_from_ui
 from app.models.geometry import mock_geometry, no_photo_geometry
@@ -82,6 +83,7 @@ def run(args: argparse.Namespace) -> dict:
         params = CrochetParamsGenerator.generate_params(
             analysis, structure, gauge=gauge, style=style)
         result = PatternResult(
+            generator_version=software_version(),
             analysis=analysis.model_dump(), structure=structure,
             params=params,
             # CLI --mock 无照片参与：配色为生成器默认值（与照片路径的
@@ -115,6 +117,7 @@ def run(args: argparse.Namespace) -> dict:
         params = CrochetParamsGenerator.generate_params(
             analysis, structure, gauge=gauge, style=style)
         result = PatternResult(
+            generator_version=software_version(),
             analysis=analysis.model_dump(), structure=structure,
             params=params, vision_meta={},
             gauge={"stitches_per_10cm": gauge.stitches_per_10cm,
@@ -251,7 +254,7 @@ def main(argv=None) -> int:
     if args.md:
         analysis = result["analysis"]
         Path(args.md).write_text(
-            export_markdown(result["params"], analysis), encoding="utf-8")
+            export_markdown(result["params"], analysis, result=result), encoding="utf-8")
     if args.parade:
         from app.utils.parade_export import export_parade_dsl
         Path(args.parade).write_text(
@@ -259,7 +262,7 @@ def main(argv=None) -> int:
     if args.pdf:
         from app.utils.pdf_export import export_pdf
         Path(args.pdf).write_bytes(export_pdf(result["params"],
-                                              result["analysis"]))
+                                              result["analysis"], result=result))
     if not args.quiet:
         analysis = result["analysis"]
         parts = result["params"]["parts"]

@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 权威状态快照：2026-10-02。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 权威状态快照：2026-10-04。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 
@@ -20,18 +20,18 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 指定提交的最近一次已发布多 Python/extras 快照；新分支必须在合并前重新通过受保护
 分支要求的全部检查。
 
-2026-10-04 本地复核（Python 3.12.13）：输入/导出、密度/结构编辑、照片观测
-复用、模型缓存、编辑计数/装配连接、物理尺寸/旋转修复，第六、七轮复核
-（装配文案、pose 退避、资源边界、溯源字段容错、试钩 CLI 解码、评测重校验），
-以及第八轮外部审计处理（crochet_params 零行为拆分为
-parts/materials/assembly/time_estimate/onepiece、Lab 转换分配修复、收口
-变体识别、历史/preview 加固、基础镜像摘要固定）之后，全量为
-**1079 passed, 1 skipped，23.45s**；Ruff、mypy app tests（96 个文件）、
-Schema 文档同步与 `git diff --check` 均通过。合成图对照中，
-共享主体分割的管线耗时中位数从 0.1074 秒降至 0.0543 秒；不代表真实照片质量结论。
-跳过项为未配置 `CROCHET_EVAL_DIR` 的真实照片评测。本轮修改已提交至本地 main，
-尚未推送或进行远程矩阵验证，不替代下表的提交绑定证据。
-修复明细与待查范围见 [本轮审查记录](optimization-review-20260907.md)。
+2026-10-04 第九轮工作树修复自检提示，编辑/导入/可打印导出阻断代数错误，
+统一导入路径并校验嵌套元数据；Parade 评测要求完整导出，Markdown/PDF 保留来源
+与版本标签。历史默认关闭，仅可信单用户部署可显式设置
+`CROCHET_HISTORY_MODE=single_user`；公开/多人部署必须保持关闭。
+此处记录提交 GitHub PR 前的本地快照；合并前须检查该 PR 的远端矩阵，
+下表继续保留历史提交绑定证据。本地全量 **1103 passed、1 skipped，48.39s**
+（Python 3.12.13）；Ruff、mypy app tests（99 个文件）、Schema 文档同步及差异检查通过。
+详见[审核记录](optimization-review-20260907.md)。
+
+此前第八轮本地快照为 1079 passed、1 skipped（Python 3.12.13）。真实照片跳过项
+仍需 `CROCHET_EVAL_DIR`；工作区没有授权照片或实体试钩基线，G3/G4 继续阻断。
+旧的仅校验 Parade 语法的报告须重跑，不能作为 100% 完整导出的凭据。
 
 | 检查 | 结果 | 说明 |
 |---|---|---|

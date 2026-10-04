@@ -32,6 +32,18 @@
       "default": null,
       "title": "Gauge"
     },
+    "generator_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generator Version"
+    },
     "geometry": {
       "anyOf": [
         {

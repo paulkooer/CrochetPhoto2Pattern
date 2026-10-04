@@ -4,6 +4,8 @@ from typing import Any
 
 from PIL import Image
 
+from app import software_version
+
 from ..schemas import (  # noqa: F401 – ImageAnalysis kept for re-export convenience
     ImageAnalysis,
     PatternResult,
@@ -179,6 +181,7 @@ class PipelineOrchestrator:
         # 单一契约出口：键集由 PatternResult 定义（schemas.py），
         # 5 处手写字典的失同步问题在此收口。
         return PatternResult(
+            generator_version=software_version(),
             analysis=analysis.model_dump(),
             structure=structure,
             params=params,
