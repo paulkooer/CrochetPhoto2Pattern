@@ -115,6 +115,10 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
     # 材料
     story.append(Paragraph("🧵 所需材料", head))
     story.append(Paragraph("克重/米数为估算值（请以实际线标为准）", small))
+    from app.models.materials import material_summary_text
+    summary_text = material_summary_text(params)
+    if summary_text:
+        story.append(Paragraph(esc(summary_text), small))
     mat_rows = [[Paragraph("材料", cell_head), Paragraph("用量", cell_head)]]
     for mat in params.get("materials", []):
         if isinstance(mat, dict):

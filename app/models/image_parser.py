@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -30,8 +31,7 @@ _PLACEHOLDER_KEYS = frozenset({
     "your-key-here", "your-api-key-here", "your-api-key",
 })
 
-# 交互路径预算：40s × (max_retries+1) × 2 家 provider ≈ 最坏 2.7 分钟，
-# 且 SDK 重试仅覆盖 429/5xx。旧值 60s×3 在 UI 进度条上不可接受。
+# 每次网络请求最多 40 秒，显式重试受整个解析阶段剩余预算约束。
 VISION_TIMEOUT_SECONDS = 40.0
 VISION_MAX_RETRIES = 1
 
@@ -242,10 +242,79 @@ class ImageParser:
         self.openai_model = os.getenv("OPENAI_VISION_MODEL", self.DEFAULT_OPENAI_MODEL)
         # 最近一次成功调用的 token 用量（供 UI 展示/成本估算）
         self.last_usage: dict = {}
+        self.request_budget_seconds = 180.0
+        self._request_deadline: float | None = None
+        self._attempts: list[dict] = []
         # 最近一次本地视觉估算的 meta（无 LLM 路径）
         self.last_local_meta: dict = {}
         self._prompt = _load_prompt("vision_parser.txt")
         self._span_hints: str | None = None
+
+    def _remaining_request_time(self) -> float:
+        remaining = (self._request_deadline - time.monotonic()
+                     if self._request_deadline is not None else self.request_budget_seconds)
+        if remaining <= 0:
+            raise TimeoutError("视觉解析已达到运行预算")
+        return min(VISION_TIMEOUT_SECONDS, remaining)
+
+    def _update_usage(self) -> None:
+        if not self._attempts:
+            self.last_usage = {}
+            return
+        providers = list(dict.fromkeys(a["provider"] for a in self._attempts))
+        self.last_usage = {
+            "provider": providers[0] if len(providers) == 1 else "multiple",
+            "input_tokens": sum(a.get("input_tokens") or 0 for a in self._attempts),
+            "output_tokens": sum(a.get("output_tokens") or 0 for a in self._attempts),
+            "usage_complete": all(a["usage_known"] for a in self._attempts),
+            "attempts": [dict(a) for a in self._attempts],
+        }
+
+    def _request(self, provider: str, call, **kwargs):
+        """Count every explicit request, including retries and failed responses.
+
+        Unknown billing on transport errors remains unknown; totals are only
+        the usage returned by providers. No payloads, endpoints or keys logged.
+        SDK retries are disabled so requests cannot disappear from this ledger.
+        """
+        for retry in range(VISION_MAX_RETRIES + 1):
+            timeout = self._remaining_request_time()
+            started = time.monotonic()
+            attempt = {"provider": provider, "model": kwargs["model"],
+                       "status": "failed", "input_tokens": None,
+                       "output_tokens": None, "usage_known": False}
+            self._attempts.append(attempt)
+            try:
+                response = call(timeout=timeout, **kwargs)
+                usage = getattr(response, "usage", None)
+                names = (("prompt_tokens", "completion_tokens") if provider == "openai"
+                         else ("input_tokens", "output_tokens"))
+                for target, source in zip(("input_tokens", "output_tokens"), names, strict=True):
+                    value = getattr(usage, source, None)
+                    attempt[target] = value if isinstance(value, int) and value >= 0 else None
+                attempt["usage_known"] = all(attempt[k] is not None
+                                             for k in ("input_tokens", "output_tokens"))
+                attempt["status"] = "response"
+                self._remaining_request_time()
+                return response
+            except Exception as exc:
+                attempt["status"] = "failed"
+                attempt["error_type"] = type(exc).__name__
+                code = getattr(exc, "status_code", None)
+                retryable = (code in (408, 409, 429) or isinstance(code, int) and code >= 500
+                             or isinstance(exc, (TimeoutError, ConnectionError))
+                             or type(exc).__name__ in ("APITimeoutError", "APIConnectionError"))
+                if not retryable or retry == VISION_MAX_RETRIES:
+                    raise
+            finally:
+                attempt["seconds"] = round(time.monotonic() - started, 4)
+                self._update_usage()
+        raise RuntimeError("视觉请求失败")  # unreachable
+
+    def _mark_attempt(self, status: str) -> None:
+        if self._attempts:
+            self._attempts[-1]["status"] = status
+            self._update_usage()
 
     def _sanitize(self, text: str) -> str:
         return _sanitize_secrets(text, self.openai_key, self.anthropic_key)
@@ -272,6 +341,8 @@ class ImageParser:
         # 延迟导入避免 local_vision ↔ image_parser 循环依赖
         from .local_vision import analyze
 
+        self.last_usage = {}
+        self._attempts = []
         analysis, meta = analyze(
             image,
             geometry_profile=geometry_profile,
@@ -288,6 +359,8 @@ class ImageParser:
         环境里任何非空 Key 都会把请求切换进计费路径。现在编排层用
         vision_mode="mock" 显式进入本路径，Key 是否存在不再影响行为。
         """
+        self.last_usage = {}
+        self._attempts = []
         self.last_local_meta = {
             "source": "mock",
             "note": "Mock 演示数据：体型与部件为固定演示值，"
@@ -308,6 +381,9 @@ class ImageParser:
         span_hints（T6）：姿态关键点实测的分段参考文案，附加进 prompt
         供模型交叉验证 parts 判断（S1×LLM 协同）。
         """
+        self.last_usage = {}
+        self._attempts = []
+        self._request_deadline = time.monotonic() + self.request_budget_seconds
         self.last_local_meta = {}  # 每次解析重置，防止上次的来源信息泄漏
         self._span_hints = span_hints
         img_b64 = _image_to_base64(image)
@@ -322,15 +398,15 @@ class ImageParser:
                 provider = "anthropic"
             except Exception as e:
                 errors.append(self._sanitize(str(e)))
-                logger.warning("Anthropic parse failed, trying next provider: %s",
-                               self._sanitize(str(e)))
+                logger.warning("Anthropic parse failed, trying next provider (%s)",
+                               type(e).__name__)
         if result is None and self.openai_key:
             try:
                 result = self._parse_with_openai(img_b64)
                 provider = "openai"
             except Exception as e:
                 errors.append(self._sanitize(str(e)))
-                logger.warning("OpenAI parse failed: %s", self._sanitize(str(e)))
+                logger.warning("OpenAI parse failed (%s)", type(e).__name__)
         if result is not None:
             # LLM 来源也写入 vision_meta：渲染层可区分 AI/本地/Mock
             self.last_local_meta = {
@@ -374,7 +450,7 @@ class ImageParser:
 
         client = OpenAI(api_key=self.openai_key, base_url=self.openai_base_url,
                         timeout=VISION_TIMEOUT_SECONDS,
-                        max_retries=VISION_MAX_RETRIES)
+                        max_retries=0)
         try:
             if not hasattr(client.chat.completions, "parse"):
                 return self._parse_with_openai_legacy(client, img_b64)
@@ -393,7 +469,7 @@ class ImageParser:
             for attempt in range(2):
                 # SDK 的 messages TypedDict 联合过窄：重试路径带动态反馈
                 # 文案，无法逐字面匹配其参数类型
-                response = client.chat.completions.parse(
+                response = self._request("openai", client.chat.completions.parse,
                     model=self.openai_model,
                     # SDK 的 messages TypedDict 联合过窄：重试路径带动态反馈
                     # 文案，无法逐字面匹配其参数类型
@@ -402,25 +478,20 @@ class ImageParser:
                     temperature=0.2,
                     response_format=VisionOutput,
                 )
-                usage = getattr(response, "usage", None)
-                if usage is not None:
-                    self.last_usage = {
-                        "provider": "openai",
-                        "input_tokens": getattr(usage, "prompt_tokens", None),
-                        "output_tokens": getattr(usage, "completion_tokens", None),
-                    }
                 message = response.choices[0].message
                 refusal = getattr(message, "refusal", None)
                 if refusal:
+                    self._mark_attempt("refused")
                     raise RuntimeError(f"模型拒绝了该请求 (refusal): "
                                        f"{self._sanitize(str(refusal))}")
                 parsed = getattr(message, "parsed", None)
                 if parsed is not None:
-                    return parsed.to_analysis()
+                    analysis = parsed.to_analysis()
+                    self._mark_attempt("success")
+                    return analysis
                 # 服务端 strict 校验仍失败（极少数：长度截断等）→ 带反馈重试
-                last_err = RuntimeError(
-                    f"响应未能解析为 VisionOutput（原始内容前 200 字: "
-                    f"{(message.content or '')[:200]}）")
+                self._mark_attempt("invalid_output")
+                last_err = RuntimeError("响应未能解析为 VisionOutput")
                 logger.warning("OpenAI parse attempt %d failed: %s", attempt + 1, last_err)
                 messages = base_messages + [
                     {"role": "assistant", "content": message.content or ""},
@@ -432,14 +503,14 @@ class ImageParser:
         except RuntimeError:
             raise
         except Exception as e:
-            logger.error("OpenAI Vision API error: %s", self._sanitize(str(e)))
+            logger.error("OpenAI Vision API error (%s)", type(e).__name__)
             raise RuntimeError(
                 f"OpenAI Vision API 调用失败: {self._sanitize(str(e))}") from e
 
     def _parse_with_openai_legacy(self, client, img_b64: str) -> ImageAnalysis:
         """旧 SDK 回退路径：json_object + 本地解析（S2 之前的实现）。"""
         try:
-            response = client.chat.completions.create(
+            response = self._request("openai", client.chat.completions.create,
                 model=self.openai_model,
                 messages=[{
                     "role": "user",
@@ -458,16 +529,15 @@ class ImageParser:
                 response_format={"type": "json_object"},
             )
             content = response.choices[0].message.content
-            usage = getattr(response, "usage", None)
-            if usage is not None:
-                self.last_usage = {
-                    "provider": "openai",
-                    "input_tokens": getattr(usage, "prompt_tokens", None),
-                    "output_tokens": getattr(usage, "completion_tokens", None),
-                }
-            return self._parse_response(content)
+            try:
+                analysis = self._parse_response(content)
+            except Exception:
+                self._mark_attempt("invalid_output")
+                raise
+            self._mark_attempt("success")
+            return analysis
         except Exception as e:
-            logger.error("OpenAI Vision API error: %s", self._sanitize(str(e)))
+            logger.error("OpenAI Vision API error (%s)", type(e).__name__)
             raise RuntimeError(
                 f"OpenAI Vision API 调用失败: {self._sanitize(str(e))}") from e
 
@@ -477,16 +547,16 @@ class ImageParser:
         `messages.parse` enforces the VisionOutput JSON schema server-side
         and validates client-side, so no manual JSON extraction is needed;
         the ratio-based contract converts to the internal ImageAnalysis via
-        to_analysis(). 429/5xx are retried by the SDK itself (max_retries).
+        to_analysis(). Transient errors are retried explicitly in _request.
         """
         import anthropic
 
         client = anthropic.Anthropic(
             api_key=self.anthropic_key, base_url=self.anthropic_base_url,
-            timeout=VISION_TIMEOUT_SECONDS, max_retries=VISION_MAX_RETRIES
+            timeout=VISION_TIMEOUT_SECONDS, max_retries=0
         )
         try:
-            response = client.messages.parse(
+            response = self._request("anthropic", client.messages.parse,
                 model=self.anthropic_model,
                 # Sonnet 5 runs adaptive thinking by default and max_tokens
                 # caps thinking + answer together, so leave headroom.
@@ -509,20 +579,16 @@ class ImageParser:
                 }],
             )
             if response.stop_reason == "refusal":
+                self._mark_attempt("refused")
                 raise RuntimeError("模型拒绝了该请求 (refusal)")
             if response.parsed_output is None:
+                self._mark_attempt("invalid_output")
                 raise RuntimeError("响应未能解析为 VisionOutput 结构")
-            usage = getattr(response, "usage", None)
-            if usage is not None:
-                self.last_usage = {
-                    "provider": "anthropic",
-                    "input_tokens": getattr(usage, "input_tokens", None),
-                    "output_tokens": getattr(usage, "output_tokens", None),
-                }
-            return response.parsed_output.to_analysis()
+            analysis = response.parsed_output.to_analysis()
+            self._mark_attempt("success")
+            return analysis
         except Exception as e:
-            logger.error("Anthropic Vision API error: %s",
-                         self._sanitize(str(e)))
+            logger.error("Anthropic Vision API error (%s)", type(e).__name__)
             raise RuntimeError(
                 f"Anthropic Vision API 调用失败: {self._sanitize(str(e))}") from e
 
@@ -564,7 +630,7 @@ class ImageParser:
                 except ValueError:
                     continue
 
-        logger.error("Failed to parse Vision response. Content: %s", content[:500])
+        logger.error("Failed to parse Vision response: invalid JSON schema")
         raise RuntimeError("Vision 返回格式解析失败: 无法从响应中提取有效 JSON")
 
     @staticmethod

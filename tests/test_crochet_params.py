@@ -109,8 +109,8 @@ def test_materials_reflect_actual_parts():
     """只有耳朵时不应列肤色线之外的分组，也不应出现安全眼。"""
     params = _params_for(["头部", "耳朵"])
     items = [m["item"] for m in params["materials"]]
-    assert "肤色系毛线" in items
-    assert "主体色毛线" not in items  # 无身体/帽子/裙子/尾巴
+    assert "毛线 · 肤色（待选色）" in items
+    assert "毛线 · 主体色（待选色）" not in items  # 无身体/帽子/裙子/尾巴
     assert "安全眼" in items  # 有头部
 
 
@@ -118,8 +118,8 @@ def test_no_head_means_no_safety_eyes():
     params = _params_for(["身体", "腿部"])
     items = [m["item"] for m in params["materials"]]
     assert "安全眼" not in items
-    assert "主体色毛线" in items
-    assert "肤色系毛线" in items  # 腿部用肤色
+    assert "毛线 · 主体色（待选色）" in items
+    assert "毛线 · 肤色（待选色）" in items  # 腿部用肤色
 
 
 def test_assembly_mentions_only_present_parts():

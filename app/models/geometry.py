@@ -30,7 +30,8 @@ class SilhouetteObservation(BaseModel):
     profile: list[ProfileFraction] = Field(min_length=8, max_length=2000)
     flare: bool = False
     source: Literal["segmentation_pipeline"] = "segmentation_pipeline"
-    confidence: float = Field(default=0.65, ge=0.0, le=1.0)
+    # Legacy numeric values remain readable; no probability has been calibrated.
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class GeometryObservation(BaseModel):
@@ -96,7 +97,7 @@ class PartGeometry(BaseModel):
     mirror_group: str | None = None
     instances: list[PartInstance] = Field(min_length=1)
     source: Literal["template_inferred"] = "template_inferred"
-    confidence: float = Field(default=0.45, ge=0.0, le=1.0)
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
     def _instances_match_count(self) -> PartGeometry:

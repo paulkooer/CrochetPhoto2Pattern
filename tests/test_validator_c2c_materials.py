@@ -57,11 +57,11 @@ def test_per_color_grams_consistent_with_totals():
     total_stitches = params["total_stitches"]
     per_color = [m for m in params["materials"]
                  if str(m.get("item", "")).startswith("毛线 · ")]
-    import re
-    grams = sum(int(re.match(r"约 (\d+)g", m["quantity"]).group(1))
-                for m in per_color)
-    # 每色下限 5g 的截断会造成少量高估，容差 = 色数×4g
-    assert grams <= total_stitches * 0.08 + len(per_color) * 4 + 1
+    grams = sum(m["grams"] for m in per_color)
+    assert sum(m["stitches"] for m in per_color) == total_stitches
+    from app.models.gauge import DEFAULT
+    assert abs(grams - total_stitches * DEFAULT.grams_per_stitch * 1.1) <= len(per_color) * 0.01
+
 
 
 # ── T3 C2C ────────────────────────────────────────────────────────────────

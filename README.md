@@ -52,7 +52,8 @@ convention.
 - Photo-derived yarn palettes, longitudinal color bands, and CIEDE2000 color matching.
 - OpenAI and Anthropic vision providers with structured validation and safe fallback.
 - Versioned template geometry with part instances, mirrored pairs, rotations, attachment
-  anchors, and explicit inference confidence. This is not full 3D reconstruction.
+  anchors, and explicit inference provenance. Heuristics are uncalibrated; no confidence
+  percentage is claimed. This is not full 3D reconstruction.
 - Gauge-aware, round-by-round stitch generation with executable six-section shaping.
 - **CrochetPARADE export:** translate the pattern into the
   [CrochetPARADE](https://crochetparade.org) DSL (result page / `--parade`) for
@@ -61,6 +62,15 @@ convention.
   (`parade_export_rate`).
 - Correct multiplicity accounting for paired arms, legs, and ears across stitches,
   materials, time estimates, exports, and progress.
+- Photo recognition pauses for review: crop the subject, inspect the outline/head box,
+  correct head proportions and parts, then generate without a second AI call.
+- Form-based part size/quantity/position/attachment editing and a per-round stitch table,
+  plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
+- One per-color yarn purchase list with a separate subtotal; optional ball labels and
+  weighed swatches refine grams, metres, and whole-ball counts. Estimates include a
+  configurable allowance (10% by default), and the same yarn specification applies to all colors.
+- Stage timings, fallback reasons, and every explicit API attempt, including retries.
+  Known token totals exclude unknown usage from failed requests and are not a complete bill.
 - Strictly validated advanced structure editing without another AI call.
 - Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
 - Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows.
@@ -115,6 +125,8 @@ not sent to a user-controlled endpoint. Models can be overridden with
 
 ### Data and privacy
 
+- Uploads reach the machine hosting Streamlit. Processing stays on your own computer
+  only when you host the application there; “local vision” means no LLM call.
 - Local vision, manual input, and grid mode do not send photos to an LLM provider.
 - OpenAI/Anthropic vision mode sends the selected photo to that provider. A custom Base
   URL sends it to that third party. Use only images you are authorized to process.
@@ -135,6 +147,17 @@ not sent to a user-controlled endpoint. Models can be overridden with
 ```bash
 uv run streamlit run app/main.py
 ```
+
+### Review and runtime limits
+
+The Photo tab uses **recognize → review → generate**. Changing the crop or mode invalidates
+its recognition draft; changing target size or review fields does not call the provider again.
+The default active-work budget is 180 seconds (15–600 in the UI), excluding time spent
+reviewing. It is checked between stages and limits individual API request timeouts, but
+cannot interrupt native image processing or guarantee a hard wall-clock cutoff.
+Each export has a separate 60-second cooperative budget; export timings stay in the session,
+while photo-stage diagnostics travel with backups. Failed edits keep the current result.
+Structure regeneration replaces manual round edits; undo can restore the previous version.
 
 ### Headless CLI
 

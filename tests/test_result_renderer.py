@@ -41,9 +41,9 @@ def test_silhouette_verification_skips_non_dict_rounds():
 
 def test_crafted_confidence_and_ratio_cannot_crash_rendering():
     # geometry/sizing 是备份可控的自由字段；展示层必须容错
-    assert rr._confidence_text({"confidence": None}) == "None"
-    assert rr._confidence_text({"confidence": "abc"}) == "abc"
-    assert rr._confidence_text({"confidence": 0.86}) == "86%"
+    assert rr._confidence_text({"confidence": None}) == "启发式估算（未经校准）"
+    assert rr._confidence_text({"confidence": "abc"}) == "启发式估算（未经校准）"
+    assert rr._confidence_text({"confidence": 0.86}) == "启发式估算（未经校准）"
     assert rr._ratio_text({"photo_head_to_height_ratio": None}) == "None"
     assert rr._ratio_text({"photo_head_to_height_ratio": "junk"}) == "junk"
     assert rr._ratio_text({"photo_head_to_height_ratio": 0.42857}) == "0.429"

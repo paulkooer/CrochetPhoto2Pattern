@@ -19,6 +19,11 @@
       "default": null,
       "title": "Color Bands"
     },
+    "diagnostics": {
+      "additionalProperties": true,
+      "title": "Diagnostics",
+      "type": "object"
+    },
     "gauge": {
       "anyOf": [
         {

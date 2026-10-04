@@ -8,6 +8,16 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-10-04 reviewable editing workflow
+
+- Crop photos and review subject/head overlays, proportions, and parts before generating without a second AI call.
+- Part forms, round-table edits, bounded session undo/redo, and before/after comparisons; failed edits preserve results.
+- Count yarn once per color with a separate subtotal; ball labels, weighed swatches, and allowances drive purchasing.
+  Preserve specifications through resizing and backups; preserve matching one-piece quantities and reject mismatches.
+- Cooperative active-stage budgets, timings, fallback reasons, and explicit API retry accounting with unknown usage marked.
+- Correct deployment-host privacy wording and remove uncalibrated confidence defaults. Legacy numeric values remain
+  importable but are not displayed as probabilities. New optional metadata keeps old backups readable.
+
 ### Fixed — 2026-10-04 audit
 
 - Patch GHSA-8xx6-hgc6-gc2m discovered during GitHub publication: update locked

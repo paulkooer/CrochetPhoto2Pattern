@@ -29,6 +29,14 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 （Python 3.12.13）；Ruff、mypy app tests（99 个文件）、Schema 文档同步及差异检查通过。
 详见[审核记录](optimization-review-20260907.md)。
 
+2026-10-04 第十轮新增照片裁剪与确认、部件／逐圈表格编辑、有限撤销／重做、
+单次计数的逐色材料清单与实测试片输入，以及运行预算和 API 尝试账本；修正远程部署
+隐私说明并移除未经校准的默认置信度数值。最后本地全量 **1131 passed、1 skipped，
+81.31s，覆盖率 91.49%**（Python 3.12.13）；Ruff、mypy app tests（105 个文件）、
+Schema 文档同步与差异检查通过。新增 28 项回归覆盖照片确认不重复调用 AI、裁剪失效、
+错误保留、撤销／重做、用量去重与计时边界。本快照不替代本轮 PR 的远端 CI。
+上一轮审核修复已通过 [PR #10](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/10) 合并。
+
 此前第八轮本地快照为 1079 passed、1 skipped（Python 3.12.13）。真实照片跳过项
 仍需 `CROCHET_EVAL_DIR`；工作区没有授权照片或实体试钩基线，G3/G4 继续阻断。
 旧的仅校验 Parade 语法的报告须重跑，不能作为 100% 完整导出的凭据。

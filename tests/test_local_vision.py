@@ -110,7 +110,7 @@ def test_full_pipeline_local_vision_mode(monkeypatch):
     assert set(result.keys()) == {
         "analysis", "structure", "params", "usage", "vision_meta", "gauge",
         "style", "color_bands", "spans", "spans_measured", "preview",
-        "sizing", "geometry", "generator_version",
+        "sizing", "geometry", "generator_version", "diagnostics",
     }
     assert result["gauge"]["stitches_per_10cm"] > 0  # gauge 透传（M4.15）
     assert result["analysis"]["body_type"] == "标准"

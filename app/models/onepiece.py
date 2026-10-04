@@ -27,6 +27,9 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge) -> list[CrochetPart]
     if head is None or body is None:
         return parts
 
+    if head.quantity != body.quantity:
+        raise ValueError("一体头身需要头部与身体数量相同；请同步调整两者数量，或改为分件生成")
+
     body_sts = [r.stitches for r in body.rounds]
     # F16：dome 剥离必须用 strip_dome（+6 前缀），不能用
     # body_sts[0]//6——首圈是魔法环 6 针，恒得 1（N4 同款错误），
@@ -88,6 +91,7 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge) -> list[CrochetPart]
     _axial_rounds = len(head_kept) + max(0, len(top_down) - 1)
     merged = CrochetPart(
         name=_ONE_PIECE_NAME,
+        quantity=head.quantity,
         type="onepiece",
         height_cm=round(_axial_rounds * gauge.row_h_cm, 1),
         rounds=[CrochetStitch(**r) for r in rounds_raw],
