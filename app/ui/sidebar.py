@@ -113,6 +113,9 @@ def render_sidebar() -> None:
             from app.ui.result_renderer import md_safe, purge_result_state
             from app.utils import history
 
+            if not history.history_enabled():
+                st.caption("历史记录未启用；可下载完整备份，在自己的会话中恢复。")
+                return
             _search = st.text_input("搜索历史", "", key="hist_search",
                                     placeholder="关键词（体型/部件…）")
             try:
@@ -148,14 +151,9 @@ def render_sidebar() -> None:
                         # 不用 st.stop：那会让下方同行「删」按钮在本轮
                         # 永远渲染不出来，提示里的出路形同虚设。
                         try:
-                            from app.ui.result_logic import (
-                                rebuild_params,
-                                validate_backup,
-                            )
-                            analysis, structure = validate_backup(data)
-                            data["params"] = rebuild_params(dict(data["params"]))
-                            data["analysis"] = analysis
-                            data["structure"] = structure
+                            from app.ui.result_logic import import_backup
+
+                            data = import_backup(data, it["rid"])
                         except Exception as e:
                             st.error(f"该记录已损坏，无法载入（可点「删」清除）: {md_safe(e)}")
                         else:

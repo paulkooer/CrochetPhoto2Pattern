@@ -79,12 +79,11 @@ def test_structure_count_cannot_hide_a_boolean_as_one_instance():
                                             "position": {"x": 0, "y": 0.5, "z": 0}}])
 
 
-def test_rebuild_keeps_algebra_errors_visible_for_further_editing():
+def test_rebuild_rejects_algebra_errors_before_applying_edit():
     params = _params()
     params["parts"][0]["rounds"].append({"row": 2, "stitches": 12})
-    out = rebuild_params(params)
-    assert out["parts"][0]["rounds"][1]["increase"] == 0
-    assert not validate_pattern(out)["ok"]
+    with pytest.raises(ValueError, match="自检失败"):
+        rebuild_params(params)
 
 
 def test_rebuild_rejects_pathological_part_counts():

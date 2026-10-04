@@ -60,10 +60,21 @@ def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
     return f"({head}{op})×{groups}"
 
 
-def export_markdown(params: dict, analysis: dict | None = None) -> str:
+def export_markdown(params: dict, analysis: dict | None = None, *, result: dict | None = None) -> str:
     """Convert crochet params dict to a printable Markdown pattern."""
+    if result is not None:
+        params, analysis = result["params"], result["analysis"]
+    from app.models.validator import require_valid_pattern
+    from app.utils.provenance import provenance_lines
+
+    require_valid_pattern(params)
     lines: list[str] = []
     lines.append("# 🧶 Amigurumi 钩织图解")
+    lines.append("")
+    import html
+
+    for note in provenance_lines(result):
+        lines.append("> " + html.escape(_md_cell(note)).replace("[", "\\[").replace("]", "\\]"))
     lines.append("")
     if analysis:
         lines.append(f"> 体型：{analysis.get('body_type', '—')}  ·  "

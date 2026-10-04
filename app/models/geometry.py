@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 PartDimension = Annotated[
     float, Field(gt=0, le=MAX_PART_DIMENSION_CM), BeforeValidator(finite_float)]
+ProfileFraction = Annotated[float, Field(ge=0, le=1), BeforeValidator(finite_float)]
 
 # 头身比说明行由 StructureDesigner 生成、调尺寸时按新比例重写；两端共享
 # 前缀常量，避免文案一处改动后另一端的 startswith 识别静默失灵。
@@ -26,7 +27,7 @@ PROPORTIONS_HEAD_BODY_PREFIX = "头部直径约为身体高度的 "
 class SilhouetteObservation(BaseModel):
     """Normalized subject width profile, top-to-bottom."""
 
-    profile: list[float] = Field(min_length=8)
+    profile: list[ProfileFraction] = Field(min_length=8, max_length=2000)
     flare: bool = False
     source: Literal["segmentation_pipeline"] = "segmentation_pipeline"
     confidence: float = Field(default=0.65, ge=0.0, le=1.0)

@@ -155,6 +155,7 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
         "color_top3_accuracy": 1.0,
         "pattern_valid_rate": 1.0,
         "parade_export_rate": 1.0,
+        "parade_syntax_rate": 1.0,
         "passed": True,
     }
     assert all(case["passed"] for case in report["cases"])
@@ -302,7 +303,7 @@ def test_parade_export_failure_blocks_case_and_release_gate(tmp_path, monkeypatc
     )
 
     monkeypatch.setattr(
-        "app.utils.parade_export.export_parade_dsl",
+        "app.utils.parade_export.export_parade_report",
         lambda _result: (_ for _ in ()).throw(ValueError("unsupported round")),
     )
     report = evaluate_dataset(
@@ -377,3 +378,25 @@ def test_file_replaced_during_evaluation_is_never_scored(tmp_path, monkeypatch):
     assert blue["passed"] is False
     assert "changed during evaluation" in blue["error"]["message"]
     assert red["passed"] is True
+
+
+def test_partial_parade_export_fails_gate_despite_valid_syntax(tmp_path):
+    digest = _write_image(tmp_path / "photo.png", (255, 255, 255))
+    case = _case("partial-export", "photo.png", digest, ["头部"])
+    payload = _manifest([case])
+    payload["thresholds"]["min_cases"] = 1
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(payload), encoding="utf-8")
+    result = _valid_result(["头部"], ["白色"], flare=False)
+    result["params"]["parts"][0]["rounds"] = [
+        {"row": 1, "stitches": 6},
+        {"row": 2, "stitches": 7, "increase": 2, "decrease": 1},
+        {"row": 3, "stitches": 7},
+    ]
+    report = evaluate_dataset(tmp_path, runner=lambda _image: result)
+    assert report["summary"]["pattern_valid_rate"] == 1.0
+    assert report["summary"]["parade_syntax_rate"] == 1.0
+    assert report["summary"]["parade_export_rate"] == 0.0
+    assert report["summary"]["passed"] is False
+    details = report["cases"][0]["parade_export"]
+    assert details["exported_rounds"] == 1
+    assert details["requested_rounds"] == 3

@@ -15,8 +15,15 @@ from app import PRODUCT_NAME, theme
 from app.schemas import difficulty_label
 
 
-def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -> bytes:
+def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
+               *, result: dict[str, Any] | None = None) -> bytes:
     """生成图解 PDF，返回字节流。reportlab 缺失时抛 ImportError。"""
+    if result is not None:
+        params, analysis = result["params"], result["analysis"]
+    from app.models.validator import require_valid_pattern
+    from app.utils.provenance import provenance_lines
+
+    require_valid_pattern(params)
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
@@ -53,6 +60,8 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None) -
     story = []
 
     story.append(Paragraph("🧶 Amigurumi 钩织图解", title))
+    for note in provenance_lines(result):
+        story.append(Paragraph(esc(note), small))
     if analysis:
         story.append(Paragraph(
             f"体型 {esc(analysis.get('body_type', '—'))} · "

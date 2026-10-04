@@ -98,6 +98,14 @@ uv run pytest -q tests/test_eval_real.py
 - `pattern_valid_rate`: rate passing stitch arithmetic and shaping gates; release default is 100%.
 - `parade_export_rate`: rate exporting completely and passing the CrochetPARADE DSL syntax
   check; release default is 100%. It now contributes to per-case and overall `passed`.
+- `parade_syntax_rate`: rate passing this project's emitter-level syntax check. A truncated
+  prefix may pass, so this cannot replace complete export rate. Each case's `parade_export`
+  includes completeness, exported/requested rounds, fully exported/requested physical
+  parts, and warnings; counts include every copy of paired parts.
+
+The 2026-10-04 fix prevents truncated exports from counting as successful. Earlier
+syntax-only reports must be rerun before claiming 100% complete export. These checks
+do not execute the third-party official parser.
 
 These metrics measure software behavior from photo to pattern. They do not prove actual
 size, yarn usage, time, or crochetability. Physical trials must independently record yarn

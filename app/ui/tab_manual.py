@@ -6,6 +6,7 @@ import uuid
 
 import streamlit as st
 
+from app import software_version
 from app.models.crochet_params import CrochetParamsGenerator
 from app.models.gauge import gauge_from_ui
 from app.models.geometry import no_photo_geometry
@@ -56,6 +57,7 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
         style=style)
     # 键集走 PatternResult 单一契约（与照片路径同构；无照片 → 无色带）
     return PatternResult(
+        generator_version=software_version(),
         analysis=analysis.model_dump(),
         structure=structure,
         params=params,

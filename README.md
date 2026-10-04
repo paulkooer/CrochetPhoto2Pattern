@@ -118,7 +118,10 @@ not sent to a user-controlled endpoint. Models can be overridden with
 - Local vision, manual input, and grid mode do not send photos to an LLM provider.
 - OpenAI/Anthropic vision mode sends the selected photo to that provider. A custom Base
   URL sends it to that third party. Use only images you are authorized to process.
-- Pattern history is stored in a local SQLite database. Share links embed compressed
+- Pattern history is disabled by default. Only trusted single-user installations may
+  set `CROCHET_HISTORY_MODE=single_user` to use the server's local SQLite database.
+  Shared/public deployments must keep `disabled`; history has no user authentication
+  or ownership isolation. Existing databases are preserved. Share links embed compressed
   pattern data in the URL and should not contain sensitive material.
 - `.env`, authorized evaluation photos, evaluation outputs, and physical-trial records
   are ignored by Git by default. Always review staged files for credentials, private

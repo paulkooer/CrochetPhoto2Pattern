@@ -8,6 +8,20 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-04 audit
+
+- Correct validation messages and reject arithmetic errors before applying edits, imports,
+  or printable exports; failed edits preserve the current result and cached exports.
+- Route shares, history, and backups through one import boundary with nested metadata
+  validation/normalization. Missing legacy fields remain supported; invalid fields require repair.
+- Separate Parade syntax checks from complete export; truncated exports cannot pass release gates.
+- Include source, dimension provenance, generator/exporter versions, and physical-validation
+  limits in Markdown/PDF. New results record optional `generator_version`; legacy versions
+  remain unknown without changing the schema version.
+- Disable history by default; only explicit `CROCHET_HISTORY_MODE=single_user` enables it.
+  Shared/public deployments must keep it disabled. Existing databases are preserved;
+  this does not implement multi-user authentication or ownership isolation.
+
 ### Changed
 
 - **crochet_params module split** (1396 → 892 lines): materials, assembly,
