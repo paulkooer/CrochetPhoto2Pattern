@@ -38,7 +38,7 @@ dependencies = [
     "python-dotenv>=1.0",
     # 无 LLM 的本地视觉降级（haar 人脸检测）；缺失时自动退纯默认值路径。
     # 上界 <5：OpenCV 5.x 移除了 legacy CascadeClassifier API。
-    "opencv-python-headless>=4.8,<5",
+    "opencv-python-headless>=4.8,<6",
     # color_design / local_vision 直接 import numpy（此前靠 opencv 传递带入；
     # 显式声明，避免 opencv 一旦改可选时配色静默降级单色）。
     "numpy>=1.24",
