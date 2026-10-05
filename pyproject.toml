@@ -41,7 +41,7 @@ dependencies = [
     "opencv-python-headless>=4.8,<5",
     # color_design / local_vision 直接 import numpy（此前靠 opencv 传递带入；
     # 显式声明，避免 opencv 一旦改可选时配色静默降级单色）。
-    "numpy>=1.24",
+    "numpy>=2.3",
     # pose 暂限制在 3.11–3.12；3.13+ 显式使用提供新解释器 wheel 的
     # NumPy 2.x，避免 CI 从源码构建不支持新 ABI 的 1.26。
     "numpy>=2.3; python_version >= '3.13'",
