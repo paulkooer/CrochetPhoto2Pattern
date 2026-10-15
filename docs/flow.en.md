@@ -9,11 +9,11 @@ photo upload
    ↓
 1. image preprocessing (Pillow resize, orientation, RGB conversion)
    ↓
-2. provider-independent geometric observation + semantic parsing
+2. local geometry and template suggestions
    geometry: versioned width profile, flare, uncalibrated provenance, single-view limitations
    semantics: body type, parts, features, pose, relative proportions, difficulty
    ↓
-3. human review (Photo UI): head box/proportion and parts; no second provider call
+3. human review (Photo UI): head box/proportion and parts; local generation
    then target-size transform
    no absolute centimetres are inferred from a single photo; relative proportions are
    scaled to the user's selected finished height
@@ -42,7 +42,7 @@ only when an old structure has no attachment graph.
 | `app/main.py` | thin Streamlit entry point and tab dispatch |
 | `app/ui/` | sidebar, photo/manual/grid tabs, result rendering, progress, corrections, downloads |
 | `app/utils/images.py` | defensive loading, size limits, EXIF orientation, transparent-image handling |
-| `app/models/image_parser.py` | provider calls, structured parsing, local/mock fallbacks |
+| `app/models/image_parser.py` | local photo analysis, palettes and explicit mock demonstration |
 | `app/models/local_vision.py` | face proportions and silhouette profile without an LLM |
 | `app/models/sizing.py` | relative observation to user target dimensions, with provenance metadata |
 | `app/models/geometry.py` | shared observation IR and StructureGeometry v2 graph |
@@ -68,7 +68,7 @@ only when an old structure has no attachment graph.
 - Position, rotation, and attachment fields are explicit template priors, not measured depth.
 - Absolute head diameter/height cannot be measured from one photo; the user selects the target.
 - Users may edit dimensions and StructureGeometry v2 before local regeneration.
-- Advanced structure regeneration does not make another AI call.
+- Advanced structure regeneration runs locally.
 
 ## Roadmap
 

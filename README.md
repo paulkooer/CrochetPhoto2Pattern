@@ -4,12 +4,16 @@
 
 [![CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml/badge.svg)](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml) [![Version: 0.2.0 beta 2](https://img.shields.io/badge/version-0.2.0--beta.2-orange.svg)](CHANGELOG_EN.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> An AI-assisted amigurumi pattern generator that turns a single photo into a complete crochet draft.
+> A local amigurumi design tool: analyze a photo, review proportions and parts, then generate a crochet draft.
 
 > **Release status: Beta.** Automated checks prove only that a pattern satisfies the
 > current stitch arithmetic and shaping rules. They do not replace gauge swatches or
 > physical test crochets. Verify dimensions, tension, and assembly before publishing a
 > generated pattern. See [System Status and Release Gates](docs/system-status.md).
+
+Photo analysis now runs locally by default. Cloud LLM interfaces, credential settings, and SDK dependencies have been removed. Review proportions and parts before generating; `--local` remains compatible with older commands.
+
+Migration: remove provider key/Base URL arguments from library constructors and replace `vision_mode="ai"` with `"local"`. Historical patterns retain provenance and usage on import. Run `uv sync --locked` to update the installed dependency environment.
 
 ## Project scope and evidence levels
 
@@ -36,21 +40,20 @@ pattern passes an algebra/self-check gate before download, and the evaluation pr
 reports a second-tier `parade_export_rate` — whether the result can be translated into
 the [CrochetPARADE](https://crochetparade.org) pattern language (independent
 structural analysis, 3D rendering, and stitch-tension checks; paste the exported DSL
-into their locally-run web app). This is also the evidence baseline for model selection:
-default vision models are chosen against published image-to-instruction benchmarks, not
-convention.
+into their locally-run web app). This does not establish physical correctness of a generated object.
 
 ## Features
 
+Unknown part names remain available for review. Remove mistaken labels or select supported parts before generation; unsupported anatomy is no longer replaced by a small sphere. Existing custom-structure backups remain importable.
+
 - Photo upload, plus manual and 2D grid workflows.
-- Free local-vision fallback: face-based proportion estimation and silhouette analysis
-  without an LLM API key.
+- Local photo analysis: candidate head-box checks and silhouette analysis without
+  an LLM API key. Parts are an unconfirmed template; silhouette flare only suggests a skirt.
 - GrabCut subject segmentation shared once per generation across palette, profile,
   and color bands, with repeatable initialization and fallback when extraction fails.
 - Optional pose landmarks on Python 3.11–3.12 for shoulder/hip/knee measurement; Linux
   also requires EGL/GLESv2 and safely falls back when the native runtime is unavailable.
 - Photo-derived yarn palettes, longitudinal color bands, and CIEDE2000 color matching.
-- OpenAI and Anthropic vision providers with structured validation and safe fallback.
 - Versioned template geometry with part instances, mirrored pairs, rotations, attachment
   anchors, and explicit inference provenance. Heuristics are uncalibrated; no confidence
   percentage is claimed. This is not full 3D reconstruction.
@@ -63,15 +66,22 @@ convention.
 - Correct multiplicity accounting for paired arms, legs, and ears across stitches,
   materials, time estimates, exports, and progress.
 - Photo recognition pauses for review: crop the subject, inspect the outline/head box,
-  correct head proportions and parts, then generate without a second AI call.
+  correct head proportions and parts, then generate locally.
+- An optional blue body box excludes foreground outside the selected region from
+  shape measurement. Backups and resizing retain both the original silhouette and
+  reviewed body profile. The box cannot recover missing foreground or measure cm;
+  body colors only inherit its vertical interval.
+- Enable the foreground brush to add missed regions or erase background directly
+  on the photo. Each completed stroke updates geometry and colors; undo the last
+  20 strokes or restore automatic segmentation. Backups retain the corrected mask.
+  Part names still need review; hidden or cropped-out anatomy cannot be recovered.
 - Form-based part size/quantity/position/attachment editing and a per-round stitch table,
   plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
 - One per-color yarn purchase list with a separate subtotal; optional ball labels and
   weighed swatches refine grams, metres, and whole-ball counts. Estimates include a
   configurable allowance (10% by default), and the same yarn specification applies to all colors.
-- Stage timings, fallback reasons, and every explicit API attempt, including retries.
-  Known token totals exclude unknown usage from failed requests and are not a complete bill.
-- Strictly validated advanced structure editing without another AI call.
+- Stage timings, fallback reasons, and a runtime budget. Historical imported results retain their original usage metadata.
+- Strictly validated advanced structure editing with local regeneration.
 - Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
 - Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows.
 - Stitch-arithmetic validation, ring charts, progress tracking, per-color bills of
@@ -83,7 +93,6 @@ convention.
 
 - Python 3.11–3.14
 - Streamlit
-- OpenAI / Anthropic APIs (optional)
 - Pydantic v2
 - OpenCV / Pillow / NumPy
 
@@ -100,36 +109,19 @@ uv sync --locked
 
 ### Configure
 
-Copy `.env.example` to `.env` and add an API key if you want cloud vision:
+No API key or model service is needed. Optionally copy `.env.example` to `.env` to
+configure trusted single-user history. Legacy provider environment variables are ignored.
 
-```bash
-cp .env.example .env
-# Edit .env and set OPENAI_API_KEY or ANTHROPIC_API_KEY
-```
-
-Key precedence is **sidebar input > `.env`**. Clearing the sidebar field does not disable
-an `.env` key; the provider may still be called and billed. With no key in either place,
-the Photo tab uses local vision or mock mode. Mock demo mode is always explicitly
-selectable regardless of keys and never calls any API; its body/parts are fixed demo
-values while colors and spans come from the photo.
-
-For a third-party API relay, enter your own key and matching Base URL together in the
-sidebar. Deployments may pair `OPENAI_API_KEY` with `OPENAI_BASE_URL`, or
-`ANTHROPIC_API_KEY` with `ANTHROPIC_BASE_URL`. Sources are never mixed, so a server key is
-not sent to a user-controlled endpoint. Models can be overridden with
-`OPENAI_VISION_MODEL` and `ANTHROPIC_VISION_MODEL`.
-
-> A photo has no reliable absolute scale. The target height in centimetres always comes
-> from the user. Shared deployments should also restrict outbound traffic at the network
-> layer; application URL checks cannot fully prevent DNS rebinding.
+Photos provide relative proportions; the target height in centimetres comes from you.
+Optional pose landmarks may download model weights on first use; provide
+`CROCHET_POSE_MODEL` for a local model file. Photos are processed on the application host.
 
 ### Data and privacy
 
 - Uploads reach the machine hosting Streamlit. Processing stays on your own computer
   only when you host the application there; “local vision” means no LLM call.
 - Local vision, manual input, and grid mode do not send photos to an LLM provider.
-- OpenAI/Anthropic vision mode sends the selected photo to that provider. A custom Base
-  URL sends it to that third party. Use only images you are authorized to process.
+- Only use images you are authorized to process.
 - Pattern history is disabled by default. Only trusted single-user installations may
   set `CROCHET_HISTORY_MODE=single_user` to use the server's local SQLite database.
   Shared/public deployments must keep `disabled`; history has no user authentication
@@ -151,9 +143,9 @@ uv run streamlit run app/main.py
 ### Review and runtime limits
 
 The Photo tab uses **recognize → review → generate**. Changing the crop or mode invalidates
-its recognition draft; changing target size or review fields does not call the provider again.
+its recognition draft; changing target size or review fields reuses local observations.
 The default active-work budget is 180 seconds (15–600 in the UI), excluding time spent
-reviewing. It is checked between stages and limits individual API request timeouts, but
+reviewing. It is checked between stages but
 cannot interrupt native image processing or guarantee a hard wall-clock cutoff.
 Each export has a separate 60-second cooperative budget; export timings stay in the session,
 while photo-stage diagnostics travel with backups. Failed edits keep the current result.
@@ -169,8 +161,7 @@ uv run crochet2pattern --batch-dir photos/ --out-dir patterns/
 ```
 
 Canonical part values in the current schema are Chinese (`头部`, `身体`, and so on), so
-the manual CLI example intentionally retains them. AI mode reads provider keys from the
-environment; without a key it falls back to local vision. A pattern that violates stitch
+the manual CLI example intentionally retains them. Photo mode always uses local vision, regardless of provider environment variables. A pattern that violates stitch
 arithmetic or the active gauge's shaping limit exits with code `2`.
 
 ### Optional extras
@@ -188,7 +179,7 @@ falls back to template spans when either native library is unavailable.
 
 ```bash
 docker build -t crochet-photo2pattern .
-docker run -p 8501:8501 -e ANTHROPIC_API_KEY=your-placeholder crochet-photo2pattern
+docker run -p 8501:8501 crochet-photo2pattern
 ```
 
 ### Tests
@@ -261,7 +252,6 @@ CrochetPhoto2Pattern/
 │   ├── models/              # vision, geometry, sizing, pattern generation, validation
 │   ├── ui/                  # Streamlit tabs and renderers
 │   ├── utils/               # image loading, history, and exporters
-│   ├── prompts/             # packaged LLM prompts
 │   └── data/                # curated, non-calibrating external evidence
 ├── tests/
 ├── docs/

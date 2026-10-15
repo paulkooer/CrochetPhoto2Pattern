@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "accessed_on": "2026-10-09",
+  "label_basis": "Manual inspection before running. single_animal is the legacy scoring group for single dolls/creatures. Only visible canonical part categories are scored, not manufacturing topology. Jellyfish anatomy and plant are boundary cases. No retouching/cropping; source text overlays retained.",
+  "screened_source_pages": 6,
+  "excluded_candidates": [
+    {
+      "id": "mushroom",
+      "page_url": "https://www.stitchbyfay.com/mushroom-buddy-crochet-pattern/",
+      "status": "image_not_acquired",
+      "reason": "Direct origin page fetch returned HTTP 403. Web text checked, no photo probe or score claimed."
+    }
+  ],
+  "cases": {
+    "elf": {
+      "page_url": "https://www.lilleliis.com/amigurumi-crochet-freebies/little-christmas-elf/",
+      "image_url": "https://www.lilleliis.com/wp-content/uploads/2019/10/DSC_4613.jpg",
+      "publisher": "lilleliis",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "手臂",
+        "腿部",
+        "耳朵",
+        "帽子"
+      ],
+      "evaluation_group": "single_animal",
+      "tags": [
+        "humanoid",
+        "full-body",
+        "props",
+        "hat"
+      ],
+      "unmodeled_features": [
+        "刺绣头发"
+      ],
+      "construction_observation": "Separate head, ears, hat and arms; legs join into the body.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "elf.img"
+    },
+    "tree": {
+      "page_url": "https://www.lilleliis.com/amigurumi-crochet-freebies/little-amigurumi-tree/",
+      "image_url": "https://www.lilleliis.com/wp-content/uploads/2021/05/little-amigurumi-tree-1.jpg",
+      "publisher": "lilleliis",
+      "visible_parts": [],
+      "evaluation_group": "boundary_non_animal",
+      "tags": [
+        "plant",
+        "single-subject",
+        "pot"
+      ],
+      "unmodeled_features": [
+        "树冠",
+        "树干",
+        "根团"
+      ],
+      "construction_observation": "Tree crown, trunk and root ball are crocheted continuously, then placed in a pot.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "tree.img"
+    },
+    "mermaid": {
+      "page_url": "https://spinayarncrochet.com/ragdoll-mermaid-free-crochet-pattern/",
+      "image_url": "https://spinayarncrochet.com/wp-content/uploads/2017/04/18209664_10158640624915437_1112405484_o.jpg",
+      "publisher": "Spin a Yarn Crochet",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "手臂",
+        "尾巴"
+      ],
+      "evaluation_group": "single_animal",
+      "tags": [
+        "fantasy",
+        "flat-panels",
+        "long-hair",
+        "text-overlay"
+      ],
+      "unmodeled_features": [
+        "发束",
+        "尾鳍",
+        "贝壳饰边"
+      ],
+      "construction_observation": "Two flat body panels are joined around the edge; paired panels form arms and fins.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "mermaid.img"
+    },
+    "jellyfish": {
+      "page_url": "https://www.cuddlystitchescraft.com/free-crochet-jellyfish-pattern/",
+      "image_url": "https://www.cuddlystitchescraft.com/wp-content/uploads/2021/03/Free-crochet-jellyfish-pattern-free-Amigurumi-jellyfish-pattern-by-Cuddly-Stitches-Craft.jpg",
+      "publisher": "Cuddly Stitches Craft",
+      "visible_parts": [],
+      "evaluation_group": "boundary_unsupported_anatomy",
+      "tags": [
+        "marine",
+        "single-subject",
+        "text-overlay",
+        "tentacles"
+      ],
+      "unmodeled_features": [
+        "伞体",
+        "腹片",
+        "触手",
+        "蝴蝶结"
+      ],
+      "construction_observation": "Separate dome and belly are crocheted together; straight and curly tentacles attach to the belly.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "jellyfish-single.img"
+    },
+    "lamb": {
+      "page_url": "https://yarnhild.com/crochet-ragdoll-pattern/",
+      "image_url": "https://yarnhild.com/wp-content/uploads/2017/05/DSC_0382-1-1024x680.jpg",
+      "publisher": "Yarnhild",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "腿部",
+        "耳朵",
+        "尾巴"
+      ],
+      "evaluation_group": "single_animal",
+      "tags": [
+        "quadruped",
+        "flat-panels",
+        "bobble-texture",
+        "cropped-feet"
+      ],
+      "unmodeled_features": [
+        "羊毛纹理"
+      ],
+      "construction_observation": "Body and head use paired flat panels, with bobble texture on the body.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "lamb.img"
+    }
+  }
+}

@@ -169,3 +169,46 @@ def test_face_box_seed_forces_foreground(monkeypatch):
     monkeypatch.setattr(subj_mod, "_face_box",
                         lambda _img: (5, 5, 110, 110))
     assert extract_subject(img, max_side=120) is None
+
+
+def test_mixed_black_white_yarn_does_not_invent_grey(monkeypatch):
+    import numpy as np
+
+    image = Image.new("RGB", (100, 100), "black")
+    ImageDraw.Draw(image).rectangle((60, 0, 99, 99), fill="white")
+    monkeypatch.setattr("app.models.subject.extract_subject",
+                        lambda image, **kw: (np.ones((100, 100), dtype=bool), image))
+    assert vertical_color_bands(image) == [{"start": 0.0, "end": 1.0, "color": "黑色"}]
+
+
+def test_fallback_empty_bands_do_not_introduce_background(monkeypatch):
+    monkeypatch.setattr("app.models.subject.extract_subject", lambda *a, **kw: None)
+    image = Image.new("RGB", (100, 100), "white")
+    ImageDraw.Draw(image).rectangle((30, 30, 69, 69), fill=(0, 120, 215))
+    assert vertical_color_bands(image) == [{"start": 0.0, "end": 1.0, "color": "蓝色"}]
+
+
+def test_internal_empty_bands_use_nearest_observation(monkeypatch):
+    import numpy as np
+
+    image = Image.new("RGB", (100, 100), "white")
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((30, 10, 69, 19), fill="black")
+    draw.rectangle((30, 70, 69, 79), fill=(0, 120, 215))
+    mask = np.zeros((100, 100), dtype=bool)
+    mask[10:20, 30:70] = mask[70:80, 30:70] = True
+    monkeypatch.setattr("app.models.subject.extract_subject", lambda *a, **kw: (mask, image))
+    assert vertical_color_bands(image) == [
+        {"start": 0.0, "end": 0.5, "color": "黑色"},
+        {"start": 0.5, "end": 1.0, "color": "蓝色"},
+    ]
+
+
+def test_wrong_width_mask_falls_back(monkeypatch):
+    import numpy as np
+
+    image = Image.new("RGB", (100, 100), "white")
+    ImageDraw.Draw(image).rectangle((30, 30, 69, 69), fill=(0, 120, 215))
+    monkeypatch.setattr("app.models.subject.extract_subject",
+                        lambda *a, **kw: (np.ones((100, 50), dtype=bool), image))
+    assert vertical_color_bands(image) == [{"start": 0.0, "end": 1.0, "color": "蓝色"}]

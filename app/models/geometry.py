@@ -11,6 +11,7 @@ from ..schemas import MAX_PART_DIMENSION_CM, MAX_PATTERN_PARTS, IntegerCount
 from ..utils.counts import integer_count
 from ..utils.numbers import finite_float
 from .color_design import _BG_DIST_THRESHOLD
+from .mask_review import MaskReview
 from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
@@ -34,17 +35,35 @@ class SilhouetteObservation(BaseModel):
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
+class BodyRegionObservation(BaseModel):
+    """User-selected crop coordinates and full-image-coordinate body profile."""
+
+    box: tuple[ProfileFraction, ProfileFraction, ProfileFraction, ProfileFraction]
+    profile: list[ProfileFraction] = Field(min_length=8, max_length=2000)
+    source: Literal["user_body_box"] = "user_body_box"
+
+    @model_validator(mode="after")
+    def valid_region(self) -> BodyRegionObservation:
+        x0, y0, x1, y1 = self.box
+        if x0 >= x1 or y0 >= y1 or not any(self.profile):
+            raise ValueError("身体框必须具有面积及有效轮廓")
+        return self
+
+
 class GeometryObservation(BaseModel):
     """Versioned geometry IR shared by every real-photo parser mode."""
 
     schema_version: Literal["1.0"] = "1.0"
     view_mode: Literal["single_front_assumed"] = "single_front_assumed"
     silhouette: SilhouetteObservation | None = None
+    body_region: BodyRegionObservation | None = None
+    mask_review: MaskReview | None = None
     used_for_generation: bool = True
     limitations: list[str] = Field(default_factory=lambda: [
         "单张正面图没有背面或深度信息",
         "宽度剖面按圆形截面近似为旋转体",
         "部件遮挡可能使轮廓宽度偏大",
+        "逐行最长连续前景段只是身体宽度近似，无法分开贴合身体的手臂或识别部件",
     ])
 
 
@@ -190,6 +209,8 @@ def normalize_structure(structure: Any) -> dict[str, Any]:
             raise ValueError(f"部件名称不能重复: {name}")
         names.add(name)
         part = dict(source)
+        if "instances" in part:
+            raise ValueError("旧格式部件不能包含 instances；请使用完整的 schema_version=2.0 结构")
         for field in ("diameter_cm", "height_cm", "length_cm"):
             if part.get(field) is None:
                 part.pop(field, None)
@@ -206,13 +227,42 @@ def normalize_structure(structure: Any) -> dict[str, Any]:
     return {**structure, "parts": parts}
 
 
+def _mask_width_profile(mask, n_rows: int) -> list[float] | None:
+    """Measure the longest contiguous foreground run in each pixel row.
+
+    Disconnected arms/noise must not be added to torso width. This is a
+    geometric heuristic, not part recognition: touching limbs and occlusion
+    still require review. Average pixel-row widths before peak normalization,
+    preserving image coordinates and empty rows for existing part spans.
+    """
+    import numpy as np
+
+    if mask.ndim != 2 or n_rows < 1:
+        return None
+    height, width = mask.shape
+    if height < n_rows or width < 4:
+        return None
+    row_widths = []
+    for row in mask:
+        edges = np.diff(np.pad(row.astype(bool).astype(np.int8), (1, 1)))
+        starts = np.flatnonzero(edges == 1)
+        ends = np.flatnonzero(edges == -1)
+        row_widths.append(float((ends - starts).max()) if len(starts) else 0.0)
+    widths = [float(np.mean(row_widths[height * i // n_rows:height * (i + 1) // n_rows]))
+              for i in range(n_rows)]
+    peak = max(widths)
+    if peak / width < 0.05:
+        return None
+    return [value / peak for value in widths]
+
+
 def silhouette_profile(image: Image.Image, n_rows: int = 40, *,
                        subject: SubjectObservation | None = None) -> list[float] | None:
     """Measure normalized subject width from top to bottom.
 
     GrabCut subject extraction is preferred; a corner-background colour model
-    is the deterministic fallback.  Pixel widths are normalized by the widest
-    row so this observation carries no false metric scale.
+    is the deterministic fallback. Both paths measure contiguous row widths
+    on un-eroded masks, normalized by the widest band without metric scale.
     """
     try:
         import numpy as np
@@ -222,18 +272,11 @@ def silhouette_profile(image: Image.Image, n_rows: int = 40, *,
         from .subject import extract_subject
         res = subject.extract(image) if subject is not None else extract_subject(image, max_side=120)
         if res is not None:
-            mask, _small = res
-            if mask.shape[0] >= n_rows and mask.shape[1] >= 4:
-                height = mask.shape[0]
-                widths = [
-                    float(mask[height * i // n_rows:
-                               height * (i + 1) // n_rows].mean())
-                    for i in range(n_rows)
-                ]
-                peak = max(widths)
-                if peak >= 0.05:
-                    return [value / peak for value in widths]
+            mask, small = res
+            if mask.shape != (small.height, small.width):
                 return None
+            if mask.shape[0] >= n_rows and mask.shape[1] >= 4:
+                return _mask_width_profile(mask, n_rows)
 
         img = image.convert("RGB")
         img.thumbnail((120, 120))
@@ -243,16 +286,8 @@ def silhouette_profile(image: Image.Image, n_rows: int = 40, *,
             return None
         from .color_design import estimate_background
         background = np.array(estimate_background(pixels), dtype=pixels.dtype)
-        widths = []
-        for i in range(n_rows):
-            y0, y1 = height * i // n_rows, height * (i + 1) // n_rows
-            row = pixels[y0:y1].reshape(-1, 3)
-            distance = np.abs(row - background).sum(axis=1)
-            widths.append(float((distance > _BG_DIST_THRESHOLD).mean()))
-        peak = max(widths)
-        if peak < 0.05:
-            return None
-        return [value / peak for value in widths]
+        mask = np.abs(pixels - background).sum(axis=2) > _BG_DIST_THRESHOLD
+        return _mask_width_profile(mask, n_rows)
     except Exception as exc:
         logger.debug("silhouette extraction failed: %s", exc)
         return None

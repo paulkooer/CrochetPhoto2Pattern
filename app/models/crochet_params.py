@@ -6,7 +6,7 @@ from .color_design import (
     PART_SPAN,
     blocks_summary_text,
     color_blocks_for_part,
-    round_color,
+    round_color_plan,
 )
 from .gauge import DEFAULT as DEFAULT_GAUGE
 from .gauge import (
@@ -768,8 +768,8 @@ class CrochetParamsGenerator:
                           spans: dict[str, Any] | None = None) -> None:
         """把照片色带按部件纵向占比铺到每一圈（原地），并生成换线说明。
 
-        snap_color（M3.13 语义融合）：提供时保留色带分段结构，把与该语义色
-        最接近的段"吸附"为语义色本身（红裙白边 → 白边保留、红段吸附为正红）；
+        snap_color（M3.13 语义融合）：提供时把覆盖圈数最多的主色
+        "吸附"为语义色本身（红裙白边 → 白边保留、主色吸附为正红）；
         语义色不在毛线色表中时由调用方退化为整段单色。
         spans（S1）：实测部件占比，None 回退 PART_SPAN 先验。
         """
@@ -778,18 +778,16 @@ class CrochetParamsGenerator:
             return  # 该部件无占比（先验/实测均无）→ 保持单色
         span = (spans or PART_SPAN).get(part.name) or PART_SPAN.get(
             part.name, (0.0, 1.0))
-        span_s, span_e = span
-        span_len = span_e - span_s
         n = len(part.rounds)
         # 钩织方向：身体/四肢自端部起针（R1=脚底/手端/胯部=照片低处），
         # 末圈才缝合到躯干——这些部件的照片色带映射必须自底向上。
         bottom_up = part.name in _BOTTOM_UP_PARTS
-        colors: list[str | None] = []
-        for j in range(n):
-            frac = (span_e - span_len * (j + 0.5) / n) if bottom_up else (
-                span_s + span_len * (j + 0.5) / n
+        colors, omitted_blocks = round_color_plan(blocks, span, n, bottom_up=bottom_up)
+        if omitted_blocks:
+            part.notes = (part.notes or "") + (
+                f" 配色分辨率：按当前{n}圈取色时，{omitted_blocks}个照片色段未分配到对应圈色；"
+                "请复核窄条纹，必要时手动调整逐圈配色。"
             )
-            colors.append(round_color(frac, blocks))
 
         # 语义吸附：占比最大的段（该部件的主色段）→ 替换为语义色。
         # 吸附目标用"主色段"而非"色距最近段"：LLM 语义字段描述的是服装主色
@@ -803,7 +801,7 @@ class CrochetParamsGenerator:
                 name: (rgb[0], rgb[1], rgb[2]) for rgb, name in YARN_COLORS}
             snap_rgb = rgb_by_name.get(snap_color)
             if snap_rgb is not None:
-                candidates = {c for c in colors if c in rgb_by_name}
+                candidates = [c for c in dict.fromkeys(colors) if c in rgb_by_name]
                 if candidates:
                     dominant = max(
                         candidates,
@@ -816,18 +814,21 @@ class CrochetParamsGenerator:
             raise RuntimeError("round color count does not match generated rounds")
         for rd, c in zip(part.rounds, colors):  # noqa: B905 - length checked above
             rd.color = c
-            if prev is not None and c != prev:
-                # jogless 换色：前一针最后一次挂线即改用新色，消除螺旋台阶
+            if prev is not None and c is not None and c != prev:
+                # 普通换色不等于无痕条纹；螺旋圈的接缝仍需单独处理。
                 rd.notes = (rd.notes or "") + (
-                    f"；换线：{c}（前一针最后一次挂线改用新色，避免螺旋台阶）"
+                    f"；换线：{c}（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）"
                 )
             prev = c
         if len(set(colors)) > 1:
-            part.notes = (part.notes or "") + f" 配色（自上而下）：{blocks_summary_text(colors)}。"
-        # 主色回写：部件基准色取该部件占比最大的色段（round_color 在
-        # blocks 非空时恒返回色名，调用方已保证；过滤只满足 str 类型）
+            direction = "自下而上" if bottom_up else "自上而下"
+            part.notes = (part.notes or "") + (
+                f" 配色（按钩织圈序，{direction}）：{blocks_summary_text(colors)}。"
+            )
+        # 主色按圈数统计，平局取钩织顺序中先出现的颜色，避免 set 迭代漂移。
         named = [c for c in colors if c is not None]
-        part.color = max(set(named), key=colors.count)
+        if named:
+            part.color = max(dict.fromkeys(named), key=colors.count)
 
     @staticmethod
     def _build_result(analysis: ImageAnalysis, parts: list[CrochetPart],

@@ -4,11 +4,15 @@
 
 [![CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml/badge.svg)](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml) [![Version: 0.2.0 beta 2](https://img.shields.io/badge/version-0.2.0--beta.2-orange.svg)](CHANGELOG.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> AI 驱动的 Amigurumi 立体人物钩织图解生成器：从一张照片自动生成完整钩织方法。
+> 本地视觉与规则驱动的 Amigurumi 钩织图解生成器：照片分析、人工确认、逐圈生成。
 
 > **发布状态：Beta。** 自动化自检只能证明图解满足当前代数与塑形规则，
 > 不能替代实际毛线小样和成品试钩；公开分享图解前请先验证尺寸、张力与装配。
 > 当前验证结果与发布阻断项见 [系统状态与发布门禁](docs/system-status.zh-CN.md)。
+
+照片默认使用本地视觉＋人工确认，不再调用云端 LLM；接口、密钥设置和 SDK 依赖已移除。`--local` 保留兼容旧命令，旧环境中的 API Key 不影响生成。
+
+从旧版迁移：删除库调用中的 `openai_key` / `anthropic_key` / Base URL 参数，将 `vision_mode="ai"` 改为 `"local"`。无需删除旧图解，历史来源与用量仍能导入。更新依赖环境请执行 `uv sync --locked`。
 
 ## 项目定位与证据等级
 
@@ -29,31 +33,32 @@
 通过代数自检门禁才能下载；评测协议同时报告第二层指标 `parade_export_rate`——
 结果能否翻译为 [CrochetPARADE](https://crochetparade.org) 的图解语言（在其本地
 运行的网页应用中获得独立结构分析、3D 渲染与针目张力检查；粘贴导出的 DSL 即可，
-结果页与 CLI `--parade` 均可导出）。默认视觉模型的选型同样以公开的
-image→instruction 基准为依据，而非惯例。
+结果页与 CLI `--parade` 均可导出）。这不能替代实际试钩验证。
 
 ## ✨ 功能
 
-- 📷 照片先裁剪，再识别与确认：预览主体轮廓和头部框，调整头身比例与部件后生成；确认阶段不再次调用 AI
+- 未知部件保留供人工复核；确认页需移除误识别项或改选受支持部件，自动生成不会将其替换为小球。已有自定义结构备份仍可导入。
+- 📷 照片先裁剪，再识别与确认：预览主体轮廓和头部框，调整头身比例与部件后生成；确认后本地生成
+- 可手动限定身体轮廓的蓝框，排除框外手臂及背景；原图轮廓与身体框观测分别保存，备份及尺寸调整保留。框选不补回漏分割像素，也不提供实际厘米尺寸；身体配色只同步上下区间。
+- 漏分割时勾选「补选／擦除主体区域」，直接在照片上涂抹；松开后更新轮廓与配色，支持撤销最近 20 笔和恢复自动分割。修正掩码随备份保存，仍需确认部件；被遮挡或拍摄裁掉的部分无法凭空恢复。
 - ↶ 部件尺寸／数量／位置／连接表单和逐圈表格；会话内撤销／重做（最多 12 份、合计 8 MB）及修改前后对比
-- ⏱ 分阶段耗时、回退原因与全部 API 尝试记录；失败请求未返回的用量标为未知，不把已知 token 合计当完整账单
-- 🧮 无 LLM 模式：本地人脸检测推算头身比例 + 轮廓识别（下摆展开自动加裙子），零 API 成本
+- ⏱ 分阶段耗时、回退原因与运行预算；导入旧版图解时保留历史用量记录
+- 🧮 无 LLM 模式：头部候选框检查与轮廓分析，零 API 成本；部件来自待确认模板，下方变宽仅提示可能有裙摆
 - 🎯 GrabCut 主体分割：配色、轮廓与推荐色板共用同次主体观测，固定初始化种子；
   分割失败时回退启发式，减少重复计算与重复运行漂移
 - 🧍 姿态关键点实测分段（Python 3.11–3.12 可选 `pip install .[pose]`；Linux 还需 EGL/GLESv2）：肩/髋/膝关键点实测部件配色区间；原生库缺失时安全回退比例先验
-- 🎨 照片配色设计：纵向色带映射到逐圈毛线色，自动生成换线说明；AI 模式识别发色/上衣/下装直达部件配色；CIEDE2000 感知色差匹配毛线色表
+- 🎨 照片配色设计：纵向色带映射到逐圈毛线色，自动生成换线说明；CIEDE2000 感知色差匹配毛线色表
 - 🖩 网格缩放算法可选：照片平滑（LANCZOS）/ 像素画锐利（NEAREST）+ Floyd–Steinberg 抖动可选
 - 🧶 CrochetPARADE 导出：图解一键翻译为其 DSL（结果页 / CLI `--parade`），
   粘贴到其本地网页应用即得独立 3D 渲染与针目张力分析（评测协议报告
   `parade_export_rate` 第二层"可执行正确性"指标）
-- 🤖 AI 视觉解析人物特征（支持 OpenAI GPT-4o / Anthropic Claude）
 - 🧊 版本化基础结构骨架（非完整 3D 重建）：显式记录部件位置、旋转、左右镜像实例与连接锚点，并标注模板推断来源；启发式未经校准，不展示置信度百分比
 - 🧶 生成完整钩织参数（针数、加减针、逐圈步骤）
 - 📐 塑形上限随小样密度推导：连续几何变化率量化为六等分可执行针法，经典密度每圈最多 ±6，DK/细密度可到 ±12
 - 🧮 双臂/双腿/双耳按两个实体计量：总针数、材料、工时、导出和逐圈进度不会漏算第二件
 - 📝 结构化输出（JSON + 可视化表格）
 - ✏️ 支持局部修正和重新生成
-- 🧩 高级结构修正：编辑并严格校验部件尺寸、数量、位姿和连接图，无需再次调用 AI 即可重生成针法与装配说明
+- 🧩 高级结构修正：编辑并严格校验部件尺寸、数量、位姿和连接图，可在本地重生成针法与装配说明
 - 📏 调整成品尺寸时保留已编辑的结构；显式直径、杯深和颜色参与生成。图解密度编辑同步用于材料、导出、预览和后续重生成。
 - 🟦 2D 像素网格图案（生成前比例裁剪、单格/矩形修色、5 步撤销重做、可编辑工程 JSON、完整 Markdown、Tapestry / C2C / 十字绣）
 - ✅ 逐圈钩织进度追踪
@@ -68,7 +73,6 @@ image→instruction 基准为依据，而非惯例。
 
 - Python 3.11+
 - Streamlit（交互 UI）
-- OpenAI / Anthropic API（Vision + Reasoning）
 - Pydantic v2（数据验证）
 
 ## 🚀 快速开始
@@ -83,40 +87,16 @@ uv sync --locked              # 推荐：严格使用仓库锁定依赖
 
 ### 配置
 
-复制 `.env.example` 为 `.env`，填入你的 API Key：
-
-```bash
-cp .env.example .env
-# 编辑 .env 填入 OPENAI_API_KEY 或 ANTHROPIC_API_KEY
-```
-
-Key 优先级：**侧栏输入框 > `.env`**。注意：清空输入框并不会停用 Key——
-此时回退使用 `.env` 中配置的 Key（仍会真实计费）；只有输入框与 `.env`
-都不配置时，照片 Tab 才进入「本地视觉估算 / Mock」的免费模式。Mock 演示
-模式始终显式可选（与是否有 Key 无关）且绝不发起任何 API 调用：体型与
-部件为固定演示值，配色与分段参考照片。
-
-**中转站（第三方 API 代理）**：个人使用时可在侧栏同时填写“自己的 API
-Key + 对应 Base URL”（如 `https://your-relay.example/v1`）；Base URL 不能借用
-服务器 `.env` 中的 Key。部署方可在 `.env` 成对配置 `OPENAI_API_KEY` +
-`OPENAI_BASE_URL` 或 `ANTHROPIC_API_KEY` + `ANTHROPIC_BASE_URL`。两组来源不会
-交叉混用，避免共享部署把服务器密钥发送到用户控制的地址。模型名也可用环境
-变量覆盖：
-`ANTHROPIC_VISION_MODEL`（默认 claude-sonnet-5）、`OPENAI_VISION_MODEL`（默认 gpt-4o）。
-
-> 💡 不设置 API Key 也可以运行：照片 Tab 可选「本地视觉估算」（OpenCV
-> 人脸检测推算相对头身比例）或 Mock 演示；照片没有绝对尺度，厘米尺寸始终
-> 来自你在照片 Tab 选择的目标成品高度。手动/网格 Tab 本就无需 Key。
-> ⚠️ 多人共享部署应禁用不需要的出站网络；应用会拒绝 HTTP、localhost 和
-> 显式私网 Base URL，但 DNS 重绑定等边界仍须由网络层策略兜底。
+无需配置 API Key 或模型服务。需要可信单用户历史时，可复制 `.env.example` 为 `.env` 并配置历史选项。
+旧版 provider 环境变量不再使用。照片仅估算相对比例，厘米尺寸由用户指定。
+可选姿态功能首次使用可能下载模型权重；可用 `CROCHET_POSE_MODEL` 指向本地模型文件。
 
 ### 数据与隐私
 
 - 上传照片会传到运行 Streamlit 的主机；仅在自己电脑部署时才是本机处理。“本地估算”表示不调用模型服务商。
 
 - 本地视觉、手动输入和网格模式不把照片发送给 LLM 服务。
-- 选择 OpenAI / Anthropic 视觉模式时，所选照片会发送到对应服务商；配置自定义
-  Base URL 时则发送到该第三方地址。请只使用你有权处理的图片并核对服务条款。
+- 请只使用你有权处理的图片。
 - 图解历史默认关闭；仅可信单用户部署可设置 `CROCHET_HISTORY_MODE=single_user`，
   使用服务器本机 SQLite。多人/公开部署必须保持 `disabled`：历史没有用户认证或
   所有权隔离。旧数据库不会被删除。分享链接把压缩图解放入 URL，请勿用于敏感内容。
@@ -141,15 +121,14 @@ uv run crochet2pattern --mock --out demo.json                       # 固定演�
 uv run crochet2pattern --batch-dir photos/ --out-dir patterns/      # 目录批量生成
 ```
 
-AI 模式读取环境变量中的 API Key（支持 `OPENAI_BASE_URL` / `ANTHROPIC_BASE_URL`
-中转站）；无 Key 自动走本地视觉估算。所有输出经过图解自检门禁（代数矛盾
+照片模式始终使用本地算法，旧版 Key 不会触发云端调用。所有输出经过图解自检门禁（代数矛盾
 或超过当前密度塑形上限时返回码 2）。
 
 ### Docker（可选）
 
 ```bash
 docker build -t crochet-photo2pattern .
-docker run -p 8501:8501 -e ANTHROPIC_API_KEY=sk-ant-... crochet-photo2pattern
+docker run -p 8501:8501 crochet-photo2pattern
 ```
 
 ### 测试
@@ -216,7 +195,7 @@ CrochetPhoto2Pattern/
 │   ├── trials.py            # 实体试钩记录、偏差分析与保守校准建议
 │   ├── schemas.py           # Pydantic 数据模型
 │   ├── models/
-│   │   ├── image_parser.py  # Vision API 图像解析
+│   │   ├── image_parser.py  # 本地图像分析
 │   │   ├── geometry.py      # 单图观测 IR + StructureGeometry v2 部件图谱
 │   │   ├── sizing.py        # 照片相对比例 → 用户目标尺寸
 │   │   ├── structure_designer.py  # 版本化模板结构（位姿/镜像/连接）
@@ -225,7 +204,7 @@ CrochetPhoto2Pattern/
 │   │   ├── colors.py              # 共享毛线色表 + Lab 感知色距
 │   │   └── orchestrator.py        # 流水线编排
 │   ├── ui/
-│   │   ├── sidebar.py             # API Key 配置
+│   │   ├── sidebar.py             # 密度与塑形配置
 │   │   ├── tab_photo.py           # 照片识别 Tab
 │   │   ├── tab_manual.py          # 手动输入 Tab
 │   │   ├── tab_grid.py            # 2D 网格 Tab
@@ -233,7 +212,6 @@ CrochetPhoto2Pattern/
 │   ├── utils/
 │   │   ├── exporters.py           # Markdown 导出
 │   │   └── images.py              # 上传图片安全加载（容错/大小限制）
-│   └── prompts/             # LLM 提示词模板
 ├── tests/                   # 自动化测试
 ├── docs/                    # 文档
 └── pyproject.toml           # 项目配置（依赖单一来源）
@@ -247,8 +225,8 @@ CrochetPhoto2Pattern/
 ## 照片确认与运行预算
 
 照片流程为“识别 → 人工确认 → 生成”。修改裁剪或解析模式会清除旧识别草稿，
-修改目标高度、头部范围或部件不会重复调用 AI。单次默认运行预算 180 秒，界面可设
-15–600 秒，人工确认停留时间不计入。预算在阶段边界检查并限制 API 请求超时，
+修改目标高度、头部范围或部件复用本地观测。单次默认运行预算 180 秒，界面可设
+15–600 秒，人工确认停留时间不计入。预算在阶段边界检查，
 不能中途终止本地图像处理，因此不是严格的墙钟超时保证。
 
 每次导出另有 60 秒协作式预算，导出耗时仅留在当前会话；照片阶段诊断随备份保存。

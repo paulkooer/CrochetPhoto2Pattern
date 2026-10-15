@@ -47,7 +47,7 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
     """Run structure + param stages given an already-parsed ImageAnalysis.
 
     手动输入无需 Vision 解析，因此直接用后两个阶段类，不构造
-    PipelineOrchestrator（那会连带初始化 ImageParser 并加载 prompt 文件）。
+    PipelineOrchestrator（那会连带初始化 ImageParser ）。
     """
     structure = StructureDesigner.design_3d_structure(analysis)
     style = _style_from_session()

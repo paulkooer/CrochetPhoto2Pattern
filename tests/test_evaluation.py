@@ -92,17 +92,16 @@ def _case(
 
 
 def _valid_result(parts, colors, *, flare):
-    structure_parts = [{"name": name} for name in parts if name != "裙子"]
-    if flare:
-        structure_parts.append({"name": "裙子"})
+    parts = list(dict.fromkeys([*parts, *(["裙子"] if flare else [])]))
+    structure_parts = [{"name": name} for name in parts]
     return {
         "analysis": {"parts": parts, "recommended_colors": colors},
         "structure": {"parts": structure_parts},
         "params": {
             "parts": [{
-                "name": "头部",
+                "name": name,
                 "rounds": [{"row": 1, "stitches": 6, "increase": 0, "decrease": 0}],
-            }]
+            } for name in parts]
         },
     }
 
@@ -159,7 +158,7 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
         "passed": True,
     }
     assert all(case["passed"] for case in report["cases"])
-    assert report["report_schema_version"] == 2
+    assert report["report_schema_version"] == 3
     assert report["cases"][0]["rights"]["copyright_basis"] == "self_owned"
 
 
@@ -338,7 +337,7 @@ def test_default_evaluator_runs_complete_local_pipeline(tmp_path):
 def test_cli_exit_code_reflects_quality_gate(tmp_path, monkeypatch):
     report = {"summary": {"cases": 1, "macro_part_f1": 0.0, "case_pass_rate": 0.0,
                           "passed": False}}
-    monkeypatch.setattr("app.evaluation.evaluate_dataset", lambda _dataset: report)
+    monkeypatch.setattr("app.evaluation.evaluate_dataset", lambda _dataset, **_kwargs: report)
     output = tmp_path / "report.json"
     assert main(["--dataset", "unused", "--out", str(output)]) == 2
     assert json.loads(output.read_text(encoding="utf-8")) == report
@@ -380,6 +379,36 @@ def test_file_replaced_during_evaluation_is_never_scored(tmp_path, monkeypatch):
     assert red["passed"] is True
 
 
+def test_scored_pixels_and_hash_use_same_bytes_when_path_changes(tmp_path, monkeypatch):
+    from app import evaluation
+
+    blue_hash = _write_image(tmp_path / "blue.png", (0, 120, 215))
+    red_hash = _write_image(tmp_path / "red.png", (220, 50, 50))
+    red_bytes = (tmp_path / "red.png").read_bytes()
+    cases = [
+        _case("blue", "blue.png", blue_hash, ["头部"]),
+        _case("red", "red.png", red_hash, ["头部"]),
+    ]
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest(cases)), encoding="utf-8")
+    real_decode = evaluation.load_image_bytes
+    observed = []
+
+    def swap_then_decode(data):
+        # Replace the path after the checked bytes have been read, before decode.
+        (tmp_path / "blue.png").write_bytes(red_bytes)
+        return real_decode(data)
+
+    def score(image):
+        observed.append(image.getpixel((0, 0)))
+        return _valid_result(["头部"], [], flare=False)
+
+    monkeypatch.setattr(evaluation, "load_image_bytes", swap_then_decode)
+    report = evaluate_dataset(tmp_path, runner=score)
+    assert observed == [(0, 120, 215), (220, 50, 50)]
+    assert report["cases"][0]["sha256"] == blue_hash
+    assert report["summary"]["passed"]
+
+
 def test_partial_parade_export_fails_gate_despite_valid_syntax(tmp_path):
     digest = _write_image(tmp_path / "photo.png", (255, 255, 255))
     case = _case("partial-export", "photo.png", digest, ["头部"])
@@ -400,3 +429,129 @@ def test_partial_parade_export_fails_gate_despite_valid_syntax(tmp_path):
     details = report["cases"][0]["parade_export"]
     assert details["exported_rounds"] == 1
     assert details["requested_rounds"] == 3
+
+
+def test_release_rejects_duplicate_content_and_missing_labels(tmp_path):
+    cases = []
+    for i in range(30):
+        name = f"case-{i}.png"
+        digest = _write_image(tmp_path / name, (0, 120, 215))
+        cases.append(_case(f"case-{i}", name, digest, ["头部"]))
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest(cases)), encoding="utf-8")
+    report = evaluate_dataset(tmp_path, release=True,
+                              runner=lambda _: _valid_result(["头部"], ["蓝色"], flare=False))
+    assert report["summary"]["passed"]
+    readiness = report["release_readiness"]
+    assert not readiness["automated_passed"]
+    assert readiness["unique_image_hashes"] == 1
+    assert any("duplicate" in reason for reason in readiness["blocking_reasons"])
+    assert any("labels" in reason for reason in readiness["blocking_reasons"])
+    assert any("scene" in reason for reason in readiness["blocking_reasons"])
+
+
+def test_release_floors_and_complete_automated_evidence(tmp_path):
+    tags = ["full-body", "half-body", "occluded", "plain-background", "complex-background", "low-contrast"]
+    cases = []
+    for i in range(30):
+        name = f"case-{i}.png"
+        digest = _write_image(tmp_path / name, (i, 120, 215))
+        cases.append(_case(f"case-{i}", name, digest, ["头部"] + (["裙子"] if i % 2 else []),
+                           flare=bool(i % 2),
+                           colors=["蓝色"], tags=[tags[i % len(tags)]]))
+    manifest = _manifest(cases)
+    manifest["thresholds"] = {key: (1 if key == "min_cases" else 0)
+                              for key in manifest["thresholds"]}
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    report = evaluate_dataset(tmp_path, release=True, runner=lambda image: _valid_result(
+        ["头部"], ["蓝色"], flare=bool(image.getpixel((0, 0))[0] % 2)))
+    assert report["thresholds"]["min_cases"] == 30
+    assert report["thresholds"]["min_case_part_recall"] == 0.5
+    assert report["release_readiness"]["automated_passed"]
+    assert not report["release_readiness"]["release_approved"]
+    assert report["release_readiness"]["manual_checks_required"]
+    assert report["evaluator"]["mode"] == "custom_runner"
+
+
+def test_release_cli_cannot_bypass_failure_with_allow_fail(monkeypatch, capsys):
+    import app.evaluation as evaluation
+
+    def evaluate(path, *, release=False):
+        assert release
+        return {"summary": {"cases": 30, "macro_part_f1": 1, "case_pass_rate": 1, "passed": True},
+                "release_readiness": {"automated_passed": False, "blocking_reasons": ["duplicate images"]}}
+
+    monkeypatch.setattr(evaluation, "evaluate_dataset", evaluate)
+    assert main(["--dataset", "unused", "--release", "--allow-fail"]) == 2
+    assert "duplicate images" in capsys.readouterr().err
+
+
+def test_release_rejects_fixed_template_with_zero_exact_matches(tmp_path):
+    tags = ["full-body", "close-up", "seated", "plain-background", "complex-background", "low-contrast"]
+    actual = ["头部", "身体", "手臂", "腿部"]
+    cases = []
+    for i in range(30):
+        name = f"{i}.png"
+        digest = _write_image(tmp_path / name, (i, 100, 200))
+        cases.append(_case(str(i), name, digest, actual + ["耳朵", "尾巴"],
+                           flare=i == 0, colors=["蓝色"], tags=[tags[i % 6]]))
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest(cases)), encoding="utf-8")
+    report = evaluate_dataset(tmp_path, release=True,
+                              runner=lambda _: _valid_result(actual, ["蓝色"], flare=False))
+    assert report["summary"]["case_pass_rate"] > 0.9
+    readiness = report["release_readiness"]
+    assert not readiness["automated_passed"]
+    assert readiness["quality_metrics"]["delivered_parts_exact_rate"] == 0
+    assert readiness["quality_metrics"]["part_recall"]["耳朵"] == 0
+    assert readiness["quality_metrics"]["flare_class_recall"]["true"] == 0
+    assert any("baseline" in r for r in readiness["blocking_reasons"])
+
+
+@pytest.mark.parametrize("mismatch", ["missing_part", "quantity"])
+def test_evaluation_checks_delivered_parts_and_counts(tmp_path, mismatch):
+    digest = _write_image(tmp_path / "one.png", (1, 2, 3))
+    case = _case("one", "one.png", digest, ["头部", "身体"], flare=False, colors=["蓝色"])
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest([case])), encoding="utf-8")
+    result = _valid_result(["头部", "身体"], ["蓝色"], flare=False)
+    if mismatch == "missing_part":
+        result["params"]["parts"].pop()
+    else:
+        result["structure"]["parts"][0]["count"] = 2
+    report = evaluate_dataset(tmp_path, runner=lambda _: result)
+    assert not report["cases"][0]["delivery_consistent"]
+    assert not report["cases"][0]["passed"]
+    if mismatch == "missing_part":
+        assert report["cases"][0]["part_recall"] == 0.5
+
+
+@pytest.mark.parametrize("quantity", [True, 0, 21, 1.5])
+def test_evaluation_rejects_invalid_structure_quantities(tmp_path, quantity):
+    digest = _write_image(tmp_path / "one.png", (1, 2, 3))
+    case = _case("one", "one.png", digest, ["头部"], flare=False, colors=["蓝色"])
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest([case])), encoding="utf-8")
+    result = _valid_result(["头部"], ["蓝色"], flare=False)
+    result["structure"]["parts"][0]["count"] = quantity
+    report = evaluate_dataset(tmp_path, runner=lambda _: result)
+    assert not report["cases"][0]["passed"]
+    assert report["cases"][0]["error"] is not None
+
+
+@pytest.mark.parametrize("kind", ["onepiece", "sphere"])
+def test_evaluation_expands_only_real_onepiece_parts(tmp_path, kind):
+    from app.models.parts import _ONE_PIECE_NAME
+
+    digest = _write_image(tmp_path / "one.png", (1, 2, 3))
+    case = _case("one", "one.png", digest, ["头部", "身体"], flare=False, colors=["蓝色"])
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest([case])), encoding="utf-8")
+    result = _valid_result(["头部", "身体"], ["蓝色"], flare=False)
+    for part in result["structure"]["parts"]:
+        part["count"] = "2"  # Legacy integer strings use the same contract as pattern counts.
+    merged = result["params"]["parts"][0]
+    merged.update(name=_ONE_PIECE_NAME, type=kind, quantity=2)
+    result["params"]["parts"] = [merged]
+    case_report = evaluate_dataset(tmp_path, runner=lambda _: result)["cases"][0]
+    if kind == "onepiece":
+        assert case_report["delivery_consistent"]
+        assert case_report["part_f1"] == 1
+        assert case_report["passed"]
+    else:
+        assert not case_report["passed"]

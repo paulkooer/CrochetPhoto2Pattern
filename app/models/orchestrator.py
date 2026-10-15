@@ -23,7 +23,7 @@ from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
 ProgressCB = Callable[..., Any]
-VISION_MODES = ("ai", "local", "mock")
+VISION_MODES = ("local", "mock")
 
 
 @dataclass
@@ -42,19 +42,8 @@ class PhotoDraft:
 
 
 class PipelineOrchestrator:
-    def __init__(
-        self,
-        openai_key: str | None = None,
-        anthropic_key: str | None = None,
-        openai_base_url: str | None = None,
-        anthropic_base_url: str | None = None,
-    ):
-        self.parser = ImageParser(
-            openai_key=openai_key,
-            anthropic_key=anthropic_key,
-            openai_base_url=openai_base_url,
-            anthropic_base_url=anthropic_base_url,
-        )
+    def __init__(self):
+        self.parser = ImageParser()
         self.structure_designer = StructureDesigner()
         self.params_generator = CrochetParamsGenerator()
         self.last_diagnostics: dict = {}
@@ -63,7 +52,7 @@ class PipelineOrchestrator:
         self,
         image: Image.Image,
         *,
-        vision_mode: str = "ai",
+        vision_mode: str = "local",
         progress_cb: ProgressCB | None = None,
         subject: SubjectObservation | None = None,
         budget_seconds: float = 180,
@@ -82,14 +71,12 @@ class PipelineOrchestrator:
     def _prepare(self, image, subject, vision_mode, trace, progress_cb) -> PhotoDraft:
         geometry = None
         with trace.stage("geometry"):
-            if vision_mode != "mock" and (
-                vision_mode == "local" or self.parser.openai_key or self.parser.anthropic_key
-            ):
+            if vision_mode != "mock":
                 geometry = observe_geometry(image, subject=subject)
-        spans, measured_names, hints = None, [], None
+        spans, measured_names = None, []
         with trace.stage("pose"):
             try:
-                from .pose import format_span_hints, get_body_landmarks, measured_spans
+                from .pose import get_body_landmarks, measured_spans
 
                 landmarks = get_body_landmarks(image)
                 if landmarks is not None:
@@ -98,7 +85,6 @@ class PipelineOrchestrator:
                     measured = measured_spans(landmarks)
                     spans = {**PART_SPAN, **measured}
                     measured_names = sorted(measured)
-                    hints = format_span_hints(measured)
                 else:
                     trace.fallbacks.append("姿态关键点不可用；使用部件分段先验")
             except Exception:
@@ -115,37 +101,17 @@ class PipelineOrchestrator:
             elif vision_mode == "mock":
                 analysis = self.parser.parse_image_mock()
                 self.parser.last_usage = {}
-            else:
-                self.parser.request_budget_seconds = trace.remaining()
-                analysis = self.parser.parse_image(image, span_hints=hints, subject=subject)
             source = (self.parser.last_local_meta or {}).get("source")
             if source == "mock":
                 geometry = mock_geometry()
             elif geometry is None:
                 geometry = observe_geometry(image, subject=subject)
         if source == "default":
-            trace.fallbacks.append("未检出头部；比例来自默认模板，请人工确认")
+            trace.fallbacks.append("没有通过检查的头部候选框；比例来自默认模板，请人工确认")
         if source != "mock" and geometry.silhouette is None:
             trace.fallbacks.append("主体分割不可用；形状回退模板")
-        attempts = self.parser.last_usage.get("attempts", [])
-        if any(a.get("status") != "success" for a in attempts):
-            trace.fallbacks.append("视觉请求曾失败、拒绝或返回无效内容；已重试或切换服务商，详见尝试记录")
         if source != "mock" and geometry.silhouette is not None and subject.segmentation is None:
             trace.fallbacks.append("主体分割不可用；轮廓采用背景颜色差异启发式")
-        if source not in ("mock", "opencv-face", "default"):
-            with trace.stage("review_head_detection"):
-                from .subject import _face_box
-
-                small = image.copy()
-                small.thumbnail((640, 640))
-                box = _face_box(small)
-                if box:
-                    self.parser.last_local_meta["face_box"] = [
-                        round(box[0] * image.width / small.width),
-                        round(box[1] * image.height / small.height),
-                        round(box[2] * image.width / small.width),
-                        round(box[3] * image.height / small.height),
-                    ]
         return PhotoDraft(
             image,
             subject,
@@ -189,15 +155,18 @@ class PipelineOrchestrator:
             )
             if progress_cb:
                 progress_cb(40, text="Step 2/3: 部件结构设计中...")
-            structure = StructureDesigner.design_3d_structure(chosen)
+            structure = StructureDesigner.design_3d_structure(chosen, infer_missing_parts=analysis is None)
         with trace.stage("colors"):
-            bands = vertical_color_bands(draft.image, subject=draft.subject)
+            color_observation: dict = {}
+            bands = vertical_color_bands(draft.image, subject=draft.subject, observation=color_observation)
             if not bands:
                 trace.fallbacks.append("未取得纵向配色；使用部件语义色或默认色")
         with trace.stage("pattern"):
             if progress_cb:
                 progress_cb(70, text="Step 3/3: 生成钩织参数...")
             profile = draft.geometry.silhouette.profile if draft.geometry.silhouette else None
+            if draft.geometry.body_region is not None:
+                profile = draft.geometry.body_region.profile
             params = CrochetParamsGenerator.generate_params(
                 chosen,
                 structure,
@@ -212,6 +181,8 @@ class PipelineOrchestrator:
 
             preview = thumbnail_data_url(draft.image)
         meta = deepcopy(draft.vision_meta)
+        if color_observation:
+            meta["color_observation"] = color_observation
         if analysis is not None:
             meta["reviewed_by_user"] = True
         return PatternResult(
@@ -246,7 +217,7 @@ class PipelineOrchestrator:
         style=None,
         target_height_cm: float = 18.0,
         target_height_source: str = "default_reference",
-        vision_mode: str = "ai",
+        vision_mode: str = "local",
         budget_seconds: float = 180,
     ) -> dict[str, Any]:
         # Keep the original public API and explicit mode validation.

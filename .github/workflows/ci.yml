@@ -96,8 +96,12 @@ jobs:
               entry_name = next(n for n in names if n.endswith(".dist-info/entry_points.txt"))
               metadata = archive.read(metadata_name).decode()
               entries = archive.read(entry_name).decode()
-          assert "app/prompts/vision_parser.txt" in names
           assert "app/py.typed" in names
+          assert "app/ui/mask_canvas/index.html" in names
+          assert "app/ui/mask_canvas/editor.js" in names
+          assert not any(n.startswith("app/prompts/") for n in names)
+          assert "Requires-Dist: openai" not in metadata
+          assert "Requires-Dist: anthropic" not in metadata
           assert "app/data/external-trial-evidence.json" in names
           assert any(n.endswith(".dist-info/licenses/LICENSE") for n in names)
           assert "Version: 0.2.0b2" in metadata
@@ -106,5 +110,5 @@ jobs:
           assert "crochet2pattern = app.cli:main" in entries
           assert "crochet2pattern-eval = app.evaluation:main" in entries
           assert "crochet2pattern-trials = app.trials:main" in entries
-          print("wheel metadata, license, CLI, prompt and curated evidence: OK")
+          print("wheel metadata, license, CLI and curated evidence: OK")
           EOF

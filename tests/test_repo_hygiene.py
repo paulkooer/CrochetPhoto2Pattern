@@ -56,7 +56,10 @@ def test_release_metadata_is_consistent():
     assert "Release status: Beta" in readme
     assert 'crochet2pattern-eval = "app.evaluation:main"' in pyproject
     assert 'crochet2pattern-trials = "app.trials:main"' in pyproject
-    assert 'app = ["prompts/*.txt", "data/*.json", "py.typed"]' in pyproject
+    import tomllib
+
+    package_data = tomllib.loads(pyproject)["tool"]["setuptools"]["package-data"]["app"]
+    assert {"data/*.json", "py.typed", "ui/mask_canvas/*.html", "ui/mask_canvas/*.js"} <= set(package_data)
     assert (_REPO / "app" / "py.typed").is_file()
     assert (_REPO / "app" / "data" / "external-trial-evidence.json").is_file()
     assert "System Status and Release Gates" in readme

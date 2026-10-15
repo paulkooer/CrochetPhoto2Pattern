@@ -6,6 +6,13 @@ The trial tooling turns “size may need adjustment” into traceable evidence. 
 modifies production constants automatically. Raw records and reports belong in the
 Git-ignored `trial_data/` and `trial_outputs/` directories.
 
+Trials need not be performed by the project author. Other makers may work an exact
+system-exported pattern and submit its hash, measured swatch, dimensions, yarn usage,
+scoped timing and anonymous maker record under the same protocol. Calibration and
+validation cohorts must remain separate. Online tutorials and similar finished objects
+provide rule or scale references; current `external_evidence` summaries are not promoted
+automatically into qualifying trials. See [online evidence scope](SOURCES.en.md).
+
 ## 1. Create a draft from an exact pattern
 
 Generate complete pattern JSON, then bind a trial record to its SHA-256:

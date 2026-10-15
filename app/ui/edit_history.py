@@ -1,4 +1,4 @@
-"""Bounded, per-tab undo/redo. Snapshots contain pattern data only."""
+"""Bounded, per-tab undo/redo of patterns and their physical-round progress."""
 
 from __future__ import annotations
 
@@ -7,6 +7,8 @@ import uuid
 from copy import deepcopy
 
 import streamlit as st
+
+from app.ui.progress_state import capture_progress, install_progress, retained_progress
 
 MAX_SNAPSHOTS = 12
 MAX_HISTORY_BYTES = 8 << 20
@@ -41,45 +43,56 @@ def trim_history(history: dict) -> None:
         (history["undo"] or history["redo"]).pop(0)
 
 
-def get_history(slot: str, result: dict) -> dict:
+def get_history(slot: str, result: dict, *, create: bool = True) -> dict:
     key = f"edit_history_{slot}"
     identity = result.get("result_id") or slot
     history = st.session_state.get(key)
     if history is None or history["current_id"] != identity:
         history = {"current_id": identity, "undo": [], "redo": [], "comparison": None}
-        st.session_state[key] = history
+        if create:
+            st.session_state[key] = history
     return history
 
 
-def _install(slot: str, current: dict, updated: dict, history: dict) -> dict:
+def _install(slot: str, current: dict, updated: dict, history: dict, progress: dict) -> dict:
     from app.ui.result_renderer import purge_result_state
 
     updated = deepcopy(updated)
     updated["result_id"] = uuid.uuid4().hex[:12]
-    purge_result_state(current)
-    st.session_state[slot] = updated
     history["current_id"] = updated["result_id"]
     history["comparison"] = {"修改前": metrics(current), "修改后": metrics(updated)}
     trim_history(history)
+    prepared_progress: dict = {}
+    install_progress(updated, slot, progress, prepared_progress)
+    # All copying, metrics and serialization must succeed before session mutation.
+    purge_result_state(current)
+    st.session_state.update(prepared_progress)
+    st.session_state[slot] = updated
+    st.session_state[f"edit_history_{slot}"] = history
     return updated
 
 
 def commit_edit(slot: str, current: dict, updated: dict) -> dict:
-    history = get_history(slot, current)
-    history["undo"].append(deepcopy(current))
+    history = deepcopy(get_history(slot, current, create=False))
+    progress = capture_progress(current, slot, st.session_state)
+    history["undo"].append({"result": deepcopy(current), "progress": progress})
     history["redo"].clear()
-    return _install(slot, current, updated, history)
+    return _install(slot, current, updated, history, retained_progress(current, updated, slot, progress))
 
 
 def restore_edit(slot: str, current: dict, direction: str) -> dict:
     if direction not in ("undo", "redo"):
         raise ValueError("invalid history direction")
-    history = get_history(slot, current)
+    history = deepcopy(get_history(slot, current, create=False))
     if not history[direction]:
         return current
-    updated = history[direction].pop()
-    history["redo" if direction == "undo" else "undo"].append(deepcopy(current))
-    return _install(slot, current, updated, history)
+    snapshot = history[direction].pop()
+    # In-process sessions may still contain snapshots made before this update.
+    updated = snapshot.get("result", snapshot)
+    history["redo" if direction == "undo" else "undo"].append({
+        "result": deepcopy(current), "progress": capture_progress(current, slot, st.session_state),
+    })
+    return _install(slot, current, updated, history, snapshot.get("progress", {}))
 
 
 def render_history(slot: str, result: dict) -> None:
@@ -93,6 +106,7 @@ def render_history(slot: str, result: dict) -> None:
         restore_edit(slot, result, "redo")
         st.rerun()
     st.caption("保留本会话最近的修改（最多 12 份、合计 8 MB）；重新导入或生成会开启新的记录。")
+    st.caption("材料修改保留进度；图解变化只清除受影响部件的进度，密度变化清除全部进度。撤销可恢复。")
     with st.expander("最近一次修改前后对比"):
         if history["comparison"]:
             before, after = history["comparison"]["修改前"], history["comparison"]["修改后"]

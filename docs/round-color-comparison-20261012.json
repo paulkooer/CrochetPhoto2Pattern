@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "kind": "original_synthetic_round_color_comparison",
+  "source_images_used": false,
+  "release_evidence": false,
+  "calibration_allowed": false,
+  "scope": "Equal-height round intervals, perfect supplied color boundaries. Minimizes vertical color mismatch, not stripe count or physical resemblance. No real photos, 3D reconstruction or stitch-density calibration.",
+  "cases": [
+    {
+      "id": "midpoint_sliver",
+      "rounds": 10,
+      "blocks": [
+        [
+          0,
+          0.049,
+          "白色"
+        ],
+        [
+          0.049,
+          0.051,
+          "黑色"
+        ],
+        [
+          0.051,
+          1,
+          "白色"
+        ]
+      ],
+      "midpoint_colors": [
+        "黑色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色"
+      ],
+      "overlap_colors": [
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色",
+        "白色"
+      ],
+      "midpoint_mismatched_height": 0.098,
+      "overlap_mismatched_height": 0.002,
+      "unrepresented_blocks": 1
+    },
+    {
+      "id": "three_colors_one_round",
+      "rounds": 1,
+      "blocks": [
+        [
+          0,
+          0.3,
+          "白色"
+        ],
+        [
+          0.3,
+          0.55,
+          "黑色"
+        ],
+        [
+          0.55,
+          1,
+          "红色"
+        ]
+      ],
+      "midpoint_colors": [
+        "黑色"
+      ],
+      "overlap_colors": [
+        "红色"
+      ],
+      "midpoint_mismatched_height": 0.75,
+      "overlap_mismatched_height": 0.55,
+      "unrepresented_blocks": 2
+    },
+    {
+      "id": "resolvable_stripe",
+      "rounds": 10,
+      "blocks": [
+        [
+          0,
+          0.3,
+          "白色"
+        ],
+        [
+          0.3,
+          0.4,
+          "黑色"
+        ],
+        [
+          0.4,
+          1,
+          "红色"
+        ]
+      ],
+      "midpoint_colors": [
+        "白色",
+        "白色",
+        "白色",
+        "黑色",
+        "红色",
+        "红色",
+        "红色",
+        "红色",
+        "红色",
+        "红色"
+      ],
+      "overlap_colors": [
+        "白色",
+        "白色",
+        "白色",
+        "黑色",
+        "红色",
+        "红色",
+        "红色",
+        "红色",
+        "红色",
+        "红色"
+      ],
+      "midpoint_mismatched_height": 0.0,
+      "overlap_mismatched_height": 0.0,
+      "unrepresented_blocks": 0
+    }
+  ],
+  "script_sha256": "4812f8fff4160af238448db9acaf1939d7efaebed225add672a217a3d135efbb",
+  "source_sha256": {
+    "app/models/color_design.py": "2ebc2781fc38e3604a4c9619897b89cd884caa3c26ea3d4962a1c10fa272ce80",
+    "app/models/crochet_params.py": "e302cada50afd064ec248bfc90daec4e08ba2b701912a6a70951b0a07c7ead73"
+  }
+}

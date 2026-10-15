@@ -49,12 +49,22 @@ _FGD_FLOOR = 144
 class SubjectObservation:
     """One pipeline run's shared subject pixels, including failed extraction.
 
-    The 160px mask is used by silhouette, palette and color bands so they do
-    not independently segment different subjects at different resolutions.
+    Geometry retains the un-eroded 160px mask. Palette and bands share a
+    derived interior mask, without running segmentation a second time.
     This object is transient and must not be reused after editing its image.
     """
 
     image: Image.Image
+
+    @classmethod
+    def from_reviewed_mask(cls, image: Image.Image, mask: np.ndarray,
+                           small: Image.Image) -> SubjectObservation:
+        """Own a corrected mask with fresh color caches and no re-segmentation."""
+        if mask.shape != (small.height, small.width) or max(small.size) > 160:
+            raise ValueError("修正掩码与图片尺寸不一致")
+        observation = cls(image)
+        observation.__dict__["segmentation"] = (mask.astype(bool).copy(), small.copy())
+        return observation
 
     @cached_property
     def segmentation(self) -> tuple[np.ndarray, Image.Image] | None:
@@ -68,6 +78,35 @@ class SubjectObservation:
         if image is not self.image:
             raise ValueError("主体观测只能用于创建它的图片")
         return self.segmentation
+
+    @cached_property
+    def color_segmentation(self) -> tuple[np.ndarray, Image.Image] | None:
+        return color_interior(self.segmentation)
+
+    def extract_colors(self, image: Image.Image) -> tuple[np.ndarray, Image.Image] | None:
+        if image is not self.image:
+            raise ValueError("主体观测只能用于创建它的图片")
+        return self.color_segmentation
+
+
+def color_interior(
+    segmentation: tuple[np.ndarray, Image.Image] | None,
+) -> tuple[np.ndarray, Image.Image] | None:
+    """Remove mixed boundary pixels only for color sampling, never geometry.
+
+    An empty interior is unavailable evidence; callers use their existing
+    fallback. The input mask is not mutated.
+    """
+    if segmentation is None:
+        return None
+    import cv2
+    import numpy as np
+
+    mask, image = segmentation
+    if mask.shape != (image.height, image.width):
+        return None
+    interior = cv2.erode(mask.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
+    return (interior, image) if interior.any() else None
 
 
 def _otsu_threshold(values) -> int | None:
@@ -130,7 +169,7 @@ def extract_subject(
 
     Returns:
         (mask, small_image)：mask 是与 small_image 同尺寸的 bool 二维数组
-        （True=主体像素），small_image 是缩放后的 RGB 图。
+        （True=主体像素，未腐蚀），small_image 是缩放后的 RGB 图。
         cv2 不可用 / 图过小 / 分割退化 → None（调用方回退启发式）。
     """
     try:
@@ -226,11 +265,8 @@ def extract_subject(
         # rect=None 在 GC_INIT_WITH_MASK 模式下合法；opencv 无官方类型桩
         cv2.grabCut(arr, mask, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)  # type: ignore[call-overload]
         subject = (mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD)
-        # 腐蚀 1px：thumbnail 重采样的主体边界是前景/背景混色（1–2px），
-        # 是全图最不可靠的像素——会污染窄带的颜色均值。均匀内缩对剖面
-        # 形状无影响（归一化后不变）。
-        subject = cv2.erode(subject.astype(np.uint8),
-                            np.ones((3, 3), np.uint8)).astype(bool)
+        # Preserve geometry: uniform erosion disproportionately shrinks thin
+        # parts. Boundary cleanup belongs to the separate color mask.
         frac = float(subject.mean())
         if frac < _MIN_SUBJECT_FRAC or frac > _MAX_SUBJECT_FRAC:
             logger.debug("GrabCut 分割退化（主体占比 %.2f），回退启发式", frac)

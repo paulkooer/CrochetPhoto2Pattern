@@ -65,7 +65,7 @@ def test_extreme_head_to_height_ratio_never_rounds_dimensions_to_zero():
 
 
 def test_accessories_have_dedicated_shapes():
-    """耳朵/尾巴等配件应有专属条目，未知部件默认小球而非身体级圆柱。"""
+    """耳朵/尾巴等受支持配件应有专属条目。"""
     analysis = ImageAnalysis(
         body_type="标准",
         head_diameter_cm=9.0,
@@ -73,7 +73,7 @@ def test_accessories_have_dedicated_shapes():
         main_features=[],
         pose="站立",
         difficulty="easy",
-        parts=["头部", "耳朵", "尾巴", "未知部件"]
+        parts=["头部", "耳朵", "尾巴"]
     )
     result = StructureDesigner.design_3d_structure(analysis)
     by_name = {p["name"]: p for p in result["parts"]}
@@ -81,8 +81,6 @@ def test_accessories_have_dedicated_shapes():
     assert by_name["耳朵"]["diameter_cm"] < analysis.head_diameter_cm
     assert by_name["尾巴"]["shape"] == "cylinder"
     assert "length_cm" in by_name["尾巴"]
-    assert by_name["未知部件"]["shape"] == "sphere"
-    assert by_name["未知部件"]["diameter_cm"] < analysis.head_diameter_cm
 
 
 def test_hat_is_open_cup_with_slack():

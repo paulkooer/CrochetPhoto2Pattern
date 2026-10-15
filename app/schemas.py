@@ -96,8 +96,8 @@ PART_LABELS_EN: dict[PartKind, str] = {
 }
 
 # 规范部件名（vision prompt、手动输入、结构设计三方共用的单一来源）。
-# 不用 Literal 硬约束 parts 字段：LLM 输出变体（如"双手"）时宁可走
-# StructureDesigner 的默认小球降级，也不要让整次解析因校验失败而报错。
+# 解析阶段保留未知名称供人工复核；自动结构生成仅接受规范部件，
+# 不把未知结构静默替换成球体。显式设计的旧结构仍可导入。
 PART_NAMES = tuple(PART_LABELS_ZH[k] for k in PartKind)
 
 
@@ -186,19 +186,13 @@ _REFERENCE_CANVAS_CM = 18.0
 
 
 class VisionOutput(BaseModel):
-    """Vision 模型结构化输出的独立契约（与内部 ImageAnalysis 刻意分离）。
+    """Legacy ratio payload adapter; retained for library/data compatibility.
 
-    审核意见（fable5.1）落地：
-    - 枚举字段用 Literal——结构化输出下由服务端约束解码，不会导致校验失败；
-    - 不携带 recommended_colors——色板永远由本地量化产生（照片像素是唯一
-      可信来源），模型无权填写，也不再给图片内注入留展示位；
-    - 直接索取 head_to_height_ratio，替代"固定 18.0 画布 + 头径换算"的
-      间接比例索取。
+    No runtime provider calls use this model. New photo analysis is local.
     """
 
     body_type: Literal["瘦", "标准", "胖"]
-    # 注意：结构化输出的 strict 模式只约束"结构"（字段/类型），数值区间
-    # 由客户端校验——越界会触发 OpenAI 路径的带反馈重试或 provider 回退
+    # Validate historical ratio payloads before converting to internal dimensions.
     head_to_height_ratio: float = Field(
         gt=0, lt=1,
         description="photo head diameter divided by full visible height")

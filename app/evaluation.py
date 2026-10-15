@@ -23,11 +23,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.models.colors import YARN_COLORS
 from app.schemas import PART_NAMES
-from app.utils.images import MAX_UPLOAD_MB, load_image_file
+from app.utils.images import MAX_UPLOAD_MB, load_image_bytes, load_image_file
 
 MANIFEST_NAME = "eval_manifest.json"
 MANIFEST_SCHEMA_VERSION = Literal[2]
-REPORT_SCHEMA_VERSION = 2
+REPORT_SCHEMA_VERSION = 3
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
 ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp"})
@@ -312,6 +312,32 @@ def _default_local_runner() -> EvaluationRunner:
     return _run
 
 
+def _part_quantities(parts: list, quantity_key: str) -> dict[str, int]:
+    """Compare physical copies, expanding only genuine generated one-piece parts."""
+    from app.models.parts import _ONE_PIECE_NAME
+    from app.utils.counts import integer_count
+
+    counts: dict[str, int] = {}
+    for raw in parts:
+        part = raw if isinstance(raw, dict) else raw.model_dump()
+        name = part.get("name")
+        names: tuple[Any, ...]
+        if name == _ONE_PIECE_NAME:
+            if quantity_key != "quantity" or part.get("type") != "onepiece":
+                raise ValueError("combined head/body requires a onepiece pattern")
+            names = ("头部", "身体")
+        else:
+            names = (name,)
+        quantity = integer_count(part.get(quantity_key, 1))
+        if not 1 <= quantity <= 20:
+            raise ValueError("part quantity must be between 1 and 20")
+        for expanded in names:
+            if not isinstance(expanded, str) or not expanded.strip() or expanded in counts:
+                raise ValueError("invalid or duplicate delivered part")
+            counts[expanded] = quantity
+    return counts
+
+
 def _part_metrics(expected: set[str], actual: set[str]) -> tuple[float, float, float]:
     true_positive = len(expected & actual)
     precision = true_positive / len(actual) if actual else 0.0
@@ -335,11 +361,17 @@ def evaluate_dataset(
     dataset_dir: str | Path,
     *,
     runner: EvaluationRunner | None = None,
+    release: bool = False,
 ) -> dict[str, Any]:
     """Evaluate every frozen case and return a report without hiding failures."""
     _root, manifest, prepared = load_evaluation_dataset(dataset_dir)
     run_case = runner or _default_local_runner()
     thresholds = manifest.thresholds
+    if release:
+        floors = EvaluationThresholds(min_cases=30).model_dump()
+        thresholds = EvaluationThresholds(**{
+            key: max(value, floors[key]) for key, value in thresholds.model_dump().items()
+        })
     case_reports: list[dict[str, Any]] = []
 
     part_f1_values: list[float] = []
@@ -357,24 +389,34 @@ def evaluate_dataset(
             tag_counts[tag] = tag_counts.get(tag, 0) + 1
         expected_parts = set(case.expected.parts)
         try:
-            image = load_image_file(image_path)
+            # Hash and decode the same bounded, immutable read. Reopening the
+            # path for either operation can attribute different pixels to this hash.
+            limit = MAX_UPLOAD_MB * 1024 * 1024
+            with image_path.open("rb") as handle:
+                image_bytes = handle.read(limit + 1)
+            if len(image_bytes) > limit:
+                raise EvaluationDatasetError(f"{case.id}: image exceeds {MAX_UPLOAD_MB}MB limit")
+            actual_sha = hashlib.sha256(image_bytes).hexdigest()
+            if actual_sha != case.sha256:
+                raise EvaluationDatasetError(
+                    f"{case.id}: dataset file changed during evaluation: {case.file}; "
+                    f"expected {case.sha256}, got {actual_sha}"
+                )
+            image = load_image_bytes(image_bytes)
+            del image_bytes
             if image is None:
                 raise EvaluationDatasetError(f"unable to decode image: {case.file}")
             try:
-                # 每例打分前重校验冻结哈希：数据集在载入与评测之间被同步
-                # 进程替换时，报告不得把分数归因到旧哈希上。
-                actual_sha = _sha256(image_path)
-                if actual_sha != case.sha256:
-                    raise EvaluationDatasetError(
-                        f"{case.id}: dataset file changed during evaluation: {case.file}; "
-                        f"expected {case.sha256}, got {actual_sha}"
-                    )
                 result = run_case(image)
             finally:
                 image.close()
 
             analysis = result.get("analysis") or {}
-            actual_parts = set(analysis.get("parts") or [])
+            analysis_parts = set(analysis.get("parts") or [])
+            delivered = _part_quantities((result.get("params") or {}).get("parts") or [], "quantity")
+            designed = _part_quantities((result.get("structure") or {}).get("parts") or [], "count")
+            actual_parts = set(delivered)
+            delivery_consistent = bool(delivered and delivered == designed and actual_parts == analysis_parts)
             precision, recall, part_f1 = _part_metrics(expected_parts, actual_parts)
             structure_parts = (result.get("structure") or {}).get("parts") or []
             got_flare = any(
@@ -413,7 +455,8 @@ def evaluate_dataset(
                 parade_syntax_ok = False
                 parade_export_ok = False
             case_passed = bool(
-                recall >= thresholds.min_case_part_recall
+                delivery_consistent
+                and recall >= thresholds.min_case_part_recall
                 and (flare_match is not False)
                 and (color_match is not False)
                 and pattern_valid
@@ -431,6 +474,7 @@ def evaluate_dataset(
                 "part_recall": round(recall, 4),
                 "part_f1": round(part_f1, 4),
                 "parts_exact": actual_parts == expected_parts,
+                "delivery_consistent": delivery_consistent,
                 "expected_flare": case.expected.flare,
                 "actual_flare": got_flare,
                 "flare_match": flare_match,
@@ -466,6 +510,7 @@ def evaluate_dataset(
                 "part_recall": 0.0,
                 "part_f1": 0.0,
                 "parts_exact": False,
+                "delivery_consistent": False,
                 "expected_flare": case.expected.flare,
                 "actual_flare": None,
                 "flare_match": flare_match,
@@ -514,15 +559,91 @@ def evaluate_dataset(
             or color_top3_accuracy >= thresholds.min_color_top3_accuracy
         )
     )
+    unique_images = len({case.sha256 for case in manifest.cases})
+    required_groups = {
+        "full_body": {"full-body"},
+        "close_framing": {"half-body", "close-up"},
+        "pose_or_occlusion": {"seated", "occluded"},
+        "plain_background": {"plain-background"},
+        "complex_background": {"complex-background"},
+        "low_contrast": {"low-contrast"},
+    }
+    missing_groups = [name for name, tags in required_groups.items() if not tags.intersection(tag_counts)]
+    reasons = []
+    if unique_images < 30:
+        reasons.append("requires at least 30 distinct image SHA-256 hashes")
+    if unique_images != len(manifest.cases):
+        reasons.append("duplicate image content must be removed")
+    if missing_groups:
+        reasons.append("missing scene groups: " + ", ".join(missing_groups))
+    if len(flare_matches) != len(case_reports) or len(color_matches) != len(case_reports):
+        reasons.append("every case requires flare and dominant-color labels")
+    if {case.expected.flare for case in manifest.cases} != {True, False}:
+        reasons.append("requires both flare-positive and flare-negative labels")
+    fixed_case_pass_rate = _mean([
+        float(c.get("part_recall", 0) >= 0.5
+              and c["flare_match"] is True and c["color_top3_match"] is True
+              and c["pattern_valid"] and c["parade_export_ok"]) for c in case_reports
+    ])
+    fixed_quality = bool(
+        macro_part_f1 is not None and macro_part_f1 >= 0.6
+        and fixed_case_pass_rate is not None and fixed_case_pass_rate >= 0.8
+        and flare_accuracy is not None and flare_accuracy >= 0.8
+        and color_top3_accuracy is not None and color_top3_accuracy >= 0.8
+        and pattern_valid_rate == 1 and parade_export_rate == 1
+    )
+    if not fixed_quality or not passed:
+        reasons.append("quality metrics do not meet release floors and configured thresholds")
+    # Policy v2: evaluate minority classes and the artifact, not just the
+    # average recognition score. These are engineering acceptance floors.
+    exact_rate = _mean([float(c["parts_exact"]) for c in case_reports])
+    labels = sorted({name for c in case_reports for name in c["expected_parts"]})
+    part_recall = {
+        name: _mean([float(name in c["actual_parts"]) for c in case_reports
+                     if name in c["expected_parts"]]) for name in labels
+    }
+    flare_recall = {
+        str(label).lower(): _mean([float(c["flare_match"] is True) for c in case_reports
+                                  if c["expected_flare"] is label]) for label in (True, False)
+    }
+    baseline = {"头部", "身体", "手臂", "腿部"}
+    baseline_f1 = _mean([_part_metrics(set(c["expected_parts"]), baseline)[2] for c in case_reports])
+    sparse_groups = [name for name, tags in required_groups.items()
+                     if sum(bool(tags.intersection(c.tags)) for c in manifest.cases) < 5]
+    if sparse_groups:
+        reasons.append("requires at least 5 cases per scene group: " + ", ".join(sparse_groups))
+    if any(sum(c.expected.flare is label for c in manifest.cases) < 5 for label in (True, False)):
+        reasons.append("requires at least 5 flare-positive and 5 flare-negative cases")
+    if exact_rate is None or exact_rate < 0.8:
+        reasons.append("delivered part exact-match rate must be at least 0.8")
+    if any(value is None or value < 0.8 for value in [*part_recall.values(), *flare_recall.values()]):
+        reasons.append("each part and each flare class requires recall of at least 0.8")
+    if any(not c["delivery_consistent"] for c in case_reports):
+        reasons.append("analysis, structure and delivered parts/counts must agree in every case")
+    if macro_part_f1 is None or baseline_f1 is None or macro_part_f1 <= baseline_f1:
+        reasons.append("delivered part macro F1 must exceed the fixed humanoid-template baseline")
+    readiness = {
+        "policy_version": 2, "requested": release,
+        "quality_metrics": {"delivered_parts_exact_rate": exact_rate,
+                            "part_recall": part_recall, "flare_class_recall": flare_recall,
+                            "fixed_template_macro_f1": baseline_f1},
+        "automated_passed": not reasons, "blocking_reasons": reasons,
+        "unique_image_hashes": unique_images,
+        "required_scene_groups": {key: sorted(value) for key, value in required_groups.items()},
+        "release_approved": False,
+        "manual_checks_required": ["image authenticity and scene/label review",
+                                   "rights evidence review", "physical crochet trials"],
+    }
     return {
         "report_schema_version": REPORT_SCHEMA_VERSION,
         "generated_at": datetime.now(UTC).isoformat(),
         "application_version": _application_version(),
         "evaluator": {
-            "mode": "local_vision",
+            "mode": "custom_runner" if runner is not None else "local_vision",
             "python": platform.python_version(),
             "network_images_sent": False,
         },
+        "release_readiness": readiness,
         "dataset": manifest.dataset.model_dump(mode="json"),
         "thresholds": thresholds.model_dump(mode="json"),
         "summary": {
@@ -557,6 +678,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="在授权真实照片集上运行本地、可审计的质量评测",
     )
     parser.add_argument("--dataset", required=True, help="含 eval_manifest.json 的数据集目录")
+    parser.add_argument("--release", action="store_true", help="检查发布所需样本、覆盖、标签和固定质量下限")
     parser.add_argument("--out", help="JSON 报告路径；省略时输出到 stdout")
     parser.add_argument(
         "--allow-fail",
@@ -569,7 +691,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        report = evaluate_dataset(args.dataset)
+        report = evaluate_dataset(args.dataset, release=args.release)
     except EvaluationDatasetError as exc:
         print(f"评测数据集无效: {exc}", file=sys.stderr)
         return 1
@@ -588,6 +710,12 @@ def main(argv: list[str] | None = None) -> int:
         f"· pass_rate={summary['case_pass_rate']} · passed={summary['passed']}",
         file=sys.stderr,
     )
+    if args.release:
+        readiness = report["release_readiness"]
+        print(f"发布自动检查: {readiness['automated_passed']} · "
+              f"{'; '.join(readiness['blocking_reasons'])}", file=sys.stderr)
+        # --allow-fail is deliberately limited to development evaluations.
+        return 0 if readiness["automated_passed"] else 2
     return 0 if summary["passed"] or args.allow_fail else 2
 
 

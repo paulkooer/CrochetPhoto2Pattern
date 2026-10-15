@@ -1,0 +1,40 @@
+{
+  "kind": "original_synthetic_representation_counterexample",
+  "schema_version": 1,
+  "source_images_used": false,
+  "release_evidence": false,
+  "mask": "perfect_all_foreground_supplied_to_isolate_color_compression",
+  "cases": [
+    {
+      "id": "two_separate_patches",
+      "pixel_sha256": "dd0c3d4e57fb98307b36f09fc40879af610c61df42475f83bb72546fba41f857",
+      "black_pixels": 1280,
+      "bands": [
+        {
+          "start": 0.0,
+          "end": 1.0,
+          "color": "白色"
+        }
+      ],
+      "black_preserved_in_output": false
+    },
+    {
+      "id": "one_center_patch",
+      "pixel_sha256": "db518c3a2ac7d4b94b6c945a609285e83dc0a0c23b068d1626152a5f44a26fbd",
+      "black_pixels": 1280,
+      "bands": [
+        {
+          "start": 0.0,
+          "end": 1.0,
+          "color": "白色"
+        }
+      ],
+      "black_preserved_in_output": false
+    }
+  ],
+  "distinct_pixels": true,
+  "identical_band_outputs": true,
+  "interpretation": "Horizontal majority bands discard minority patches and horizontal positions. This diagnoses representation, not real-photo accuracy or improved segmentation.",
+  "script_sha256": "7767fbeedab59886db2aaa25a6b4b28581be034e7cb8ed6515f8e60fd49bffe2",
+  "color_design_sha256": "d520402a7eb84823688959c4c7da1e4ab49afb846050e7586510ab6de4c69400"
+}

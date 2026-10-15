@@ -29,6 +29,9 @@ STYLE_DEFAULTS: dict[str, Any] = {
 def result_profile(result: dict) -> list[float] | None:
     """读取当前几何 IR 剖面；旧结果回退 vision_meta（legacy 备份）。"""
     geometry = result.get("geometry") or {}
+    body_region = geometry.get("body_region") or {}
+    if body_region.get("profile"):
+        return body_region["profile"]
     silhouette = geometry.get("silhouette") or {}
     profile = silhouette.get("profile")
     if isinstance(profile, list) and profile:
@@ -77,7 +80,7 @@ def _result_style(result: dict) -> ShapingStyle:
     return ShapingStyle(**{**STYLE_DEFAULTS, **(result.get("style") or {})})
 
 
-def rebuild_params(corrected: dict) -> dict:
+def rebuild_params(corrected: dict, *, check_notes: bool = True) -> dict:
     """把用户 JSON 中的 parts 重建为 CrochetPart 并重算派生量（regen/导入共用）。
 
     CrochetPart 只作校验器：重建后立即 dump 回 dict——params["parts"]
@@ -106,7 +109,7 @@ def rebuild_params(corrected: dict) -> dict:
     rebuilt = {**corrected, "parts": rebuilt_parts}
     from app.models.validator import require_valid_pattern
 
-    require_valid_pattern(rebuilt)
+    require_valid_pattern(rebuilt, check_notes=check_notes)
     # 时长/总针数/材料克数是 parts 的派生量，必须随编辑重算。
     refresh_derived(rebuilt)
     return rebuilt

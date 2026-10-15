@@ -5,9 +5,7 @@
   crochet2pattern --head 9 --height 18 --parts 头部,身体 --out p.json
   crochet2pattern --image photo.jpg --local --format all --out-dir out/
 
-AI 模式读取 OPENAI_API_KEY / ANTHROPIC_API_KEY 环境变量（含中转站
-OPENAI_BASE_URL / ANTHROPIC_BASE_URL）；--local 强制本地视觉（免费），
---mock 演示数据。默认：无 Key 自动走本地视觉。
+照片默认使用本地视觉；--local 保留为兼容选项，--mock 使用演示数据。
 """
 from __future__ import annotations
 
@@ -38,7 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
                      help="演示数据（CLI 无照片参与，配色为默认值）")
     src.add_argument("--batch-dir", help="批量模式：目录内所有 jpg/png 逐个生成")
     parser.add_argument("--local", action="store_true",
-                        help="强制本地视觉估算（免费，默认无 Key 时自动启用）")
+                        help="本地视觉估算（默认启用；保留此参数兼容旧命令）")
     parser.add_argument("--head", type=float, default=9.0, help="头部直径 cm（手动模式）")
     parser.add_argument("--height", type=float, default=18.0,
                         help="整体/照片目标成品高度 cm（默认 18）")
@@ -73,7 +71,7 @@ def run(args: argparse.Namespace) -> dict:
     gauge = gauge_from_ui(args.gauge, args.stitches, args.rows)
     style = ShapingStyle(sphere_mode=args.sphere_mode, one_piece=args.one_piece,
                          skirt_style=args.skirt_style, ruffle_hem=args.ruffle)
-    orch = PipelineOrchestrator()  # Key 从环境变量读取
+    orch = PipelineOrchestrator()
 
     if args.mock:
         analysis = orch.parser.parse_image_mock()
@@ -102,10 +100,8 @@ def run(args: argparse.Namespace) -> dict:
         image = load_image_file(args.image)
         if image is None:
             raise SystemExit(f"无法读取图片: {args.image}")
-        use_local = args.local or not (
-            orch.parser.openai_key or orch.parser.anthropic_key)
         result = orch.run_full_pipeline(image,
-                                        vision_mode="local" if use_local else "ai",
+                                        vision_mode="local",
                                         gauge=gauge, style=style,
                                         target_height_cm=args.height,
                                         target_height_source="cli_target")
@@ -233,6 +229,13 @@ def main(argv=None) -> int:
         if args.parade:
             print("--parade 在批量模式下按每图 <stem>.parade.txt 导出", file=sys.stderr)
         return run_batch(args)
+    from app.utils.output_files import output_paths, write_outputs
+
+    try:
+        paths = output_paths(args)
+    except (OSError, ValueError) as exc:
+        print(f"输出准备失败: {exc}", file=sys.stderr)
+        return 1
     try:
         result = run(args)
     except PatternGenerationErrorSafe as e:
@@ -244,25 +247,29 @@ def main(argv=None) -> int:
             print(f"图解自检失败: {e}", file=sys.stderr)
             return 2
         raise
+    if result.get("vision_meta", {}).get("requires_subject_review") and not args.quiet:
+        print("注意：本地结果的主体类型未确认，部件来自默认模板；请在界面确认头部、部件和数量后使用。",
+              file=sys.stderr)
     payload = result  # 完整 result（含 vision_meta/gauge/style 等，与备份同构）
     blob = json.dumps(payload, ensure_ascii=False, default=lambda o: (
         o.model_dump() if hasattr(o, "model_dump") else str(o)), indent=2)
-    if args.out:
-        Path(args.out).write_text(blob, encoding="utf-8")
-    else:
+    try:
+        exports = {"out": blob.encode("utf-8")}
+        if args.md:
+            exports["md"] = export_markdown(
+                result["params"], result["analysis"], result=result).encode("utf-8")
+        if args.parade:
+            from app.utils.parade_export import export_parade_dsl
+            exports["parade"] = export_parade_dsl(result).encode("utf-8")
+        if args.pdf:
+            from app.utils.pdf_export import export_pdf
+            exports["pdf"] = export_pdf(result["params"], result["analysis"], result=result)
+        write_outputs({path: exports[kind] for kind, path in paths.items()})
+    except Exception as exc:
+        print(f"导出失败: {exc}", file=sys.stderr)
+        return 1
+    if not args.out:
         print(blob)
-    if args.md:
-        analysis = result["analysis"]
-        Path(args.md).write_text(
-            export_markdown(result["params"], analysis, result=result), encoding="utf-8")
-    if args.parade:
-        from app.utils.parade_export import export_parade_dsl
-        Path(args.parade).write_text(
-            export_parade_dsl(result), encoding="utf-8")
-    if args.pdf:
-        from app.utils.pdf_export import export_pdf
-        Path(args.pdf).write_bytes(export_pdf(result["params"],
-                                              result["analysis"], result=result))
     if not args.quiet:
         analysis = result["analysis"]
         parts = result["params"]["parts"]

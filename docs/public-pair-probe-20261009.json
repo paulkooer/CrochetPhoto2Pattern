@@ -1,0 +1,255 @@
+{
+  "kind": "exploratory_public_photo_pattern_pairs",
+  "created_at": "2026-10-09T12:49:31.161889+00:00",
+  "app_source_sha256": "b08d21cde2647677338856b81d3d99394685965251fa83a32ce757c951b8508c",
+  "mode": "local_vision_pose_disabled",
+  "release_evidence": false,
+  "rights_status": "public_source_reference_only_no_redistribution_permission_asserted",
+  "scope": "Two manually selected development cases; not a held-out benchmark. Visible semantic parts are distinct from separately crocheted pieces. Pattern instructions were not supplied to the pipeline. Gauge was not calibrated.",
+  "cases": [
+    {
+      "id": "akihiro",
+      "reference": {
+        "page_url": "https://www.clover-mfg.com/en/project/amigurumi-akihiro-crochet-pattern/",
+        "image_url": "https://www.clover-mfg.com/wp-content/uploads/2023/08/Amigurumi-AKIHIRO-Crochet-Pattern.jpg",
+        "publisher": "Clover / Maria Atelier",
+        "visible_parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部",
+          "耳朵",
+          "尾巴"
+        ],
+        "construction_observation": "Joined legs continue into body and head; arms, ears and tail attach separately.",
+        "target_height_cm": 26,
+        "target_basis": "source_declared_finished_height"
+      },
+      "sha256": "0a7b80c776663b28755ea2f71f899cacf79685d5403575202788a11ac7261c88",
+      "image_size": [
+        640,
+        480
+      ],
+      "vision_meta": {
+        "source": "opencv-face",
+        "face_box": [
+          364,
+          12,
+          73,
+          73
+        ],
+        "head_span": [
+          0.025,
+          0.177
+        ],
+        "body_ratio": 6.08,
+        "head_cm_anchor": 9.0,
+        "note": "比例来自本地人脸检测；单图没有绝对尺度，厘米尺寸由生成时选择的目标高度决定"
+      },
+      "analysis": {
+        "body_type": "瘦",
+        "head_diameter_cm": 4.3,
+        "height_cm": 26.0,
+        "main_features": [
+          "主色调 灰色",
+          "主色调 深灰色"
+        ],
+        "pose": "站立",
+        "difficulty": "easy",
+        "parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部"
+        ],
+        "recommended_colors": [
+          "灰色",
+          "深灰色",
+          "黑色",
+          "白皙肤色",
+          "小麦肤色"
+        ],
+        "hair_color": null,
+        "top_color": null,
+        "bottom_color": null,
+        "clothing_type": null
+      },
+      "missing_visible_parts": [
+        "尾巴",
+        "耳朵"
+      ],
+      "unexpected_parts": [],
+      "visible_part_recall": 0.6666666666666666,
+      "generated_parts": [
+        {
+          "name": "头部",
+          "quantity": 1,
+          "type": "sphere",
+          "round_count": 8,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "身体",
+          "quantity": 1,
+          "type": "profile",
+          "round_count": 20,
+          "colors": [
+            "小麦肤色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "手臂",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 13,
+          "colors": [
+            "小麦肤色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "腿部",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 15,
+          "colors": [
+            "灰色"
+          ]
+        }
+      ],
+      "pattern_validation": {
+        "ok": true,
+        "issues": [],
+        "notes": [],
+        "checked": 56,
+        "max_stitch_change": 6,
+        "shaping_continuous_delta": 5.11
+      },
+      "physical_trial": false
+    },
+    {
+      "id": "bunny",
+      "reference": {
+        "page_url": "https://53stitches.com/low-sew-bunny-free-crochet-pattern/",
+        "image_url": "https://53stitches.com/wp-content/uploads/2026/04/pasted-image-48-1024x819.jpeg",
+        "publisher": "53stitches",
+        "visible_parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部",
+          "耳朵"
+        ],
+        "construction_observation": "Continuous main form with popcorn limbs; separate ears; carrot accessory.",
+        "target_height_cm": 18,
+        "target_basis": "application_default_not_source_measurement"
+      },
+      "sha256": "4d05cbde917ce7d815c71b4dca6d05cbfca964e485b70f356a77cd5309349067",
+      "image_size": [
+        1024,
+        819
+      ],
+      "vision_meta": {
+        "source": "default",
+        "note": "未检测到人脸，使用默认 Q 版比例"
+      },
+      "analysis": {
+        "body_type": "标准",
+        "head_diameter_cm": 9.0,
+        "height_cm": 18.0,
+        "main_features": [
+          "本地估算（未检出人脸）"
+        ],
+        "pose": "站立",
+        "difficulty": "easy",
+        "parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部",
+          "裙子"
+        ],
+        "recommended_colors": [
+          "灰色",
+          "暗肤色",
+          "深绿色",
+          "钢蓝色",
+          "浅灰色"
+        ],
+        "hair_color": null,
+        "top_color": null,
+        "bottom_color": null,
+        "clothing_type": null
+      },
+      "missing_visible_parts": [
+        "耳朵"
+      ],
+      "unexpected_parts": [
+        "裙子"
+      ],
+      "visible_part_recall": 0.8,
+      "generated_parts": [
+        {
+          "name": "头部",
+          "quantity": 1,
+          "type": "sphere",
+          "round_count": 17,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "身体",
+          "quantity": 1,
+          "type": "profile",
+          "round_count": 13,
+          "colors": [
+            "深灰色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "手臂",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 8,
+          "colors": [
+            "深灰色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "腿部",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 9,
+          "colors": [
+            "暗肤色",
+            "深灰色"
+          ]
+        },
+        {
+          "name": "裙子",
+          "quantity": 1,
+          "type": "cup",
+          "round_count": 5,
+          "colors": [
+            "深灰色"
+          ]
+        }
+      ],
+      "pattern_validation": {
+        "ok": true,
+        "issues": [],
+        "notes": [],
+        "checked": 52,
+        "max_stitch_change": 6,
+        "shaping_continuous_delta": 5.11
+      },
+      "physical_trial": false
+    }
+  ]
+}

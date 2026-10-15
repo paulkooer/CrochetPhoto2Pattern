@@ -25,9 +25,9 @@ from ..utils.counts import integer_count as _integer_count
 from .gauge import gauge_from_mapping
 
 
-def require_valid_pattern(params: dict[str, Any]) -> None:
+def require_valid_pattern(params: dict[str, Any], *, check_notes: bool = True) -> None:
     """Reject arithmetic errors at edit/import and printable export boundaries."""
-    validation = validate_pattern(params)
+    validation = validate_pattern(params, check_notes=check_notes)
     if not validation["ok"]:
         raise ValueError("图解自检失败: " + "；".join(validation["issues"]))
 
@@ -47,7 +47,7 @@ def shaping_limit_for_pattern(params: dict[str, Any]) -> int:
     return int(shaping_policy_for_pattern(params)["max_stitch_change"])
 
 
-def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
+def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dict[str, Any]:
     """校验图解代数自洽 + 物理边界。返回 {"ok", "issues", "checked"}。
 
     两类检查解耦（V2）：
@@ -132,6 +132,11 @@ def validate_pattern(params: dict[str, Any]) -> dict[str, Any]:
                 issues.append(f"{name} 第 {i} 圈：针数 {st} 超出上限 {MAX_ROUND_STITCHES}")
                 prev_stitches = None
                 continue
+            if check_notes:
+                from .instruction_checks import instruction_issues
+
+                for issue in instruction_issues(rd.get("notes"), st, inc, dec):
+                    issues.append(f"{name} 第 {i} 圈：{issue}")
             if inc > 0 and dec > 0:
                 # 印证修正：真实图解的面部/异形塑形常在同圈混用加减速
                 # （垂耳兔眼窝圈 7X,7V,A,7V,7X：30→43），代数与可执行性

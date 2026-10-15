@@ -6,12 +6,11 @@ import pytest
 from PIL import Image, ImageDraw
 
 from app.models import subject
-from app.models.image_parser import ImageParser
 from app.models.orchestrator import PipelineOrchestrator
 from app.models.subject import SubjectObservation
 
 
-@pytest.mark.parametrize("mode", ["local", "ai", "mock"])
+@pytest.mark.parametrize("mode", ["local", "mock"])
 @pytest.mark.parametrize("segmented", [True, False])
 def test_pipeline_segments_once_including_failure(monkeypatch, mode, segmented):
     calls = []
@@ -27,8 +26,7 @@ def test_pipeline_segments_once_including_failure(monkeypatch, mode, segmented):
     monkeypatch.setattr(subject, "extract_subject", extract)
     monkeypatch.setattr("app.models.pose.get_body_landmarks", lambda image: None)
     monkeypatch.setattr("app.models.local_vision._detect_face", lambda image: None)
-    monkeypatch.setattr(ImageParser, "_parse_with_openai", lambda self, image: self._mock_analysis())
-    result = PipelineOrchestrator(openai_key="fake-key").run_full_pipeline(
+    result = PipelineOrchestrator().run_full_pipeline(
         Image.new("RGB", (80, 160), "red"), vision_mode=mode)
     assert calls == [160]
     assert result["params"]["parts"]
@@ -121,3 +119,60 @@ def test_segmentation_is_stable_across_prior_rng_state_and_threads(monkeypatch):
         masks.extend(pool.map(extract, reversed(seeds)))
     for mask in masks[1:]:
         np.testing.assert_array_equal(mask, masks[0])
+
+
+def test_geometry_keeps_thin_parts_while_colors_use_cached_interior(monkeypatch):
+    image = Image.new("RGB", (100, 80))
+    mask = np.zeros((80, 100), dtype=bool)
+    mask[5:35, 45:55] = True
+    mask[35:75, 25:75] = True
+    mask[10:30, 70:71] = True  # one-pixel appendage must survive geometry
+    original = mask.copy()
+    calls = []
+
+    def extract(*args, **kwargs):
+        calls.append(1)
+        return mask, image
+
+    monkeypatch.setattr(subject, "extract_subject", extract)
+    observation = SubjectObservation(image)
+    colors = observation.extract_colors(image)
+    geometry = observation.extract(image)
+    assert colors is not None and geometry is not None
+    assert colors is observation.extract_colors(image)
+    assert calls == [1]
+    np.testing.assert_array_equal(geometry[0], original)
+    assert geometry[0][20, 70] and not colors[0][20, 70]
+    assert geometry[0][20, 45:55].sum() / geometry[0][50].sum() == 0.2
+    assert colors[0][20].sum() / colors[0][50].sum() == pytest.approx(8 / 48)
+    with pytest.raises(ValueError, match="图片"):
+        observation.extract_colors(image.copy())
+
+
+def test_color_interior_empty_or_misaligned_is_unavailable():
+    image = Image.new("RGB", (40, 80))
+    mask = np.zeros((80, 40), dtype=bool)
+    mask[10:70, 20] = True
+    assert subject.color_interior((mask, image)) is None
+    assert mask.sum() == 60
+    assert subject.color_interior((mask[:, :20], image)) is None
+    assert subject.color_interior(None) is None
+
+
+def test_grabcut_output_is_not_eroded(monkeypatch):
+    import cv2
+
+    image = Image.new("RGB", (100, 80), "white")
+    expected = np.zeros((80, 100), dtype=bool)
+    expected[10:70, 40:60] = True
+    expected[15:35, 60] = True
+
+    def grabcut(arr, mask, *args):
+        mask[:] = cv2.GC_BGD
+        mask[expected] = cv2.GC_FGD
+
+    monkeypatch.setattr(cv2, "grabCut", grabcut)
+    monkeypatch.setattr(subject, "_face_box", lambda image: None)
+    result = subject.extract_subject(image)
+    assert result is not None
+    np.testing.assert_array_equal(result[0], expected)

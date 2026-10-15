@@ -2,11 +2,13 @@
 to per-round yarn colors for each amigurumi part.
 
 设计思路（让针法配色真正来自照片）：
-1. 估计背景色（四角众数），逐横带取"非背景像素"的平均色；
-2. 平均色经 CIE Lab 匹配到毛线色表（与全局色板同一来源）；
-3. 相邻同色带合并；按部件在主体上的纵向占比（PART_SPAN）切片，
+1. 估计背景色（四角众数），逐横带统计非背景像素映射到毛线色表后的覆盖率；
+2. 选覆盖率最高的毛线色，避免不同颜色平均后产生不存在的中间色；
+3. 用持续、覆盖充分的逐行主色细化边界，保留窄横条纹；相邻同色带合并；
+   按部件在主体上的纵向占比（PART_SPAN）切片，
    得到该部件自上而下的色段；
-4. 色段按圈数等比铺开 → 每圈一个颜色，颜色变化处生成"换线"说明。
+4. 色段按圈数等比划分 → 每圈按区间覆盖量选色，颜色变化处生成"换线"说明；
+   未分配对应圈色的色段明确提示复核。
 
 近似性声明：不做人体分割，背景剔除是启发式的；部件纵向占比是
 Amigurumi 常规比例的先验。结果可在 UI「局部修正」中逐圈调整。
@@ -18,7 +20,7 @@ import logging
 from PIL import Image
 
 from ..schemas import PART_LABELS_ZH, PartKind
-from .colors import nearest_yarn
+from .colors import nearest_yarn_batch
 from .subject import SubjectObservation
 
 logger = logging.getLogger(__name__)
@@ -67,8 +69,13 @@ def estimate_background(px) -> tuple[int, int, int]:
 
 
 def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
-                         subject: SubjectObservation | None = None) -> list[dict]:
-    """把照片纵向切成 n_bands 个横带，返回每带的毛线色（自上而下）。
+                         subject: SubjectObservation | None = None,
+                         observation: dict | None = None,
+                         refine_stripes: bool = True) -> list[dict]:
+    """以 n_bands 个横带为基线，细化稳定横条纹后返回自上而下毛线色。
+
+    refine_stripes=False 保留原固定横带投票，供可复现对照使用。
+    observation 始终保留原始固定横带计数及二维色块，不随细化丢弃证据。
 
     主体判定优先 GrabCut 分割（subject.extract_subject，对双色/相近背景
     更稳）；失败回退四角众数背景 + 颜色距离阈值的启发式。
@@ -76,6 +83,8 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
     Returns [{"start": 0.0, "end": 0.1, "color": "浅肤色"}, ...]
     失败（异常图）返回 []，调用方按"无配色"降级。
     """
+    if observation is not None:
+        observation.clear()
     try:
         import numpy as np
     except ImportError:
@@ -85,68 +94,96 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
         img.thumbnail((160, 160))
         px = np.asarray(img, dtype=np.int16)
         h, w = px.shape[:2]
-        if h < n_bands or w < 4:
+        if n_bands < 1 or h < n_bands or w < 4:
             return []
         # 主体掩码：GrabCut 优先（掩码与小图对齐），退化/不可用回退阈值法
-        from .subject import extract_subject
-        res = subject.extract(image) if subject is not None else extract_subject(image, max_side=160)
+        from .subject import color_interior, extract_subject
+        res = (subject.extract_colors(image) if subject is not None
+               else color_interior(extract_subject(image, max_side=160)))
         mask = None if res is None else res[0]
-        if mask is not None and mask.shape[0] == h:
-            # 每带取主体像素均值；无主体像素的带（纯背景带）不落回整带
-            # 均值——那会把背景色当主体色（实测地板色混进底部带），改为
-            # 延续最近的有主体色带（色彩连续性），全空则按无配色降级。
-            colors: list[str | None] = []
-            for i in range(n_bands):
-                y0, y1 = h * i // n_bands, h * (i + 1) // n_bands
-                block = px[y0:y1].reshape(-1, 3)
-                subject_pixels = block[mask[y0:y1].reshape(-1)]
-                colors.append(
-                    nearest_yarn(*(int(v) for v in subject_pixels.mean(axis=0)))[0]
-                    if len(subject_pixels) else None)
-            filled: list[str | None] = list(colors)
-            last: str | None = None
-            for i, c in enumerate(colors):     # 前向填充
-                if c is not None:
-                    last = c
-                elif last is not None:
-                    filled[i] = last
-            nxt: str | None = None          # 后向填充（顶部空带）
-            for i in range(n_bands - 1, -1, -1):
-                if colors[i] is not None:
-                    nxt = colors[i]
-                elif nxt is not None:
-                    filled[i] = nxt
-            if all(c is None for c in filled):  # 全图无主体
+        if mask is not None and mask.shape != (h, w):
+            mask = None
+        mask_source = "segmentation" if mask is not None else "background_distance"
+        if mask is None:
+            bg = np.array(estimate_background(px), dtype=np.int16)
+            mask = np.abs(px - bg).sum(axis=2) > _BG_DIST_THRESHOLD
+            if mask.mean() < 0.05:
                 return []
-            bands = [{"start": i / n_bands, "end": (i + 1) / n_bands,
-                      "color": filled[i]} for i in range(n_bands)]
-            return _merge_bands(bands)
-        bg = np.array(estimate_background(px), dtype=np.int16)
-        bands = []
-        subject_total = 0
-        pixel_total = 0
+        # Map actual foreground colors once, then vote per horizontal band.
+        # A mean of black and white would invent grey; coverage preserves yarn.
+        ys, _xs = np.nonzero(mask)
+        if not len(ys):
+            return []
+        unique, inverse = np.unique(px[mask], axis=0, return_inverse=True)
+        names, _rgbs = nearest_yarn_batch(unique)
+        yarn_names, name_ids = np.unique(names, return_inverse=True)
+        pixel_ids = name_ids[inverse]
+        colors: list[str | None] = []
         for i in range(n_bands):
             y0, y1 = h * i // n_bands, h * (i + 1) // n_bands
-            block = px[y0:y1].reshape(-1, 3)
-            dist = np.abs(block - bg).sum(axis=1)
-            subject_pixels = block[dist > _BG_DIST_THRESHOLD]
-            subject_total += len(subject_pixels)
-            pixel_total += len(block)
-            # 主体像素不足的带兜底用整带均值（背景带），但若全图几乎无主体
-            # → 视为"没有可分析的物体"，返回空让上层降级为单色
-            mean = subject_pixels.mean(axis=0) if len(subject_pixels) else block.mean(axis=0)
-            name, _rgb = nearest_yarn(*(int(v) for v in mean))
-            bands.append({
-                "start": i / n_bands,
-                "end": (i + 1) / n_bands,
-                "color": name,
-            })
-        if pixel_total and subject_total / pixel_total < 0.05:
-            return []
+            ids = pixel_ids[(ys >= y0) & (ys < y1)]
+            colors.append(str(yarn_names[np.bincount(ids).argmax()]) if len(ids) else None)
+        # Empty bands inherit the nearest observed band, never the background.
+        # Ties choose the preceding band, independently of scan direction.
+        observed = [i for i, color in enumerate(colors) if color is not None]
+        bands = []
+        for i, color in enumerate(colors):
+            if color is None:
+                color = colors[min(observed, key=lambda j: (abs(j - i), j))]
+            bands.append({"start": i / n_bands, "end": (i + 1) / n_bands,
+                          "color": color})
+        if observation is not None:
+            from .color_observation import build_observation
+
+            observation.update(build_observation(mask, pixel_ids, yarn_names, n_bands, mask_source))
+        if refine_stripes:
+            bands = _refine_stripes(bands, mask, ys, pixel_ids, yarn_names)
         return _merge_bands(bands)
     except Exception as e:
         logger.warning("color band extraction failed: %s", e)
         return []
+
+
+def _refine_stripes(bands, mask, ys, pixel_ids, yarn_names) -> list[dict]:
+    """Overlay sustained row-majority runs on coarse bands, without filling gaps.
+
+    Thresholds are conservative noise heuristics, not photo-calibrated confidence.
+    Require >=75% agreement, sufficient foreground support and >=2 rows / 1.5%
+    image height. Minority patches stay in ColorObservation, not whole rounds.
+    Empty/ambiguous rows retain the coarse estimate. Work is bounded by 160 rows.
+    """
+    import numpy as np
+
+    h = mask.shape[0]
+    histogram = np.zeros((h, len(yarn_names)), dtype=np.int32)
+    np.add.at(histogram, (ys, pixel_ids), 1)
+    support = histogram.sum(axis=1)
+    winners = histogram.argmax(axis=1)
+    minimum_support = max(4, int(np.ceil(support.max() * 0.2)))
+    reliable = ((support >= minimum_support)
+                & (histogram[np.arange(h), winners] >= 0.75 * support))
+    rows = np.where(reliable, winners, -1)
+    minimum_height = max(2, int(np.ceil(h * 0.015)))
+    runs = []
+    start = 0
+    while start < h:
+        end = start + 1
+        while end < h and rows[end] == rows[start]:
+            end += 1
+        if rows[start] >= 0 and end - start >= minimum_height:
+            runs.append({"start": start / h, "end": end / h,
+                         "color": str(yarn_names[rows[start]])})
+        start = end
+    # Preserve exact coarse boundaries, including when h is not divisible by n_bands.
+    edges = sorted({b[k] for b in bands + runs for k in ("start", "end")})
+    refined = []
+    for start, end in zip(edges, edges[1:], strict=False):
+        middle = (start + end) / 2
+        source = next((r for r in runs if r["start"] <= middle < r["end"]), None)
+        if source is None:
+            source = next(b for b in bands if b["start"] <= middle < b["end"])
+        refined.append({"start": start, "end": end, "color": source["color"]})
+    return refined
 
 
 def _merge_bands(bands: list[dict]) -> list[dict]:
@@ -190,6 +227,52 @@ def round_color(frac: float, blocks: list[tuple[float, float, str]]) -> str | No
         if s <= frac < e:
             return name
     return blocks[-1][2] if blocks else None
+
+
+def round_color_plan(
+    blocks: list[tuple[float, float, str]],
+    span: tuple[float, float],
+    n_rounds: int,
+    *,
+    bottom_up: bool = False,
+) -> tuple[list[str | None], int]:
+    """Choose one yarn per equal-height round by total interval overlap.
+
+    Minimizes mismatched vertical length for each round, rather than magnifying
+    a tiny stripe that happens to cross its midpoint. Equal coverage keeps the
+    midpoint color when possible, then the first color in image order. Compute
+    top-down once and reverse for bottom-up work so floating-point ties cannot
+    change the plan. Return the number of observed blocks with no overlapping
+    round assigned their color; this is resolution loss, not a confidence score.
+    Blocks are ordered, non-overlapping photo intervals from color_blocks_for_part.
+    """
+    import math
+
+    start, end = span
+    if n_rounds < 1 or not (math.isfinite(start) and math.isfinite(end) and start < end):
+        raise ValueError("配色映射需要正圈数和有效部件区间")
+    colors: list[str | None] = []
+    represented: set[int] = set()
+    for j in range(n_rounds):
+        lo = start + (end - start) * j / n_rounds
+        hi = start + (end - start) * (j + 1) / n_rounds
+        overlaps = [(i, name, min(e, hi) - max(s, lo))
+                    for i, (s, e, name) in enumerate(blocks) if min(e, hi) > max(s, lo)]
+        coverage: dict[str, float] = {}
+        for _i, name, length in overlaps:
+            coverage[name] = coverage.get(name, 0.0) + length
+        if not coverage:
+            colors.append(None)
+            continue
+        maximum = max(coverage.values())
+        tied = [name for name, length in coverage.items()
+                if math.isclose(length, maximum, rel_tol=1e-12, abs_tol=0.0)]
+        midpoint = round_color((lo + hi) / 2, blocks)
+        selected = midpoint if midpoint in tied else tied[0]
+        colors.append(selected)
+        represented.update(i for i, name, _length in overlaps if name == selected)
+    eligible = {i for i, (s, e, _name) in enumerate(blocks) if min(e, end) > max(s, start)}
+    return (list(reversed(colors)) if bottom_up else colors), len(eligible - represented)
 
 
 def blocks_summary_text(round_colors: list[str | None]) -> str:

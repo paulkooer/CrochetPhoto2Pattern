@@ -1,0 +1,423 @@
+{
+  "schema_version": 1,
+  "kind": "original_synthetic_narrow_stripe_comparison",
+  "source_images_used": false,
+  "release_evidence": false,
+  "calibration_allowed": false,
+  "mask": "perfect_all_foreground_to_isolate_band_resolution",
+  "scope": "Development counterexamples, not held-out real-photo accuracy or physical trials. Tests additionally cover noise, sparse masks, minority patches and evidence preservation.",
+  "summary": {
+    "cases": 9,
+    "baseline_stripe_exact": 0,
+    "refined_stripe_exact": 9
+  },
+  "cases": [
+    {
+      "id": "h100_y31",
+      "pixel_sha256": "e0f1c88790db84dff9c91466cdb0161a0d1d31b030266e5ba210f9fa673fa903",
+      "size": [
+        100,
+        100
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.31,
+          "end": 0.35,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.31,
+            "color": "白色"
+          },
+          {
+            "start": 0.31,
+            "end": 0.35,
+            "color": "黑色"
+          },
+          {
+            "start": 0.35,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h100_y45",
+      "pixel_sha256": "f4cf8b9c6133fe6b7b475ca349c02c0413e6f50134bbb0e5d9835f236efd656f",
+      "size": [
+        100,
+        100
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.45,
+          "end": 0.49,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.45,
+            "color": "白色"
+          },
+          {
+            "start": 0.45,
+            "end": 0.49,
+            "color": "黑色"
+          },
+          {
+            "start": 0.49,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h100_y62",
+      "pixel_sha256": "8858db123d95d055ac376c275c3976f9a65260f2bf744ac7a19e5c4bffeee2d7",
+      "size": [
+        100,
+        100
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.62,
+          "end": 0.66,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.62,
+            "color": "白色"
+          },
+          {
+            "start": 0.62,
+            "end": 0.66,
+            "color": "黑色"
+          },
+          {
+            "start": 0.66,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h137_y31",
+      "pixel_sha256": "d11a11e19fc2079237759c440572010bb51b7053f6c22d07bab1c6bef3d3da9e",
+      "size": [
+        100,
+        137
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.22627737226277372,
+          "end": 0.25547445255474455,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.22627737226277372,
+            "color": "白色"
+          },
+          {
+            "start": 0.22627737226277372,
+            "end": 0.25547445255474455,
+            "color": "黑色"
+          },
+          {
+            "start": 0.25547445255474455,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h137_y45",
+      "pixel_sha256": "d119a4da606b82d5dcf98dba50bb45570b6ec8d4744d911233987af372a7a76c",
+      "size": [
+        100,
+        137
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.3284671532846715,
+          "end": 0.35766423357664234,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.3284671532846715,
+            "color": "白色"
+          },
+          {
+            "start": 0.3284671532846715,
+            "end": 0.35766423357664234,
+            "color": "黑色"
+          },
+          {
+            "start": 0.35766423357664234,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h137_y62",
+      "pixel_sha256": "3891d541faad69ea303e75400e9dc7828f18731ae4b61a0282e14dde2815e8bb",
+      "size": [
+        100,
+        137
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.45255474452554745,
+          "end": 0.48175182481751827,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.45255474452554745,
+            "color": "白色"
+          },
+          {
+            "start": 0.45255474452554745,
+            "end": 0.48175182481751827,
+            "color": "黑色"
+          },
+          {
+            "start": 0.48175182481751827,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h160_y31",
+      "pixel_sha256": "08641187f3d2992a5af380ce086ef87fbada961b048641ec7e188d3dd3c7312f",
+      "size": [
+        100,
+        160
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.19375,
+          "end": 0.21875,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.19375,
+            "color": "白色"
+          },
+          {
+            "start": 0.19375,
+            "end": 0.21875,
+            "color": "黑色"
+          },
+          {
+            "start": 0.21875,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h160_y45",
+      "pixel_sha256": "d7ef93dc388a6d73a5fa4a4d9d1de3a5829bb32016e7fd1fef145f35555d16e5",
+      "size": [
+        100,
+        160
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.28125,
+          "end": 0.30625,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.28125,
+            "color": "白色"
+          },
+          {
+            "start": 0.28125,
+            "end": 0.30625,
+            "color": "黑色"
+          },
+          {
+            "start": 0.30625,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    },
+    {
+      "id": "h160_y62",
+      "pixel_sha256": "236653a6e8f6f9a4bdc93dffed819bacce524e12e1761b17e01907368178eeb4",
+      "size": [
+        100,
+        160
+      ],
+      "expected_stripe": [
+        {
+          "start": 0.3875,
+          "end": 0.4125,
+          "color": "黑色"
+        }
+      ],
+      "baseline": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": false
+      },
+      "refined": {
+        "bands": [
+          {
+            "start": 0.0,
+            "end": 0.3875,
+            "color": "白色"
+          },
+          {
+            "start": 0.3875,
+            "end": 0.4125,
+            "color": "黑色"
+          },
+          {
+            "start": 0.4125,
+            "end": 1.0,
+            "color": "白色"
+          }
+        ],
+        "stripe_exact": true
+      }
+    }
+  ],
+  "script_sha256": "6beff05fe6d44bb533affb122aee103253f223c32655123d25a5d6b74716fb24",
+  "color_design_sha256": "182bc65e2c048b5bb0f8e5ff87b6fe337c44a5ee4d97e6e116496a31bdfd3b57"
+}

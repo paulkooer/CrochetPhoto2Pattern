@@ -18,7 +18,7 @@ def _analysis():
 
 def test_full_pipeline_returns_three_stage_result():
     orch = PipelineOrchestrator()
-    with patch.object(ImageParser, "parse_image", return_value=_analysis()):
+    with patch.object(ImageParser, "parse_image_local", return_value=_analysis()):
         result = orch.run_full_pipeline(Image.new("RGB", (40, 40)))
     assert set(result.keys()) == {
         "analysis", "structure", "params", "usage", "vision_meta", "gauge",
@@ -39,7 +39,7 @@ def test_full_pipeline_returns_three_stage_result():
 def test_full_pipeline_reports_progress():
     calls = []
     orch = PipelineOrchestrator()
-    with patch.object(ImageParser, "parse_image", return_value=_analysis()):
+    with patch.object(ImageParser, "parse_image_local", return_value=_analysis()):
         orch.run_full_pipeline(
             Image.new("RGB", (40, 40)),
             progress_cb=lambda pct, text: calls.append((pct, text)),
@@ -52,7 +52,7 @@ def test_full_pipeline_reports_progress():
 def test_full_pipeline_progress_cb_optional():
     """不传 progress_cb 时静默运行（模型层不依赖 Streamlit）。"""
     orch = PipelineOrchestrator()
-    with patch.object(ImageParser, "parse_image", return_value=_analysis()):
+    with patch.object(ImageParser, "parse_image_local", return_value=_analysis()):
         result = orch.run_full_pipeline(Image.new("RGB", (40, 40)))
     assert result["analysis"]["parts"] == ["头部", "身体"]
 
@@ -63,7 +63,7 @@ def test_full_pipeline_applies_user_target_to_parser_ratio():
         body_type="标准", head_diameter_cm=4.0, height_cm=20.0,
         main_features=[], pose="站立", difficulty="easy",
         parts=["头部", "身体"])
-    with patch.object(ImageParser, "parse_image", return_value=observed):
+    with patch.object(ImageParser, "parse_image_local", return_value=observed):
         result = orch.run_full_pipeline(
             Image.new("RGB", (40, 40)), target_height_cm=30.0,
             target_height_source="user_photo_target")
@@ -74,13 +74,10 @@ def test_full_pipeline_applies_user_target_to_parser_ratio():
 
 
 def test_explicit_mock_mode_skips_api_and_photo_geometry():
-    """vision_mode="mock"：即使配置了 Key 也不发起 API 调用、不读照片几何。
-
-    旧设计里 Mock 只是"无 Key"的隐式副作用；显式三态后选择与行为一致。
-    """
+    """显式 Mock 使用演示数据，不读取照片几何。"""
     from PIL import Image
 
-    orch = PipelineOrchestrator(openai_key="sk-user-key-1234567890")
+    orch = PipelineOrchestrator()
     result = orch.run_full_pipeline(Image.new("RGB", (40, 40)),
                                     vision_mode="mock")
     assert result["vision_meta"]["source"] == "mock"

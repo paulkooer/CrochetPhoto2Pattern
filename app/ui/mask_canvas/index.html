@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>主体区域修正</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; color: #262626; }
+  .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 8px 0; }
+  button, select { padding: 7px; border: 1px solid #aaa; border-radius: 5px; background: #fff; color: #222; }
+  canvas { display: block; max-width: 100%; touch-action: none; cursor: crosshair; border: 1px solid #aaa; }
+  #status { margin: 8px 0; min-height: 20px; }
+</style>
+<div class="tools">
+  <label>操作 <select id="mode"><option value="1">补选主体</option><option value="0">擦除背景</option></select></label>
+  <label>笔刷 <input id="radius" type="range" min="1" max="16" value="3" aria-label="笔刷半径"></label>
+  <button id="undo" type="button">撤销一笔</button>
+  <button id="reset" type="button">恢复自动分割</button>
+  <label><input id="overlay" type="checkbox" checked>显示绿色选区</label>
+</div>
+<canvas id="canvas" aria-label="在照片上拖动以补选主体或擦除背景"></canvas>
+<p id="status" role="status">正在载入照片…</p>
+<script src="editor.js"></script>
+</html>

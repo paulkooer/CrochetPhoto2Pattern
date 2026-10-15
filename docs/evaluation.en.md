@@ -65,20 +65,45 @@ with near-duplicate photos of the same person. Cover at least:
 The report emits `tag_counts`, but a release reviewer must judge whether the distribution
 is meaningful and confirm that the test set was not used for targeted tuning.
 
+Strict `--release` mode requires at least 30 distinct SHA-256 hashes and rejects duplicate
+image content. Every case needs flare and dominant-color labels, with both flare classes.
+Required scene groups: `full-body`; `half-body` or `close-up`; `seated` or `occluded`;
+`plain-background`; `complex-background`; and `low-contrast`.
+Hashes cannot detect cropped/transcoded near-duplicates, and tags require human review.
+
+Strict thresholds are the higher of manifest values and these floors: 30 cases, 0.5 case
+part recall, 0.6 macro F1, 0.8 case pass/flare/color accuracy, and 1.0 pattern validity and
+complete Parade export rates. `release_readiness.automated_passed` reports automated
+readiness separately from `summary.passed` quality metrics. `release_approved` remains
+false: photo authenticity, labels, rights evidence and physical trials require review.
+
+As of 2026-10-11, report schema 3 (input manifest remains 2) uses release policy 2.
+Part precision/recall/F1 score final `params.parts`. Every case must agree across
+analysis, structure and delivered part names, with matching structure/delivery quantities;
+quantities follow the shared integer contract (1–20, no booleans or fractional values).
+Only a delivered head/body with `type=onepiece` is expanded for comparison; the name alone is insufficient. Strict checks additionally require
+part-set exact match >=0.8, recall >=0.8 for every expected part and each flare class,
+at least five examples in each flare class and scene group, and delivered macro F1
+strictly above a fixed head/body/arms/legs baseline. Metrics appear under
+`release_readiness.quality_metrics`. These are engineering acceptance floors, not
+measured accuracy claims. A dataset that merely ties the fixed template cannot establish
+visual benefit and remains blocked. Older reports must be rerun.
+
 ## 3. Run and interpret exit codes
 
 ```bash
 uv run crochet2pattern-eval \
-  --dataset eval_data/release-01 \
+  --dataset eval_data/release-01 --release \
   --out eval_outputs/release-01.json
 ```
 
-- `0`: valid manifest and every aggregate gate passes.
+- `0`: selected automated checks pass, including strict evidence checks with `--release`.
 - `1`: invalid manifest, path, rights field, image, or hash.
-- `2`: evaluation completed but quality thresholds were missed.
+- `2`: evaluation completed but quality or strict evidence checks failed.
 
 `--allow-fail` keeps exit code `0` during exploration, but `summary.passed` remains false
-and may not be used as release evidence.
+and may not be used as release evidence. `--allow-fail` cannot bypass `--release` failures.
+The real-photo pytest gate also uses strict mode.
 
 Optional pytest gate:
 

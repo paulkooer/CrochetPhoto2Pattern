@@ -1,6 +1,6 @@
-"""Local (no-LLM) photo analysis — the vision-free fallback path.
+"""Local (no-LLM) photo analysis — the default photo-analysis path.
 
-无 API Key 时的本地降级：OpenCV 人脸检测给出头部像素框，按
+默认本地分析：OpenCV 人脸检测给出头部像素框，按
 "头径锚点 × 人体比例" 推算 ImageAnalysis。
 
 能力边界（如实声明）：
@@ -62,6 +62,31 @@ def _detect_face(img: Image.Image) -> tuple[int, int, int, int] | None:
     return int(x), int(y), int(w), int(h)
 
 
+def _subject_vertical_extent(profile: list[float] | None, height: int) -> tuple[float, float]:
+    rows = [i for i, width in enumerate(profile or []) if width > 0.08]
+    if rows and profile:
+        return rows[0] / len(profile) * height, (rows[-1] + 1) / len(profile) * height
+    return 0.0, height * FRAME_FILL_RATIO
+
+
+def _face_rejection_reason(image: Image.Image, box, profile: list[float] | None) -> str | None:
+    """Conservative checks for an upright subject, not semantic face verification.
+
+    Sideways poses and unusual proportions require manual review. These bounds
+    reject unsuitable candidates rather than clamp them into plausible measurements.
+    """
+    x, y, width, height = box
+    if width <= 0 or height <= 0 or x < 0 or y < 0 or x + width > image.width or y + height > image.height:
+        return "检测框超出图片或没有面积"
+    top, bottom = _subject_vertical_extent(profile, image.height)
+    center = y + height / 2
+    if center < top or center > top + (bottom - top) / 2:
+        return "检测框不在主体上半部，不能自动作为直立玩偶头部"
+    if (bottom - top) / max(width, height) > MAX_BODY_RATIO:
+        return "检测框相对主体过小，无法可靠推算头身比例"
+    return None
+
+
 def analyze(
     image: Image.Image,
     n_colors: int = 5,
@@ -77,20 +102,29 @@ def analyze(
     colors = extract_color_palette(image, n_colors=n_colors, subject=subject)
     H = image.size[1]
     box = _detect_face(image)
-    # 轮廓剖面：下摆展开 → 主体是裙形，自动补"裙子"部件
+    # A widened silhouette is an observation, not evidence of a garment.
     # Orchestrator 已建立 provider-neutral geometry 时复用同一观测，避免
     # GrabCut/背景分割做两遍。直接调用 analyze() 仍保持原有独立行为。
     profile = geometry_profile if geometry_observed else _silhouette_profile(image, subject=subject)
     parts = list(_CANONICAL_PARTS)
-    # 完整剖面由 provider-neutral geometry 结果持久化；本地语义层
-    # 只消费 flare 来补部件，不再把几何数据塞进 vision_meta。
-    if profile is not None and _has_bottom_flare(profile):
-        parts.append("裙子")
+    candidate_meta: dict[str, Any] = {
+        "parts_source": "default_template", "requires_subject_review": True,
+        "subject_type": "unclassified",
+        "possible_skirt": bool(profile is not None and _has_bottom_flare(profile)),
+    }
+    if box is not None:
+        rejection = _face_rejection_reason(image, box, profile)
+        if rejection:
+            candidate_meta.update(rejected_face_box=list(box), face_rejection_reason=rejection)
+            box = None
 
     if box is None:
         meta: dict[str, Any] = {
+            **candidate_meta,
             "source": "default",
-            "note": "未检测到人脸，使用默认 Q 版比例",
+            "note": ("头部候选框未通过检查，使用默认 Q 版比例；请手动确认头部和部件"
+                     if candidate_meta.get("face_rejection_reason") else
+                     "未检测到人脸，使用默认 Q 版比例；部件来自模板，请手动确认"),
         }
         return ImageAnalysis(
             body_type="标准",
@@ -105,24 +139,21 @@ def analyze(
 
     _x, _y, face_w, face_h = box
     head_px = max(face_w, face_h, 1)
-    # M1.4：主体高度取剖面首/末超阈行（此前用 0.9×图高盲设）
-    if profile is not None:
-        rows = [i for i, w in enumerate(profile) if w > 0.08]
-        subject_px = ((rows[-1] - rows[0] + 1) / len(profile)) * H if rows else H * 0.9
-    else:
-        subject_px = H * FRAME_FILL_RATIO
+    top, bottom = _subject_vertical_extent(profile, H)
+    subject_px = bottom - top
     ratio = min(max(subject_px / head_px, MIN_BODY_RATIO), MAX_BODY_RATIO)
     height_cm = round(DEFAULT_HEAD_CM * ratio, 1)
     body_type = "胖" if ratio <= 3.0 else ("标准" if ratio <= 5.5 else "瘦")
     head_span = (round(box[1] / H, 3), round((box[1] + box[3]) / H, 3))
     meta = {
+        **candidate_meta,
         "source": "opencv-face",
         "face_box": [int(v) for v in box],
         "head_span": head_span,  # M1.3：实测头部纵向占比（先展示，暂不替代先验）
         "body_ratio": round(ratio, 2),
         "head_cm_anchor": DEFAULT_HEAD_CM,
         "note": (
-            "比例来自本地人脸检测；单图没有绝对尺度，"
+            "比例来自待确认的人脸候选框，部件来自模板；单图没有绝对尺度，"
             "厘米尺寸由生成时选择的目标高度决定"
         ),
     }

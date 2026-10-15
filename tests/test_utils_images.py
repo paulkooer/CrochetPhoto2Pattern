@@ -7,6 +7,7 @@ from app.utils.images import (
     MAX_UPLOAD_MB,
     MAX_UPLOAD_PIXELS,
     MAX_UPLOAD_SIDE,
+    load_image_bytes,
     load_uploaded_image,
     load_uploaded_image_cached,
 )
@@ -31,6 +32,23 @@ def test_valid_image_decoded():
     img = load_uploaded_image(up)
     assert img is not None
     assert img.size == (10, 10)
+
+
+def test_byte_snapshot_preserves_orientation_alpha_and_detaches_stream():
+    rotated = load_image_bytes(_jpeg_with_exif_orientation(6))
+    assert rotated is not None and rotated.size == (200, 400)
+    transparent = load_image_bytes(_transparent_png_bytes())
+    assert transparent is not None
+    assert transparent.getpixel((0, 0)) == (255, 255, 255)
+    assert transparent.copy().getpixel((10, 10)) == (255, 0, 0)
+
+
+def test_byte_snapshot_rejects_corruption_size_and_pixels(monkeypatch):
+    assert load_image_bytes(b"not an image") is None
+    monkeypatch.setattr("app.utils.images.MAX_UPLOAD_PIXELS", 50)
+    assert load_image_bytes(_png_bytes()) is None
+    monkeypatch.setattr("app.utils.images.MAX_UPLOAD_MB", 0)
+    assert load_image_bytes(_png_bytes(size=(1, 1))) is None
 
 
 def test_corrupt_image_returns_none():

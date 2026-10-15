@@ -107,11 +107,11 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
     materials, _ = yarn_requirements(parts, gauge, yarn_spec)
     # 一体件会把"头部/身体"合并改名"头身（一体）"；显式识别这三个
     # 语义名称，避免"头套"等附件因子串命中而误获安全眼或配重珠。
-    has_head = any(
-        _part_name(p) in {"头部", _ONE_PIECE_NAME} for p in parts)
-    has_body = any(
-        _part_name(p) in {"身体", _ONE_PIECE_NAME} for p in parts)
-    if has_head:
+    head_count = sum(_part_quantity(p) for p in parts
+                     if _part_name(p) in {"头部", _ONE_PIECE_NAME})
+    body_count = sum(_part_quantity(p) for p in parts
+                     if _part_name(p) in {"身体", _ONE_PIECE_NAME})
+    if head_count:
         # 安全眼尺寸随头径分档（固定 8mm 在大/小头径下失真——社区与
         # 专业图解都按玩偶大小配眼）；无头径数据的旧结果兜底 8mm
         head = next((p for p in parts
@@ -122,17 +122,19 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         except (TypeError, ValueError):
             diameter = None
         materials.append({"item": "安全眼",
-                          "quantity": f"一对 ({_safety_eye_mm(diameter)}mm；"
+                          "count": head_count, "unit": "对", "scope": "per_head",
+                          "quantity": f"{head_count} 对 ({_safety_eye_mm(diameter)}mm；"
                                       "3 岁以下儿童及宠物玩偶禁用——眼件"
                                       "可能脱落误吞，必须改用刺绣眼)"})
     materials.append({"item": "填充棉", "quantity": "适量"})
     # 配重底（可选）——Grace and Yarn 逐字：约 3/4 杯聚乙烯珠装入丝袜
     # 打结置于底部（丝袜色近玩偶防透出），在开始减针、开口尚能伸手时
     # 放入；3 岁以下勿用（珠粒可能透过针缝）；可正常水洗。
-    if has_body:
+    if body_count:
         materials.append({
             "item": "配重珠（可选）",
-            "quantity": "约 3/4 杯——装入丝袜打结后置底再正常填充；"
+            "count": body_count, "unit": "份", "scope": "per_body",
+            "quantity": f"{body_count} 份（每份约 3/4 杯，按体积调整）——装入丝袜打结后置底再正常填充；"
                         "3 岁以下儿童玩偶勿用",
         })
     # 可弯折四肢的定型线（可选件）——规格锚点：Crafty Intentions 设计师
@@ -146,6 +148,7 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
     if limb_count:
         materials.append({
             "item": "定型线（可选）",
+            "count": limb_count, "unit": "根", "scope": "per_limb",
             "quantity": f"18号（≈1.2mm）纸包花艺线 {limb_count} 根——"
                         "端部折回成环并包裹防戳；儿童玩具勿用任何硬质"
                         "内骨架，改毛条等软质填充",
@@ -154,9 +157,10 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
     # 惯例的钩针建议，后者是同密度的 CYC 标准钩针区间——并列展示而非混淆。
     materials.append({
         "item": f"{gauge.hook_yarn_label}（{gauge.cyc_label}）",
-        "quantity": "1 把",
+        "quantity": "1 把", "count": 1, "unit": "把", "scope": "reusable",
     })
-    materials.append({"item": "缝合针", "quantity": "1 根"})
+    materials.append({"item": "缝合针", "quantity": "1 根",
+                      "count": 1, "unit": "根", "scope": "reusable"})
     return materials
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from copy import deepcopy
 
@@ -55,7 +56,7 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
         raise ValueError("逐圈表格只支持修改现有圈；增删圈请使用高级 JSON")
     updated = deepcopy(result)
     updated["params"]["parts"][index]["rounds"] = rounds
-    updated["params"] = rebuild_params(updated["params"])
+    updated["params"] = rebuild_params(updated["params"], check_notes=False)
     part = updated["params"]["parts"][index]
     original = result["params"]["parts"][index]["rounds"]
     from app.models.crochet_params import _change_note
@@ -63,13 +64,32 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
     for i, rd in enumerate(part["rounds"]):
         old = original[i]
         changed = any(rd.get(k, 0) != old.get(k, 0) for k in ("stitches", "increase", "decrease"))
+        staggered = bool(i and rd["increase"] and part["rounds"][i - 1]["increase"])
+        was_staggered = bool(i and old.get("increase") and original[i - 1].get("increase"))
         if i:
             changed |= part["rounds"][i - 1]["stitches"] != original[i - 1]["stitches"]
         # Explicit user wording is retained; unchanged generated instructions must
         # not describe obsolete counts after a numeric edit.
-        if changed and rd.get("notes") == old.get("notes"):
+        if (changed or staggered != was_staggered) and rd.get("notes") == old.get("notes"):
+            # Only replace a recognized numeric instruction. Semicolon-separated
+            # finishing/assembly actions must survive; unfamiliar prose needs an
+            # explicit user edit instead of being silently discarded.
+            old_note = old.get("notes") or ""
+            prefix, _, suffix = old_note.partition("；")
+            old_before = original[i - 1]["stitches"] if i else None
+            recognized = not prefix or (
+                old_before is not None and prefix == _change_note(old_before, old["stitches"])
+            ) or (i == 0 and part.get("magic_ring") and re.fullmatch(
+                r"魔法环起\s*\d+\s*针(?:（X×\d+）)?", prefix
+            ))
+            if not recognized:
+                if changed:
+                    raise ValueError(f"第 {rd['row']} 圈含自定义或特殊工艺说明，请同时修改说明后再应用")
+                continue  # An unchanged custom instruction is not a generated hint.
             before = part["rounds"][i - 1]["stitches"] if i else None
-            if before is None:
+            if not changed:
+                rd["notes"] = prefix
+            elif before is None:
                 method = "魔法环" if part.get("magic_ring") else "按原起针方式"
                 rd["notes"] = f"{method}起 {rd['stitches']} 针"
             elif rd["increase"] and rd["decrease"]:
@@ -83,6 +103,17 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
                     rd["notes"] = f"本圈共 {rd['stitches']} 针；含复合加减针，请补充具体针法和位置"
             else:
                 rd["notes"] = _change_note(before, rd["stitches"])
+            # Staggering is generated from the new transitions; it is not a
+            # finishing action and may no longer apply after a numeric edit.
+            actions = [s for s in suffix.split("；") if s and s != "加针位置与上一圈错开半组"]
+            if staggered:
+                actions.append("加针位置与上一圈错开半组")
+            if actions:
+                rd["notes"] += "；" + "；".join(actions)
+    from app.models.validator import require_valid_pattern
+
+    require_valid_pattern(updated["params"])
+    refresh_derived(updated["params"])
     return updated
 
 
@@ -119,7 +150,7 @@ def render_pattern_editor(result: dict, slot: str) -> None:
             part = parts[index]
             prefix = f"edit_{rid}_part{index}"
             inst_index = 0
-            if part.get("instances"):
+            if result["structure"].get("schema_version") == "2.0" and part.get("instances"):
                 inst_index = st.selectbox(
                     "选择实体（位置与连接单独设置）",
                     range(len(part["instances"])),
@@ -141,7 +172,7 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                         )
                 position: dict | None = None
                 attachments: list[dict] | None = None
-                if part.get("instances"):
+                if result["structure"].get("schema_version") == "2.0" and part.get("instances"):
                     instance = part["instances"][inst_index]
                     ip = f"{prefix}_i{inst_index}"
                     position = {}
@@ -247,6 +278,7 @@ def render_pattern_editor(result: dict, slot: str) -> None:
             st.caption(
                 "针数、加针和减针须满足相邻圈关系；不通过自检的修改不会覆盖当前图解。"
                 "更改针数时，未手改的原针法说明会自动更新；自定义说明请同步核对。"
+                "收口与留线说明会保留；无法识别的特殊工艺需同时修改说明。"
             )
             if st.button("应用逐圈修改", key=f"edit_{rid}_roundapply"):
                 try:

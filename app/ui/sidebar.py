@@ -1,4 +1,4 @@
-"""Sidebar: API key configuration."""
+"""Sidebar: gauge, shaping and local history."""
 from __future__ import annotations
 
 import streamlit as st
@@ -8,47 +8,12 @@ def render_sidebar() -> None:
     with st.sidebar:
         st.header("🧺 创作设置")
         st.caption("先选择密度与塑形偏好，再开始生成你的专属钩织图解。")
-        # 无条件写回（含空串）：否则用户清空输入框后旧 key 仍残留在
-        # session_state 且会在下次 rerun 时回填输入框，造成"删不掉"的假象。
-        openai_key = st.text_input(
-            "OpenAI API Key", type="password",
-            value=st.session_state.get("openai_key", ""),
-            key="openai_key_input",
-        ).strip()
-        anthropic_key = st.text_input(
-            "Anthropic API Key (推荐)", type="password",
-            value=st.session_state.get("anthropic_key", ""),
-            key="anthropic_key_input",
-        ).strip()
-        st.session_state.openai_key = openai_key
-        st.session_state.anthropic_key = anthropic_key
-
-        # 中转站（自定义 API 地址）：UI URL 必须和 UI Key 成对，不能
-        # 回退搭配服务器环境 Key；否则共享部署会把服务器密钥发给用户 URL。
-        with st.expander("🔗 中转站地址（可选）", expanded=False):
-            openai_base = st.text_input(
-                "OpenAI Base URL",
-                value=st.session_state.get("openai_base_url", ""),
-                key="openai_base_url_input",
-                placeholder="https://api.openai.com/v1",
-                help="第三方 API 代理/中转站地址。填写时必须同时在上方输入"
-                     "你自己的 OpenAI Key；留空 = 官方默认",
-            ).strip()
-            anthropic_base = st.text_input(
-                "Anthropic Base URL",
-                value=st.session_state.get("anthropic_base_url", ""),
-                key="anthropic_base_url_input",
-                placeholder="https://api.anthropic.com",
-                help="填写时必须同时在上方输入你自己的 Anthropic Key；"
-                     "留空 = 官方默认",
-            ).strip()
-        if openai_base and not openai_key:
-            st.warning("OpenAI 自定义地址必须同时提供你自己的 OpenAI Key。")
-        if anthropic_base and not anthropic_key:
-            st.warning("Anthropic 自定义地址必须同时提供你自己的 Anthropic Key。")
-        st.session_state.openai_base_url = openai_base or None
-        st.session_state.anthropic_base_url = anthropic_base or None
-
+        # Remove obsolete credentials from sessions surviving an app upgrade.
+        for key in ("openai_key", "anthropic_key", "openai_base_url", "anthropic_base_url",
+                    "openai_key_input", "anthropic_key_input",
+                    "openai_base_url_input", "anthropic_base_url_input"):
+            st.session_state.pop(key, None)
+        st.caption("本地视觉与人工确认，无需 API Key。")
         st.divider()
         st.subheader("🧵 编织密度（小样）")
         preset = st.select_slider(
@@ -94,18 +59,6 @@ def render_sidebar() -> None:
                 key="style_skirt",
             )
             st.checkbox("波浪裙摆（末圈每针放2针）", value=False, key="style_ruffle")
-
-        if openai_key or anthropic_key:
-            st.success("✅ API Key 已设置")
-            st.caption("输入框内容优先于 .env；清空输入框即回退到 .env（未配置则进入免费模式）")
-        else:
-            st.warning("未在输入框设置 API Key")
-            st.caption(
-                "若 .env 中配置了 Key 仍会使用（并真实计费）；照片 Tab 可在"
-                "「AI 视觉解析 / 本地视觉估算」间选择。输入框与 .env 都无 Key 时"
-                "默认走本地视觉估算（免费、基于照片），也可切换 Mock 演示。"
-                "⚠️ 请勿在多人共享的部署上输入 API Key。"
-            )
 
         # ── 图解历史（S4）：SQLite 本机持久化，跨会话载回 ─────────────────
         st.divider()

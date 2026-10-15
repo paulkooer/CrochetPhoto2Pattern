@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import warnings
+from io import BytesIO
 
 import streamlit as st
 from PIL import Image, ImageOps
@@ -16,6 +17,26 @@ MAX_UPLOAD_SIDE = 16_384
 # 更大的像素只会在缓存（最多 4 张）、st.image 全帧传输和白底合成时放大
 # 内存——39.7MP RGBA 合成实测峰值 +650MB。2048 给预览留一档余量。
 MAX_DECODED_SIDE = 2048
+
+
+def load_image_bytes(data: bytes) -> Image.Image | None:
+    """Decode a bounded immutable snapshot, including the normal image guards."""
+    try:
+        if len(data) > MAX_UPLOAD_MB * 1024 * 1024:
+            raise ValueError(f"图片超过 {MAX_UPLOAD_MB}MB 上限")
+        with BytesIO(data) as source, warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(source) as original:
+                _validate_upload_dimensions(original)
+                image = ImageOps.exif_transpose(_apply_jpeg_draft(original))
+                image = _downsample(image)
+                if _has_transparency(image):
+                    image = _flatten_alpha(image)
+                image.load()
+                return image
+    except Exception as exc:
+        logger.warning("Failed to decode image snapshot: %s", exc)
+        return None
 
 
 def _validate_upload_dimensions(image: Image.Image) -> None:

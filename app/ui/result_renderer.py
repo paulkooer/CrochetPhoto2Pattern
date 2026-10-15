@@ -30,7 +30,8 @@ _WIDGET_KEY_PREFIXES = (
     "sz_height_", "sz_go_", "pdf_", "dl_pdf_", "hist_save_", "pdf_gen_",
     "sz_", "share_", "hist_title_", "struct_edit_", "struct_go_", "struct_",
     # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
-    "share_token_", "edit_", "export_trace_",
+    "share_token_", "edit_", "export_trace_", "export_cache_",
+    "progress_", "progress_page_", "progress_part_",
 )
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
@@ -144,6 +145,62 @@ def purge_result_state(result: dict) -> None:
     for key in list(st.session_state.keys()):
         if str(key).startswith(tuple(p + rid for p in _WIDGET_KEY_PREFIXES)):
             del st.session_state[key]
+
+
+@st.fragment
+def _render_paged_progress(result: dict, slot: str) -> None:
+    """Bound widget creation; progress survives Streamlit's hidden-widget cleanup."""
+    from app.ui.progress_state import PROGRESS_PAGE_SIZE, progress_entries, progress_store_key
+
+    rid = result.get("result_id") or slot
+    parts = result["params"]["parts"]
+    store_key = progress_store_key(result, slot)
+    durable = st.session_state.setdefault(store_key, {})
+    st.caption("圈次较多，按部件分页显示；切换页面会保留进度。全部完成/重置仅作用于所选部件。")
+    index = st.selectbox("进度部件", range(len(parts)),
+                         format_func=lambda i: parts[i]["name"], key=f"progress_part_{rid}")
+    part = parts[index]
+    entries = list(progress_entries({**result, "params": {"parts": [part]}}, slot))
+    for _, key, _ in entries:
+        if key in st.session_state:
+            if st.session_state[key]:
+                durable[key] = True
+            else:
+                durable.pop(key, None)
+    done = sum(bool(durable.get(key)) for _, key, _ in entries)
+    st.progress(done / len(entries) if entries else 0,
+                text=f"{part['name']}：已完成 {done}/{len(entries)} 圈次")
+    left, right = st.columns(2)
+    clear = left.button("↩️ 重置进度", key=f"clear_{rid}_{part['name']}")
+    complete = right.button("✅ 全部完成", key=f"all_{rid}_{part['name']}")
+    if clear or complete:
+        for _, key, _ in entries:
+            if complete:
+                durable[key] = True
+            else:
+                durable.pop(key, None)
+            if key in st.session_state:
+                st.session_state[key] = complete
+        st.rerun()
+    pages = max(1, (len(entries) + PROGRESS_PAGE_SIZE - 1) // PROGRESS_PAGE_SIZE)
+    page = st.selectbox("进度页", range(pages), format_func=lambda n: f"{n + 1} / {pages}",
+                        key=f"progress_page_{rid}_{index}")
+
+    def save(key: str) -> None:
+        if st.session_state[key]:
+            st.session_state[store_key][key] = True
+        else:
+            st.session_state[store_key].pop(key, None)
+
+    for offset in range(page * PROGRESS_PAGE_SIZE, min((page + 1) * PROGRESS_PAGE_SIZE, len(entries))):
+        _, key, _ = entries[offset]
+        copy, row = divmod(offset, len(part["rounds"]))
+        rd = part["rounds"][row]
+        if key not in st.session_state:
+            st.session_state[key] = bool(durable.get(key))
+        st.checkbox(f"第 {copy + 1} 个 · 第 {rd['row']} 圈 · {rd['stitches']} 针　"
+                    f"{md_safe(rd.get('color', ''))}　{md_safe(rd.get('notes', ''))}",
+                    key=key, on_change=save, args=(key,))
 
 
 @st.fragment
@@ -284,6 +341,8 @@ def render_results(result: dict, slot: str) -> None:
     elif sizing.get("note"):
         st.caption(f"📏 {md_safe(sizing['note'])}")
     geometry = result.get("geometry") or {}
+    if geometry.get("mask_review"):
+        st.caption("✓ 主体选区已经过人工补选／擦除；轮廓与配色来自修正后的掩码，部件仍需确认。")
     silhouette = geometry.get("silhouette") or {}
     if silhouette:
         st.caption(
@@ -294,26 +353,44 @@ def render_results(result: dict, slot: str) -> None:
     st.text("识别部件: "
             + ", ".join(_plain_text(p) for p in analysis["parts"]))
 
-    # 规范名之外的部件会被降级为小球处理——只在日志里提示用户看不见，
-    # 这里补一条 UI 内提示（部件名模型可写，caption 前先转义）
+    # 导入的旧图解或显式自定义结构可以保留非规范名，不重新猜测其形状。
     unknown = [p for p in analysis.get("parts", []) if p not in PART_NAMES]
     if unknown:
         st.caption("⚠️ 未识别的部件 "
                    + "、".join(html.escape(_plain_text(p)) for p in unknown)
-                   + " 将按小配件（球）处理")
+                   + " 使用已有结构与图解，请人工核对形状；不支持从该名称自动推断")
 
-    # Vision 调用的 token 用量（仅照片 Tab 的真实解析路径会有值）
+    color_evidence = (result.get("vision_meta") or {}).get("color_observation")
+    if color_evidence:
+        from app.models.color_observation import ColorObservation
+
+        observation = ColorObservation.model_validate(color_evidence)
+        if observation.requires_review:
+            st.warning("照片中的局部色块需要复核：当前图解只有整圈配色，"
+                       "眼斑等局部颜色尚未转换成圈内换色或附着装饰。")
+        with st.expander("照片局部配色观测"):
+            st.caption("色块按裁剪照片定位，不代表针目位置或制作方法。阴影、背景残留也可能形成色块。"
+                       "修改图解不会改写这份照片观测。")
+            st.dataframe([{"颜色": r.color, "占主体比例": f"{r.pixels / observation.foreground_pixels:.1%}",
+                           "左边界": f"{r.box[0]:.1%}", "上边界": f"{r.box[1]:.1%}",
+                           "右边界": f"{r.box[2]:.1%}", "下边界": f"{r.box[3]:.1%}"}
+                          for r in observation.regions], hide_index=True)
+            if observation.omitted_region_count:
+                st.caption(f"另有 {observation.omitted_region_count} 个微小或超出展示上限的色块；"
+                           "其颜色计数保留在备份中。")
+
+    # Preserve billing provenance only for imported historical results.
     usage = result.get("usage") or {}
     if usage.get("input_tokens") is not None:
         st.caption(
-            f"📊 Vision 已返回的累计用量（{md_safe(usage.get('provider', '?'))}）："
+            f"📊 旧版图解记录的 Vision 用量（{md_safe(usage.get('provider', '?'))}）："
             f"输入 {usage['input_tokens']} tok · 输出 {usage.get('output_tokens', '?')} tok"
         )
 
     if usage.get("usage_complete") is False:
         st.caption("部分请求未返回用量；以上合计不代表完整账单，失败与重试也可能计费。")
     if result.get("diagnostics") or usage.get("attempts"):
-        with st.expander("运行耗时、回退原因与 API 尝试记录"):
+        with st.expander("运行耗时与回退原因"):
             st.caption("耗时只计运行阶段，不含人工确认停留时间；预算在阶段边界检查。")
             st.json({"diagnostics": result.get("diagnostics", {}), "api_usage": usage})
 
@@ -338,12 +415,20 @@ def render_results(result: dict, slot: str) -> None:
 
     # S1/F15：分段来源诚实标注——实测覆盖的部件逐一列出，其余为先验
     measured = result.get("spans_measured") or []
+    manual_spans = []
+    if geometry.get("body_region"):
+        manual_spans.append("身体")
+    if vmeta.get("review_head_box"):
+        manual_spans.append("头部")
+    if manual_spans:
+        st.caption("📐 人工框选分段：" + "、".join(manual_spans)
+                   + "；身体框仅限定轮廓范围，不代表实物尺寸校准。")
     if measured:
         st.caption("📐 部件分段："
                    + "、".join(md_safe(m) for m in measured)
-                   + " 来自姿态关键点实测；其余按常规比例先验")
+                   + " 来自姿态关键点实测；未框选或实测的部件按常规比例先验")
     elif result.get("spans"):
-        st.caption("📐 部件分段按常规比例先验（未检出姿态关键点）")
+        st.caption("📐 未人工框选的部件分段按常规比例先验（未检出姿态关键点）")
 
     # Color palette swatches (from extract_color_palette)
     colors = analysis.get("recommended_colors") or []
@@ -488,7 +573,8 @@ def render_results(result: dict, slot: str) -> None:
     if _v["ok"]:
         st.success(
             f"✅ 针数代数与相邻圈跳变检查通过（已检查 {_v['checked']} 圈）")
-        st.caption("该检查不等同于成品形状、部件连接或实际可钩性验证。")
+        st.caption("自检仅覆盖针数代数和可识别的文字矛盾；自定义工艺说明仍需人工复核。"
+                   "该检查不等同于成品形状、部件连接或实际可钩性验证。")
     else:
         st.warning("⚠️ 图解自检发现问题（可在局部修正中修复）：\n"
                    + "\n".join(md_safe(issue) for issue in _v["issues"]))
@@ -522,51 +608,55 @@ def render_results(result: dict, slot: str) -> None:
 
     # 同名部件（历史坏结果/JSON 编辑复制部件）会生成冲突 widget key → 整页
     # 崩溃；重名时追加序号后缀。正常结果首个部件不带后缀，key 保持稳定。
-    seen_names: dict = {}
-    for part_index, part in enumerate(params.get("parts", [])):
-        part_data = part
-        name = part_data.get("name", "?")
-        seen_names[name] = seen_names.get(name, 0) + 1
-        suffix = "" if seen_names[name] == 1 else f"_{seen_names[name]}"
-        part_key = f"{result_key}_{name}{suffix}"
-        rounds_list = part_data.get("rounds", [])
-        n_rounds = len(rounds_list)
-        quantity = max(1, int(part_data.get("quantity", 1)))
-        # 第一份沿用历史 key，第二份起使用 copyN 命名；这样旧会话进度不丢，
-        # 又能让成对部件的两份实体各自勾选。圈数/数量缩小时清掉越界状态。
-        copy_prefixes = [
-            f"chk_{part_key}_" if copy == 0 else f"chk_{part_key}_copy{copy + 1}_"
-            for copy in range(quantity)
-        ]
-        stale = []
-        all_part_prefix = f"chk_{part_key}_"
-        for key in st.session_state:
-            if not key.startswith(all_part_prefix):
-                continue
-            match = re.match(
-                rf"^{re.escape(all_part_prefix)}(?:copy(\d+)_)?(\d+)$", key)
-            if not match:
-                continue
-            copy_number = int(match.group(1) or 1)
-            round_index = int(match.group(2))
-            if copy_number > quantity or round_index >= n_rounds:
-                stale.append(key)
-        for k in stale:
-            del st.session_state[k]
-        # Checkbox widget state is the single source of truth for progress.
-        # It is updated by Streamlit before the rerun, so the counts below
-        # already include the click that triggered this run (no one-step lag).
-        chk_keys_by_copy = [
-            [f"{prefix}{i}" for i in range(n_rounds)]
-            for prefix in copy_prefixes
-        ]
-        chk_keys = [key for keys in chk_keys_by_copy for key in keys]
-        # 带 key 的容器获得 CSS 类 st-key-sheet_part_…；design_system 据此把
-        # 这一部件的圈序渲染成"图解纸"（宋体行，勾选后记号扣高亮）
-        with st.container(key=f"sheet_part_{result_key}_{part_index}"):
-            _render_part_progress(
-                part, part_data, part_key, chk_keys_by_copy, chk_keys,
-                rounds_list, quantity, n_rounds, result, params)
+    from app.ui.progress_state import MAX_INLINE_ROUNDS, physical_rounds
+    if physical_rounds(result) > MAX_INLINE_ROUNDS:
+        _render_paged_progress(result, slot)
+    else:
+        seen_names: dict = {}
+        for part_index, part in enumerate(params.get("parts", [])):
+            part_data = part
+            name = part_data.get("name", "?")
+            seen_names[name] = seen_names.get(name, 0) + 1
+            suffix = "" if seen_names[name] == 1 else f"_{seen_names[name]}"
+            part_key = f"{result_key}_{name}{suffix}"
+            rounds_list = part_data.get("rounds", [])
+            n_rounds = len(rounds_list)
+            quantity = max(1, int(part_data.get("quantity", 1)))
+            # 第一份沿用历史 key，第二份起使用 copyN 命名；这样旧会话进度不丢，
+            # 又能让成对部件的两份实体各自勾选。圈数/数量缩小时清掉越界状态。
+            copy_prefixes = [
+                f"chk_{part_key}_" if copy == 0 else f"chk_{part_key}_copy{copy + 1}_"
+                for copy in range(quantity)
+            ]
+            stale = []
+            all_part_prefix = f"chk_{part_key}_"
+            for key in st.session_state:
+                if not key.startswith(all_part_prefix):
+                    continue
+                match = re.match(
+                    rf"^{re.escape(all_part_prefix)}(?:copy(\d+)_)?(\d+)$", key)
+                if not match:
+                    continue
+                copy_number = int(match.group(1) or 1)
+                round_index = int(match.group(2))
+                if copy_number > quantity or round_index >= n_rounds:
+                    stale.append(key)
+            for k in stale:
+                del st.session_state[k]
+            # Checkbox widget state is the single source of truth for progress.
+            # It is updated by Streamlit before the rerun, so the counts below
+            # already include the click that triggered this run (no one-step lag).
+            chk_keys_by_copy = [
+                [f"{prefix}{i}" for i in range(n_rounds)]
+                for prefix in copy_prefixes
+            ]
+            chk_keys = [key for keys in chk_keys_by_copy for key in keys]
+            # 带 key 的容器获得 CSS 类 st-key-sheet_part_…；design_system 据此把
+            # 这一部件的圈序渲染成"图解纸"（宋体行，勾选后记号扣高亮）
+            with st.container(key=f"sheet_part_{result_key}_{part_index}"):
+                _render_part_progress(
+                    part, part_data, part_key, chk_keys_by_copy, chk_keys,
+                    rounds_list, quantity, n_rounds, result, params)
 
     # Section 4: Assembly
     section_heading(4, "装配说明")
@@ -654,21 +744,37 @@ def render_results(result: dict, slot: str) -> None:
         json.dumps(params, default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o),
                    ensure_ascii=False, indent=2)
     )
+    applied_params_json = json.dumps(serializable_params, ensure_ascii=False, indent=2)
     correction_json = st.text_area(
         "编辑 JSON 输出",
-        json.dumps(serializable_params, ensure_ascii=False, indent=2),
+        applied_params_json,
         height=300,
         key=f"json_edit_{result_key}",
     )
+    if correction_json != applied_params_json:
+        st.caption("JSON 草稿尚未应用。请点击「重新生成」应用修改；"
+                   "下载、分享和存入历史使用当前已应用的图解。")
 
     from app.models.runtime import timed_export
+    from app.ui.export_cache import cached_export, parade_payload
     export_record = st.session_state.setdefault(f"export_trace_{result_key}", {})
+    export_cache = st.session_state.setdefault(f"export_cache_{result_key}", {})
+    # Bind portable text to all inputs its exporter consumes, including source
+    # labels. Widget edits and unrelated diagnostics do not invalidate it.
+    from app import software_version
+    markdown_source = {
+        "params": serializable_params, "analysis": analysis,
+        "vision_meta": result.get("vision_meta"), "sizing": result.get("sizing"),
+        "generator_version": result.get("generator_version"), "export_version": software_version(),
+    }
     md_content = ""
     md_ready = False
     if _v["ok"]:
         try:
-            md_content = timed_export(
-                export_record, "markdown", lambda: export_markdown(params, analysis, result=result))
+            md_content = cached_export(
+                export_cache, "markdown", markdown_source,
+                lambda: timed_export(
+                    export_record, "markdown", lambda: export_markdown(params, analysis, result=result)))
             md_ready = True
         except Exception as exc:
             st.error(f"Markdown 生成失败：{md_safe(exc)}")
@@ -689,7 +795,7 @@ def render_results(result: dict, slot: str) -> None:
     with col_btn2:
         st.download_button(
             "📥 下载 JSON",
-            correction_json,
+            applied_params_json,
             file_name="amigurumi_pattern.json",
             mime="application/json",
             key=f"dl_json_{result_key}",
@@ -710,18 +816,20 @@ def render_results(result: dict, slot: str) -> None:
             "把图解翻译为 [CrochetPARADE](https://crochetparade.org) 的文本语法："
             "粘贴到其网页应用（本地计算、照片不外发）可得可旋转 3D 模型、"
             "\"过松/过紧针目\"物理分析与逐针动画——本应用代数自检之外的"
-            "独立验证层。语法映射基于其官方手册的已核对子集。")
+            "独立检查工具。语法映射基于其官方手册的已核对子集。")
+        st.caption("本应用只检查导出完整性与文本语法，尚未运行外部仿真；仿真结果也不能替代实体试钩。")
         try:
             if not _v["ok"]:
                 raise ValueError("请先修复图解自检错误")
-            from app.utils.parade_export import export_parade_report, lint_parade_dsl
-            _parade = export_parade_report(result)
-            _parade_text = _parade.text
-            if not _parade.complete:
+            _parade = cached_export(
+                export_cache, "parade", {"params": serializable_params, "export_version": software_version()},
+                lambda: parade_payload(result))
+            _parade_text = _parade["text"]
+            if not _parade["complete"]:
                 st.warning("仅导出部分图解；不可视为完整验证："
-                           f"{_parade.exported_rounds}/{_parade.requested_rounds} 圈次，"
-                           f"{_parade.exported_parts}/{_parade.requested_parts} 个完整实体部件。")
-            _parade_issues = lint_parade_dsl(_parade_text)
+                           f"{_parade['exported_rounds']}/{_parade['requested_rounds']} 圈次，"
+                           f"{_parade['exported_parts']}/{_parade['requested_parts']} 个完整实体部件。")
+            _parade_issues = _parade["issues"]
             if _parade_issues:
                 st.warning("导出自检提示：\n" + "\n".join(md_safe(i)
                                                        for i in _parade_issues))
@@ -804,7 +912,7 @@ def render_results(result: dict, slot: str) -> None:
                      help="保存到部署主机的图解历史，可在侧栏随时载回"):
             try:
                 saved = dict(result)
-                saved["params"] = rebuild_params(json.loads(correction_json))
+                saved["params"] = rebuild_params(serializable_params)
                 saved["gauge"] = saved["params"].get("gauge")
                 _title = (st.session_state.get(f"hist_title_{result_key}")
                           or "").strip() or None

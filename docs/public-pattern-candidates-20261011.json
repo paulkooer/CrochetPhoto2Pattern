@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "kind": "public_pattern_structure_candidates",
+  "accessed_on": "2026-10-11",
+  "scope": "Source-text structural references, not a photo benchmark. No source pattern prose or photos copied. No canonical visible-part scores assigned without image inspection. Synthetic diagnostic is independent.",
+  "summary": {
+    "candidates": 7,
+    "origin_text_reviewed": 5,
+    "indexed_origin_text_only": 2,
+    "new_photo_pipeline_runs": 0
+  },
+  "access_notes": [
+    {
+      "id": "panda_low_sew",
+      "detail": "Direct open failed; facts are from indexed primary-source text."
+    },
+    {
+      "id": "panda_in_round",
+      "detail": "Direct page returned browser verification; no bypass attempted."
+    },
+    {
+      "id": "scheepjes_blue_whale",
+      "page_url": "https://www.scheepjes.com/files/565541/ENG%20UK-US_Chroma%20version_Blue%20the%20Whale.pdf",
+      "detail": "PDF open failed; excluded from the seven reviewed candidates."
+    }
+  ],
+  "release_evidence": false,
+  "calibration_allowed": false,
+  "cases": [
+    {
+      "id": "panda_sewn_patches",
+      "publisher": "Grace and Yarn",
+      "page_url": "https://www.graceandyarn.com/2021/04/free-crochet-panda-pattern.html",
+      "evidence": "origin_text",
+      "source_fact": "Separate eye patches are attached to the head.",
+      "construction_mode": "sewn_applique",
+      "tags": [
+        "localized-color",
+        "appearance-vs-construction"
+      ],
+      "algorithm_hypothesis": "Do not infer a full dark round from a local eye patch.",
+      "visual_review": false,
+      "image_pipeline_run": false,
+      "photo_rights": "not_established",
+      "g3_eligible": false
+    },
+    {
+      "id": "panda_low_sew",
+      "publisher": "Cuddly Stitches Craft",
+      "page_url": "https://www.cuddlystitchescraft.com/free-crochet-panda-pattern/",
+      "evidence": "indexed_origin_text_only",
+      "source_fact": "Eye patches and head are sewn; several appendages are joined while crocheting.",
+      "construction_mode": "mixed_join_methods",
+      "tags": [
+        "localized-color",
+        "attachment-method"
+      ],
+      "algorithm_hypothesis": "Model attachment method separately from visible anatomy.",
+      "visual_review": false,
+      "image_pipeline_run": false,
+      "photo_rights": "not_established",
+      "g3_eligible": false
+    },
+    {
+      "id": "panda_in_round",
+      "publisher": "Chai Coffee Crochet",
+      "page_url": "https://chaicoffeecrochet.com/crochet-panda-polly/",
+      "evidence": "indexed_origin_text_only",
+      "source_fact": "Eye patches are formed with color changes within rounds.",
+      "construction_mode": "in_round_colorwork",
+      "tags": [
+        "localized-color",
+        "multiple-colors-per-round"
+      ],
+      "algorithm_hypothesis": "A single color field per round cannot encode this construction.",
+      "visual_review": false,
+      "image_pipeline_run": false,
+      "photo_rights": "not_established",
+      "g3_eligible": false
+    },
+    {
+      "id": "panda_flat_panels",
+      "publisher": "Spin a Yarn Crochet",
+      "page_url": "https://spinayarncrochet.com/pudgy-panda-plushie-free-crochet-pattern/",
+      "evidence": "origin_text",
+      "source_fact": "Flat pieces are assembled; body panels include within-row color changes.",
+      "construction_mode": "flat_panel_assembly",
+      "tags": [
+        "flat-vs-round",
+        "multiple-colors-per-row"
+      ],
+      "algorithm_hypothesis": "Require construction mode independently of the panda part labels.",
+      "visual_review": false,
+      "image_pipeline_run": false,
+      "photo_rights": "not_established",
+      "g3_eligible": false
+    },
+    {
+      "id": "snail_shell",
+      "publisher": "StringyDingDing",
+      "page_url": "https://stringydingding.com/snail-amigurumi-free-crochet-pattern/",
+      "evidence": "origin_text",
+      "source_fact": "Two shell sides are joined and attached to a separately worked body; antennae use knotted yarn.",
+      "construction_mode": "two_sided_shell",
+      "tags": [
+        "unsupported-anatomy",
+        "non-stitch-detail"
+      ],
+      "algorithm_hypothesis": "Separate shell surfaces, body and finishing details; do not map all to humanoid parts.",
+      "visual_review": false,
+      "image_pipeline_run": false,
+      "photo_rights": "not_established",
+      "g3_eligible": false
+    },
+    {
+      "id": "tiny_whale",
+      "publisher": "PlanetJune / June Gilbank",
+      "page_url": "https://www.planetjune.com/blog/free-crochet-patterns/tiny-whale/",
+      "evidence": "origin_text",
+      "source_fact": "The whale is continuous, with the tail worked through both layers of the flattened opening.",
+      "construction_mode": "continuous_with_flattened_tail",
+      "tags": [
+        "unsupported-anatomy",
+        "non-vertical-axis"
+      ],
+      "algorithm_hypothesis": "Use a local part/work axis and explicit opening/join semantics, not a detached cylinder tail.",
+      "visual_review": false,
+      "image_pipeline_run": false,
+      "photo_rights": "not_established",
+      "g3_eligible": false
+    },
+    {
+      "id": "puppy_rattle",
+      "publisher": "lilleliis / Mari-Liis Lille",
+      "page_url": "https://www.lilleliis.com/amigurumi-crochet-freebies/puppy-rattle/",
+      "evidence": "origin_text",
+      "source_fact": "A puppy head with ears, muzzle and nose is joined to a handle.",
+      "construction_mode": "head_and_handle",
+      "tags": [
+        "unsupported-anatomy",
+        "template-false-positive"
+      ],
+      "algorithm_hypothesis": "Recognize partial/toy-specific anatomy; do not invent torso, arms and legs.",
+      "visual_review": false,
+      "image_pipeline_run": false,
+      "photo_rights": "not_established",
+      "g3_eligible": false
+    }
+  ],
+  "diagnostic": "color-layout-diagnostic-20261011.json"
+}

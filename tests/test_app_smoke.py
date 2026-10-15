@@ -302,14 +302,17 @@ def test_editable_grid_view_exposes_project_download():
                for button in at.get("download_button"))
 
 
-def test_sidebar_key_can_be_cleared():
-    """侧栏清空 Key 后 session_state 必须同步清空（回归：旧实现残留旧值）。"""
+def test_sidebar_removes_legacy_credentials():
     at = AppTest.from_file(_APP, default_timeout=30)
+    at.session_state["openai_key"] = "sk-old"
+    at.session_state["anthropic_base_url"] = "https://example.com"
+    at.session_state["vision_mode"] = "🤖 AI 视觉解析"
     at.run()
-    at.text_input(key="openai_key_input").set_value("sk-old").run()
-    assert at.session_state["openai_key"] == "sk-old"
-    at.text_input(key="openai_key_input").set_value("").run()
-    assert at.session_state["openai_key"] == ""
+    assert not at.exception
+    assert "openai_key" not in at.session_state
+    assert "anthropic_base_url" not in at.session_state
+    assert not any("API" in item.label or "Base URL" in item.label for item in at.text_input)
+    assert at.radio(key="vision_mode").value == "🧮 本地视觉估算（推荐）"
 
 
 def test_nokey_mode_radio_renders(monkeypatch):
@@ -325,15 +328,8 @@ def test_nokey_mode_radio_renders(monkeypatch):
     assert any("Mock" in o for o in radio.options)
 
 
-def test_env_keys_default_to_ai_with_explicit_mock(monkeypatch):
-    """.env（环境变量）有 Key 而输入框为空时：默认 AI 解析，Mock 仍显式可选。
-
-    vision_mode 三态化后 Mock 不再是"无 Key"的隐式副作用——无论 Key
-    是否存在，选 Mock 都不会发起任何 API 调用，因此始终提供该选项。
-
-    回归（N1）：旧版只看输入框判定"无 Key"，.env 用户选"Mock 演示数据"
-    时空串 key 回退 env → 实际发起真实计费调用，选项与行为完全脱节。
-    """
+def test_env_keys_keep_local_default_with_explicit_mock(monkeypatch):
+    """旧环境 Key 不影响本地默认值，Mock 始终显式可选。"""
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-only")
     at = AppTest.from_file(_APP, default_timeout=30)
@@ -341,8 +337,8 @@ def test_env_keys_default_to_ai_with_explicit_mock(monkeypatch):
     assert not at.exception
     radio = at.radio(key="vision_mode")
     assert radio is not None
-    assert radio.value.startswith("🤖")          # 默认 AI
-    assert any("Mock" in o for o in radio.options)      # Mock 常驻可选（显式三态）
+    assert radio.value.startswith("🧮")          # 始终本地
+    assert any("Mock" in o for o in radio.options)      # Mock 常驻可选
     assert any("本地" in o for o in radio.options)      # 免费的本地模式仍可选
 
 
@@ -352,17 +348,13 @@ def test_env_keys_offer_local_mode_for_free(monkeypatch):
     at = AppTest.from_file(_APP, default_timeout=30)
     at.run()
     radio = at.radio(key="vision_mode")
-    at.radio(key="vision_mode").set_value("🧮 本地视觉估算（免费）").run()
+    at.radio(key="vision_mode").set_value("🧮 本地视觉估算（推荐）").run()
     assert not at.exception
     assert radio.value.startswith("🧮")
 
 
-def test_vision_mode_resets_when_keys_appear(monkeypatch):
-    """无 Key 时选了"本地估算（推荐）"，配 Key 后旧选项不复存在 → 确定性回到 AI 默认。
-
-    Mock 选项跨 Key 状态常驻，选择会被保留（且永不发起 API 调用）；
-    只有带"（推荐）"后缀的无 Key 专属标签才会触发重置。
-    """
+def test_vision_mode_stays_local_when_keys_appear(monkeypatch):
+    """运行中新增旧环境 Key 不改变用户选择。"""
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     at = AppTest.from_file(_APP, default_timeout=30)
@@ -371,9 +363,9 @@ def test_vision_mode_resets_when_keys_appear(monkeypatch):
     assert at.radio(key="vision_mode").value.startswith("🧮")
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-only")
-    at.run()  # options 已切换（"（推荐）"标签不在新 options 中）
+    at.run()  # 旧 Key 不改变 options
     assert not at.exception
-    assert at.radio(key="vision_mode").value.startswith("🤖")
+    assert at.radio(key="vision_mode").value.startswith("🧮")
 
 
 def test_local_vision_result_renders_with_meta():

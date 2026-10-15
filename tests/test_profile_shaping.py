@@ -1,15 +1,63 @@
 """Tests for profile-driven shaping（照片剖面 → 旋转体逐圈针数，M1.2/M1.5）。"""
 import math
 import re
+from itertools import product
+
+import pytest
 
 from app.models.gauge import DEFAULT, PRESETS
 from app.models.profile_shaping import (
+    _fit_round_targets,
     _sample_at,
     profile_to_rounds,
     render_silhouette_svg,
     rounds_to_notes,
     strip_dome,
 )
+
+
+def test_fit_anticipates_shoulder_without_moving_base():
+    targets = [12, 12, 36, 36, 36]
+    fitted = _fit_round_targets(targets, 6)
+    greedy = [12, 12, 18, 24, 30]
+    assert fitted[0] == targets[0]
+    assert len(fitted) == len(targets)
+    assert sum((a - b) ** 2 for a, b in zip(fitted, targets, strict=True)) < sum(
+        (a - b) ** 2 for a, b in zip(greedy, targets, strict=True))
+
+
+@pytest.mark.parametrize("cap", [6, 12, 30])
+def test_fit_matches_exhaustive_feasible_paths(cap):
+    # Independent exhaustive oracle: source consumption, cap, least squares.
+    for targets in product((6, 12, 18, 24), repeat=3):
+        feasible = [
+            (targets[0], *tail) for tail in product((6, 12, 18, 24), repeat=2)
+            if all(abs(b - a) <= cap and b <= 2 * a and 2 * b >= a
+                   for a, b in zip((targets[0], *tail), tail, strict=False))
+        ]
+
+        def cost(path, targets=targets):
+            return (sum((a - b) ** 2 for a, b in zip(path, targets, strict=True)),
+                    sum(abs(b - a) for a, b in zip(path, path[1:], strict=False)))
+
+        result = _fit_round_targets(targets, cap)
+        assert tuple(result) in feasible
+        assert cost(result) == min(map(cost, feasible))
+
+
+def test_published_pear_shoulder_keeps_plain_rounds():
+    # Narrow count facts only, Trishagurumi Crochet Pear (2021), R18–22:
+    # https://trishagurumi.com/wp-content/uploads/2021/07/crochet-pear-pattern-trishagurumi.pdf
+    # A shoulder includes pauses; do not force a decrease on every round.
+    shoulder = [30, 30, 24, 24, 24]
+    assert _fit_round_targets(shoulder, 6) == shoulder
+
+
+def test_fit_empty_and_invalid_targets():
+    assert _fit_round_targets([], 6) == []
+    assert _fit_round_targets([18], 6) == [18]
+    with pytest.raises(ValueError):
+        _fit_round_targets([6, 9], 6)
 
 
 def _pear_profile(n=40):

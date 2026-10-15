@@ -54,23 +54,44 @@ shasum -a 256 eval_data/release-01/standing-plain-001.jpg
 - 有/无裙摆、深浅肤色、浅色/深色服装；
 - 横图、竖图、带 EXIF 旋转的手机照片。
 
-报告会输出 `tag_counts`。它不会自动判断分层是否合理；发布审核者需要检查分布，
-并确保测试集没有被用于针对性调参。
+报告会输出 `tag_counts`。`--release` 检查最低覆盖；发布审核者仍需检查分布、
+照片真实性、标签准确性，并确保测试集没有被用于针对性调参。
+
+严格模式固定要求至少 30 个不同 SHA-256，且禁止重复图片内容；每例必须有裙摆和
+主色标签，并覆盖有/无裙摆。场景组至少各含五例：`full-body`、`half-body` 或 `close-up`、
+`seated` 或 `occluded`、`plain-background`、`complex-background`、`low-contrast`。
+哈希去重不能识别裁剪、转码或同一对象的近重复照片，标签也不能自动证明场景真实。
+
+严格模式取清单阈值与固定下限的较大值：30 例、单例部件召回 0.5、宏 F1 0.6、
+单例通过率/裙摆准确率/主色准确率 0.8、图解有效率及完整 Parade 导出率 1.0。
+报告另列 `release_readiness.automated_passed` 和阻断原因；`summary.passed` 仅表示质量指标。
+`release_approved` 固定为 false：自动检查不能替代授权证据审核及实体试钩。
+
+2026-10-11 起报告版本为 `3`（输入清单仍为 `2`），发布策略版本为 `2`：
+部件 precision/recall/F1 改为读取最终 `params.parts`；逐例要求分析、结构与交付
+部件一致，结构数量与交付数量一致；数量沿用整数兼容规则（1–20，拒绝布尔值和小数）。
+仅 `type=onepiece` 的头身一体交付件按头部和身体展开比较，单凭名称不能冒充。
+严格自动门禁另要求：部件集合精确匹配率 ≥0.8，各预期部件召回率 ≥0.8，
+裙摆正负类召回率各 ≥0.8 且各至少五例，各场景组至少五例，交付部件宏 F1
+严格高于固定“头部、身体、手臂、腿部”模板基线。新增指标见
+`release_readiness.quality_metrics`。这些是工程验收下限，不是实测准确率声明；
+同模板数据集与固定基线打平时不能证明视觉增益，仍会阻断。旧报告需重跑。
 
 ## 3. 运行与状态码
 
 ```bash
 uv run crochet2pattern-eval \
-  --dataset eval_data/release-01 \
+  --dataset eval_data/release-01 --release \
   --out eval_outputs/release-01.json
 ```
 
-- `0`：清单有效且所有聚合门禁通过。
+- `0`：所选模式的自动检查通过；严格模式还要求样本、标签和场景覆盖通过。
 - `1`：清单、路径、授权字段、图片或哈希无效。
-- `2`：评测已完成，但质量指标未达到清单阈值。
+- `2`：评测已完成，但质量指标或严格模式的证据条件未通过。
 
 探索阶段可加 `--allow-fail` 保持状态码 `0`，但报告中的 `summary.passed` 仍为
-`false`，不得把它作为发布通过凭据。
+`false`，不得把它作为发布通过凭据。`--release` 下 `--allow-fail` 不生效。
+真实照片 pytest 门禁同样使用严格模式。
 
 也可以接入 pytest 门禁：
 

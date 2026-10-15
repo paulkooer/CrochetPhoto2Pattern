@@ -1,5 +1,4 @@
 """逐色材料 / C2C 网格 / 图解自检器 / span hints / 环形圈数图（原 test_round12.py）。"""
-from contextlib import suppress
 
 from PIL import Image
 
@@ -130,6 +129,9 @@ def test_validator_downgrades_mixed_inc_dec_to_notes():
     pd = params["parts"][0]
     pd["rounds"][8]["increase"] = 6
     pd["rounds"][8]["decrease"] = 6
+    # The original generated prose says no increases/decreases; keep the fixture
+    # consistent so this test isolates support for mixed shaping.
+    pd["rounds"][8]["notes"] = "本圈混用 6 个加针和 6 个减针，位置按记号安排"
     v = validate_pattern(params)
     assert v["ok"], v["issues"]
     assert any("混用加针" in n for n in v["notes"])
@@ -234,56 +236,8 @@ def test_validator_notes_non_six_stitch_topology():
 
 # ── T6 span hints ─────────────────────────────────────────────────────────
 
-def test_span_hints_reach_prompt(monkeypatch):
-    """实测 span 作为几何参考进入 Vision prompt（T6）。"""
-    from app.models.image_parser import ImageParser
-    from app.models.pose import measured_spans
-
-    lm = {"nose": 0.10, "eye_top": 0.07, "shoulder": 0.25, "hip": 0.50,
-          "knee": 0.72, "ankle": 0.94, "wrist": 0.52}
-    hints = "【几何参考】身体 0.25–0.50"
-    recorded = {}
-
-    def fake_anthropic(self, img_b64):
-        recorded["prompt"] = self._prompt_with_hints()
-        raise RuntimeError("stop")
-
-    monkeypatch.setattr(ImageParser, "_parse_with_anthropic", fake_anthropic)
-    monkeypatch.setattr("app.models.image_parser.load_dotenv",
-                        lambda *a, **k: False)
-    parser = ImageParser(anthropic_key="k")
-    parser._span_hints = hints
-    with suppress(RuntimeError):  # 无真实 Key：解析在 prompt 捕获后即失败
-        parser.parse_image(Image.new("RGB", (32, 32)), span_hints=hints)
-    assert hints in recorded["prompt"]
-    # 无 hints 时 prompt 不含几何参考
-    parser2 = ImageParser(anthropic_key="k")
-    assert "【几何参考】" not in parser2._prompt_with_hints()
-    assert measured_spans(lm)["身体"]
 
 
-def test_orchestrator_passes_hints_to_parser(monkeypatch):
-    """orchestrator 在解析前测 pose 并把 hints 传给 parse_image。"""
-    import app.models.pose as pose_mod
-    from app.models.image_parser import ImageParser
-    from app.models.orchestrator import PipelineOrchestrator
-
-    monkeypatch.setattr(pose_mod, "get_body_landmarks",
-                        lambda _img: {"nose": 0.1, "eye_top": 0.07,
-                                      "shoulder": 0.25, "hip": 0.5,
-                                      "knee": 0.7, "ankle": 0.9,
-                                      "wrist": 0.5})
-    captured = {}
-
-    def fake_parse(self, image, span_hints=None, **kwargs):
-        captured["hints"] = span_hints
-        from app.models.image_parser import ImageParser as IP
-        return IP._mock_analysis()
-
-    monkeypatch.setattr(ImageParser, "parse_image", fake_parse)
-    PipelineOrchestrator().run_full_pipeline(
-        Image.new("RGB", (40, 40)))
-    assert captured["hints"] and "【几何参考】" in captured["hints"]
 
 
 # ── T8 环形图 ─────────────────────────────────────────────────────────────

@@ -8,6 +8,51 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-10-15 Foreground correction brush
+
+- Add a local photo canvas with add/erase, brush sizing, overlay visibility, undo for the last 20 strokes and reset to automatic segmentation. Each completed stroke updates the selection.
+- Corrected masks drive geometry, palette and generated color bands through independent observations with fresh color caches; body boxes apply afterward.
+- Bind corrections to the cropped photo and validate dimensions up to 160×160. Empty selections block generation; failed segmentation can be manually recovered. Backups and resizing preserve corrections and provenance; existing share-size limits remain.
+- Package the HTML/JS assets without external scripts. Add 14 regressions and verify brush operations plus Streamlit generation/reset in a real browser. Real-photo accuracy and physical crochetability remain unverified.
+
+### Added — 2026-10-15 Reviewed body region
+
+- Add a blue body box to photo review, measuring existing foreground inside the selected region. Reject empty/tiny regions, unavailable foreground and mock geometry.
+- Retain the original silhouette alongside the body box and body profile in full-image coordinates. Generation, backup import and resizing reuse the body profile and synchronize its vertical span; head and body review work together.
+- Reject imported body-box/span mismatches and label the manual source in results and printable exports. Legacy backups remain compatible; existing URL size limits still apply.
+- The box constrains shape only; colors use the updated vertical interval without horizontal resampling. No automatic part-recognition, real-photo accuracy or physical-validation claim is made.
+
+### Fixed — 2026-10-15 Separate geometry and color masks
+
+- Preserve the un-eroded subject mask for geometry; palette and bands share a derived interior mask, with one segmentation per pipeline run.
+- Both segmentation and background-threshold fallback measure the longest contiguous foreground run per pixel row, then average bands and normalize by the peak. Detached arms and noise are no longer added to torso width.
+- Add regressions for thin features, equal-area layouts, detached arms, translation, and fallback consistency. This remains a geometric approximation, not part recognition; touching limbs and physical accuracy remain unverified.
+
+### Changed — 2026-10-14 Remove cloud LLM integration
+
+- Photo and batch CLI default to local vision; `--local` remains compatible. UI offers local analysis and explicit mock data, followed by review and deterministic generation.
+- Remove provider requests, retries, prompts, credentials and Base URL settings; remove both SDKs and 11 unused transitive packages from the lockfile.
+- Ignore legacy provider environment variables and purge stale session credentials/AI selection. Historical provenance, usage and semantic-color fields remain importable.
+- Library migration: constructors no longer accept provider arguments; `vision_mode="ai"` raises explicitly. Use parameterless constructors and `vision_mode="local"`.
+- Replace retired provider tests with no-network/no-SDK runtime, legacy-key isolation, backup and distribution regressions. Recognition and physical-validation limits remain.
+
+### Fixed — 2026-10-14 Profile fitting
+
+- Fit complete profiles on a six-stitch lattice under gauge/source-stitch constraints, preserving the first round and round count while reducing greedy lag.
+- Add an exhaustive optimality oracle and 18 reproducible synthetic comparisons; review original pear, staggered-increase, CYC and AmiGo sources.
+- Document local operation and LLM removal scope; provider interfaces, SDK dependencies and invocation defaults remain unchanged.
+
+### Fixed — 2026-10-12 Narrow color stripes
+
+- Round colors now maximize interval coverage instead of sampling a single midpoint, reducing
+  magnification of tiny color slivers. Unrepresented blocks trigger review notes in patterns and exports.
+  Summaries use the actual working direction and dominant-color ties are deterministic.
+  Ordinary color changes no longer promise to eliminate spiral-round jogs.
+- Refine coarse photo color bands using sustained row majorities with sufficient foreground support.
+  Nine original synthetic narrow-stripe cases improve from 0/9 to 9/9 exact stripe recovery;
+  single-row noise, sparse foreground and minority patches have regression coverage.
+  Raw spatial evidence is retained. This is a development diagnostic, not real-photo or physical validation.
+
 ### Added — 2026-10-04 reviewable editing workflow
 
 - Crop photos and review subject/head overlays, proportions, and parts before generating without a second AI call.

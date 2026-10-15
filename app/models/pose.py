@@ -247,17 +247,3 @@ def measured_spans(lm: dict[str, Any]) -> dict[str, Any]:
         if e - s > 0.02:
             clean[name] = (round(s, 4), round(e, 4))
     return clean
-
-
-def format_span_hints(spans: dict[str, Any]) -> str | None:
-    """实测 span → prompt 附加参考文案（T6，S1×LLM 协同）。
-
-    让 Vision 模型的 parts 判断与几何实测交叉验证；无实测返回 None。
-    """
-    if not spans:
-        return None
-    segs = "、".join(
-        f"{name} {s:.2f}–{e:.2f}" for name, (s, e) in sorted(
-            spans.items(), key=lambda kv: kv[1][0]))
-    return ("【几何参考】已从照片测得人物各部位的纵向占比（0=图顶，1=图底，"
-            f"供 parts 判断交叉验证）: {segs}。")

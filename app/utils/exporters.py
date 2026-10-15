@@ -236,5 +236,5 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         lines.append("")
 
     lines.append("---")
-    lines.append(f"*由 {PRODUCT_NAME} AI 自动生成 — 部分比例可能需要试钩调整*")
+    lines.append(f"*由 {PRODUCT_NAME} 自动生成 — 部分比例可能需要试钩调整*")
     return "\n".join(lines)

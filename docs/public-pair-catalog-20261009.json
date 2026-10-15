@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "accessed_on": "2026-10-09",
+  "label_basis": "Manual photo inspection plus original pattern; only visible canonical part categories are scored. Boundary images excluded from part metrics.",
+  "cases": {
+    "akihiro": {
+      "page_url": "https://www.clover-mfg.com/en/project/amigurumi-akihiro-crochet-pattern/",
+      "image_url": "https://www.clover-mfg.com/wp-content/uploads/2023/08/Amigurumi-AKIHIRO-Crochet-Pattern.jpg",
+      "publisher": "Clover / Maria Atelier",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "手臂",
+        "腿部",
+        "耳朵",
+        "尾巴"
+      ],
+      "construction_observation": "Joined legs continue into body and head; arms, ears and tail attach separately.",
+      "target_height_cm": 26,
+      "target_basis": "source_declared_finished_height",
+      "image_file": "akihiro.img",
+      "evaluation_group": "single_animal",
+      "tags": [
+        "complex-background"
+      ],
+      "unmodeled_features": []
+    },
+    "bunny": {
+      "page_url": "https://53stitches.com/low-sew-bunny-free-crochet-pattern/",
+      "image_url": "https://53stitches.com/wp-content/uploads/2026/04/pasted-image-48-1024x819.jpeg",
+      "publisher": "53stitches",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "手臂",
+        "腿部",
+        "耳朵"
+      ],
+      "construction_observation": "Continuous main form with popcorn limbs; separate ears; carrot accessory.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "bunny.img",
+      "evaluation_group": "single_animal",
+      "tags": [
+        "complex-background"
+      ],
+      "unmodeled_features": [
+        "胡萝卜配件"
+      ]
+    },
+    "cat": {
+      "page_url": "https://53stitches.com/ginger-cat-free-low-sew-crochet-pattern/",
+      "image_url": "https://53stitches.com/wp-content/uploads/2026/03/Ginger-cat-free-crochet-pattern.jpg",
+      "publisher": "53stitches",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "腿部",
+        "耳朵",
+        "尾巴"
+      ],
+      "evaluation_group": "single_animal",
+      "tags": [
+        "handheld",
+        "complex-background",
+        "seated"
+      ],
+      "unmodeled_features": [],
+      "construction_observation": "Bobble ears and popcorn feet are formed in the main piece; tail is sewn on.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "cat.img"
+    },
+    "pigeon": {
+      "page_url": "https://53stitches.com/no-sew-pigeon-free-crochet-pattern/",
+      "image_url": "https://53stitches.com/wp-content/uploads/2026/03/Pigeon-cover.jpg",
+      "publisher": "53stitches",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "腿部"
+      ],
+      "evaluation_group": "single_animal",
+      "tags": [
+        "handheld",
+        "complex-background",
+        "multicolor"
+      ],
+      "unmodeled_features": [
+        "翅膀",
+        "喙"
+      ],
+      "construction_observation": "Body uses colorwork; wings are worked into reserved loops without sewing.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "pigeon.img"
+    },
+    "worm": {
+      "page_url": "https://53stitches.com/sour-gummy-worms-free-candy-crochet-pattern/",
+      "image_url": "https://53stitches.com/wp-content/uploads/2025/07/Sour-gummy-worm-free-candy-crochet-pattern.jpg",
+      "publisher": "53stitches",
+      "visible_parts": [],
+      "evaluation_group": "boundary_multi_subject",
+      "tags": [
+        "multiple-subjects",
+        "handheld",
+        "complex-background"
+      ],
+      "unmodeled_features": [
+        "弯曲长管"
+      ],
+      "construction_observation": "Two-color tube with bends formed using selected front/back loops.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "worm.img"
+    },
+    "cupcake": {
+      "page_url": "https://www.clover-mfg.com/en/project/crochet-cupcakes/",
+      "image_url": "https://www.clover-mfg.com/wp-content/uploads/2025/11/Main_Crochet-Cupcakes.jpg",
+      "publisher": "Clover",
+      "visible_parts": [],
+      "evaluation_group": "boundary_multi_subject",
+      "tags": [
+        "multiple-subjects",
+        "food",
+        "complex-background"
+      ],
+      "unmodeled_features": [
+        "蛋糕体",
+        "杯套",
+        "装饰"
+      ],
+      "construction_observation": "Cupcake body and case with decorative toppings; joined rounds and loop-specific shaping.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "cupcake.img"
+    },
+    "pretzel": {
+      "page_url": "https://www.clover-mfg.com/en/project/amigurumi-pretzel/",
+      "image_url": "https://www.clover-mfg.com/wp-content/uploads/2026/04/Pretzel3.jpg",
+      "publisher": "Clover",
+      "visible_parts": [],
+      "evaluation_group": "boundary_non_animal",
+      "tags": [
+        "food",
+        "top-view",
+        "complex-background"
+      ],
+      "unmodeled_features": [
+        "打结长管"
+      ],
+      "construction_observation": "A stuffed tube is shaped and secured into a pretzel.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "pretzel.img"
+    },
+    "bear": {
+      "page_url": "https://www.tinycurl.co/monsieur-bear-free-amigurumi-crochet-pattern/",
+      "image_url": "https://www.tinycurl.co/wp-content/uploads/2020/05/front2.jpg",
+      "publisher": "Tiny Curl",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "手臂",
+        "腿部",
+        "耳朵",
+        "帽子"
+      ],
+      "evaluation_group": "single_animal",
+      "tags": [
+        "plain-background",
+        "striped",
+        "partial-feet"
+      ],
+      "unmodeled_features": [
+        "口鼻"
+      ],
+      "construction_observation": "Continuous head/body, striped sweater, separate limbs and beret.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "bear.img"
+    },
+    "elephant": {
+      "page_url": "https://www.allaboutami.com/elephantpattern/",
+      "image_url": "https://www.allaboutami.com/wp-content/uploads/2016/12/wsi-imageoptim-tumblr_inline_n2r4yvszA61qfosqa-1.jpg",
+      "publisher": "All About Ami",
+      "visible_parts": [],
+      "evaluation_group": "boundary_multi_subject",
+      "tags": [
+        "multiple-subjects",
+        "plain-background",
+        "quadruped"
+      ],
+      "unmodeled_features": [
+        "象鼻",
+        "象牙",
+        "四足"
+      ],
+      "construction_observation": "Oval foundation body with openings for trunk and four legs; attached ears.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "elephant.img"
+    },
+    "bee": {
+      "page_url": "https://www.supergurumi.com/amigurumi-crochet-bee-pattern",
+      "image_url": "https://www.supergurumi.com/wp-content/uploads/2022/08/Amigurumi-Bee-Crochet-Pattern-Facebook.jpg",
+      "publisher": "Supergurumi",
+      "visible_parts": [
+        "头部",
+        "身体",
+        "腿部"
+      ],
+      "evaluation_group": "single_animal",
+      "tags": [
+        "plain-background",
+        "striped",
+        "top-oblique"
+      ],
+      "unmodeled_features": [
+        "翅膀",
+        "触角"
+      ],
+      "construction_observation": "Continuous head/body/sting with separately attached wings, six legs and antennae.",
+      "target_height_cm": 18,
+      "target_basis": "application_default_not_source_measurement",
+      "image_file": "bee.img"
+    }
+  }
+}

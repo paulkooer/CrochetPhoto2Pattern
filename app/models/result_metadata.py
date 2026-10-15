@@ -9,6 +9,7 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, TypeAdapter
 
 from app.utils.numbers import finite_float
 
+from .color_observation import ColorObservation
 from .geometry import GeometryObservation
 
 Finite = Annotated[float, BeforeValidator(finite_float)]
@@ -36,6 +37,7 @@ class LegacySilhouette(Metadata):
 
 
 class VisionMetadata(Metadata):
+    color_observation: ColorObservation | None = None
     source: str | None = None
     note: str | None = None
     body_ratio: Finite | None = None
@@ -110,6 +112,16 @@ def validate_result_metadata(data: dict[str, Any]) -> None:
         if any(start >= end for start, end in spans.values()):
             raise ValueError("部件分段起点必须小于终点")
         data["spans"] = {key: list(span) for key, span in spans.items()}
+    body = (data.get("geometry") or {}).get("body_region")
+    if ((data.get("geometry") or {}).get("mask_review") is not None
+            and not (data.get("geometry") or {}).get("used_for_generation", True)):
+        raise ValueError("未使用照片几何时不能声明主体掩码修正")
+    if body is not None:
+        if not (data.get("geometry") or {}).get("used_for_generation", True):
+            raise ValueError("未使用照片几何时不能声明人工身体轮廓")
+        expected = [body["box"][1], body["box"][3]]
+        if (data.get("spans") or {}).get("身体") != expected:
+            raise ValueError("身体轮廓范围与身体分段不一致")
     if data.get("color_bands") is not None:
         bands = TypeAdapter(list[ColorBand]).validate_python(data["color_bands"])
         if any(band.start >= band.end for band in bands):

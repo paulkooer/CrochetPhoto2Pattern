@@ -1,9 +1,19 @@
-# External Calibration Evidence Chain (Pattern Source Index)
+# External Rule References (Pattern Source Index)
 
 [简体中文](SOURCES.md) | **English**
 
-The domain assumptions in this system are not guessed: every example
-comes from a real, hookable public pattern. Necessary stitch-algebra and
+## 2026-10-15 Foreground correction canvas
+
+The [Streamlit bidirectional-component guide](https://docs.streamlit.io/develop/concepts/custom-components/components-v1/intro)
+and [v1.40 message interface](https://github.com/streamlit/streamlit/blob/1.40.0/component-lib/src/streamlit.ts)
+were checked for the Python/JavaScript protocol. The canvas is original project code with no remote scripts.
+It directly edits the final mask; it does not rerun GrabCut or generate unseen anatomy.
+See `tests/test_mask_review.py` and the optional Playwright browser smoke test
+`scripts/check_mask_canvas.cjs`. Local Chrome and an actual Streamlit page verified
+brush, undo, reset and generation behavior; these checks do not establish real-photo accuracy.
+
+Public patterns supply cases for checking domain assumptions; publication alone
+does not prove crochetability. Necessary stitch-algebra and
 round-structure facts are extracted, mechanically verified, and encoded as a runnable test
 fixture ([`tests/test_reference_patterns.py`](../tests/test_reference_patterns.py),
 fixture count is
@@ -14,6 +24,33 @@ validator was corrected each time — the evidence for every correction
 is in the table below. This is reference validation, not model-weight training or fine-tuning.
 Only stitch algebra and round structure are taken from each source, never source images or
 creative pattern prose (per each source's terms).
+
+## 2026-10-14 Symbol and profile-shaping review
+
+**Subsequent implementation on the same date:** cloud interfaces, SDKs, credentials and prompts have now been removed at the user's request. Local photo analysis is the default. The assessment below describes the preceding review and is superseded by this implementation. Historical provenance/usage remain compatible; remove provider constructor arguments and replace `ai` mode with `local`.
+
+Reviewed original sources: [CYC symbols](https://www.craftyarncouncil.com/standards/crochet-chart-symbols), [Trishagurumi's pear](https://trishagurumi.com/wp-content/uploads/2021/07/crochet-pear-pattern-trishagurumi.pdf), [Geek and Yarn's staggered increases](https://geekandyarn.com/how-to-stagger-increases/), and [AmiGo](https://arxiv.org/abs/2211.01178). Pattern-specific keys remain authoritative; a pear shoulder includes plain rounds and finishing affects shape; staggering preserves totals. AmiGo takes a closed mesh, not a single photograph. Corrected its attribution to Edelstein et al., SCF 2022.
+
+Our new dynamic program is an independent six-stitch-lattice fit, not an AmiGo implementation. It anchors the first round, preserves round count, and minimizes squared error against quantized targets under gauge and source-stitch constraints. Equal errors prefer less shaping. These constraints apply to the current single-crochet surface-of-revolution model only.
+
+[18 original synthetic cases](profile-fit-comparison-20261014.json): 12 improve, six straight profiles remain exact. Classic shoulder error falls from 2556 to 864. This does not establish photo-recognition or physical accuracy. Reproduce with `.venv/bin/python -m scripts.diagnose_profile_fit --out /tmp/profile-fit.json`.
+
+LLM removal assessment: generation, gauge, colors, validation and export already operate locally. Local vision plus human confirmation can be the main workflow. This change retains provider interfaces, required SDK dependencies and existing defaults; use `--local` explicitly when keys are configured. Complete removal would also cover packaging/lockfile, credentials UI, CLI/UI defaults, usage accounting and provider tests while preserving historical provenance. Local anatomy recognition remains incomplete.
+
+
+## What online methods establish (primary sources checked 2026-10-09)
+
+| Primary source | Useful evidence | Does not establish |
+|---|---|---|
+| [Craft Yarn Council yarn/gauge chart](https://www.craftyarncouncil.com/standards/yarn-weight-system) | Industry reference ranges, explicitly guidelines rather than a replacement for pattern gauge | Calibrated dimensions or yarn usage for this generator |
+| [PlanetJune hook/tension experiment](https://www.planetjune.com/blog/stitch-tension-in-amigurumi-an-investigation/) | Changing hooks for the same cup sample changes size, stiffness and stitch gaps | Successful physical trials of our generated dolls |
+| [CrochetPARADE author capability notes](https://github.com/stassev/CrochetPARADE/blob/main/capabilities.md) | An independent stitch-graph rendering, topology and tension tool | That exporting DSL alone executes a simulation or validates a physical object |
+
+Keep reference cases, independent tool executions and physical measurements distinct.
+Our `parade_export_rate` checks completeness and our emitter's syntax subset, not execution
+in the external application. These references do not satisfy G3 or G4. Third-party makers
+may submit traceable trials of exact system outputs under the [trial protocol](physical-trials.en.md);
+finding a similar finished object is insufficient.
 
 ## Validator evolution: five prior corrections
 
@@ -106,3 +143,158 @@ model are skipped by the Parade exporter with a warning.
   Raffamusa 403, Hobbii PDFs, Ami Amour 404, Supergurumi /patterns
   index 404. These sources are not in the fixtures; they will be
   added if they become reachable.
+
+
+## Public photo/pattern pair probe (2026-10-09)
+
+The [recorded probe](public-pair-probe-20261009.json) runs two source-site finished-item
+photos through the local pipeline, with cloud APIs and optional pose disabled. Pattern
+instructions are withheld from generation. Photos remain in temporary local storage;
+only URLs, image hashes, source-code fingerprint and observations are recorded.
+Clover AKIHIRO misses ears/tail; 53stitches Bunny misses ears and adds a skirt.
+Both generated patterns pass stitch validation. Source construction also differs from
+the default separate-part output. These are development cases already used in rule
+fixtures, not held-out release evidence. Uncalibrated gauge prevents direct size claims.
+Run `python -m scripts.probe_public_pairs --help` for reproduction arguments.
+
+
+## Expanded public-pair probe (2026-10-09)
+
+The [catalog](public-pair-catalog-20261009.json) now contains 10 photos from five
+publishers, adding cat, pigeon, gummy worms, cupcakes, pretzel, bear, elephants and bee.
+The [actual run](public-pair-probe-expanded-20261009.json) completes all 10, with 10
+unique hashes and 10 valid stitch-arithmetic outputs. Canonical part sets match exactly
+in 0/6 scored single-animal cases. Four multi-subject/non-animal boundary cases are
+excluded from part metrics. This selected local-only development sample does not estimate
+population accuracy or cloud-model performance. Unsupported anatomical features are listed
+separately. Manual inspection places the bear's detected face box on its legs and the
+pigeon's on its abdomen. Both inferred ratios reach the configured upper limit.
+
+Use `--catalog docs/public-pair-catalog-20261009.json --image-dir <local-images> --out <report>`
+with `python -m scripts.probe_public_pairs`. Download URLs and filenames are in the catalog;
+images are not redistributed. Three new accounting tests, Ruff and script mypy pass.
+Application code is unchanged; the full application suite was not rerun.
+
+
+## First changes driven by the paired probe
+
+The [guarded rerun](public-pair-probe-guarded-20261009.json) uses the same 10 images.
+Automatic skirt false additions fall from two to zero. Five of six detected head
+candidates are rejected for unsuitable position/relative size; default proportions are
+explicitly marked for review. Canonical part-set matches remain 0/6 and stitch validity
+remains 10/10. No new animal-semantic recognizer is claimed.
+The photo UI requires user selection of a single representable subject before generation;
+multiple/unsupported selections block that button. This is manual screening. CLI/direct
+pipeline calls still emit unreviewed templates with explicit metadata and export notices.
+
+
+## Second acquisition batch (2026-10-09)
+
+Six original pattern pages were checked; five photo pairs were acquired and actually run:
+lilleliis elf and tree, Spin a Yarn mermaid, Cuddly Stitches jellyfish, Yarnhild lamb.
+Stitch by Fay mushroom remains a candidate after direct acquisition returned HTTP 403;
+no photo result is claimed. See the [catalog](public-pair-catalog-wave2-20261009.json)
+and [run](public-pair-probe-wave2-20261009.json). The accumulated sample has 15 distinct
+photo hashes from nine sites; both latest batches share the same application source hash.
+The jellyfish uses a single-subject source photo with text retained, replacing the collage
+cover before labeling/running. All five pass arithmetic; none of three canonical-part
+comparisons match exactly, with two boundary cases excluded. Elf misses hat/ears; mermaid
+misses tail and gains legs; lamb misses ears/tail and gains arms. Tree/jellyfish still get
+humanoid templates through the direct unreviewed pipeline. Panel construction and non-biped
+anatomy are additional gaps. No application or probe code changed, and the full test suite
+was not rerun for this acquisition-only batch.
+
+## 2026-10-11: construction and local-color candidates
+
+The [candidate catalog](public-pattern-candidates-20261011.json) adds seven primary-source
+references: five readable origin pages and two indexed-origin-text references whose direct
+fetch failed or required browser verification. It records source URLs, structural facts,
+access limits and algorithm hypotheses. No new third-party photos were processed, no visual
+labels were asserted, and these references do not increase the earlier 15-photo probe count.
+They do not constitute G3/G4 evidence or authorize calibration.
+
+The examples contrast sewn panda patches with in-round colorwork, flat-panel construction,
+two-sided snail shells, a continuous flattened whale tail and a puppy head on a rattle handle.
+See the linked catalog for each original source and evidence level.
+
+An [original synthetic diagnostic](color-layout-diagnostic-20261011.json) isolates a limitation:
+two separate black patches and one central patch, each containing 1280 black pixels on a
+160×160 canvas, produce the same all-white horizontal bands even with a perfect supplied
+foreground mask. This is representation loss, not a real-photo score. Reproduce with:
+
+```bash
+.venv/bin/python -m scripts.diagnose_color_layout --out /private/tmp/color-layout.json
+```
+
+Next algorithm work should retain minority-color coverage and 2D regions, accept reviewed
+part/patch regions, distinguish in-round segments from applied decoration, and evaluate
+construction mode separately from visible anatomy. These changes remain proposed; no
+production vision behavior was changed in this source-discovery round.
+
+### Follow-up implementation: spatial color observations
+
+The [updated comparison](color-layout-observation-20261011.json) uses the same original
+pixels and supplied masks. Majority bands remain all white, but observations now preserve
+1280 black pixels in each image and distinguish two separate patches from one central patch.
+The historical diagnostic remains unchanged; the command above now emits the updated report.
+
+The existing quantization/mask pass supplies complete per-band color counts, mask provenance
+and normalized region boxes. At most 64 regions are retained; fragments below
+max(4, ceil(foreground_pixels * 0.002)) and overflow retain total counts and omission accounting.
+A 2% aggregate within-band minority fraction triggers review text in the UI and Markdown/PDF;
+this is a UI threshold, not calibrated confidence. Observations survive backups, size changes
+and links that fit the existing URL limit; oversized links still require a backup file.
+Coordinates describe the cropped image, not stitches. Applied decorations versus in-round
+colorwork remain undecided. No new real-photo validation or local-color stitch generation
+is claimed.
+
+## 2026-10-12: Narrow stripes and boundary refinement
+
+Three primary-source pages were read; no source photographs or pattern prose were copied:
+
+- [Sharon Ojala's Little Bee](https://www.amigurumitogo.com/2020/04/little-bee-free-crochet-pattern.html)
+  uses short color intervals and explicitly discusses stripe placement.
+- [Stitch by Fay's No-Sew Bee](https://www.stitchbyfay.com/crochet-bee-pattern/)
+  combines spiral construction, back-loop stripes and wings joined during crocheting.
+- [Ollie + Holly's cotton stripe experiment](https://www.ollieholly.com/blog/2021/03/24/how-to-crochet-better-stripes-for-amigurumi-when-using-cotton-yarn-an-experiment)
+  compares methods for reducing color-change jogs in cotton.
+
+Our inference: preserve narrow color intervals independently of stitch and assembly semantics.
+`vertical_color_bands` now overlays sustained row-majority runs on the existing coarse estimate.
+Rows require 75% color agreement and max(4, ceil(maximum foreground row width * 0.2)) support;
+runs require max(2, ceil(thumbnail height * 0.015)) rows. These are uncalibrated noise heuristics.
+Empty, ambiguous and short runs retain coarse estimates. `refine_stripes=False` reproduces the baseline.
+Raw band counts and spatial evidence remain unchanged, so review warnings remain conservative,
+not a score of refined-band error.
+
+The [reproducible comparison](color-stripe-comparison-20261012.json) uses nine original four-pixel
+stripe fixtures with three heights and three positions, all with perfect supplied masks.
+Exact stripe color/boundary recovery changes from **0/9 to 9/9**. Regression tests additionally cover
+single-row noise, sparse foreground, minority patches, evidence preservation and round-color lookup.
+Run `.venv/bin/python -m scripts.diagnose_color_stripes --out /private/tmp/color-stripes.json`.
+
+These are development counterexamples, not held-out photographs, G3/G4 evidence or physical calibration.
+The image's vertical axis is still assumed. Oblique stripes, occlusion, yarn texture and complex
+backgrounds require authorized photo validation. Thumbnail reduction can erase subpixel stripes,
+and round sampling can still skip intervals narrower than one generated round.
+
+### Follow-up: interval coverage for round colors
+
+Round allocation now sums overlap by color over each equal-height round interval and selects the
+largest total. This minimizes vertical mismatch under the existing equal-height approximation;
+it does not guarantee preservation of every stripe. Ties prefer the midpoint color, then image order.
+Bottom-up parts reverse the completed top-down plan. Blocks with no overlapping round assigned their
+color trigger review notes in patterns and exports, even if the same color appears elsewhere.
+
+The [three original interval diagnostics](round-color-comparison-20261012.json) show mismatched-height
+fractions of 9.8% → 0.2% for a midpoint sliver, 75% → 55% for three colors within one round, and
+0% → 0% for a resolvable stripe. Run
+`.venv/bin/python -m scripts.diagnose_round_colors --out /private/tmp/round-colors.json`.
+An independent integer-pixel oracle checks 280 seeded cases; tests also cover reversal, repeated-color
+loss, stitch algebra and exported review notes. These are development diagnostics, not photo accuracy,
+3D surface-area measurements or physical trials.
+
+[PlanetJune's color-change tutorial](https://www.planetjune.com/blog/amigurumi-help/how-to-change-colour-in-amigurumi/)
+distinguishes switching yarn on the previous stitch's last pull-through from techniques for improving
+full-stripe jogs. Generated instructions now acknowledge that spiral jogs can remain; no extra stitches
+or unsupported joining technique are inserted.

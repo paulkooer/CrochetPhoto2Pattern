@@ -9,9 +9,7 @@
 | `0.2.x` Beta / `main` | Supported |
 | `< 0.2` | Not supported |
 
-Beta releases may change data formats, but credential handling, image parsing,
-share/import boundaries, and third-party Base URL isolation are always treated as
-security-sensitive.
+Beta releases may change data formats. Image parsing and share/import boundaries remain security-sensitive. Cloud LLM interfaces have been removed.
 
 ## Report a vulnerability privately
 
@@ -38,11 +36,10 @@ it does not add authentication or record ownership checks. Shared/public install
 must keep history disabled and use session results/downloaded backups. Before enabling
 an existing database, check that its contents may be exposed to that installation's user.
 
-- API keys, redacted error output, and custom OpenAI/Anthropic Base URL isolation.
 - Malicious or oversized images, EXIF, backup JSON, grid projects, share URLs, and
   Markdown/PDF exports.
 - Local SQLite history and its access boundary.
-- Prompt/model output bypassing Pydantic, stitch arithmetic, shaping, or attachment checks.
+- Imported data bypassing Pydantic, stitch arithmetic, shaping, or attachment checks.
 - Dependency, workflow, wheel, and packaged-data supply-chain integrity.
 
 Use the regular issue forms for non-sensitive defects and feature requests.

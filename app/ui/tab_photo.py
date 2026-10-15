@@ -1,4 +1,4 @@
-"""Tab 1: photo upload + AI pipeline."""
+"""Tab 1: photo upload + local analysis."""
 from __future__ import annotations
 
 import hashlib
@@ -8,7 +8,6 @@ import uuid
 import streamlit as st
 
 from app.models.gauge import gauge_from_ui
-from app.models.image_parser import env_api_key
 from app.models.orchestrator import PipelineOrchestrator
 from app.ui.result_renderer import md_safe, purge_result_state, render_results
 from app.utils.images import load_uploaded_image_cached
@@ -30,35 +29,8 @@ def _style_from_session():
 
 
 def _build_orchestrator() -> PipelineOrchestrator:
-    """每次点击新建（不缓存）。
-
-    orchestrator 本身只是薄壳（prompt 文件读取 + dotenv，开销微小），而
-    @st.cache_resource 会把用户输入过的每组 API key 进程级留存到重启，
-    共享部署上是真实的密钥滞留面——权衡后放弃缓存。
-    """
-    return PipelineOrchestrator(
-        openai_key=st.session_state.get("openai_key"),
-        anthropic_key=st.session_state.get("anthropic_key"),
-        openai_base_url=st.session_state.get("openai_base_url"),
-        anthropic_base_url=st.session_state.get("anthropic_base_url"),
-    )
-
-
-def _has_effective_keys() -> bool:
-    """输入框或 .env（环境变量）任一处配置了 Key 即视为已配置。
-
-    只看输入框会把 .env 用户误判为"无 Key"：ImageParser 的空串 key 会
-    回退 os.getenv，旧版在此时选择"Mock 演示数据"实际发起的是真实计费
-    调用（Mock 只是"无 key"的隐式副作用），选项与行为完全脱节。
-    .env.example 的占位值（sk-your-key-here）不算已配置——否则应用会
-    带着占位符发真实请求。
-    """
-    return bool(
-        st.session_state.get("openai_key")
-        or st.session_state.get("anthropic_key")
-        or env_api_key("OPENAI_API_KEY")
-        or env_api_key("ANTHROPIC_API_KEY")
-    )
+    """Each preparation owns its local observations and diagnostics."""
+    return PipelineOrchestrator()
 
 
 def render_tab_photo() -> None:
@@ -84,26 +56,16 @@ def render_tab_photo() -> None:
         )
         st.caption("📏 照片只用于估算相对比例，绝对尺寸由上面的目标高度决定。")
         st.caption("🔒 上传的照片会传到运行此应用的主机；只有在自己电脑部署时才是本机处理。"
-                   "本地估算／Mock 不向模型服务商发送照片；AI 模式会发送至所选服务商或中转站。"
+                   "照片通过本地算法处理，不调用云端视觉模型。"
                    "历史记录默认关闭，启用后保存于部署主机的磁盘。")
         with st.expander("➕ 多角度照片（规划中）", expanded=False):
             st.caption("上传侧面/背面照片以辅助 3D 结构推理——尚未开放；"
                        "当前可用结果页的「快速调整尺寸」与姿态实测分段弥补部分场景。")
 
-        # 解析模式显式选择（放在上传之前：先选模式再传照片更顺）。
-        # vision_mode 是显式三态（"ai"/"local"/"mock"）：Mock 不再是
-        # "无 Key"的隐式副作用——有 Key 时选 Mock 也绝不发起 API 调用。
-        if _has_effective_keys():
-            mode_options = ["🤖 AI 视觉解析", "🧮 本地视觉估算（免费）",
-                            "🎬 Mock 演示数据"]
-            mode_help = ("AI：视觉模型语义解析（按 token 计费）；"
-                         "本地：人脸检测推算比例，零 API 成本；"
-                         "Mock：固定演示数据（配色来自照片），零 API 成本")
-        else:
-            mode_options = ["🧮 本地视觉估算（推荐）", "🎬 Mock 演示数据"]
-            mode_help = ("本地估算：人脸检测推算相对头身比例，零 API 成本；"
-                         "Mock：体型与部件为演示数据，配色来自照片，零 API 成本")
-        # options 随 Key 状态切换：残留旧值不在新 options 时先清掉，
+        mode_options = ["🧮 本地视觉估算（推荐）", "🎬 Mock 演示数据"]
+        mode_help = ("本地估算：轮廓与头部候选框推算比例，部件需人工确认；"
+                     "Mock：固定演示数据，配色来自照片。")
+        # 清理升级前的 AI 模式残留值，
         # 让 radio 确定性回到默认（不依赖 Streamlit 的隐式重置行为）
         if st.session_state.get("vision_mode") not in mode_options:
             st.session_state.pop("vision_mode", None)
@@ -114,7 +76,7 @@ def render_tab_photo() -> None:
             horizontal=True,
             help=mode_help,
         )
-        vision_mode = {"🤖": "ai", "🧮": "local", "🎬": "mock"}[mode[0]]
+        vision_mode = {"🧮": "local", "🎬": "mock"}[mode[0]]
 
     with col_preview:
         if uploaded_file is None:
@@ -157,7 +119,7 @@ def render_tab_photo() -> None:
                     st.image(cropped, caption="将用于识别的裁剪照片", width="stretch")
                 budget = st.number_input("单次任务运行预算（秒，不含人工确认时间）", 15, 600, 180,
                                          key="photo_budget")
-                st.caption("预算在阶段边界检查，并约束 API 请求超时；本地计算无法中途强制终止。")
+                st.caption("预算在阶段边界检查；本地计算无法中途强制终止。")
                 if st.button("① 识别照片，进入确认", type="primary", width="stretch", key="btn_photo"):
                     progress = st.progress(0, text="识别中…")
                     orchestrator = None

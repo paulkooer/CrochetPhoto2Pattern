@@ -1,0 +1,366 @@
+{
+  "kind": "original_synthetic_representation_counterexample",
+  "schema_version": 2,
+  "source_images_used": false,
+  "release_evidence": false,
+  "mask": "perfect_all_foreground_supplied_to_isolate_color_compression",
+  "cases": [
+    {
+      "id": "two_separate_patches",
+      "pixel_sha256": "dd0c3d4e57fb98307b36f09fc40879af610c61df42475f83bb72546fba41f857",
+      "black_pixels": 1280,
+      "bands": [
+        {
+          "start": 0.0,
+          "end": 1.0,
+          "color": "白色"
+        }
+      ],
+      "observation": {
+        "version": 1,
+        "coordinates": "cropped_image_normalized",
+        "mask_source": "segmentation",
+        "width": 160,
+        "height": 160,
+        "foreground_pixels": 25600,
+        "coverage": [
+          {
+            "color": "白色",
+            "pixels": 24320
+          },
+          {
+            "color": "黑色",
+            "pixels": 1280
+          }
+        ],
+        "band_coverage": [
+          {
+            "start": 0.0,
+            "end": 0.1,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.1,
+            "end": 0.2,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.2,
+            "end": 0.3,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2304
+              },
+              {
+                "color": "黑色",
+                "pixels": 256
+              }
+            ]
+          },
+          {
+            "start": 0.3,
+            "end": 0.4,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2048
+              },
+              {
+                "color": "黑色",
+                "pixels": 512
+              }
+            ]
+          },
+          {
+            "start": 0.4,
+            "end": 0.5,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2048
+              },
+              {
+                "color": "黑色",
+                "pixels": 512
+              }
+            ]
+          },
+          {
+            "start": 0.5,
+            "end": 0.6,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.6,
+            "end": 0.7,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.7,
+            "end": 0.8,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.8,
+            "end": 0.9,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.9,
+            "end": 1.0,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          }
+        ],
+        "regions": [
+          {
+            "color": "白色",
+            "pixels": 24320,
+            "box": [
+              0.0,
+              0.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "color": "黑色",
+            "pixels": 640,
+            "box": [
+              0.1875,
+              0.25,
+              0.2875,
+              0.5
+            ]
+          },
+          {
+            "color": "黑色",
+            "pixels": 640,
+            "box": [
+              0.6875,
+              0.25,
+              0.7875,
+              0.5
+            ]
+          }
+        ],
+        "omitted_region_count": 0,
+        "omitted_pixels": 0
+      },
+      "requires_review": true,
+      "black_preserved_in_output": false
+    },
+    {
+      "id": "one_center_patch",
+      "pixel_sha256": "db518c3a2ac7d4b94b6c945a609285e83dc0a0c23b068d1626152a5f44a26fbd",
+      "black_pixels": 1280,
+      "bands": [
+        {
+          "start": 0.0,
+          "end": 1.0,
+          "color": "白色"
+        }
+      ],
+      "observation": {
+        "version": 1,
+        "coordinates": "cropped_image_normalized",
+        "mask_source": "segmentation",
+        "width": 160,
+        "height": 160,
+        "foreground_pixels": 25600,
+        "coverage": [
+          {
+            "color": "白色",
+            "pixels": 24320
+          },
+          {
+            "color": "黑色",
+            "pixels": 1280
+          }
+        ],
+        "band_coverage": [
+          {
+            "start": 0.0,
+            "end": 0.1,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.1,
+            "end": 0.2,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.2,
+            "end": 0.3,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2304
+              },
+              {
+                "color": "黑色",
+                "pixels": 256
+              }
+            ]
+          },
+          {
+            "start": 0.3,
+            "end": 0.4,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2048
+              },
+              {
+                "color": "黑色",
+                "pixels": 512
+              }
+            ]
+          },
+          {
+            "start": 0.4,
+            "end": 0.5,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2048
+              },
+              {
+                "color": "黑色",
+                "pixels": 512
+              }
+            ]
+          },
+          {
+            "start": 0.5,
+            "end": 0.6,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.6,
+            "end": 0.7,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.7,
+            "end": 0.8,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.8,
+            "end": 0.9,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          },
+          {
+            "start": 0.9,
+            "end": 1.0,
+            "colors": [
+              {
+                "color": "白色",
+                "pixels": 2560
+              }
+            ]
+          }
+        ],
+        "regions": [
+          {
+            "color": "白色",
+            "pixels": 24320,
+            "box": [
+              0.0,
+              0.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "color": "黑色",
+            "pixels": 1280,
+            "box": [
+              0.4,
+              0.25,
+              0.6,
+              0.5
+            ]
+          }
+        ],
+        "omitted_region_count": 0,
+        "omitted_pixels": 0
+      },
+      "requires_review": true,
+      "black_preserved_in_output": false
+    }
+  ],
+  "distinct_pixels": true,
+  "identical_band_outputs": true,
+  "distinct_region_outputs": true,
+  "interpretation": "Horizontal majority bands discard minority patches and horizontal positions. Spatial observations preserve patches separately from stitch instructions. This diagnoses representation, not real-photo accuracy or improved segmentation.",
+  "color_observation_sha256": "e2823be98f0fb159a0514210f4e0e5f538a5b9f574e62e5af32accf751448259",
+  "script_sha256": "9ae384030d9e1acccdab7196bed4f102e9dcb3c3cec7b59becc5c21be5aff613",
+  "color_design_sha256": "ec112017a41552ee7c45accf7e43930c39f3a55a101151ef89466728ea7b06d6"
+}

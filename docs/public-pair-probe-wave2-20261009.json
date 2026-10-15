@@ -1,0 +1,678 @@
+{
+  "kind": "exploratory_public_photo_pattern_pairs",
+  "created_at": "2026-10-09T13:29:43.607061+00:00",
+  "app_source_sha256": "8b6089965ec8089896d340102a633d6f639dd8ec161c88ce367fefd75cda1d53",
+  "mode": "local_vision_pose_disabled",
+  "release_evidence": false,
+  "rights_status": "public_source_reference_only_no_redistribution_permission_asserted",
+  "python_version": "3.12.13",
+  "probe_sha256": "e9d0e5dade997e9914bdc6314dfb9c0d716026ff366f762177ad243ae12809d3",
+  "catalog_sha256": "378861a2b317999b26175d21e85ad66571b9bcc4c45cf5811032cd052497f618",
+  "scope": "Manually selected development cases; not a held-out benchmark. Visible semantic parts are distinct from separately crocheted pieces. Pattern instructions were not supplied to the pipeline. Gauge was not calibrated.",
+  "summary": {
+    "requested": 5,
+    "completed": 5,
+    "errors": 0,
+    "unique_image_hashes": 5,
+    "canonical_part_scored_cases": 3,
+    "canonical_parts_exact_cases": 0,
+    "pattern_valid_cases": 5,
+    "boundary_cases_completed": 2
+  },
+  "cases": [
+    {
+      "id": "elf",
+      "reference": {
+        "page_url": "https://www.lilleliis.com/amigurumi-crochet-freebies/little-christmas-elf/",
+        "image_url": "https://www.lilleliis.com/wp-content/uploads/2019/10/DSC_4613.jpg",
+        "publisher": "lilleliis",
+        "visible_parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部",
+          "耳朵",
+          "帽子"
+        ],
+        "evaluation_group": "single_animal",
+        "tags": [
+          "humanoid",
+          "full-body",
+          "props",
+          "hat"
+        ],
+        "unmodeled_features": [
+          "刺绣头发"
+        ],
+        "construction_observation": "Separate head, ears, hat and arms; legs join into the body.",
+        "target_height_cm": 18,
+        "target_basis": "application_default_not_source_measurement",
+        "image_file": "elf.img"
+      },
+      "sha256": "b8da5807a52c32226209f0d17d7bf0e4143493f715560c5c0c1576622573339f",
+      "image_size": [
+        400,
+        400
+      ],
+      "vision_meta": {
+        "parts_source": "default_template",
+        "requires_subject_review": true,
+        "subject_type": "unclassified",
+        "possible_skirt": false,
+        "source": "default",
+        "note": "未检测到人脸，使用默认 Q 版比例；部件来自模板，请手动确认"
+      },
+      "analysis": {
+        "body_type": "标准",
+        "head_diameter_cm": 9.0,
+        "height_cm": 18.0,
+        "main_features": [
+          "本地估算（未检出人脸）"
+        ],
+        "pose": "站立",
+        "difficulty": "easy",
+        "parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部"
+        ],
+        "recommended_colors": [
+          "灰色",
+          "暗红色",
+          "白皙肤色",
+          "深灰色",
+          "深肤色"
+        ],
+        "hair_color": null,
+        "top_color": null,
+        "bottom_color": null,
+        "clothing_type": null
+      },
+      "part_metrics_applicable": true,
+      "missing_visible_parts": [
+        "帽子",
+        "耳朵"
+      ],
+      "unexpected_parts": [],
+      "visible_part_recall": 0.6666666666666666,
+      "visible_part_precision": 1.0,
+      "canonical_parts_exact": false,
+      "status": "completed",
+      "generated_parts": [
+        {
+          "name": "头部",
+          "quantity": 1,
+          "type": "sphere",
+          "round_count": 17,
+          "colors": [
+            "暗红色"
+          ]
+        },
+        {
+          "name": "身体",
+          "quantity": 1,
+          "type": "profile",
+          "round_count": 12,
+          "colors": [
+            "咖啡肤色",
+            "暗红色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "手臂",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 8,
+          "colors": [
+            "暗红色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "腿部",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 9,
+          "colors": [
+            "咖啡肤色",
+            "小麦肤色",
+            "灰色"
+          ]
+        }
+      ],
+      "pattern_validation": {
+        "ok": true,
+        "issues": [],
+        "notes": [],
+        "checked": 46,
+        "max_stitch_change": 6,
+        "shaping_continuous_delta": 5.11
+      },
+      "physical_trial": false
+    },
+    {
+      "id": "tree",
+      "reference": {
+        "page_url": "https://www.lilleliis.com/amigurumi-crochet-freebies/little-amigurumi-tree/",
+        "image_url": "https://www.lilleliis.com/wp-content/uploads/2021/05/little-amigurumi-tree-1.jpg",
+        "publisher": "lilleliis",
+        "visible_parts": [],
+        "evaluation_group": "boundary_non_animal",
+        "tags": [
+          "plant",
+          "single-subject",
+          "pot"
+        ],
+        "unmodeled_features": [
+          "树冠",
+          "树干",
+          "根团"
+        ],
+        "construction_observation": "Tree crown, trunk and root ball are crocheted continuously, then placed in a pot.",
+        "target_height_cm": 18,
+        "target_basis": "application_default_not_source_measurement",
+        "image_file": "tree.img"
+      },
+      "sha256": "198e8d032d4f57ff0052efa684c1cb27b24b569efefbc3d8282996cbfd7e38e1",
+      "image_size": [
+        400,
+        400
+      ],
+      "vision_meta": {
+        "parts_source": "default_template",
+        "requires_subject_review": true,
+        "subject_type": "unclassified",
+        "possible_skirt": false,
+        "source": "default",
+        "note": "未检测到人脸，使用默认 Q 版比例；部件来自模板，请手动确认"
+      },
+      "analysis": {
+        "body_type": "标准",
+        "head_diameter_cm": 9.0,
+        "height_cm": 18.0,
+        "main_features": [
+          "本地估算（未检出人脸）"
+        ],
+        "pose": "站立",
+        "difficulty": "easy",
+        "parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部"
+        ],
+        "recommended_colors": [
+          "深绿色",
+          "咖啡肤色",
+          "草绿色",
+          "小麦肤色",
+          "暗红色"
+        ],
+        "hair_color": null,
+        "top_color": null,
+        "bottom_color": null,
+        "clothing_type": null
+      },
+      "part_metrics_applicable": false,
+      "missing_visible_parts": null,
+      "unexpected_parts": null,
+      "visible_part_recall": null,
+      "visible_part_precision": null,
+      "canonical_parts_exact": null,
+      "status": "completed",
+      "generated_parts": [
+        {
+          "name": "头部",
+          "quantity": 1,
+          "type": "sphere",
+          "round_count": 17,
+          "colors": [
+            "小麦肤色",
+            "浅灰色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "身体",
+          "quantity": 1,
+          "type": "profile",
+          "round_count": 9,
+          "colors": [
+            "小麦肤色",
+            "深肤色"
+          ]
+        },
+        {
+          "name": "手臂",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 8,
+          "colors": [
+            "小麦肤色"
+          ]
+        },
+        {
+          "name": "腿部",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 9,
+          "colors": [
+            "咖啡肤色",
+            "深肤色"
+          ]
+        }
+      ],
+      "pattern_validation": {
+        "ok": true,
+        "issues": [],
+        "notes": [],
+        "checked": 43,
+        "max_stitch_change": 6,
+        "shaping_continuous_delta": 5.11
+      },
+      "physical_trial": false
+    },
+    {
+      "id": "mermaid",
+      "reference": {
+        "page_url": "https://spinayarncrochet.com/ragdoll-mermaid-free-crochet-pattern/",
+        "image_url": "https://spinayarncrochet.com/wp-content/uploads/2017/04/18209664_10158640624915437_1112405484_o.jpg",
+        "publisher": "Spin a Yarn Crochet",
+        "visible_parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "尾巴"
+        ],
+        "evaluation_group": "single_animal",
+        "tags": [
+          "fantasy",
+          "flat-panels",
+          "long-hair",
+          "text-overlay"
+        ],
+        "unmodeled_features": [
+          "发束",
+          "尾鳍",
+          "贝壳饰边"
+        ],
+        "construction_observation": "Two flat body panels are joined around the edge; paired panels form arms and fins.",
+        "target_height_cm": 18,
+        "target_basis": "application_default_not_source_measurement",
+        "image_file": "mermaid.img"
+      },
+      "sha256": "2dd18a38df23d93f89d1b9dc47b5f82262c3a6a66a9e54aed9f37cf6e083e9c4",
+      "image_size": [
+        1333,
+        1334
+      ],
+      "vision_meta": {
+        "parts_source": "default_template",
+        "requires_subject_review": true,
+        "subject_type": "unclassified",
+        "possible_skirt": false,
+        "rejected_face_box": [
+          817,
+          287,
+          93,
+          93
+        ],
+        "face_rejection_reason": "检测框相对主体过小，无法可靠推算头身比例",
+        "source": "default",
+        "note": "头部候选框未通过检查，使用默认 Q 版比例；请手动确认头部和部件"
+      },
+      "analysis": {
+        "body_type": "标准",
+        "head_diameter_cm": 9.0,
+        "height_cm": 18.0,
+        "main_features": [
+          "本地估算（未检出人脸）"
+        ],
+        "pose": "站立",
+        "difficulty": "easy",
+        "parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部"
+        ],
+        "recommended_colors": [
+          "深灰色",
+          "灰色",
+          "青色",
+          "白皙肤色",
+          "小麦肤色"
+        ],
+        "hair_color": null,
+        "top_color": null,
+        "bottom_color": null,
+        "clothing_type": null
+      },
+      "part_metrics_applicable": true,
+      "missing_visible_parts": [
+        "尾巴"
+      ],
+      "unexpected_parts": [
+        "腿部"
+      ],
+      "visible_part_recall": 0.75,
+      "visible_part_precision": 0.75,
+      "canonical_parts_exact": false,
+      "status": "completed",
+      "generated_parts": [
+        {
+          "name": "头部",
+          "quantity": 1,
+          "type": "sphere",
+          "round_count": 17,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "身体",
+          "quantity": 1,
+          "type": "profile",
+          "round_count": 13,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "手臂",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 8,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "腿部",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 9,
+          "colors": [
+            "深灰色",
+            "灰色"
+          ]
+        }
+      ],
+      "pattern_validation": {
+        "ok": true,
+        "issues": [],
+        "notes": [],
+        "checked": 47,
+        "max_stitch_change": 6,
+        "shaping_continuous_delta": 5.11
+      },
+      "physical_trial": false
+    },
+    {
+      "id": "jellyfish",
+      "reference": {
+        "page_url": "https://www.cuddlystitchescraft.com/free-crochet-jellyfish-pattern/",
+        "image_url": "https://www.cuddlystitchescraft.com/wp-content/uploads/2021/03/Free-crochet-jellyfish-pattern-free-Amigurumi-jellyfish-pattern-by-Cuddly-Stitches-Craft.jpg",
+        "publisher": "Cuddly Stitches Craft",
+        "visible_parts": [],
+        "evaluation_group": "boundary_unsupported_anatomy",
+        "tags": [
+          "marine",
+          "single-subject",
+          "text-overlay",
+          "tentacles"
+        ],
+        "unmodeled_features": [
+          "伞体",
+          "腹片",
+          "触手",
+          "蝴蝶结"
+        ],
+        "construction_observation": "Separate dome and belly are crocheted together; straight and curly tentacles attach to the belly.",
+        "target_height_cm": 18,
+        "target_basis": "application_default_not_source_measurement",
+        "image_file": "jellyfish-single.img"
+      },
+      "sha256": "1335cdecc62298ac6fed0afb56ee7187db7d54f4d896a92924b4dfa5244046f2",
+      "image_size": [
+        1000,
+        1500
+      ],
+      "vision_meta": {
+        "parts_source": "default_template",
+        "requires_subject_review": true,
+        "subject_type": "unclassified",
+        "possible_skirt": false,
+        "rejected_face_box": [
+          373,
+          1045,
+          41,
+          41
+        ],
+        "face_rejection_reason": "检测框不在主体上半部，不能自动作为直立玩偶头部",
+        "source": "default",
+        "note": "头部候选框未通过检查，使用默认 Q 版比例；请手动确认头部和部件"
+      },
+      "analysis": {
+        "body_type": "标准",
+        "head_diameter_cm": 9.0,
+        "height_cm": 18.0,
+        "main_features": [
+          "本地估算（未检出人脸）"
+        ],
+        "pose": "站立",
+        "difficulty": "easy",
+        "parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部"
+        ],
+        "recommended_colors": [
+          "薰衣草色",
+          "白色",
+          "白皙肤色",
+          "钢蓝色",
+          "青色"
+        ],
+        "hair_color": null,
+        "top_color": null,
+        "bottom_color": null,
+        "clothing_type": null
+      },
+      "part_metrics_applicable": false,
+      "missing_visible_parts": null,
+      "unexpected_parts": null,
+      "visible_part_recall": null,
+      "visible_part_precision": null,
+      "canonical_parts_exact": null,
+      "status": "completed",
+      "generated_parts": [
+        {
+          "name": "头部",
+          "quantity": 1,
+          "type": "sphere",
+          "round_count": 17,
+          "colors": [
+            "深灰色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "身体",
+          "quantity": 1,
+          "type": "profile",
+          "round_count": 13,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "手臂",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 8,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "腿部",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 9,
+          "colors": [
+            "灰色"
+          ]
+        }
+      ],
+      "pattern_validation": {
+        "ok": true,
+        "issues": [],
+        "notes": [],
+        "checked": 47,
+        "max_stitch_change": 6,
+        "shaping_continuous_delta": 5.11
+      },
+      "physical_trial": false
+    },
+    {
+      "id": "lamb",
+      "reference": {
+        "page_url": "https://yarnhild.com/crochet-ragdoll-pattern/",
+        "image_url": "https://yarnhild.com/wp-content/uploads/2017/05/DSC_0382-1-1024x680.jpg",
+        "publisher": "Yarnhild",
+        "visible_parts": [
+          "头部",
+          "身体",
+          "腿部",
+          "耳朵",
+          "尾巴"
+        ],
+        "evaluation_group": "single_animal",
+        "tags": [
+          "quadruped",
+          "flat-panels",
+          "bobble-texture",
+          "cropped-feet"
+        ],
+        "unmodeled_features": [
+          "羊毛纹理"
+        ],
+        "construction_observation": "Body and head use paired flat panels, with bobble texture on the body.",
+        "target_height_cm": 18,
+        "target_basis": "application_default_not_source_measurement",
+        "image_file": "lamb.img"
+      },
+      "sha256": "6cf992152f26c4ae15190357bb490e02dbe38b3333bab86c321522eececd5ba3",
+      "image_size": [
+        1024,
+        680
+      ],
+      "vision_meta": {
+        "parts_source": "default_template",
+        "requires_subject_review": true,
+        "subject_type": "unclassified",
+        "possible_skirt": false,
+        "rejected_face_box": [
+          225,
+          530,
+          91,
+          91
+        ],
+        "face_rejection_reason": "检测框不在主体上半部，不能自动作为直立玩偶头部",
+        "source": "default",
+        "note": "头部候选框未通过检查，使用默认 Q 版比例；请手动确认头部和部件"
+      },
+      "analysis": {
+        "body_type": "标准",
+        "head_diameter_cm": 9.0,
+        "height_cm": 18.0,
+        "main_features": [
+          "本地估算（未检出人脸）"
+        ],
+        "pose": "站立",
+        "difficulty": "easy",
+        "parts": [
+          "头部",
+          "身体",
+          "手臂",
+          "腿部"
+        ],
+        "recommended_colors": [
+          "灰色",
+          "浅灰色",
+          "白皙肤色",
+          "深绿色",
+          "深灰色"
+        ],
+        "hair_color": null,
+        "top_color": null,
+        "bottom_color": null,
+        "clothing_type": null
+      },
+      "part_metrics_applicable": true,
+      "missing_visible_parts": [
+        "尾巴",
+        "耳朵"
+      ],
+      "unexpected_parts": [
+        "手臂"
+      ],
+      "visible_part_recall": 0.6,
+      "visible_part_precision": 0.75,
+      "canonical_parts_exact": false,
+      "status": "completed",
+      "generated_parts": [
+        {
+          "name": "头部",
+          "quantity": 1,
+          "type": "sphere",
+          "round_count": 17,
+          "colors": [
+            "浅灰色",
+            "灰色"
+          ]
+        },
+        {
+          "name": "身体",
+          "quantity": 1,
+          "type": "profile",
+          "round_count": 13,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "手臂",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 8,
+          "colors": [
+            "灰色"
+          ]
+        },
+        {
+          "name": "腿部",
+          "quantity": 2,
+          "type": "cylinder",
+          "round_count": 9,
+          "colors": [
+            "灰色"
+          ]
+        }
+      ],
+      "pattern_validation": {
+        "ok": true,
+        "issues": [],
+        "notes": [],
+        "checked": 47,
+        "max_stitch_change": 6,
+        "shaping_continuous_delta": 5.11
+      },
+      "physical_trial": false
+    }
+  ]
+}

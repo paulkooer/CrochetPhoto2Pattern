@@ -1,7 +1,6 @@
 """Reviewed photo generation, reversible edits, single-count yarn, and request budgets."""
 
 from copy import deepcopy
-from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -118,66 +117,18 @@ def test_export_failure_keeps_input_and_reports_duration(result):
     assert record["diagnostics"]["exports"]["pdf"]["stages"][0]["status"] == "failed"
 
 
-def _response(provider, input_tokens=100, output_tokens=20):
-    usage = (
-        SimpleNamespace(prompt_tokens=input_tokens, completion_tokens=output_tokens)
-        if provider == "openai"
-        else SimpleNamespace(input_tokens=input_tokens, output_tokens=output_tokens)
-    )
-    return SimpleNamespace(usage=usage)
 
 
-def test_request_ledger_counts_retry_refusal_and_fallback(monkeypatch, caplog):
-    parser = ImageParser(openai_key="private-key", anthropic_key="private-key")
-    tries = []
-
-    class TransientError(Exception):
-        status_code = 429
-
-    def transient(**kwargs):
-        tries.append(kwargs["timeout"])
-        if len(tries) == 1:
-            raise TransientError("private-key secret image base64")
-        return _response("anthropic", 300, 60)
-
-    parser._request("anthropic", transient, model="claude")
-    parser._mark_attempt("refused")
-    parser._request("openai", lambda **kw: _response("openai", 200, 40), model="gpt")
-    parser._mark_attempt("success")
-    usage = parser.last_usage
-    assert len(usage["attempts"]) == 3
-    assert [a["status"] for a in usage["attempts"]] == ["failed", "refused", "success"]
-    assert usage["input_tokens"] == 500 and usage["output_tokens"] == 100
-    assert usage["provider"] == "multiple" and usage["usage_complete"] is False
-    assert usage["attempts"][0]["input_tokens"] is None
-    assert "private-key" not in str(usage) + caplog.text
-    assert "base64" not in str(usage) + caplog.text
 
 
-def test_api_request_timeout_uses_remaining_budget_and_prevents_extra_calls(monkeypatch):
-    clock = [0.0]
-    monkeypatch.setattr("app.models.image_parser.time.monotonic", lambda: clock[0])
-    parser = ImageParser(openai_key="x")
-    parser._request_deadline = 3.0
-
-    def late(**kwargs):
-        assert kwargs["timeout"] == 3
-        clock[0] = 4
-        return _response("openai")
-
-    with pytest.raises(TimeoutError):
-        parser._request("openai", late, model="test")
-    assert len(parser.last_usage["attempts"]) == 1
-    assert parser.last_usage["input_tokens"] == 100  # Returned usage is retained, even for a late response.
-    assert parser.last_usage["attempts"][0]["status"] == "failed"
 
 
 def test_local_and_mock_clear_old_billing(monkeypatch):
     parser = ImageParser()
-    parser._request("openai", lambda **kw: _response("openai"), model="test")
+    parser.last_usage = {"input_tokens": 100, "provider": "openai"}
     parser.parse_image_mock()
     assert parser.last_usage == {}
-    parser._request("openai", lambda **kw: _response("openai"), model="test")
+    parser.last_usage = {"input_tokens": 100, "provider": "openai"}
     monkeypatch.setattr("app.models.local_vision.analyze", lambda *a, **k: (ImageParser._mock_analysis(), {}))
     parser.parse_image_local(Image.new("RGB", (40, 40)))
     assert parser.last_usage == {}
@@ -363,6 +314,7 @@ if result is not None:
     assert not at.exception
     at.number_input(key="review_ratio_draft").set_value(0.3).run()
     at.multiselect(key="review_parts_draft").set_value(["头部", "身体"]).run()
+    at.radio(key="review_subject_draft").set_value("单个玩偶，所需部件可用下方列表表达").run()
     at.button(key="review_generate_draft").click().run()
     assert not at.exception
     generated = at.session_state["generated"]
@@ -451,6 +403,7 @@ def test_photo_tab_crop_mode_invalidation_and_failure_preserves_result(monkeypat
     at.slider(key="photo_target_height").set_value(24).run()
     assert at.session_state["photo_draft"][2] == draft_id
     assert len(calls) == 1
+    at.radio(key=f"review_subject_{draft_id}").set_value("单个玩偶，所需部件可用下方列表表达").run()
     at.button(key=f"review_generate_{draft_id}").click().run()
     assert not at.exception
     generated = deepcopy(at.session_state["result"])
@@ -476,4 +429,5 @@ def test_numeric_round_edit_refreshes_obsolete_instructions(result):
     changed = updated["params"]["parts"][0]["rounds"]
     assert "12" in changed[0]["notes"]
     assert changed[1]["notes"] == "12X（不加不减）"
-    assert changed[2]["notes"] == rounds[2]["notes"]
+    assert "加针位置与上一圈错开半组" in rounds[2]["notes"]
+    assert changed[2]["notes"] == rounds[2]["notes"].split("；")[0]

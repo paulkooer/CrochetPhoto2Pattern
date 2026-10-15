@@ -2,7 +2,7 @@
 
 范式依据（已联网核实）：
 - AmiGo: Computational Design of Amigurumi Crochet Patterns
-  (Zur & Edelstein 等, Technion, SIGGRAPH Asia 2022 / arXiv:2211.01178)
+  (Edelstein 等, SCF 2022 / arXiv:2211.01178)
   —— 3D 模型按表面横向切圈，每圈针数 = 该圈周长 ÷ 针宽。
 - 单张正面照没有 3D 网格，但"轮廓剖面 + 圆形截面假设 = 旋转体"，
   信息刚好够用（fable5 方案的本地化）。
@@ -81,15 +81,52 @@ def profile_to_rounds(
     # 目标针数 → 6 的倍数量化（锚点 ref 对应区间最宽处）
     targets = [max(6, int(round(v * ref_stitches / 6.0)) * 6) for v in norm]
 
-    # 钩织顺序映射 + gauge 动态上限（连续几何率的六等分上量化）。
-    from .gauge import next_shaping_stitch_count
+    # 钩织顺序映射后整体拟合，避免逐圈贪心限幅造成持续滞后。
     order = list(reversed(targets)) if direction == "bottom_up" else list(targets)
-    clamped = [order[0]]
-    for t in order[1:]:
-        prev = clamped[-1]
-        clamped.append(next_shaping_stitch_count(
-            prev, max(6, t), gauge.max_shaping_change))
-    return clamped
+    return _fit_round_targets(order, gauge.max_shaping_change)
+
+
+def _fit_round_targets(targets: Sequence[int], max_change: int) -> list[int]:
+    """Least-squares fit on the six-stitch lattice, with an anchored first round.
+
+    Each V consumes one source stitch and each A consumes two. Transitions
+    enforce those constraints as well as the gauge cap. Dynamic programming
+    can anticipate a shoulder instead of accumulating the greedy clamp's lag.
+    The objective is against quantized targets, not a physical simulation or
+    a claim of photo accuracy. Equal costs prefer less total shaping.
+
+    Complexity: O(rounds * max_target/6 * max_change/6); backpointers retain
+    O(rounds * max_target/6) entries. The first round and number of rounds are
+    preserved, so the existing base disk and axial height remain compatible.
+    """
+    if not targets:
+        return []
+    if any(t < 6 or t % 6 for t in targets):
+        raise ValueError("targets must be positive multiples of 6")
+    cap = max(6, int(max_change) // 6 * 6)
+    ceiling = max(targets)
+    costs = {targets[0]: (0, 0)}
+    parents: list[dict[int, int]] = []
+    for target in targets[1:]:
+        next_costs: dict[int, tuple[int, int]] = {}
+        parent: dict[int, int] = {}
+        for previous, (error, shaping) in sorted(costs.items()):
+            lower = max(6, previous - cap, ((previous + 11) // 12) * 6)
+            upper = min(ceiling, previous + cap, previous * 2)
+            for current in range(lower, upper + 1, 6):
+                candidate = (error + (current - target) ** 2,
+                             shaping + abs(current - previous))
+                if current not in next_costs or candidate < next_costs[current]:
+                    next_costs[current] = candidate
+                    parent[current] = previous
+        costs = next_costs
+        parents.append(parent)
+    end = min(costs, key=lambda n: (costs[n], n))
+    result = [end]
+    for parent in reversed(parents):
+        end = parent[end]
+        result.append(end)
+    return list(reversed(result))
 
 
 def strip_dome(stitches: Sequence[int]) -> list[int]:

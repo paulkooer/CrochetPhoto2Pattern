@@ -1,0 +1,669 @@
+{
+  "kind": "paired_development_color_algorithm_comparison",
+  "release_evidence": false,
+  "scope": "Same 15 local photos and parameters. Output changes are not color accuracy scores. No manual labels enter inference; no physical trial.",
+  "algorithm": "Foreground yarn coverage vote replaces mean RGB; nearest valid band fills empty bands in both segmentation and fallback paths. Image-relative coordinates remain compatible with measured pose spans.",
+  "before_reports": [
+    "public-pair-probe-guarded-20261009.json",
+    "public-pair-probe-wave2-20261009.json"
+  ],
+  "after_reports": [
+    "public-pair-probe-color-vote-20261010.json",
+    "public-pair-probe-color-vote-wave2-20261010.json"
+  ],
+  "summary": {
+    "cases": 15,
+    "cases_with_color_changes": 14,
+    "changed_parts": 46,
+    "analysis_unchanged": true,
+    "valid_before": 15,
+    "valid_after": 15,
+    "canonical_parts_exact_before": 0,
+    "canonical_parts_exact_after": 0,
+    "canonical_parts_scored": 9
+  },
+  "limitations": [
+    "Incorrect masks still include backgrounds, hands and text.",
+    "Single dominant yarn per horizontal band loses minority stripes and cannot separate overlapping parts.",
+    "Cat now includes black/grey in generated parts; do not interpret every output change as improvement.",
+    "Bunny remains grey, mermaid remains grey, and anatomy recognition is unchanged."
+  ],
+  "cases": [
+    {
+      "id": "akihiro",
+      "image_sha256": "0a7b80c776663b28755ea2f71f899cacf79685d5403575202788a11ac7261c88",
+      "color_changes": [
+        {
+          "part": "身体",
+          "before": [
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "bunny",
+      "image_sha256": "4d05cbde917ce7d815c71b4dca6d05cbfca964e485b70f356a77cd5309349067",
+      "color_changes": [
+        {
+          "part": "身体",
+          "before": [
+            "深灰色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "深灰色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "暗肤色",
+            "深灰色"
+          ],
+          "after": [
+            "暗肤色",
+            "灰色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "cat",
+      "image_sha256": "e02bd7568191eede9dd1ea9a2cdfc848acc7cd85180517437f6aa962efd438d3",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "咖啡肤色",
+            "深肤色",
+            "深褐肤色"
+          ],
+          "after": [
+            "小麦肤色",
+            "黑色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "咖啡肤色"
+          ],
+          "after": [
+            "小麦肤色",
+            "暗肤色",
+            "黑色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "咖啡肤色"
+          ],
+          "after": [
+            "小麦肤色",
+            "暗肤色",
+            "黑色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "咖啡肤色",
+            "小麦肤色"
+          ],
+          "after": [
+            "灰色",
+            "黑色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "pigeon",
+      "image_sha256": "2381efb9ca74696330241617b1338b4cd4e50d9f1ca4bc4251bf08cb2342c1bb",
+      "color_changes": [
+        {
+          "part": "身体",
+          "before": [
+            "小麦肤色",
+            "深灰色",
+            "紫色"
+          ],
+          "after": [
+            "深灰色",
+            "紫色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "咖啡肤色",
+            "小麦肤色"
+          ],
+          "after": [
+            "深灰色",
+            "深肤色",
+            "粉红色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "worm",
+      "image_sha256": "68ec7ea4720854af38c4af4e4b1b367c79e97715ff37bd665d1842cbf700431c",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "棕肤色",
+            "金黄色"
+          ],
+          "after": [
+            "金黄色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "小麦肤色",
+            "棕肤色",
+            "深灰色",
+            "红色"
+          ],
+          "after": [
+            "暗红色",
+            "棕肤色",
+            "粉红色",
+            "青色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "小麦肤色",
+            "棕肤色",
+            "红色"
+          ],
+          "after": [
+            "暗红色",
+            "棕肤色",
+            "粉红色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "深灰色",
+            "深肤色"
+          ],
+          "after": [
+            "深肤色",
+            "青色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "cupcake",
+      "image_sha256": "bdbf7d9eb847e2f7f8ad0f14e1e8222c930b626278ed1e60da5671c2f3138fcc",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "小麦肤色",
+            "浅肤色"
+          ],
+          "after": [
+            "棕肤色",
+            "浅肤色",
+            "灰色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "深灰色",
+            "灰色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "小麦肤色"
+          ],
+          "after": [
+            "小麦肤色",
+            "浅肤色",
+            "深灰色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "pretzel",
+      "image_sha256": "2ede0d075274aa65b27a83a7b3f9e610144d410cc3e136b425bd7d2d8ce0d59e",
+      "color_changes": [
+        {
+          "part": "身体",
+          "before": [
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "灰色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "bear",
+      "image_sha256": "9a305b7dea177b14b3731d480edc104ef3d26588df4c545d22f78973a11fcf32",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "棕肤色",
+            "红色"
+          ],
+          "after": [
+            "暗红色",
+            "金黄色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "灰色",
+            "金黄色"
+          ],
+          "after": [
+            "浅灰色",
+            "金黄色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "灰色",
+            "金黄色"
+          ],
+          "after": [
+            "浅灰色",
+            "金黄色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "灰色",
+            "米色"
+          ],
+          "after": [
+            "浅灰色",
+            "白色",
+            "米色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "elephant",
+      "image_sha256": "17067ed947a1f47322c07dc4a8af4007f71d3f858a40eb6eb18ac971151221a7",
+      "color_changes": [
+        {
+          "part": "身体",
+          "before": [
+            "灰色",
+            "白皙肤色"
+          ],
+          "after": [
+            "浅灰色",
+            "浅肤色",
+            "白皙肤色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "灰色",
+            "白皙肤色"
+          ],
+          "after": [
+            "浅灰色",
+            "浅肤色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "灰色",
+            "白皙肤色"
+          ],
+          "after": [
+            "白皙肤色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "bee",
+      "image_sha256": "77616d32b00ad240b8667d415bc75458a67d0a6ea05717019e0640c330628d4f",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "小麦肤色",
+            "深棕色"
+          ],
+          "after": [
+            "黑色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "暗肤色",
+            "深棕色"
+          ],
+          "after": [
+            "黑色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "暗肤色",
+            "深棕色"
+          ],
+          "after": [
+            "黑色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "小麦肤色",
+            "深棕色",
+            "深灰色"
+          ],
+          "after": [
+            "金黄色",
+            "黑色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "elf",
+      "image_sha256": "b8da5807a52c32226209f0d17d7bf0e4143493f715560c5c0c1576622573339f",
+      "color_changes": [
+        {
+          "part": "身体",
+          "before": [
+            "咖啡肤色",
+            "暗红色",
+            "灰色"
+          ],
+          "after": [
+            "暗红色",
+            "白皙肤色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "暗红色",
+            "灰色"
+          ],
+          "after": [
+            "暗红色",
+            "白皙肤色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "咖啡肤色",
+            "小麦肤色",
+            "灰色"
+          ],
+          "after": [
+            "小麦肤色",
+            "暗红色",
+            "灰色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "tree",
+      "image_sha256": "198e8d032d4f57ff0052efa684c1cb27b24b569efefbc3d8282996cbfd7e38e1",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "小麦肤色",
+            "浅灰色",
+            "灰色"
+          ],
+          "after": [
+            "浅灰色",
+            "深绿色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "小麦肤色",
+            "深肤色"
+          ],
+          "after": [
+            "暗红色",
+            "深绿色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "小麦肤色"
+          ],
+          "after": [
+            "深绿色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "咖啡肤色",
+            "深肤色"
+          ],
+          "after": [
+            "咖啡肤色",
+            "暗红色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "mermaid",
+      "image_sha256": "2dd18a38df23d93f89d1b9dc47b5f82262c3a6a66a9e54aed9f37cf6e083e9c4",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "灰色"
+          ],
+          "after": [
+            "深灰色",
+            "灰色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "灰色"
+          ],
+          "after": [
+            "深灰色",
+            "灰色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "jellyfish",
+      "image_sha256": "1335cdecc62298ac6fed0afb56ee7187db7d54f4d896a92924b4dfa5244046f2",
+      "color_changes": [
+        {
+          "part": "头部",
+          "before": [
+            "深灰色",
+            "灰色"
+          ],
+          "after": [
+            "白色",
+            "薰衣草色"
+          ]
+        },
+        {
+          "part": "身体",
+          "before": [
+            "灰色"
+          ],
+          "after": [
+            "白色"
+          ]
+        },
+        {
+          "part": "手臂",
+          "before": [
+            "灰色"
+          ],
+          "after": [
+            "白色"
+          ]
+        },
+        {
+          "part": "腿部",
+          "before": [
+            "灰色"
+          ],
+          "after": [
+            "白皙肤色",
+            "白色",
+            "薰衣草色"
+          ]
+        }
+      ],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    },
+    {
+      "id": "lamb",
+      "image_sha256": "6cf992152f26c4ae15190357bb490e02dbe38b3333bab86c321522eececd5ba3",
+      "color_changes": [],
+      "analysis_unchanged": true,
+      "pattern_valid_before": true,
+      "pattern_valid_after": true
+    }
+  ]
+}

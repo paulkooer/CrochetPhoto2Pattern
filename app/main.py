@@ -51,7 +51,7 @@ if "p" in _qp and "result" not in st.session_state:
 render_sidebar()
 
 tab_photo, tab_manual, tab_grid = st.tabs(
-    ["📸 照片识别（AI）", "✏️ 手动输入", "📹 2D 像素网格"]
+    ["📸 照片分析（本地）", "✏️ 手动输入", "📹 2D 像素网格"]
 )
 with tab_photo:
     render_tab_photo()
@@ -61,4 +61,4 @@ with tab_grid:
     render_tab_grid()
 
 st.divider()
-st.caption(f"{PRODUCT_NAME} — AI 驱动的立体钩织图解生成器")
+st.caption(f"{PRODUCT_NAME} — 本地视觉与规则驱动的立体钩织图解生成器")

@@ -3,8 +3,6 @@ from PIL import Image
 
 from app.models.image_parser import ImageParser
 from app.models.local_vision import (
-    DEFAULT_HEAD_CM,
-    MAX_BODY_RATIO,
     _detect_face,
     analyze,
 )
@@ -18,18 +16,18 @@ def _img(w=200, h=400) -> Image.Image:
 
 # ── 比例推算（注入假检测结果，纯数学验证）───────────────────────────────────
 
-def test_face_box_drives_proportions(monkeypatch):
+def test_tiny_face_candidate_is_not_clamped_into_plausible_proportions(monkeypatch):
     monkeypatch.setattr("app.models.local_vision._detect_face",
                         lambda _img: (80, 20, 40, 40))
     analysis, meta = analyze(_img(200, 400))
-    # subject_px = 400×0.9 = 360, head_px = 40 → ratio 9 → 钳到 8.0
-    assert meta["source"] == "opencv-face"
-    assert meta["body_ratio"] == MAX_BODY_RATIO
-    assert analysis.height_cm == round(DEFAULT_HEAD_CM * 8.0, 1)
-    assert analysis.body_type == "瘦"
-    assert analysis.head_diameter_cm == DEFAULT_HEAD_CM
+    # 360/40 = 9 exceeds the supported ratio: do not silently clamp to 8.
+    assert meta["source"] == "default"
+    assert "过小" in meta["face_rejection_reason"]
+    assert meta["rejected_face_box"] == [80, 20, 40, 40]
+    assert "face_box" not in meta
+    assert "body_ratio" not in meta
+    assert analysis.height_cm == 18
     assert analysis.parts == ["头部", "身体", "手臂", "腿部"]
-    assert meta["head_cm_anchor"] == DEFAULT_HEAD_CM
 
 
 def test_mid_ratio_is_standard_build(monkeypatch):
@@ -91,7 +89,6 @@ def test_real_detector_on_synthetic_image():
 def test_parse_image_local_records_meta(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.setattr("app.models.image_parser.load_dotenv", lambda *a, **k: False)
     monkeypatch.setattr("app.models.local_vision._detect_face",
                         lambda _img: (60, 30, 80, 80))
     parser = ImageParser()
@@ -122,12 +119,12 @@ def test_full_pipeline_local_vision_mode(monkeypatch):
     assert result["geometry"]["schema_version"] == "1.0"
 
 
-def test_full_pipeline_llm_mode_has_no_vision_meta():
-    """LLM 路径（mock 解析）vision_meta 应为空，不显示本地来源提示。"""
+def test_stubbed_local_parser_has_no_vision_meta():
+    """替身不提供元数据时不编造来源。"""
     from unittest.mock import patch
 
     orch = PipelineOrchestrator()
-    with patch.object(ImageParser, "parse_image", return_value=ImageAnalysis(
+    with patch.object(ImageParser, "parse_image_local", return_value=ImageAnalysis(
         body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
         main_features=[], pose="站立", difficulty="easy",
         parts=["头部", "身体"],
@@ -152,11 +149,14 @@ def _person(dress: bool) -> Image.Image:
     return img
 
 
-def test_silhouette_flare_adds_skirt(monkeypatch):
+def test_silhouette_flare_is_review_hint_not_automatic_skirt(monkeypatch):
     from app.models import local_vision as lv
     monkeypatch.setattr(lv, "_detect_face", lambda _i: None)  # 关闭人脸路径
     analysis, meta = lv.analyze(_person(dress=True))
-    assert "裙子" in analysis.parts
+    assert "裙子" not in analysis.parts
+    assert meta["possible_skirt"] is True
+    assert meta["parts_source"] == "default_template"
+    assert meta["requires_subject_review"] is True
     assert "silhouette" not in meta  # 几何数据已移至独立 geometry IR
     assert lv._has_bottom_flare(lv._silhouette_profile(_person(dress=True)))
 
@@ -205,7 +205,7 @@ def test_no_image_no_colorwork():
 
     from app.models.orchestrator import PipelineOrchestrator as Orch
     orch = Orch()
-    with _patch.object(ImageParser, "parse_image", return_value=ImageAnalysis(
+    with _patch.object(ImageParser, "parse_image_local", return_value=ImageAnalysis(
         body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
         main_features=[], pose="站立", difficulty="easy", parts=["头部"],
     )):

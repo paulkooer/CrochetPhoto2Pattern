@@ -9,7 +9,7 @@
    ↓
 1. 图像预处理（PIL 缩放 + RGB 转换）
    ↓
-2. 图像观测（与模型服务商解耦）+ 人物语义解析
+2. 本地图像观测 + 模板建议 + 人工确认
    geometry 输出：版本化宽度剖面、flare、未经校准的估算来源、单视图限制
    semantic 输出：体型、部件列表、关键特征、姿态、相对头身比例、难度
    ↓
@@ -42,10 +42,10 @@ JSON 输出 + Streamlit UI 展示 + 用户局部修正 + 下载 + 完整结果�
 | `app/ui/` | 界面组件：侧栏、三个 Tab、结果渲染（进度追踪 / 局部修正 / 下载） |
 | `app/utils/exporters.py` | Markdown 图解导出 |
 | `app/utils/images.py` | 上传图片安全加载（损坏文件/超限大小的友好错误、EXIF 方向转置、透明 PNG 合成白底） |
-| `app/models/image_parser.py` | Vision 调用（Anthropic structured outputs 优先 → 失败降级 OpenAI → 无 key 时 Mock）；`parse_image_local` 为无 LLM 路径入口 |
-| `app/models/local_vision.py` | 无 LLM 本地视觉估算（人脸检测 → 头身比例；轮廓剖面 → 下摆展开自动加裙子） |
+| `app/models/image_parser.py` | 本地视觉入口、毛线色板和显式 Mock 演示；无云端服务商 |
+| `app/models/local_vision.py` | 无 LLM 本地视觉估算（人脸检测 → 头身比例；轮廓剖面 → 下摆展开待确认提示） |
 | `app/models/sizing.py` | 单图相对比例 → 用户目标成品尺寸；记录尺寸来源、比例限制与变换元数据 |
-| `app/models/geometry.py` | 几何契约：AI/本地共用的单图观测 IR，以及 StructureGeometry v2 部件/实例/连接图谱 |
+| `app/models/geometry.py` | 几何契约：本地单图观测 IR，以及 StructureGeometry v2 部件/实例/连接图谱 |
 | `app/models/color_design.py` | 照片纵向色带 → 部件逐圈配色 + 换线说明（换线由照片颜色驱动） |
 | `app/models/structure_designer.py` | 语义部件 → 版本化模板结构图谱（位置、旋转、镜像数量、连接锚点） |
 | `app/models/gauge.py` | 小样密度、针目几何与动态塑形上限的单一事实来源 |
@@ -60,7 +60,6 @@ JSON 输出 + Streamlit UI 展示 + 用户局部修正 + 下载 + 完整结果�
 | `app/utils/pdf_export.py` | PDF 图解导出（可选依赖 [pdf]，中文 CID 字体） |
 | `app/models/orchestrator.py` | 流水线协调器（便于单元测试） |
 | `app/schemas.py` | Pydantic 数据模型（含值域校验；`PART_NAMES` 为规范部件名单一来源） |
-| `app/prompts/vision_parser.txt` | Vision API 提示词模板（随 wheel 打包，见 pyproject package-data） |
 | `app/data/external-trial-evidence.json` | 精选网络试钩上下文（带来源与复用边界，随 wheel 打包且禁止参与自动校准） |
 
 ## 单图局限性
@@ -71,7 +70,7 @@ JSON 输出 + Streamlit UI 展示 + 用户局部修正 + 下载 + 完整结果�
 - 单张照片无法测得绝对头径/身高；系统只取相对比例，厘米目标由用户选择
 - 所有数值均可通过 UI 的「局部修正」JSON 编辑器手动调整
 - 结果页「调整部件结构（高级）」可校验并修改结构 v2，随后在本地重新生成
-  针法与装配说明，不会再次调用 AI
+  针法与装配说明，在本地生成
 
 ## 已实现（曾列于路线图）
 
@@ -91,5 +90,4 @@ JSON 输出 + Streamlit UI 展示 + 用户局部修正 + 下载 + 完整结果�
 `prepare_photo` 产出会话草稿，界面确认头部范围、比例与部件后由 `generate_from_draft`
 纯本地生成；草稿不持有解析器或凭据。裁剪／模式变化使草稿失效。
 部件表单、逐圈表格和线材规格修改统一写入有上限的会话撤销记录。
-`RunTrace` 统计各阶段主动运行时间，在阶段边界检查预算；API 重试由应用显式执行并记录用量，
-SDK 内部重试关闭。上传／人工确认时间不计入，原生调用不能强制中断。
+`RunTrace` 统计各阶段主动运行时间，在阶段边界检查预算；没有云端请求或 SDK 重试。上传／人工确认时间不计入，原生调用不能强制中断。

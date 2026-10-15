@@ -15,13 +15,14 @@ def test_real_images_meet_baseline():
     """版本化清单、逐图证据与聚合阈值必须同时通过。"""
     from app.evaluation import evaluate_dataset, write_evaluation_report
 
-    report = evaluate_dataset(_EVAL_DIR)
+    report = evaluate_dataset(_EVAL_DIR, release=True)
     output = os.getenv("CROCHET_EVAL_REPORT")
     if output:
         write_evaluation_report(report, output)
     failures = [case for case in report["cases"] if not case["passed"]]
-    assert report["summary"]["passed"], json.dumps(
-        {"summary": report["summary"], "failed_cases": failures},
+    assert report["release_readiness"]["automated_passed"], json.dumps(
+        {"summary": report["summary"], "release_readiness": report["release_readiness"],
+         "failed_cases": failures},
         ensure_ascii=False,
         indent=2,
     )

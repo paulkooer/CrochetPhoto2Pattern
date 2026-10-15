@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import Any, Literal
 
 from ..schemas import PART_LABELS_ZH, PART_NAMES, ImageAnalysis
@@ -27,14 +26,6 @@ class StructureDesigner:
     # 中文规范名 → 结构 v2 英文 part_id：从 PartKind 标签表派生
     # （schemas.PART_LABELS_ZH 是单一来源；新增部件只改枚举与标签）
     _PART_IDS = {zh: kind.value for kind, zh in PART_LABELS_ZH.items()}
-
-    @staticmethod
-    def _safe_part_id(name: str, index: int) -> str:
-        known = StructureDesigner._PART_IDS.get(name)
-        if known:
-            return known
-        slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
-        return f"accessory_{slug or index + 1}"
 
     @staticmethod
     def _dimension(value: float) -> float:
@@ -134,7 +125,7 @@ class StructureDesigner:
         )]}
 
     @staticmethod
-    def design_3d_structure(analysis: ImageAnalysis) -> dict[str, Any]:
+    def design_3d_structure(analysis: ImageAnalysis, *, infer_missing_parts: bool = True) -> dict[str, Any]:
         """Convert image analysis to 3D part specifications.
 
         Maps each identified part to a basic 3D shape with
@@ -145,6 +136,10 @@ class StructureDesigner:
         gauge/塑形选项/照片剖面重新计算实际值。结构表展示的是设计骨架，
         与图解正文的数字不同属预期行为。
         """
+        unknown = [name for name in analysis.parts if name not in PART_NAMES]
+        if unknown:
+            raise ValueError("不支持自动生成这些部件：" + "、".join(unknown)
+                             + "。请在确认页移除误识别部件或选择对应的受支持部件；真实特殊结构需另行设计。")
         head_d = analysis.head_diameter_cm
         total_h = analysis.height_cm
         body_h = max(total_h - head_d, 0.1)  # protect against zero/negative
@@ -161,40 +156,23 @@ class StructureDesigner:
             "帽子": {"shape": "cup", "diameter_cm": dim(head_d * 1.15), "color": "body"},
             "裙子": {"shape": "cup", "height_cm": dim(body_h * 0.25), "color": "body"},
         }
-        # Unknown parts default to a small accessory sphere, not a body-sized tube
-        default_part = {"shape": "sphere", "diameter_cm": dim(head_d * 0.4), "color": "body"}
 
         part_names = list(analysis.parts)
 
         # 语义服装：LLM 判定穿裙但 parts 漏了裙子 → 按身体比例补上
-        if (getattr(analysis, "clothing_type", None) in ("裙子", "连衣裙")
+        if (infer_missing_parts and getattr(analysis, "clothing_type", None) in ("裙子", "连衣裙")
                 and "裙子" not in part_names):
             part_names.append("裙子")
             logger.info("Added 裙子 part from clothing_type=%s", analysis.clothing_type)
 
-        part_ids = [StructureDesigner._safe_part_id(name, i)
-                    for i, name in enumerate(part_names)]
-        # Unknown names can normalize to the same slug; suffix only collisions so
-        # attachments and backup validation still have stable unique identifiers.
-        seen_ids: dict[str, int] = {}
-        for i, part_id in enumerate(part_ids):
-            seen_ids[part_id] = seen_ids.get(part_id, 0) + 1
-            if seen_ids[part_id] > 1:
-                part_ids[i] = f"{part_id}_{seen_ids[part_id]}"
+        part_ids = [StructureDesigner._PART_IDS[name] for name in part_names]
         available = set(part_ids)
 
         parts: list[PartGeometry] = []
         if len(part_names) != len(part_ids):
             raise RuntimeError("part identifier count does not match part names")
         for part_name, part_id in zip(part_names, part_ids):  # noqa: B905 - length checked above
-            if part_name not in shape_map:
-                # LLM 输出了规范名之外的部件（如"双手"）→ 降级为小球，
-                # 记 warning 以便在日志中发现 prompt 约束失效。
-                logger.warning(
-                    "Unknown part %r (canonical: %s) — falling back to accessory sphere",
-                    part_name, "、".join(PART_NAMES),
-                )
-            base = shape_map.get(part_name, default_part)
+            base = shape_map[part_name]
             parts.append(PartGeometry(
                 part_id=part_id,
                 name=part_name,

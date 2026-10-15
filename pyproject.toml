@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "crochet-photo2pattern"
 version = "0.2.0b2"
-description = "AI-powered Amigurumi crochet pattern generator from photos"
+description = "Local Amigurumi crochet pattern generator from reviewed photos"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -27,16 +27,10 @@ classifiers = [
 dependencies = [
     # 上界 <2.0：Streamlit 大版本常有破坏性 API 变更，升 2.x 需人工验证
     "streamlit>=1.40.0,<2.0",
-    # 上界 <4：主版本升级可能有 SDK 行为/依赖底座破坏；升级需人工验证
-    "openai>=1.0.0,<4",
-    # 0.95.0 已含 messages.parse(output_format=...)（structured outputs），
-    # 已在本地实测；低于此版本不可用。
-    # 上界 <1：anthropic 1.x 换用 httpx2 底座，是破坏性升级（lock 现为 0.122.x）。
-    "anthropic>=0.95.0,<1",
     "pydantic>=2.0",
     "pillow>=10.0",
     "python-dotenv>=1.0",
-    # 无 LLM 的本地视觉降级（haar 人脸检测）；缺失时自动退纯默认值路径。
+    # 本地视觉分析（haar 人脸检测）；缺失时自动退纯默认值路径。
     # 上界 <5：OpenCV 5.x 移除了 legacy CascadeClassifier API。
     "opencv-python-headless>=4.8,<5",
     # color_design / local_vision 直接 import numpy（此前靠 opencv 传递带入；
@@ -72,11 +66,9 @@ pdf = ["reportlab>=4.0"]
 # 当前只在 3.11–3.12 的本地与 Linux extras CI 验证。
 pose = ["mediapipe>=1.0.1,<2; python_version < '3.13'"]
 
-# app/prompts/*.txt 是包内数据（运行时由 image_parser 读取）。
-# pyproject 模式下 setuptools 默认不打包 package data，缺了这一段，
-# `pip install .`（非 -e）后会静默降级到内置的弱 fallback 提示词。
+# Include curated evidence and typing metadata in installed distributions.
 [tool.setuptools.package-data]
-app = ["prompts/*.txt", "data/*.json", "py.typed"]
+app = ["data/*.json", "py.typed", "ui/mask_canvas/*.html", "ui/mask_canvas/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
