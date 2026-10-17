@@ -22,7 +22,14 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_hei
         st.warning("当前为 Mock 演示：比例与部件是模板值，请自行确认。")
     elif meta.get("source") == "default":
         st.warning("没有可用的头部检测结果；当前比例来自默认模板，请调整头部框或比例。")
-    if meta.get("parts_source") == "default_template":
+    if meta.get("parts_source") == "silhouette_ears":
+        _ears = meta.get("ears_measured") or {}
+        st.info(
+            "轮廓顶部测到独立耳部（耳长约占主体高度 "
+            f"{round(100 * float(_ears.get('length_ratio') or 0))}%），"
+            "已自动加入耳朵并按实测长宽比生成；请确认，并补选尾巴、帽子等"
+            "轮廓判不出的部件。")
+    elif meta.get("parts_source") == "default_template":
         st.info("本地模式不能识别动物种类或完整部件。下方是初始模板，请补选耳朵、尾巴、帽子，"
                 "并移除照片中没有的部件。")
     if meta.get("face_rejection_reason"):

@@ -10,9 +10,13 @@
   自适应（低对比度图固定阈值分不出主体/背景）。
 
 分割架构：确定性背景 = 顶+左右条带（主体常贴底边）；前景种子按"到背景
-色集合的距离"三档（阈值 = clamp(Otsu(距离分布), 16, 96)），haar 人脸框
-（检出时）作为确定性前景种子锚定头部。失败回退：cv2 缺失/图过小/分割
-退化（主体占比 <5% 或 >95%）→ None，调用方走旧的背景阈值启发式。
+色集合的距离"分**两个通道**取并集——亮度档（L1，阈值 = clamp(Otsu(距离
+分布), 16, 96)）与色度档（YCrCb 的 |ΔCr|+|ΔCb|，阈值 = clamp(Otsu, 8, 48)），
+haar 人脸框（检出时）作为确定性前景种子锚定头部。色度档只做加法：浅色主体
+亮度常与半透明阴影重叠（实测兔子 L1 69–111 夹在阴影 70 里），色度却能分开；
+但"比背景暗的中性像素"不能反判为背景（实测会把深灰/中灰玩偶判没，半透明
+水印也照样留下），去水印仍由确认页手工修掩码。失败回退：cv2 缺失/图过小/
+分割退化（主体占比 <5% 或 >95%）→ None，调用方走旧的背景阈值启发式。
 颜色统计、Otsu 与 haar 不使用随机初始化；GrabCut 的 GMM 初始化固定 RNG
 种子，同一运行环境内重复分割可复现（不承诺跨 OpenCV 版本逐像素一致）。
 """
@@ -43,6 +47,25 @@ _T_CEIL = 96
 # 恰好漏掉（头部被吞、色板只剩衣服色——N-G）。144 ≈ 全距的 19%，低于它
 # 不足以判"确定前景"（JPEG 噪声 <48），高于它的浅色主体可靠捕获。
 _FGD_FLOOR = 144
+
+# 色度分档（YCrCb 的 Cr/Cb 相对背景色度偏离之和，量纲与上面同）：
+# 阴影与水印都是"背景的等比例变暗"，色度几乎不变（实测 ≤7）；浅粉/浅棕主体
+# 亮度虽与阴影重叠（实测兔子 L1 69–111 夹在阴影 70 里），色度却高出数倍
+# （兔子 19 vs 阴影 5、水印 7）。下限 8 取"背景/阴影/水印"实测上限之上，
+# 上限 48 与亮度档同量级；确定前景下限 12 高于水印/阴影而低于浅色主体。
+_T_CHROMA_FLOOR = 8
+_T_CHROMA_CEIL = 48
+_CHROMA_FGD_FLOOR = 12
+
+# 配色投票时把"阴影/半透明水印"排除在外的判据：**比背景更暗**且**成片**。
+# 阴影与水印都是"同一表面被等比例压暗"——色度几乎不变、亮度明显下降，单看
+# 颜色与主体分不开（实测真照片的兔子暗部因此被映射成"深灰色"，凭空多出第二
+# 色）。所以还必须成片：细条纹、小斑块是真实深色特征（黑眼珠、深棕口鼻、衣服
+# 条纹），必须留在配色里（实测 4px 黑条纹在 k≥5 的开运算下清空，真照片的阴影
+# 在 k=5~7 时仍保留 80% 以上）。**只用于配色取样**，几何掩码、证据记录与分割
+# 一律用全量像素：剔除用在分割上会把深灰/中灰玩偶整只判没（见 extract_subject）。
+_SHADED_LUMA_RATIO = 0.8
+_SHADED_MIN_SPAN = 20     # 开运算核 ≈ 短边 / 20（160px 图上 8px，至少 5px）
 
 
 @dataclass
@@ -88,11 +111,58 @@ class SubjectObservation:
             raise ValueError("主体观测只能用于创建它的图片")
         return self.color_segmentation
 
+    @cached_property
+    def lit_segmentation(self) -> tuple[np.ndarray, Image.Image] | None:
+        """配色投票用：剔出阴影/水印的受光面取样（证据记录仍用完整内景）。"""
+        return color_interior(self.segmentation, lit_only=True)
+
+    def extract_lit_colors(self, image: Image.Image) -> tuple[np.ndarray, Image.Image] | None:
+        if image is not self.image:
+            raise ValueError("主体观测只能用于创建它的图片")
+        return self.lit_segmentation
+
+
+def shaded_area(mask, image):
+    """``mask`` 内**成片**且比背景更暗的区域——阴影/半透明水印，不是主体本色。
+
+    阴影与水印都是"同一表面被等比例压暗"：色度几乎不变、亮度明显下降，单看
+    颜色与主体分不开（实测真照片的暗部就是暖米白主体的变暗）。所以判据必须
+    再加"成片"：细条纹、小斑块这类深色结构是真实特征，要留在配色里；只有大到
+    一定跨度的暗区才当阴影（实测 4px 黑条纹在 k≥5 的开运算下清空，而真照片的
+    阴影在 k=5~7 时仍保留 80% 以上）。
+    """
+    import cv2
+    import numpy as np
+
+    rgb8 = np.asarray(image.convert("RGB"), dtype=np.uint8)
+    if mask.shape != rgb8.shape[:2]:
+        return np.zeros(mask.shape, bool)
+    _reps, rep_luma = background_reps(rgb8.astype(np.int16))
+    ycc = cv2.cvtColor(rgb8[:, :, ::-1].copy(), cv2.COLOR_BGR2YCrCb).astype(np.int16)
+    dark = mask & (ycc[:, :, 0] < _SHADED_LUMA_RATIO * float(np.median(rep_luma)))
+    if not dark.any():
+        return dark
+    k = max(5, min(mask.shape[:2]) // _SHADED_MIN_SPAN)
+    opened = cv2.morphologyEx(dark.astype(np.uint8), cv2.MORPH_OPEN,
+                              np.ones((k, k), np.uint8))
+    return opened.astype(bool)
+
 
 def color_interior(
     segmentation: tuple[np.ndarray, Image.Image] | None,
+    *, lit_only: bool = False, max_shaded_share: float = 0.4,
 ) -> tuple[np.ndarray, Image.Image] | None:
     """Remove mixed boundary pixels only for color sampling, never geometry.
+
+    ``lit_only`` also drops the shaded area (see shaded_area), so the colour vote
+    reads the lit surface: a single-colour toy photographed with shading must not
+    come out as two colours. Guard: this holds only while the lit part stays a
+    clear majority (more than ``1 - max_shaded_share``); a darker share
+    approaching half may be a body colour rather than shading (a black-and-white
+    two-tone toy), which colour alone cannot tell apart, so nothing is dropped.
+    The default is the complete interior: the evidence recorded for review must
+    not lose the dark details this vote filters out (callers that only vote pass
+    ``lit_only=True``).
 
     An empty interior is unavailable evidence; callers use their existing
     fallback. The input mask is not mutated.
@@ -106,6 +176,12 @@ def color_interior(
     if mask.shape != (image.height, image.width):
         return None
     interior = cv2.erode(mask.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
+    if not interior.any():
+        return None
+    if lit_only:
+        lit = interior & ~shaded_area(interior, image)
+        if lit.sum() >= (1.0 - max_shaded_share) * interior.sum():
+            interior = lit
     return (interior, image) if interior.any() else None
 
 
@@ -157,6 +233,42 @@ def _face_box(small: Image.Image):
         return None
 
 
+def _strip_bounds(h: int, w: int) -> tuple[int, int]:
+    """确定性背景条带厚度：顶 h/12、左右 w/12（至少 2 像素）。"""
+    return max(2, h // 12), max(2, w // 12)
+
+
+def background_reps(rgb16) -> tuple[np.ndarray, np.ndarray]:
+    """顶+左右条带的背景代表色集合与各代表色亮度（RGB 0-255 / float）。
+
+    条带 = 顶部整条 + 左右整条（人像/玩偶照构图先验：顶与两侧几乎总有留白），
+    量化到 16 级/通道取**集合**而非众数——双色背景的第二种色多在侧条带占
+    20%+，不会漏。覆盖率门槛 15%：条带可能被主体上沿侵入（头部贴顶的照片），
+    小占比的主体色不得成为"可解释的背景色"，否则主体小孤立块会被数据项判回
+    背景（实测头部被吞）。
+
+    返回 (代表色 Nx3, 各代表色亮度 N)，让亮度档、色度档与配色取样共用同一份
+    背景参考，不各自重算。
+    """
+    import numpy as np
+
+    kt, ks = _strip_bounds(*rgb16.shape[:2])
+    strips = np.concatenate([
+        rgb16[:kt].reshape(-1, 3), rgb16[:, :ks].reshape(-1, 3),
+        rgb16[:, rgb16.shape[1] - ks:].reshape(-1, 3),
+    ])
+    qb = (strips // 16).astype(np.int32)
+    packed = qb[:, 0] * 256 + qb[:, 1] * 16 + qb[:, 2]
+    uniq, counts = np.unique(packed, return_counts=True)
+    reps = np.array([[(u >> 8 & 15) * 16 + 8, (u >> 4 & 15) * 16 + 8,
+                      (u & 15) * 16 + 8] for u in uniq], dtype=np.int16)
+    coverage = np.array([c / len(strips) for c in counts])
+    if (coverage >= 0.15).any():
+        reps = reps[coverage >= 0.15]
+    luma = 0.299 * reps[:, 0] + 0.587 * reps[:, 1] + 0.114 * reps[:, 2]
+    return reps, luma
+
+
 def extract_subject(
     image: Image.Image, max_side: int = 160
 ) -> tuple[np.ndarray, Image.Image] | None:
@@ -189,8 +301,9 @@ def extract_subject(
         # 无交互分割用 mask 初始化（Rother 2004 的 incomplete labelling）。
         # 确定性背景 = 顶部整条 + 左右整条（人像/玩偶照构图先验：顶与两侧
         # 几乎总有留白），底部中央保持可能前景——主体常贴底边。
-        # 前景种子按"与背景色解释力的距离"分三档（背景色集合 = 条带全部
-        # 量化色，不只众数——双色背景的第二种色也在其中，不会被误标前景）：
+        # 前景种子按"与背景色解释力的距离"分档（背景色集合 = 条带全部
+        # 量化色，不只众数——双色背景的第二种色也在其中，不会被误标前景）。
+        # 亮度（L1）与色度（YCrCb 的 |ΔCr|+|ΔCb|）两个通道各分两档后取并集：
         #   GC_FGD  确定前景：与任何背景色距离都远（GrabCut 的数据项/平滑项
         #           会把与主体断开的小孤立块整体翻成背景——实测深色头部被
         #           吞，必须强制保留）
@@ -198,23 +311,8 @@ def extract_subject(
         #   GC_PR_BGD 其余：交给 GMM+图割精修
         rgb16 = arr[:, :, ::-1].astype(np.int16)
         from .color_design import _BG_DIST_THRESHOLD
-        kt, ks = max(2, h // 12), max(2, w // 12)
-        strips = np.concatenate([
-            rgb16[:kt].reshape(-1, 3), rgb16[:, :ks].reshape(-1, 3),
-            rgb16[:, w - ks:].reshape(-1, 3),
-        ])
-        # 条带颜色按 16 级/通道量化取代表色（集合，非众数——双色背景的
-        # 第二种色多在侧条带占 20%+，不会漏）。覆盖率门槛 15%：条带可能被
-        # 主体上沿侵入（头部贴顶的照片），小占比的主体色不得成为"可解释
-        # 的背景色"，否则主体小孤立块会被数据项判回背景（实测头部被吞）。
-        qb = (strips // 16).astype(np.int32)
-        packed = qb[:, 0] * 256 + qb[:, 1] * 16 + qb[:, 2]
-        uniq, counts = np.unique(packed, return_counts=True)
-        bg_reps = np.array([[(u >> 8 & 15) * 16 + 8, (u >> 4 & 15) * 16 + 8,
-                             (u & 15) * 16 + 8] for u in uniq], dtype=np.int16)
-        coverage = np.array([c / len(strips) for c in counts])
-        if (coverage >= 0.15).any():
-            bg_reps = bg_reps[coverage >= 0.15]
+        kt, ks = _strip_bounds(h, w)
+        bg_reps, rep_luma = background_reps(rgb16)
 
         img_q = (rgb16 // 16).astype(np.int32)
         img_packed = (img_q[..., 0] * 256 + img_q[..., 1] * 16 + img_q[..., 2])
@@ -227,7 +325,21 @@ def extract_subject(
         min_by_bucket = dmat.min(axis=1)
         px_min_dist = min_by_bucket[img_inv].reshape(h, w)
 
-        # 三档种子只看"到背景色集合的最近距离"，阈值 T 自适应：
+        # ── 色度通道（YCrCb 的 Cr/Cb 相对背景色度）──────────────────────
+        # 阴影与水印都是"背景的等比例变暗"，色度基本不变；浅色主体（浅粉/
+        # 浅棕/浅灰蓝）亮度虽与阴影重叠，色度却高出一个量级（实测兔子 L1
+        # 69–111 夹在阴影 70 里分不开，色度兔子 19 vs 阴影 5、水印 7）。
+        # 背景色度取**代表色集合**（与亮度档同一口径），不用条带中位数：
+        # 双色背景的色度中位数落在两色之间，会把两种背景色都判成彩色。
+        ycc = cv2.cvtColor(arr, cv2.COLOR_BGR2YCrCb).astype(np.int16)
+        chroma_dist = None
+        for _r, _y in zip(bg_reps.astype(np.float64), rep_luma, strict=True):
+            d = (np.abs(ycc[:, :, 1] - ((_r[0] - _y) * 0.713 + 128.0))
+                 + np.abs(ycc[:, :, 2] - ((_r[2] - _y) * 0.564 + 128.0)))
+            chroma_dist = d if chroma_dist is None else np.minimum(chroma_dist, d)
+        chroma_dist = np.asarray(chroma_dist).astype(np.int16)
+
+        # 亮度档阈值自适应（色度档同理，见上）：
         #   T = clamp(Otsu(距离分布), 16, 96)，退化回退固定 48
         # Otsu 对低对比度图（主体/背景 L1 距 < 48，固定阈值分不出）自动
         # 下探；高对比图封顶 96 保持与固定阈值版一致的行为。
@@ -237,11 +349,23 @@ def extract_subject(
         t_otsu = _otsu_threshold(px_min_dist)
         t_seed = (_BG_DIST_THRESHOLD if t_otsu is None
                   else min(_T_CEIL, max(_T_FLOOR, t_otsu)))
+        t_chr_otsu = _otsu_threshold(chroma_dist)
+        t_chroma = (_T_CHROMA_FLOOR if t_chr_otsu is None
+                    else min(_T_CHROMA_CEIL, max(_T_CHROMA_FLOOR, t_chr_otsu)))
+        chroma_fgd_t = max(1.5 * t_chroma, _CHROMA_FGD_FLOOR)
         mask = np.full((h, w), cv2.GC_PR_BGD, np.uint8)
         _fgd_t = max(1.5 * t_seed, _FGD_FLOOR)
         mask[px_min_dist > _fgd_t] = cv2.GC_FGD
         mask[(px_min_dist > t_seed)
              & (px_min_dist <= _fgd_t)] = cv2.GC_PR_FGD
+        # 色度档叠加（与亮度档取并集，只升不降）：浅色主体往往亮度不可分、
+        # 色度可分；中性主体色度≈0 时本档不动，行为与只有亮度档时一致。
+        # 不反过来把“比背景暗的中性像素”降级成背景：实测那样做会把中性主体
+        # （深灰/中灰玩偶）整只判没，而半透明水印依然留在掩码里——色度不负责
+        # 去水印，只负责别把有色的主体丢掉。
+        mask[chroma_dist > chroma_fgd_t] = cv2.GC_FGD
+        mask[(chroma_dist > t_chroma) & (chroma_dist <= chroma_fgd_t)
+             & (mask != cv2.GC_FGD)] = cv2.GC_PR_FGD
         # 人脸框 = 确定性前景种子：头部颜色与背景相近（白墙前的浅色头发/
         # 近肤色背景）时颜色分档救不了头部，检测框直接锚定（GrabCut 的检测器
         # 供种用法）。面积约束防误检 dominates：过大的框（>50% 图幅）弃用。

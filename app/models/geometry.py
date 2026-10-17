@@ -293,6 +293,87 @@ def silhouette_profile(image: Image.Image, n_rows: int = 40, *,
         return None
 
 
+def _row_runs(row, min_len: int = 2) -> list[tuple[int, int]]:
+    """一行的前景连续段 (start, end)；宽度 <min_len 的段落按噪声丢弃。"""
+    import numpy as np
+
+    edges = np.diff(np.pad(row.astype(bool).astype(np.int8), (1, 1)))
+    starts = np.flatnonzero(edges == 1)
+    ends = np.flatnonzero(edges == -1)
+    return [(int(s), int(e)) for s, e in zip(starts, ends, strict=True)
+            if e - s >= min_len]
+
+
+def measure_ears(mask, *, narrow_ratio: float = 0.5,
+                 min_band_fraction: float = 0.08,
+                 max_band_fraction: float = 0.45,
+                 min_run: int = 3) -> tuple[float, float] | None:
+    """正面掩码 → (耳长占比, 耳宽占比)，均以"主体可见高度"为分母。
+
+    耳朵在正面掩码里有两种确定性几何特征，任一成立即算耳波段：
+
+      A. **窄**：并拢/细长的耳朵，顶部合计宽度 ≤ narrow_ratio × 最宽行。判据是
+         这段窄带能持续多长——任何圆头都是从窄长起来的（球顶第 1 行最窄），但
+         球顶只在很短几行里低于峰值一半，长耳能占到主体高度的 30%+。
+      B. **分**：外张的长耳（两耳合计宽度已接近头宽），顶部几行分裂成 ≥2 段
+         （耳间缺口），向下合并成一段即结束。
+
+    耳宽取每行"单耳宽"在耳波段上的中位数：单段行 = 该段宽，分裂行 = 较窄的
+    那一叶（耳根与头合并的那一叶明显更宽，取它会把耳宽算胖）。耳长是**下界**：
+    正面轮廓里缺口通常在耳根之前就闭合，真实耳长可能更长——结构层据此只设
+    下限、不设上限。
+
+    上下界（8%–45%）既排掉圆头（窄段过短）也排掉没分开主体/背景的掩码
+    （窄段一路到底）。测不到返回 None，调用方不凭空加耳朵。
+    """
+    import numpy as np
+
+    if getattr(mask, "ndim", 0) != 2 or mask.shape[0] < 8:
+        return None
+
+    def _lobe_width(runs) -> float:
+        """该行的"单耳宽"：单段行 = 该段宽；分裂行 = **较窄的那一叶**。
+
+        分裂行里通常有一叶是"耳 + 已与耳根合并的头顶"，明显更宽；取它会把
+        耳宽算胖（实测真照片 4.0cm vs 实际 ~3cm）。只把 ≥ 最宽叶一半的段算
+        作叶，滤掉噪点碎片。
+        """
+        widths = [e - s for s, e in runs]
+        if not widths:
+            return 0.0
+        return float(min(w for w in widths if w >= 0.5 * max(widths)))
+
+    runs_per_row = [_row_runs(row, min_len=min_run) for row in mask]
+    total = [sum(e - s for s, e in runs) for runs in runs_per_row]
+    lobe_width = [_lobe_width(runs) for runs in runs_per_row]
+    occupied = [bool(runs) for runs in runs_per_row]
+    rows = [i for i, seen in enumerate(occupied) if seen]
+    if len(rows) < 8:
+        return None
+    top, bottom = rows[0], rows[-1]
+    height = bottom - top + 1
+    peak = max(total)
+    if peak <= 0:
+        return None
+    narrow = narrow_ratio * peak
+    band: list[int] = []
+    for i in range(top, bottom + 1):
+        if not occupied[i]:
+            continue                       # 段内空洞不结束（噪声/高光水印）
+        if total[i] > narrow and len(runs_per_row[i]) < 2:
+            break
+        band.append(i)
+    if len(band) < max(3, int(min_band_fraction * height)):
+        return None
+    if len(band) > max_band_fraction * height:
+        # 耳朵不可能占主体高度的一大半：掩码没分开主体与背景时窄段会一路走到底
+        return None
+    width_ratio = float(np.median([lobe_width[i] for i in band])) / height
+    if width_ratio <= 0:
+        return None
+    return len(band) / height, width_ratio
+
+
 def has_bottom_flare(profile: list[float]) -> bool:
     """Detect a lower-quarter flare within the occupied subject rows."""
     rows = [i for i, width in enumerate(profile) if width > 0.08]

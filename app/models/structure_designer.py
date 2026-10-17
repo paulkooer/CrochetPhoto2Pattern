@@ -14,6 +14,17 @@ from .geometry import (
 
 logger = logging.getLogger(__name__)
 
+# 长耳（兔/驴）默认比例：耳宽按头径，耳长按头径的倍数。照片轮廓测到耳部
+# 占比时以实测值覆盖（见 local_vision 的耳部观测 → ImageAnalysis.ear_*_ratio）。
+EAR_WIDTH_HEAD_RATIO = 0.33
+EAR_LENGTH_HEAD_RATIO = 1.1
+# 耳长/耳宽下限。正面轮廓量到的耳长只是下界（耳根两侧与头合并后缺口就闭合
+# 了，实测兔子缺口只占主体高度 10%，真实耳长 ≈ 32%），所以只设下限：判定为
+# 耳朵就至少做成 2.4 倍耳宽的长管，而不是量到多短就做多短（那会退化成球）。
+# 轮廓也无法可靠区分长耳与圆耳——熊的圆耳和兔的长耳在正面掩码里都是"顶部
+# 两片"——因此默认长耳管；确实要做球耳需在结构里显式改成 sphere。
+EAR_MIN_ASPECT = 2.4
+
 
 class StructureDesigner:
     """Map image semantics to editable-friendly primitive part specifications.
@@ -145,13 +156,24 @@ class StructureDesigner:
         body_h = max(total_h - head_d, 0.1)  # protect against zero/negative
 
         dim = StructureDesigner._dimension
+        # 耳朵：耳宽用照片轮廓实测占比（可靠）；耳长取实测与"耳长下限"的较大者
+        # （实测只是下界，见 EAR_MIN_ASPECT）；未测到耳宽则用长耳默认比例。
+        ear_len_ratio = getattr(analysis, "ear_length_ratio", None)
+        ear_w_ratio = getattr(analysis, "ear_width_ratio", None)
+        if ear_w_ratio:
+            ear_w = dim(total_h * ear_w_ratio)
+            ear_l = dim(max(total_h * (ear_len_ratio or 0.0), EAR_MIN_ASPECT * ear_w))
+        else:
+            ear_w = dim(head_d * EAR_WIDTH_HEAD_RATIO)
+            ear_l = dim(head_d * EAR_LENGTH_HEAD_RATIO)
+        ear_spec = {"shape": "ear", "diameter_cm": ear_w, "length_cm": ear_l}
         shape_map: dict[str, dict[str, Any]] = {
             "头部": {"shape": "sphere", "diameter_cm": head_d, "color": "skin"},
             "身体": {"shape": "cylinder", "height_cm": dim(body_h * 0.5), "color": "body"},
             "手臂": {"shape": "cylinder", "length_cm": dim(body_h * 0.35), "color": "skin"},
             "腿部": {"shape": "cylinder", "length_cm": dim(body_h * 0.4), "color": "skin"},
             "尾巴": {"shape": "cylinder", "length_cm": dim(body_h * 0.3), "color": "body"},
-            "耳朵": {"shape": "sphere", "diameter_cm": dim(head_d * 0.35), "color": "skin"},
+            "耳朵": {**ear_spec, "color": "skin"},
             # cup = 开口帽形：闭口球戴不进去；1.15× 松量避免帽围=头围卡死
             "帽子": {"shape": "cup", "diameter_cm": dim(head_d * 1.15), "color": "body"},
             "裙子": {"shape": "cup", "height_cm": dim(body_h * 0.25), "color": "body"},

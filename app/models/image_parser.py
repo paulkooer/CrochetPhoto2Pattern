@@ -28,11 +28,13 @@ def extract_color_palette(image: Image.Image, n_colors: int = 5, *,
         img = img.copy()
         img.thumbnail((150, 150))
         source = img
-        # 主体掩码可用 → 只统计主体像素（背景剔除比色彩距离阈值更稳）
+        # 主体掩码可用 → 只统计主体像素（背景剔除比色彩距离阈值更稳）。
+        # 取色用受光面：成片的阴影/水印会把单色玩偶读成两色（见 subject.shaded_area）。
         try:
             from .subject import color_interior, extract_subject
-            res = (subject.extract_colors(image) if subject is not None
-                   else color_interior(extract_subject(image, max_side=150)))
+            res = (subject.extract_lit_colors(image) if subject is not None
+                   else color_interior(extract_subject(image, max_side=150),
+                                       lit_only=True))
             if res is not None:
                 mask, small = res
                 subj = np.asarray(small)[mask]

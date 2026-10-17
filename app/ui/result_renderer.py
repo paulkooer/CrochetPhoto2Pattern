@@ -501,7 +501,8 @@ def render_results(result: dict, slot: str) -> None:
             "部件": part.get("name", "?"),
             "数量": part.get("count", 1),
             "形状": {"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
-                     "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—")),
+                     "profile": "照片轮廓", "ear": "长耳管（扁平）"}.get(
+                         part.get("shape"), part.get("shape", "—")),
             "尺寸": "，".join(dims) or "—",
             "位置 / 旋转": "；".join(poses) or "旧版未记录",
             "连接": "；".join(connections) or "独立部件 / 未记录",
@@ -513,16 +514,22 @@ def render_results(result: dict, slot: str) -> None:
             st.caption(
                 "结构 v2 坐标：x 左−右+，y 底部0→顶部1，z 后−前+；"
                 "位置、旋转和连接来自模板推断，并非单张照片的三维测量。")
-        with st.expander("🧸 3D 结构预览（示意）", expanded=False):
-            from app.ui.preview3d import structure_preview_html
+        with st.expander("🧸 3D 装配预览（示意）", expanded=False):
+            from app.ui.preview3d import assembly_preview_html, structure_preview_html
 
-            _pv = structure_preview_html(result)
+            # 优先装配图（按真实圈数出旋转体 + 解剖布局摆成成品）；
+            # 部件没有可译圈数时退回结构层粗形状预览。
+            _pv = assembly_preview_html(result) or structure_preview_html(result)
             if _pv:
                 from app.ui.design_system import html_box
 
                 # 静态等距 SVG——st.html 的净化器剥 <svg>/<script>，交互
                 # canvas 无可用脚本通道，与其他图形同走 markdown
                 st.markdown(html_box(_pv, 420), unsafe_allow_html=True)
+                st.caption(
+                    "按每个部件的真实圈数生成旋转体，并按解剖布局"
+                    "（头/身/耳/臂/腿）摆成成品——与 --assemble 导出的 "
+                    "CrochetPARADE 装配块是同一套布局。")
             else:
                 st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):

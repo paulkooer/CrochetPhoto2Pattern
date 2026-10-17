@@ -54,6 +54,9 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Optional pose landmarks on Python 3.11–3.12 for shoulder/hip/knee measurement; Linux
   also requires EGL/GLESv2 and safely falls back when the native runtime is unavailable.
 - Photo-derived yarn palettes, longitudinal color bands, and CIEDE2000 color matching.
+  Color voting samples the lit surface only: shading and watermarks are not yarn
+  evidence, while dark detail still enters review. Adjacent bands that differ only
+  by lighting are unified, so uneven light does not become a second colour.
 - Versioned template geometry with part instances, mirrored pairs, rotations, attachment
   anchors, and explicit inference provenance. Heuristics are uncalibrated; no confidence
   percentage is claimed. This is not full 3D reconstruction.
@@ -62,7 +65,9 @@ Unknown part names remain available for review. Remove mistaken labels or select
   [CrochetPARADE](https://crochetparade.org) DSL (result page / `--parade`) for
   independent 3D rendering and stitch-tension analysis — a second-tier
   executable-correctness check reported by the evaluation protocol
-  (`parade_export_rate`).
+  (`parade_export_rate`). `--assemble` appends an assembly block
+  (`DOT: separate=0` plus anatomical translations), and the result-page assembly
+  preview shares that exact layout.
 - Correct multiplicity accounting for paired arms, legs, and ears across stitches,
   materials, time estimates, exports, and progress.
 - Photo recognition pauses for review: crop the subject, inspect the outline/head box,
@@ -86,6 +91,8 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows.
 - Stitch-arithmetic validation, ring charts, progress tracking, per-color bills of
   materials, share links, SQLite history, JSON backup, Markdown, and optional PDF export.
+- Finished-doll preview export: `--preview` writes the same assembly preview the result
+  page renders (real rounds as a lathe plus the anatomical layout) as `.svg` or `.png`.
 - EXIF orientation correction and defensive image/input size limits.
 - Authorized-photo evaluation and independent physical-trial tooling.
 
@@ -158,6 +165,7 @@ uv run crochet2pattern --image photo.jpg --gauge dk --out pattern.json --md patt
 uv run crochet2pattern --head 9 --height 18 --parts 头部,身体 --sphere-mode egg --out p.json
 uv run crochet2pattern --mock --out demo.json
 uv run crochet2pattern --batch-dir photos/ --out-dir patterns/
+uv run crochet2pattern --image photo.jpg --preview preview.png  # finished-doll preview (.svg/.png)
 ```
 
 Canonical part values in the current schema are Chinese (`头部`, `身体`, and so on), so

@@ -82,6 +82,19 @@ def build_payload(result: dict) -> dict[str, Any] | None:
                 "row_h": row_h,
             }
         else:
+            if shape == "ear":
+                # 长耳管的粗细逐圈变化：有真实圈数就走旋转体，别退化成等粗圆柱；
+                # 没有圈数可译时退回等粗圆柱示意。
+                rounds = rounds_by_name.get(name) or []
+                if rounds:
+                    entry["shape"] = "lathe"
+                    entry["lathe"] = {
+                        "radii": [max(0.15, int(r.get("stitches", 0)) * stitch_w
+                                      / (2 * 3.14159265)) for r in rounds],
+                        "row_h": row_h,
+                    }
+                else:
+                    shape = entry["shape"] = "cylinder"
             diameter = float(part.get("diameter_cm") or 0)
             if diameter <= 0:
                 # 圆柱/杯形部件的直径未存于结构层（由针数推导）：
@@ -287,6 +300,90 @@ def _render_static_svg(payload: dict) -> str:
         "示意预览（静态等距视图，非物理仿真）</text>")
     parts.append("</svg>")
     return "".join(parts)
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+    return {}
+
+
+def _cm_extent(rounds: list, stitch_w: float, row_h: float) -> tuple[float, float]:
+    """部件 →（半径 cm, 高度 cm）：r = N_max·针宽/2π，高 = 圈数·行高。"""
+    stitches = []
+    for rd in rounds or []:
+        try:
+            n = int(_as_dict(rd).get("stitches") or 0)
+        except (TypeError, ValueError):
+            continue
+        if n > 0:
+            stitches.append(n)
+    if not stitches:
+        return 0.0, 0.0
+    return (max(stitches) * stitch_w / (2 * 3.14159265),
+            len(stitches) * row_h)
+
+
+def assembly_payload(result: dict) -> dict[str, Any] | None:
+    """result → 装配后的 3D 预览数据（真实圈数旋转体 + 解剖布局）。
+
+    与 :func:`build_payload` 的区别：不看结构层的粗形状（耳朵在那里可能只
+    记成一个球），而是把每个部件的**真实圈数**做成旋转体，再用
+    :mod:`app.utils.parade_assembly` 的同一套布局摆成成品——所以这张预览和
+    ``--assemble`` 导出的 CrochetPARADE 装配块用的是同一个布局。
+    """
+    from app.utils.parade_assembly import layout_from_extents
+
+    parts = [_as_dict(pp) for pp in (result.get("params") or {}).get("parts", [])]
+    parts = [p for p in parts if p.get("rounds")]
+    if not parts:
+        return None
+    gauge = gauge_from_result(result)
+    stitch_w, row_h = gauge.stitch_w_cm, gauge.row_h_cm
+    extents = [_cm_extent(p.get("rounds") or [], stitch_w, row_h) for p in parts]
+    if all(radius <= 0 for radius, _ in extents):
+        return None
+    layout = layout_from_extents(parts, extents)
+    hex_by_name = _hex_by_name(result)
+
+    height = float((result.get("analysis") or {}).get("height_cm") or 18.0)
+    items: list[dict[str, Any]] = []
+    cursor = 0
+    for part, _extent in zip(parts, extents, strict=True):
+        name = str(part.get("name"))
+        count = max(1, int(part.get("quantity") or 1))
+        slots = list(layout[cursor:cursor + count])
+        cursor += count
+        radii = []
+        for rd in part.get("rounds") or []:
+            try:
+                stitches = int(_as_dict(rd).get("stitches") or 0)
+            except (TypeError, ValueError):
+                continue
+            radii.append(max(0.15, stitches * stitch_w / (2 * 3.14159265)))
+        if not radii:
+            continue
+        items.append({
+            "name": name,
+            "color": hex_by_name.get(name, "#c9a68a"),
+            "shape": "lathe",
+            "lathe": {"radii": radii, "row_h": row_h},
+            "instances": [{"p": [float(x), float(y), float(z)],
+                           "r": [0.0, 0.0, 0.0]} for (x, y, z) in slots],
+        })
+    if not items:
+        return None
+    return {"height": height, "items": items}
+
+
+def assembly_preview_html(result: dict) -> str | None:
+    """装配后的静态等距 SVG；无可渲染实体时返回 None。"""
+    payload = assembly_payload(result)
+    if payload is None:
+        return None
+    return _render_static_svg(payload)
 
 
 def structure_preview_html(result: dict) -> str | None:

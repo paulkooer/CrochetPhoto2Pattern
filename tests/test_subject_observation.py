@@ -159,6 +159,71 @@ def test_color_interior_empty_or_misaligned_is_unavailable():
     assert subject.color_interior(None) is None
 
 
+def _lit_and_shaded_single_colour_subject():
+    """浅背景上的单色主体，下半身在阴影里——真实照片里兔子耳朵变深灰的成因。"""
+    image = Image.new("RGB", (40, 40), (240, 240, 240))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((8, 8, 31, 31), fill=(216, 200, 184))   # 受光面
+    draw.rectangle((8, 24, 31, 31), fill=(120, 120, 104))  # 同一表面的阴影
+    mask = np.zeros((40, 40), dtype=bool)
+    mask[8:32, 8:32] = True
+    return image, mask
+
+
+def test_color_interior_default_keeps_the_complete_evidence_sampling():
+    """默认取样不剔除任何像素：证据记录要完整，深色细节交给人工复核。"""
+    image, mask = _lit_and_shaded_single_colour_subject()
+    interior, _ = subject.color_interior((mask, image))
+    assert interior[15, 20] and interior[28, 20]
+    assert interior.sum() == 22 * 22
+
+
+def test_color_interior_samples_the_lit_part_only():
+    """阴影不是毛线本色：投票取样只读受光面，几何掩码原样保留阴影。"""
+    image, mask = _lit_and_shaded_single_colour_subject()
+    interior, _ = subject.color_interior((mask, image), lit_only=True)
+    assert interior[15, 20]                 # 受光面保留
+    assert not interior[28, 20]             # 成片的暗区被剔出投票取样
+    assert mask.sum() == 24 * 24            # 输入掩码未被修改
+
+
+def test_shaded_area_keeps_thin_dark_stripes_as_features():
+    """细条纹是真实特征（黑眼珠、衣服条纹），不能被当成阴影剔掉。"""
+    image = Image.new("RGB", (100, 137), "white")
+    ImageDraw.Draw(image).rectangle((0, 45, 99, 48), fill="black")   # 4px 条纹
+    mask = np.ones((137, 100), dtype=bool)
+    assert not subject.shaded_area(mask, image).any()
+
+
+def test_shaded_area_treats_a_large_dark_region_as_shading():
+    """成片的暗区才算阴影：核取短边/24，跨过核尺度的暗区被剔出投票取样。"""
+    image = Image.new("RGB", (100, 137), "white")
+    ImageDraw.Draw(image).rectangle((0, 45, 99, 95), fill="black")   # 成片暗区
+    mask = np.ones((137, 100), dtype=bool)
+    shaded = subject.shaded_area(mask, image)
+    assert shaded[70, 50] and not shaded[10, 50]
+
+
+def test_color_interior_guard_keeps_a_subject_darker_than_the_background():
+    """主体本身比背景暗时阴影与本色分不开——护栏放弃剔除，整块保留。"""
+    image = Image.new("RGB", (40, 40), (250, 250, 250))
+    ImageDraw.Draw(image).rectangle((8, 8, 31, 31), fill=(40, 40, 40))
+    mask = np.zeros((40, 40), dtype=bool)
+    mask[8:32, 8:32] = True
+    interior, _ = subject.color_interior((mask, image), lit_only=True)
+    assert interior.sum() == 22 * 22
+
+
+def test_color_interior_keeps_a_subject_lighter_than_a_dark_background():
+    """暗背景上的浅色主体：没有"比背景暗"的取样像素，取样集合不变。"""
+    image = Image.new("RGB", (40, 40), (40, 40, 40))
+    ImageDraw.Draw(image).rectangle((8, 8, 31, 31), fill=(216, 200, 184))
+    mask = np.zeros((40, 40), dtype=bool)
+    mask[8:32, 8:32] = True
+    interior, _ = subject.color_interior((mask, image), lit_only=True)
+    assert interior.sum() == 22 * 22
+
+
 def test_grabcut_output_is_not_eroded(monkeypatch):
     import cv2
 

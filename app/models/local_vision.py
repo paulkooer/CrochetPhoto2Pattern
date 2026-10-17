@@ -18,6 +18,7 @@ from PIL import Image
 
 from ..schemas import ImageAnalysis
 from .geometry import has_bottom_flare as _has_bottom_flare
+from .geometry import measure_ears as _measure_ears
 from .geometry import silhouette_profile as _silhouette_profile
 from .image_parser import extract_color_palette
 from .subject import SubjectObservation
@@ -106,12 +107,29 @@ def analyze(
     # Orchestrator 已建立 provider-neutral geometry 时复用同一观测，避免
     # GrabCut/背景分割做两遍。直接调用 analyze() 仍保持原有独立行为。
     profile = geometry_profile if geometry_observed else _silhouette_profile(image, subject=subject)
-    parts = list(_CANONICAL_PARTS)
+    candidates = list(_CANONICAL_PARTS)
+    # 耳朵能本地推断（头部之外的唯一"轮廓可判"部件）：顶部窄带 + 台阶跳变，
+    # 见 geometry.measure_ears。测不到就不加——不凭空给熊/猫加长耳。
+    ears = None
+    if subject is not None and subject.segmentation is not None:
+        ears = _measure_ears(subject.segmentation[0])
+    parts = [*candidates, "耳朵"] if ears is not None else candidates
+    ear_kwargs: dict[str, Any] = {}
+    if ears is not None:
+        ear_kwargs = {"ear_length_ratio": ears[0], "ear_width_ratio": ears[1]}
     candidate_meta: dict[str, Any] = {
-        "parts_source": "default_template", "requires_subject_review": True,
+        "parts_source": ("silhouette_ears" if ears is not None
+                         else "default_template"),
+        "requires_subject_review": True,
         "subject_type": "unclassified",
         "possible_skirt": bool(profile is not None and _has_bottom_flare(profile)),
     }
+    if ears is not None:
+        candidate_meta["ears_measured"] = {
+            "length_ratio": round(ears[0], 3),
+            "width_ratio": round(ears[1], 3),
+            "basis": "silhouette_top_band",
+        }
     if box is not None:
         rejection = _face_rejection_reason(image, box, profile)
         if rejection:
@@ -135,6 +153,7 @@ def analyze(
             difficulty="easy",
             parts=parts,
             recommended_colors=colors or None,
+            **ear_kwargs,
         ), meta
 
     _x, _y, face_w, face_h = box
@@ -167,4 +186,5 @@ def analyze(
         difficulty="easy",
         parts=parts,
         recommended_colors=colors or None,
+        **ear_kwargs,
     ), meta

@@ -39,6 +39,34 @@
       "title": "Difficulty",
       "type": "string"
     },
+    "ear_length_ratio": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ear Length Ratio"
+    },
+    "ear_width_ratio": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ear Width Ratio"
+    },
     "hair_color": {
       "anyOf": [
         {

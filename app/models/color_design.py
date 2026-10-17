@@ -44,6 +44,16 @@ PART_SPAN: dict[str, tuple[float, float]] = {
 
 _BG_DIST_THRESHOLD = 48  # 与背景色的欧氏距离超过此值视为主体像素
 
+# 受光差异 vs 真换色的判定（保守启发式，不是照片标定的置信度）。
+# 暗带只有在"亮度比落在受光可解释区间"、"归一化色度与相邻受光带一致"、
+# "自己的色号投票本身不牢靠"三条同时成立时才并入受光带——任何一条不成立
+# 都可能是另一种材质（黑/白、白/浅灰双色玩偶的投票是决定性的）。已知边界：
+# 受强光不均影响的**近中性**双色玩偶（白 + 浅灰）投票会同样分裂，仍可能被
+# 并成一色；证据保留原始逐带计数，可在复核页看出并改回。
+_SHADING_LUMA_RATIO = (0.5, 0.95)   # 暗带/亮带亮度比；更低更像另一种颜色
+_SHADING_CHROMATICITY_TOLERANCE = 12.0  # 归一化色度（÷亮度×100）逐通道最大差
+_SHADING_VOTE_GAP = 0.4              # 顶部两名覆盖差；更小＝证据分不清色号
+
 
 def estimate_background(px) -> tuple[int, int, int]:
     """四角小块的众数（mode）背景色。
@@ -71,10 +81,12 @@ def estimate_background(px) -> tuple[int, int, int]:
 def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
                          subject: SubjectObservation | None = None,
                          observation: dict | None = None,
-                         refine_stripes: bool = True) -> list[dict]:
+                         refine_stripes: bool = True,
+                         unify_shading: bool = True) -> list[dict]:
     """以 n_bands 个横带为基线，细化稳定横条纹后返回自上而下毛线色。
 
     refine_stripes=False 保留原固定横带投票，供可复现对照使用。
+    unify_shading=False 保留"暗带自成一色"的原行为（对照/调试用）。
     observation 始终保留原始固定横带计数及二维色块，不随细化丢弃证据。
 
     主体判定优先 GrabCut 分割（subject.extract_subject，对双色/相近背景
@@ -98,8 +110,15 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
             return []
         # 主体掩码：GrabCut 优先（掩码与小图对齐），退化/不可用回退阈值法
         from .subject import color_interior, extract_subject
-        res = (subject.extract_colors(image) if subject is not None
-               else color_interior(extract_subject(image, max_side=160)))
+        # 投票取受光面（剔出成片的阴影/水印），证据记录用完整内景：配色的
+        # 深色细节照样进 observation，交给人工复核，不被投票口径抹掉。
+        if subject is not None:
+            evidence = subject.extract_colors(image)
+            res = subject.extract_lit_colors(image)
+        else:
+            seg = extract_subject(image, max_side=160)
+            evidence = color_interior(seg)
+            res = color_interior(seg, lit_only=True)
         mask = None if res is None else res[0]
         if mask is not None and mask.shape != (h, w):
             mask = None
@@ -107,6 +126,7 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
         if mask is None:
             bg = np.array(estimate_background(px), dtype=np.int16)
             mask = np.abs(px - bg).sum(axis=2) > _BG_DIST_THRESHOLD
+            evidence = None            # 回退路径没有主体取样，证据用同一掩码
             if mask.mean() < 0.05:
                 return []
         # Map actual foreground colors once, then vote per horizontal band.
@@ -135,9 +155,22 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
         if observation is not None:
             from .color_observation import build_observation
 
-            observation.update(build_observation(mask, pixel_ids, yarn_names, n_bands, mask_source))
+            evidence_mask = mask if evidence is None else evidence[0]
+            if evidence_mask is mask:
+                eids, enames = pixel_ids, yarn_names
+            else:
+                eunique, einverse = np.unique(px[evidence_mask], axis=0,
+                                              return_inverse=True)
+                ereps, _ergbs = nearest_yarn_batch(eunique)
+                enames, ereverse = np.unique(ereps, return_inverse=True)
+                eids = ereverse[einverse]
+            observation.update(build_observation(evidence_mask, eids, enames,
+                                                 n_bands, mask_source))
         if refine_stripes:
             bands = _refine_stripes(bands, mask, ys, pixel_ids, yarn_names)
+        if unify_shading:
+            bands = _unify_shading_bands(bands, px[mask], ys, pixel_ids,
+                                         yarn_names, h)
         return _merge_bands(bands)
     except Exception as e:
         logger.warning("color band extraction failed: %s", e)
@@ -184,6 +217,94 @@ def _refine_stripes(bands, mask, ys, pixel_ids, yarn_names) -> list[dict]:
             source = next(b for b in bands if b["start"] <= middle < b["end"])
         refined.append({"start": start, "end": end, "color": source["color"]})
     return refined
+
+
+def _unify_shading_bands(bands, subject_px, ys, pixel_ids, yarn_names,
+                         height) -> list[dict]:
+    """把"只是受光不同"的相邻暗带并入受光带的色号。
+
+    单张照片里，同一材质在阴影下的中位色会沿着毛线色表的边界移动，逐带投票
+    因此可能把一只单色玩偶读成两色（真实照片里身体=灰色、耳朵=小麦肤色）。
+    这里只做一件事：相邻带满足"只是受光不同"的保守判据时，取较亮（受光）带
+    的色号，不新造颜色。判据（三条同时成立，任何一条不成立都可能是另一种材质）：
+
+    1. 亮/暗亮度比落在受光可解释区间（_SHADING_LUMA_RATIO）；更暗更像另一种颜色。
+    2. 归一化色度（÷亮度×100）逐通道差 <= _SHADING_CHROMATICITY_TOLERANCE；
+       黑/白这类极暗带的色度会崩掉，真换色的色度对不上。
+    3. 暗带自己的色号投票不牢靠（顶部两名覆盖差 < _SHADING_VOTE_GAP）：证据本身
+       分不清色号时才不凭亮度差另立一色；白+浅灰这类近中性双色即使亮度比落在
+       窗口内，投票也是决定性的，因此得以保留。
+
+    已知边界：受强光不均影响的近中性双色（白 + 浅灰）投票同样会分裂，仍可能被
+    并成一色。原始逐带计数与二维色块始终留在 ColorObservation 证据里，可在
+    复核页看出这次并入并改回。
+    """
+    import numpy as np
+
+    if len(bands) < 2 or not len(ys):
+        return bands
+    medians: list[object] = []
+    gaps: list[float] = []
+    for band in bands:
+        y0 = int(round(band["start"] * height))
+        y1 = int(round(band["end"] * height))
+        selected = (ys >= y0) & (ys < y1)
+        if not selected.any():
+            medians.append(None)
+            gaps.append(1.0)
+            continue
+        medians.append(np.median(subject_px[selected], axis=0))
+        counts = np.bincount(pixel_ids[selected], minlength=len(yarn_names))
+        top = np.sort(counts)[::-1][:2]
+        total = counts.sum()
+        gaps.append(float((top[0] - top[1]) / total) if len(top) > 1 and total
+                    else 1.0)
+    out: list[dict] = []
+    last_median = None
+    last_gap = 1.0
+    for i, band in enumerate(bands):
+        median = medians[i]
+        if out and median is not None and last_median is not None:
+            current_median = median
+            if _luma(last_median) <= _luma(current_median):
+                darker, lighter = last_median, current_median
+                darker_gap, lighter_gap = last_gap, gaps[i]
+            else:
+                darker, lighter = current_median, last_median
+                darker_gap, lighter_gap = gaps[i], last_gap
+            if _is_shading_look(darker, lighter, darker_gap):
+                previous = out[-1]
+                # 取较亮（受光）带的色号：阴影不产生新色号。
+                color = band["color"] if lighter is current_median else previous["color"]
+                out[-1] = {"start": previous["start"], "end": band["end"],
+                           "color": color}
+                last_median = lighter
+                last_gap = lighter_gap
+                continue
+        out.append(dict(band))
+        last_median = median
+        last_gap = gaps[i]
+    return out
+
+
+def _luma(rgb) -> float:
+    return float(0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2])
+
+
+def _is_shading_look(darker, lighter, darker_gap: float) -> bool:
+    """暗带是否只是同一种材质的受光差异（保守启发式）。"""
+    light_luma = _luma(lighter)
+    if light_luma <= 1.0:
+        return False
+    ratio = _luma(darker) / light_luma
+    if not _SHADING_LUMA_RATIO[0] <= ratio <= _SHADING_LUMA_RATIO[1]:
+        return False
+    if darker_gap >= _SHADING_VOTE_GAP:
+        return False
+    dark_chroma = [float(c) / max(_luma(darker), 1.0) * 100.0 for c in darker]
+    light_chroma = [float(c) / light_luma * 100.0 for c in lighter]
+    return max(abs(a - b) for a, b in zip(dark_chroma, light_chroma, strict=True)) \
+        <= _SHADING_CHROMATICITY_TOLERANCE
 
 
 def _merge_bands(bands: list[dict]) -> list[dict]:

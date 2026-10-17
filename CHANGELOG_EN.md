@@ -8,6 +8,33 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-10-17 CLI finished-doll preview export
+
+- `--preview` writes the finished-doll preview using the same renderer as the result page (each part's real rounds as a lathe, placed by the same anatomical layout as `--assemble`), as `.svg` vector or `.png` raster; batch mode exports `<stem>.preview<ext>` per image.
+- The PNG is rasterised with Pillow from the preview SVG's own dialect (background rect + painter-ordered polygons + one caption line), so no cairosvg dependency. The caption is Chinese and needs a system CJK font; without one only the shapes are drawn (the vector SVG always carries the caption and is the lossless copy).
+- The new output reuses the existing preflight: path conflicts with the input photo or other outputs, and unsupported formats, fail before generation. The preview is not a physical simulation.
+
+### Fixed — 2026-10-17 A single-colour toy is no longer read as two colours
+
+- Colour voting (band coverage) samples the lit surface only: `subject.shaded_area` treats "darker than the background **and part of a coherent area**" (opening kernel `max(5, shorter side/20)`) as shading/watermark, while dark structures finer than the kernel (black eyes, 4px stripes) stay real features and keep voting.
+- When the lit part is not a clear majority (darker share ≥ 40%) nothing is dropped — a black-and-white two-tone toy's body colour must not be filtered out that way. Review evidence (`SubjectObservation`) always records the **complete** interior pixels and region colours, so dark detail is never hidden by the voting rule.
+- `extract_color_palette` and `vertical_color_bands` sample the lit surface. Measured on a local authorized photo (not committed): sampling 8965→6234 pixels, the palette no longer invents a second colour (no more "dark grey") and the ears turn from dark grey into wheat; evidence still records the full 8965px foreground and flags review.
+- Band decisions get one more layer: an adjacent band that differs only by lighting is merged into the lit band's colour instead of becoming a second colour. Three conditions must hold at once — the bright/dark luma ratio sits in 0.5–0.95 (the lighting-explainable window), the luma-normalised chromaticities differ by at most 12 per channel, and the dark band's **own yarn vote is not decisive** (top-two coverage gap < 0.4). If any condition fails it may be another material: black/white (ratio too low), white/light-grey (decisive vote) and a warm-orange colour change (chromaticity mismatch) all keep two colours; `unify_shading=False` keeps the previous behaviour for comparison.
+- Measured on the same local authorized photo (not committed): bands go from 3 (grey/wheat/grey) to 1 (grey) and materials from two to one, with total yarn use unchanged; stitch counts and ear dimensions are unchanged, and the independent checker passes all 59 rounds.
+- Known boundary: a **near-neutral** two-tone (white + light grey) under strong uneven light splits its vote the same way and may still be merged into one colour. Raw per-band counts and 2-D colour patches always stay in the evidence, so review can see the merge and undo it.
+
+### Added — 2026-10-17 Local long-ear inference
+
+- `geometry.measure_ears` measures but never invents ears: the top rows must split into ≥2 segments (splayed long ears have a combined width already close to the head, so a narrow-band rule misses them), ear width is the median foreground segment width, taken from the narrower of the two lobes (the wider lobe is usually "ear + merged head top").
+- `structure_designer` treats the profiled ear length as a **lower bound** (the notch closes above the ear root) and uses `max(measured, 2.4×ear width)`; ears are always generated as 6→N→6 tubes — a front mask cannot tell a bear's round ear from a bunny's long ear, so round ears must be explicit in the structure.
+- Segmentation seeds add a YCrCb chroma tier next to the luma tier (union, additive only, threshold `clamp(Otsu, 8, 48)`); background chroma uses the representative colour set rather than the band median (a two-tone background median sits between both colours and paints both as colourful). Pale subjects overlap translucent shadows in luma but differ by an order of magnitude in chroma.
+- No "neutral dark pixel demotion" for watermark removal: measured, it erases dark/mid-grey toys entirely while leaving translucent watermarks in the mask. Measured on a local authorized photo (not committed): ears 6→12×11→6, 12 rounds, 3.2cm × 7.5cm (previously 4.0cm × 9.4cm, or no ears at all).
+
+### Added — 2026-10-17 CrochetPARADE assembly export and result-page assembly preview
+
+- New `app/utils/parade_assembly.py`: the anatomical layout (head/body/limbs/ears, mirrored pairs) has a single source, and `--assemble` appends `DOT: separate=0` plus `TRANSFORM_OBJECT` translations to that DSL (rotation is left for the CP panel; no fabricated orientation).
+- The result page gains an assembly preview: each part's **real rounds** become a lathe, placed by the same layout as the CP assembly block (tests assert the cm and stitch coordinate systems differ by exactly one stitch width).
+
 ### Added — 2026-10-15 Foreground correction brush
 
 - Add a local photo canvas with add/erase, brush sizing, overlay visibility, undo for the last 20 strokes and reset to automatic segmentation. Each completed stroke updates the selection.

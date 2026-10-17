@@ -171,6 +171,12 @@ class ImageAnalysis(BaseModel):
         default=None, description="Lower garment (pants/skirt) main color as a yarn color name")
     clothing_type: str | None = Field(
         default=None, description="裤子 | 裙子 | 连衣裙 | 其他 | null")
+    # ── 照片轮廓实测的耳部占比（本地视觉；未测到为 None）──────────────────
+    # 耳长/整体高度 与 单耳宽/整体高度。长耳玩偶（兔/驴）耳长占比大、长宽比
+    # 高；圆耳（熊/猫）接近 1:1。结构设计据此在"长耳管"与"球形耳"之间选择，
+    # 而不是把两者都当球（旧模板口径把耳朵记成直径=头径 0.35 的球）。
+    ear_length_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
+    ear_width_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
 
     @field_validator("parts")
     @classmethod

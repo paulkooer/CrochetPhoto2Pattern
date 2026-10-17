@@ -1,8 +1,12 @@
 """Tests for photo-driven colorwork design (app/models/color_design.py)."""
+import numpy as np
+import pytest
 from PIL import Image, ImageDraw
 
+from app.models import subject
 from app.models.color_design import (
     PART_SPAN,
+    _is_shading_look,
     blocks_summary_text,
     color_blocks_for_part,
     round_color,
@@ -28,6 +32,101 @@ def test_bands_extract_two_tones_and_merge():
     assert colors[-1] == "蓝色"             # 底部衣服带
     # start/end 覆盖 0..1 且单调
     assert bands[0]["start"] == 0.0 and bands[-1]["end"] == 1.0
+
+
+def _shaded_single_colour_subject():
+    """浅背景上的单色主体，下半身在阴影里（行程照常见）——真实照片的样子。"""
+    img = Image.new("RGB", (200, 400), (168, 168, 164))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([70, 20, 130, 390], radius=20, fill=(216, 200, 184))
+    d.rectangle([70, 280, 130, 390], fill=(120, 120, 104))  # 下段阴影（少数）
+    return img
+
+
+def test_bands_read_lit_colour_so_shading_is_not_a_second_colour(monkeypatch):
+    """单色玩偶不该因阴影被读成两色（真实照片里耳朵因此配成深灰色）。"""
+    img = _shaded_single_colour_subject()
+    colors = {b["color"] for b in vertical_color_bands(img, n_bands=10)}
+    assert len(colors) == 1 and "深灰色" not in colors
+    monkeypatch.setattr(subject, "shaded_area",
+                        lambda m, i: np.zeros(m.shape, bool))
+    plain = {b["color"] for b in vertical_color_bands(img, n_bands=10)}
+    assert "深灰色" in plain        # 不做"只取受光面"就会凭空多出阴影色
+
+
+def _gradient_mask():
+    mask = np.zeros((160, 100), bool)
+    mask[8:153, 30:71] = True
+    return mask
+
+
+def _shaded_gradient_subject(lit, dark, *, boundary=0.6, noise=18, seed=7):
+    """浅背景上的单色主体：下半段只是受光更暗（照片里的常见样子）。
+
+    主体内加确定性噪声，模拟照片里逐像素的颜色分布——正是这种分布让同一材质
+    沿毛线色表边界移动，逐带投票因此可能把一只单色玩偶读成两色。
+    """
+    rng = np.random.default_rng(seed)
+    img = Image.new("RGB", (100, 160), (168, 168, 164))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([30, 8, 70, 152], radius=8, fill=lit)
+    d.rectangle([30, int(160 * boundary), 70, 152], fill=dark)
+    arr = np.asarray(img, dtype=np.int16)
+    inside = np.zeros(arr.shape[:2], bool)
+    inside[10:150, 32:69] = True
+    arr = np.where(inside[:, :, None],
+                   arr + rng.integers(-noise, noise + 1, size=arr.shape), arr)
+    return Image.fromarray(arr.clip(0, 255).astype(np.uint8))
+
+
+def _bands_with_given_mask(monkeypatch, image, **kwargs):
+    """隔离分割：直接给出主体掩码，只考察配色判定本身。"""
+    monkeypatch.setattr(subject, "extract_subject",
+                        lambda image, **_: (_gradient_mask(), image))
+    return vertical_color_bands(image, n_bands=10, **kwargs)
+
+
+def test_shading_gradient_band_merges_into_lit_neighbour(monkeypatch):
+    """同一材质下半段更暗：暗带并回受光带色号，不另立一色（真实照片的样子）。"""
+    image = _shaded_gradient_subject((203, 193, 170), (152, 145, 128))
+    assert [b["color"] for b in _bands_with_given_mask(monkeypatch, image)] == ["灰色"]
+    plain = [b["color"] for b in
+             _bands_with_given_mask(monkeypatch, image, unify_shading=False)]
+    assert set(plain) == {"灰色", "小麦肤色"}   # 不并入时正是"凭空多出一色"
+
+
+def test_uniform_dark_step_keeps_its_own_colour(monkeypatch):
+    """均匀色块的暗带投票是决定性的，不并入——与保护真换色的是同一条判据。"""
+    image = _shaded_gradient_subject((203, 193, 170), (152, 145, 128), noise=0)
+    assert [b["color"] for b in _bands_with_given_mask(monkeypatch, image)] == \
+        ["灰色", "小麦肤色"]
+
+
+def test_clear_colour_change_is_not_unified(monkeypatch):
+    """亮度接近但色度不同的真换色（暖橙）保持两色。"""
+    image = _shaded_gradient_subject((203, 193, 170), (200, 150, 120))
+    assert [b["color"] for b in _bands_with_given_mask(monkeypatch, image)] == \
+        ["灰色", "棕肤色"]
+
+
+def test_near_neutral_two_tone_keeps_both_colours(monkeypatch):
+    """白 + 浅灰双色：色度与亮度比都落在受光窗口内，投票决定性仍然保住两色。"""
+    image = _shaded_gradient_subject((245, 245, 245), (190, 190, 190), noise=6)
+    assert [b["color"] for b in _bands_with_given_mask(monkeypatch, image)] == \
+        ["浅灰色", "灰色"]
+
+
+@pytest.mark.parametrize("darker,lighter,gap,expected", [
+    ((152, 145, 128), (203, 193, 170), 0.20, True),    # 同色度、受光更暗、投票不牢靠
+    ((60, 60, 60), (203, 193, 170), 0.20, False),      # 亮度比过低：更像另一种颜色
+    ((200, 190, 168), (203, 193, 170), 0.20, False),   # 几乎同亮度：不是受光差异
+    ((152, 145, 128), (203, 193, 170), 0.60, False),   # 投票决定性：不覆盖证据
+    ((200, 150, 120), (203, 193, 170), 0.20, False),   # 亮度接近但色度不同＝真换色
+    ((0, 0, 0), (245, 245, 245), 0.20, False),         # 极暗带色度崩掉（黑）
+])
+def test_shading_look_judgement(darker, lighter, gap, expected):
+    """三条判据（亮度窗口、投票不牢靠、色度一致）逐条可分辨。"""
+    assert _is_shading_look(darker, lighter, gap) is expected
 
 
 def test_part_span_slices_bands():

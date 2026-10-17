@@ -10,7 +10,7 @@ from unicodedata import normalize
 def output_paths(args) -> dict[str, Path]:
     paths: dict[str, Path] = {}
     source = Path(args.image).resolve() if args.image else None
-    for kind in ("out", "md", "parade", "pdf"):
+    for kind in ("out", "md", "parade", "pdf", "preview"):
         value = getattr(args, kind, None)
         if not value:
             continue

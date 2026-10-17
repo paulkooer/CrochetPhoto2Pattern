@@ -48,6 +48,9 @@ LIMB_HEAD_RATIO = 0.33       # 四肢直径 ≈ 头径 1/3（参考尺寸下恰�
 HAT_HEAD_RATIO = 1.15        # 帽围松量：太小戴不进去，太大松垮
 HAT_DEPTH_RATIO = 0.6        # 帽深 ≈ 帽直径 × 0.6
 SKIRT_BODY_RATIO = 1.25      # 裙摆直径相对身体放大
+EAR_LENGTH_TO_WIDTH = 3.2    # 耳长/耳宽（长耳玩偶）：手工调好的兔耳实测 ≈9.4/2.9
+EAR_MIN_STRAIGHT = 3         # 耳长再短也留 3 圈直钩，否则又退化成球
+EAR_MIN_STITCHES = 12        # 耳宽下限：6 针耳管成品是一根线，不是耳朵
 
 # 自端部起针的部件（R1 对应照片低处）：照片配色映射自底向上
 _BOTTOM_UP_PARTS = frozenset({"身体", "手臂", "腿部"})
@@ -600,6 +603,59 @@ class CrochetParamsGenerator:
                     color=sp.get("color", "body"),
                     magic_ring=False,  # 腰部开口起针，非魔法环
                     notes=skirt_notes,
+                )
+
+            elif part_name == "耳朵" or shape == "ear":
+                # 长耳（兔/驴）：魔法环 6 → 加针到耳宽 → 直钩出耳长 → 收口成圆头。
+                # 旧模板把耳朵记成球（直径=头径×0.35 ≈ 3cm）→ 最大针数只有 6 针，
+                # 长耳玩偶的成品等于"没有耳朵"（图解不可辨认）。宽度定围针数、
+                # 长度定直钩圈数；本式在经典 gauge 下与手工调好的兔耳逐圈一致
+                # （6 → 12 → 12×12 → 6，共 15 圈 ≈ 9.4cm 长 × 2.9cm 宽）。
+                diameter = sp.get("diameter_cm", round(head_d * LIMB_HEAD_RATIO, 1))
+                length = (sp.get("length_cm") or sp.get("height_cm")
+                          or round(diameter * EAR_LENGTH_TO_WIDTH, 1))
+                max_st = _stitches_for_diameter(diameter, gauge)
+                if max_st < EAR_MIN_STITCHES:
+                    # 针数下限：6 针耳管成品是一根线，不是耳朵。下限生效时直径
+                    # 口径跟着实际圈法走，避免说明文字与圈数互相矛盾。
+                    max_st = EAR_MIN_STITCHES
+                    diameter = round(max_st * gauge.stitch_w_cm / 3.14159, 1)
+                root = _increase_rounds(max_st)                      # 耳根 6 → 耳宽
+                tip = bridge_rounds(max_st, 6, gauge.max_shaping_change)  # 耳尖收口
+                straight_n = max(
+                    EAR_MIN_STRAIGHT,
+                    gauge.rounds_for_height(length) - len(root) - len(tip))
+                rounds_raw = root + [
+                    {"row": len(root) + i + 1, "stitches": max_st,
+                     "notes": f"{max_st}X（不加不减）"}
+                    for i in range(straight_n)
+                ]
+                before = max_st
+                for i, stitches in enumerate(tip, 1):
+                    rounds_raw.append({
+                        "row": len(root) + straight_n + i,
+                        "stitches": stitches,
+                        "decrease": before - stitches,
+                        "notes": _change_note(before, stitches),
+                    })
+                    before = stitches
+                rounds_raw = _mark_staggered(rounds_raw)
+                rounds_raw[-1]["notes"] = (rounds_raw[-1].get("notes") or "") + (
+                    "；断线留15cm，耳尖穿末圈前半针拉紧收口后留线缝合")
+                actual_h = round(len(rounds_raw) * gauge.row_h_cm, 1)
+                part = CrochetPart(
+                    name=part_name,
+                    type="cylinder",
+                    diameter_cm=diameter,
+                    height_cm=actual_h,
+                    rounds=[CrochetStitch(**r) for r in rounds_raw],
+                    color=sp.get("color", "skin"),
+                    magic_ring=True,
+                    notes=(
+                        f"长耳：耳宽 {max_st} 针（约 {diameter}cm）、耳长 {actual_h}cm"
+                        f"（{straight_n} 圈直钩）。耳根魔法环起针，耳尖收口到 6 针。"
+                        "钩两片，扁平一侧贴头部两侧缝合（耳根略微内折更服帖）。"
+                    ),
                 )
 
             elif part_name == "帽子" or shape == "cup":

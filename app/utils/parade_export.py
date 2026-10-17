@@ -193,6 +193,21 @@ def lint_parade_dsl(text: str) -> list[str]:
             continue
         if line.startswith("COLOR:") or line.startswith("#"):
             continue
+        if line.startswith("DOT:"):
+            continue
+        if line.startswith("TRANSFORM_OBJECT:"):
+            # 官方格式：object_number,tx,ty,tz,rx,ry,rz（共 7 个数值）
+            fields = [f.strip() for f in line[len("TRANSFORM_OBJECT:"):].split(",")]
+            if len(fields) != 7:
+                issues.append(f"第 {i} 行 TRANSFORM_OBJECT 需要 7 个数值，得到 {len(fields)} 个")
+            else:
+                for value in fields:
+                    try:
+                        float(value)
+                    except ValueError:
+                        issues.append(f"第 {i} 行 TRANSFORM_OBJECT 含非数值字段 {value!r}")
+                        break
+            continue
         for tok in [t for t in re.split(r",(?![^\[]*\])", line) if t]:
             token = tok.strip()
             if token in ("ring", "start_anew"):
@@ -210,8 +225,12 @@ def lint_parade_dsl(text: str) -> list[str]:
     return issues
 
 
-def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
+def export_parade_report(result: dict[str, Any], *, assemble: bool = False
+                         ) -> ParadeExportReport:
     """Return DSL, completeness, physical-copy counts and structured warnings.
+
+    assemble=True 时在图纸之后追加装配块（`DOT: separate=0` + 按解剖布局
+    算出的 `TRANSFORM_OBJECT` 平移），见 app/utils/parade_assembly.py。
 
     raises:
         ValueError: 结果缺 params.parts 或所有部件都不可译。
@@ -224,7 +243,7 @@ def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
     report = ParadeExportReport()
     warnings = report.warnings
     body: list[str] = []
-    exported_any = False
+    exported: list[dict[str, Any]] = []
     for part in parts:
         if not isinstance(part, dict):
             warnings.append("部件格式无效，该部件已跳过")
@@ -233,13 +252,23 @@ def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
         lines = _part_lines(part, report)
         if not lines:
             continue
-        exported_any = True
+        exported.append(part)
         if body:
             body.append("# ── 下一部件 ──")
             body.append("start_anew")
         body.extend(lines)
-    if not exported_any:
+    if not exported:
         raise ValueError("所有部件的圈形态均超出可译子集，未能导出")
+
+    if assemble:
+        from app.utils.parade_assembly import assembly_lines
+
+        block = assembly_lines(exported)
+        if block:
+            body.extend(block)
+        else:
+            warnings.append("装配块：未能估算出部件布局，已跳过")
+            report.complete = False
 
     text = _HEADER
     if warnings:
@@ -251,6 +280,6 @@ def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
     return report
 
 
-def export_parade_dsl(result: dict[str, Any]) -> str:
+def export_parade_dsl(result: dict[str, Any], *, assemble: bool = False) -> str:
     """Compatibility text API; partial exports carry warnings in the text."""
-    return export_parade_report(result).text
+    return export_parade_report(result, assemble=assemble).text

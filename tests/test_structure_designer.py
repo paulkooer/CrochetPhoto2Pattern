@@ -77,10 +77,41 @@ def test_accessories_have_dedicated_shapes():
     )
     result = StructureDesigner.design_3d_structure(analysis)
     by_name = {p["name"]: p for p in result["parts"]}
-    assert by_name["耳朵"]["shape"] == "sphere"
+    # 默认按长耳（兔/驴）建模：宽度窄于头径，且有独立耳长。旧口径把耳朵记成
+    # 直径=头径×0.35 的球 → 生成 6 针小球，长耳玩偶的成品等于"没有耳朵"。
+    assert by_name["耳朵"]["shape"] == "ear"
     assert by_name["耳朵"]["diameter_cm"] < analysis.head_diameter_cm
+    assert by_name["耳朵"]["length_cm"] > by_name["耳朵"]["diameter_cm"]
     assert by_name["尾巴"]["shape"] == "cylinder"
     assert "length_cm" in by_name["尾巴"]
+
+
+def _ear_analysis(**ratios):
+    return ImageAnalysis(
+        body_type="标准", head_diameter_cm=9.0, height_cm=18.0,
+        main_features=[], pose="站立", difficulty="easy",
+        parts=["头部", "耳朵"], **ratios,
+    )
+
+
+def test_measured_round_lobe_still_becomes_a_tube():
+    """轮廓判出的耳朵一律做长管：正面掩码无法区分熊的圆耳与兔的长耳，
+    实测耳长又只是下界，所以量到再短也按耳长下限（2.4× 耳宽）做。"""
+    ear = next(p for p in StructureDesigner.design_3d_structure(
+        _ear_analysis(ear_length_ratio=0.06, ear_width_ratio=0.05))["parts"]
+        if p["name"] == "耳朵")
+    assert ear["shape"] == "ear"
+    assert ear["length_cm"] >= 2.4 * ear["diameter_cm"]
+
+
+def test_measured_long_ear_honours_the_measurement():
+    """实测耳长超过下限时以实测为准；耳宽按实测占比 × 整体高度。"""
+    ear = next(p for p in StructureDesigner.design_3d_structure(
+        _ear_analysis(ear_length_ratio=0.45, ear_width_ratio=0.10))["parts"]
+        if p["name"] == "耳朵")
+    assert ear["shape"] == "ear"
+    assert ear["diameter_cm"] == pytest.approx(18.0 * 0.10, abs=0.1)
+    assert ear["length_cm"] == pytest.approx(18.0 * 0.45, abs=0.1)
 
 
 def test_hat_is_open_cup_with_slack():
