@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-15. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-25. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -11,6 +11,63 @@ CrochetPhoto2Pattern is a **0.2.0-beta.2 engineering candidate**. Stitch arithme
 gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
+
+2026-10-25 pre-publication verification: **1449 passed, 1 skipped in 67.95s;
+coverage 92.56%**. Repository-wide Ruff, mypy app/tests (128 files), offline lock
+consistency and diff checks pass. An isolated wheel build in a temporary directory
+contains 68 application files byte-identical to the working tree, including the notation
+parser, canvas and data resources; metadata and CLI entries match the package contract.
+Headless Chrome captured the [synthetic component preview](images/stitch-notation-synthetic.png),
+visually checked for ordinary/local/whole-round loop placement and corresponding DSL.
+No third-party images were used. Branch, PR and remote CI status are recorded on
+[GitHub](https://github.com/paulkooer/CrochetPhoto2Pattern); statements such as
+"uncommitted" below describe their respective historical verification snapshots.
+No runtime dependencies, real-photo or physical-trial evidence were added; G3/G4 are unchanged.
+
+2026-10-24 loop scope: Supergurumi patterns, PlanetJune comparisons and the official
+CrochetPARADE HTML manual inform scoped/local FLO/BLO expressions and standalone
+whole-round directives. Retain counts and qualifiers through validation, Markdown,
+F/B chart labels and qualified DSL shaping. Reject conflicting scopes; unresolved loop
+prose remains usable manually but stops the affected part's DSL export. Do not guess
+a foundation for first-round loops or mistake generated tail closures for FLO crochet.
+Correct bee fixture/glossary FLO/BLO labels and explicitly report inferred placement
+in other aggregate rounds. Cache format 3 invalidates old exports; regression coverage
+includes edits, backups, printable exports and the calculator.
+Added 66 regression cases; final full suite: **1449 passed, 1 skipped in 69.10s;
+coverage 92.56%**. Ruff app/tests/scripts, mypy app/tests (128 files) and diff checks pass.
+See [online sources and scope](SOURCES.en.md#2026-10-24-online-references-and-loop-scope).
+No dependencies or source images were added. No official parser execution, external
+simulation, physical trial, photo-accuracy evaluation, remote CI or package rebuild
+was performed. Changes are uncommitted; G3/G4 remain blocked.
+
+2026-10-24 follow-up: preserve explicit stitch order across Markdown, symbol strips
+and CrochetPARADE. Support mixed shaping, W/M and nested groups without expanding
+large repeats; retain one source round per DSL line. Contradictions stop the affected
+part at its valid prefix, and aggregate-only inferred placement is counted separately.
+Generated consecutive +6 rounds now specify center/end placement directly, replacing
+vague shift hints. Numeric edits update neighboring generated instructions while retaining
+finishing notes; legacy imports keep their original text. Version export caches independently
+and reuse compiled rounds across physical copies. Sixty-six new regressions cover ordered
+DSL/chart comparisons, bounded rendering, all gauge/head-mode/construction combinations,
+legacy edits, colors and cache upgrades. Final full suite: **1383 passed, 1 skipped in
+67.40s; coverage 92.49%**. Ruff app/tests/scripts, mypy app/tests (127 files) and diff
+checks pass. See [before/after cases](SOURCES.en.md#2026-10-24-stitch-order-and-export-consistency).
+No external simulation, physical trial, photo-accuracy evaluation, remote CI or package
+rebuild was run. Changes are uncommitted; G3/G4 remain blocked.
+
+2026-10-24 round notation: local JOLA reference images informed checks for complete
+X/V/A/W/M and US short-stitch expressions, repeat groups and split shaping positions.
+Edits, backup imports and Markdown/PDF exports now reject mismatches in consumed
+stitches, output stitches and separate increase/decrease counts. The round editor
+includes an optional calculator; unsupported techniques remain subject to manual review.
+Sixty-five new tests include an independent counting oracle and AppTest calculator
+interaction; four ambiguous increase abbreviations in historical fixtures were corrected.
+Full suite: **1317 passed, 1 skipped in 48.88s**; Ruff app/tests/scripts, mypy app/tests
+(125 files) and diff checks pass. Source observations are recorded in
+[SOURCES.en.md](SOURCES.en.md#2026-10-24-local-references-and-round-notation).
+No runtime dependencies or reference assets were added. No remote CI, package rebuild,
+real-photo accuracy evaluation or physical trials were run. Changes are uncommitted;
+G3/G4 remain blocked.
 
 2026-10-15 foreground correction: add a local brush with add/erase, sizing, overlay toggle, 20-stroke undo and reset. Corrected masks independently update geometry, palette and generated bands before body selection. Corrections are bound to the crop and size-validated; backups and resizing retain them. Empty manual selections block generation, while explicit reset restores the original flow; users can create a selection after failed segmentation. Fourteen new regressions; final full suite **1252 passed, 1 skipped in 38.47s**, Ruff app/tests/scripts, mypy app/tests (123 files), JavaScript syntax and diff checks pass. Chrome verified brush/erase/continuous strokes/undo/reset, and an actual Streamlit page verified corrected generation and reset. An offline wheel built in a temporary directory contains editor/model assets byte-identical to the final working tree; CI now checks canvas inclusion. Temporary local test services were stopped. No new runtime dependencies, remote CI, real-photo accuracy evaluation or physical trials. Changes remain uncommitted and G3/G4 remain blocked.
 

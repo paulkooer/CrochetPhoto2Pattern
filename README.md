@@ -84,8 +84,17 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Strictly validated advanced structure editing with local regeneration.
 - Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
 - Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows.
-- Stitch-arithmetic validation, ring charts, progress tracking, per-color bills of
+- Stitch-arithmetic and supported round-notation checks, an editor calculator for
+  consumed/output stitches and increases/decreases, ring charts, progress tracking, per-color bills of
   materials, share links, SQLite history, JSON backup, Markdown, and optional PDF export.
+- Explicit stitch order is preserved in Markdown, symbol strips and CrochetPARADE,
+  including mixed shaping and nested repeats. Aggregate-only export counts inferred
+  placement separately; prose-only placement hints and special techniques still need review.
+- Scoped front/back-loop notation, such as `BLO((2X,V)×6)` or `4sc-FLO`, retains
+  counts and exact loop positions through checks, charts and exports. F/B labels mark
+  chart positions; unresolved loop instructions stop that part's DSL export for review.
+- Consecutive +6 rounds specify end/center placement directly, such as `(X,V,X)×6`.
+  Numeric edits update affected neighboring instructions while retaining finishing steps.
 - EXIF orientation correction and defensive image/input size limits.
 - Authorized-photo evaluation and independent physical-trial tooling.
 

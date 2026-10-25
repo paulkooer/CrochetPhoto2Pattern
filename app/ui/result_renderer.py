@@ -259,7 +259,8 @@ def _render_part_progress(
                         unsafe_allow_html=True)
                     _strip = render_symbol_strip(part)
                     if _strip:
-                        st.markdown("**逐圈符号条**（×=短针，V=加针，A=减针）")
+                        st.markdown("**逐圈符号条**（×=短针，V=加针，A=减针，W=一放三，M=三并一；F/B=前/后半针）")
+                        st.caption("可识别操作式按原顺序显示；只有总针数时为均匀分布示意，文字错位提示需另行核对。")
                         st.markdown(html_box(_strip, min(
                             30 + 16 * min(len(part.get("rounds", [])), 24)
                             + 10, 560), scroll=True), unsafe_allow_html=True)
@@ -534,7 +535,8 @@ def render_results(result: dict, slot: str) -> None:
     st.caption(
         "记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针）；"
         "(4X,V)×6 = “4短针+1加针”重复 6 次。"
-        "螺旋钩法（不引拔不翻转），每圈第一针挂记号扣；减针建议隐形减针（只挑前半针）"
+        "螺旋钩法（不引拔不翻转），每圈第一针挂记号扣；"
+        "普通圈可参考隐形减针，FLO/BLO 圈按本圈指定针法。"
     )
     from app.models.stitches import (
         glossary_table_markdown,
@@ -573,7 +575,7 @@ def render_results(result: dict, slot: str) -> None:
     if _v["ok"]:
         st.success(
             f"✅ 针数代数与相邻圈跳变检查通过（已检查 {_v['checked']} 圈）")
-        st.caption("自检仅覆盖针数代数和可识别的文字矛盾；自定义工艺说明仍需人工复核。"
+        st.caption("自检覆盖针数代数及可识别操作式的消耗、产出与加减针；自定义工艺说明仍需人工复核。"
                    "该检查不等同于成品形状、部件连接或实际可钩性验证。")
     else:
         st.warning("⚠️ 图解自检发现问题（可在局部修正中修复）：\n"
@@ -818,6 +820,8 @@ def render_results(result: dict, slot: str) -> None:
             "\"过松/过紧针目\"物理分析与逐针动画——本应用代数自检之外的"
             "独立检查工具。语法映射基于其官方手册的已核对子集。")
         st.caption("本应用只检查导出完整性与文本语法，尚未运行外部仿真；仿真结果也不能替代实体试钩。")
+        st.caption("可识别操作式保留针法顺序及明确的 FLO/BLO；挑针范围不清时停止该部件导出。"
+                   "仅文字描述的错位和收口动作需对照原图解核对。")
         try:
             if not _v["ok"]:
                 raise ValueError("请先修复图解自检错误")
@@ -825,6 +829,9 @@ def render_results(result: dict, slot: str) -> None:
                 export_cache, "parade", {"params": serializable_params, "export_version": software_version()},
                 lambda: parade_payload(result))
             _parade_text = _parade["text"]
+            if _parade["inferred_rounds"]:
+                st.caption(f"{_parade['inferred_rounds']} 个实体圈次仅按数值均匀安排针位；"
+                           "其余可识别操作式保留针法顺序，特殊工艺及文字错位提示仍需核对。")
             if not _parade["complete"]:
                 st.warning("仅导出部分图解；不可视为完整验证："
                            f"{_parade['exported_rounds']}/{_parade['requested_rounds']} 圈次，"

@@ -8,6 +8,34 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-10-24 Scoped front/back-loop notation
+
+- Support `FLO(...)`, `BLO(...)`, `FLO: ...`, stitch suffixes such as `sc-FLO`, and standalone whole-round loop directives. Preserve counts, shaping and local loop positions.
+- Retain qualifiers in Markdown, label chart positions F/B with tooltips, and emit CrochetPARADE `scfl`/`scbl` plus shaping suffixes. Bump export cache format to 3.
+- Reject conflicting scopes. Unresolved loop prose and first-round loops without a supported foundation no longer fall back to ordinary sc. Manual notes remain saveable; partial DSL exports retain the valid prefix and other parts. Distinguish generated tail-threading closures from crochet-loop instructions and qualify general invisible-decrease advice.
+- Recheck the original bee pattern and correct fixture/glossary BLO labels to FLO. Export tests check actual loop types and separately report inferred placement in the remaining aggregate rounds.
+- Synthetic tests cover limits, independent counts, placement, edits, backups, printable exports and calculator interaction. No third-party patterns, new dependencies, external simulation or physical trial were added.
+
+### Changed — 2026-10-24 Generate explicit increase placement
+
+- For consecutive +6 rounds, split even plain-stitch gaps around V: 18→24 uses `(X,V,X)×6` and 30→36 uses `(2X,V,2X)×6`; odd gaps retain end-of-group increases. New patterns no longer append a separate vague half-group shift instruction.
+- Numeric edits update affected neighboring placement while preserving finishing actions and custom arrangements. Legacy backups retain their original notes on import.
+- Cover ladder/ideal/egg heads, gauge presets, one-piece construction, edit restoration and idempotence. This specifies operations; it does not establish an improvement in physical shape.
+
+### Fixed — 2026-10-24 Preserve stitch placement
+
+- Retain ordered repeat groups in the notation parser. Markdown stitch columns, symbol strips and CrochetPARADE exports now preserve explicit placement instead of replacing staggered or clustered shaping with uniform groups.
+- Export explicit mixed shaping, W/M stitches, uneven placement and nested groups, keeping each source round on one line. Contradictory or ambiguous instructions stop that part at its valid prefix; other parts still export.
+- Report physical `inferred_rounds` for aggregate-only uniform fallback. Free prose and textual placement hints still require review; Markdown no longer invents formulas alongside custom prose. Mixed rounds without explicit placement display a review marker.
+- Reuse compiled rounds across identical copies and expand only visible chart symbols. Keep large repeats compact, version export caches independently of package releases, and prevent metadata line breaks from becoming DSL instructions.
+
+### Added — 2026-10-24 Round-notation checks
+
+- Count X/V/A/W/M, US sc/inc/dec aliases (including sc-inc, sc2tog and inv-sc2tog), and repeat groups, including split positions, mixed shaping and non-six-sector rounds.
+- Edits, backup imports and Markdown/PDF exports compare consumed stitches, output stitches, increases and decreases against numeric fields. Previously accepted contradictory notation must be corrected before applying or exporting.
+- Add an optional calculator to the round editor. It displays all four counts without changing the pattern. Unknown techniques and free prose still require manual review.
+- Bound repeat counts, nesting and expression size without expanding repeats. Clarify four ambiguous increase abbreviations in historical fixtures. New tests use synthetic examples; local reference files are not included. No new dependencies.
+
 ### Added — 2026-10-15 Foreground correction brush
 
 - Add a local photo canvas with add/erase, brush sizing, overlay visibility, undo for the last 20 strokes and reset to automatic segmentation. Each completed stroke updates the selection.

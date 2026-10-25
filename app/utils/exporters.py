@@ -4,6 +4,8 @@ from __future__ import annotations
 import re as _re
 
 from app import PRODUCT_NAME
+from app.models.instruction_checks import round_expression
+from app.models.stitch_notation import NotationError, format_stitch_expression
 from app.schemas import difficulty_label
 
 # U30：双语记号对照（X/V/A 日式 Amigurumi 惯例 ↔ CYC 西方体系，
@@ -32,7 +34,7 @@ def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
 
     专业图解（Supergurumi/DROPS 等）以 "[4 sc, 1 inc] repeat" 表达均匀
     分组圈，X/V/A 记号约定见导出图例；均匀分组前提与 parade 导出器的
-    _round_tokens 一致。groups==1（单次增/减）同样渲染为 "(4X,V)"——
+    _aggregate_round_tokens 一致。groups==1（单次增/减）同样渲染为 "(4X,V)"——
     与 parade 发射器允许单分组保持同口径（外部 AI 审核发现的不一致）。
     """
     if (inc and dec) or (not inc and not dec):
@@ -121,7 +123,7 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     lines.append(
         "> 记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针），"
         "W=1针目钩3短针，M=三针短针并一针，B=枣形针（5卷长针并1，"
-        "进出各1针——不改变针数）；"
+        "进出各1针——不改变针数）；FLO=只挑前半针，BLO=只挑后半针；"
         "(4X,V)×6 = “4短针+1加针”重复 6 次"
     )
     from app.models.stitches import glossary_note_lines
@@ -129,7 +131,7 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     lines.append(">")
     lines.append(
         "> 钩法：螺旋钩（不引拔、不翻转），每圈第一针挂记号扣；"
-        "减针建议用隐形减针（只挑两针目的前半针）"
+        "普通圈可参考隐形减针（只挑两针目的前半针）；FLO/BLO 圈按本圈指定针法"
     )
     lines.append(">")
     lines.append(
@@ -212,10 +214,17 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
                     st_n = inc_n = dec_n = 0
                 inc = f"+{inc_n}" if inc_n else "—"
                 dec = f"-{dec_n}" if dec_n else "—"
-                # 专业写法列：聚合数翻译为图例约定的重复记号（均匀分组时）；
-                # JSON 改坏/非均匀形态降级为 '—'
+                # Explicit formulas carry placement: do not regenerate a
+                # different, uniformly distributed pattern from their totals.
                 rep = "—"
-                if prev_st is not None and st_n and (inc_n or dec_n):
+                try:
+                    expression = round_expression(rd.get("notes"))
+                except NotationError:
+                    expression = None
+                    rep = "请核对说明中的操作式"
+                if expression is not None:
+                    rep = format_stitch_expression(expression)
+                elif rep == "—" and not rd.get("notes") and prev_st is not None and st_n and (inc_n or dec_n):
                     rep = _repeat_notation(st_n, prev_st, inc_n, dec_n) or "—"
                 lines.append(
                     f"| {_md_cell(rd.get('row',''))} | {_md_cell(rd.get('stitches',''))} | "

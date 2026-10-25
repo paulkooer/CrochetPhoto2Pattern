@@ -429,5 +429,5 @@ def test_numeric_round_edit_refreshes_obsolete_instructions(result):
     changed = updated["params"]["parts"][0]["rounds"]
     assert "12" in changed[0]["notes"]
     assert changed[1]["notes"] == "12X（不加不减）"
-    assert "加针位置与上一圈错开半组" in rounds[2]["notes"]
-    assert changed[2]["notes"] == rounds[2]["notes"].split("；")[0]
+    assert "加针位置与上一圈错开半组" not in changed[2]["notes"]
+    assert changed[2]["notes"] == rounds[2]["notes"]

@@ -141,6 +141,20 @@ def _change_note(before: int, after: int) -> str:
     return f"({','.join(operations)})×6，均匀减{amount}针"
 
 
+def _positioned_change_note(before: int, after: int, *, staggered: bool = False) -> str:
+    """An explicit centered variant for alternate consecutive +6 rounds.
+
+    Split an even plain-stitch gap around V; odd gaps retain the end-of-group
+    increase. Counts, source consumption and round starts do not change. This
+    only specifies placement, not a measured improvement in finished shape.
+    """
+    plain = before // 6 - 1
+    if staggered and after - before == 6 and before % 6 == 0 and plain >= 2 and plain % 2 == 0:
+        half = "X" if plain == 2 else f"{plain // 2}X"
+        return f"({half},V,{half})×6"
+    return _change_note(before, after)
+
+
 def _increase_rounds(max_stitches: int) -> list[dict[str, Any]]:
     """Increase rounds shared by sphere/cylinder/cup: magic ring 6 → max_stitches.
 
@@ -183,13 +197,21 @@ class PatternGenerationError(RuntimeError):
 
 
 def _mark_staggered(rounds: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """连续加针圈提示错开半组（避免六边形棱线；PlanetJune 实证技法）。"""
+    """Write executable alternating placement instead of a prose-only hint."""
     for i in range(1, len(rounds)):
-        if rounds[i].get("increase") and rounds[i - 1].get("increase"):
-            rounds[i]["notes"] = (
-                (rounds[i].get("notes") or "")
-                + "；加针位置与上一圈错开半组"
-            )
+        current, previous = rounds[i], rounds[i - 1]
+        enabled = bool(current.get("increase") and previous.get("increase")
+                       and not current.get("decrease") and not previous.get("decrease"))
+        before, after = previous["stitches"], current["stitches"]
+        note = current.get("notes") or ""
+        prefix, _, suffix = note.partition("；")
+        generated = {_change_note(before, after), _positioned_change_note(before, after, staggered=True)}
+        if prefix not in generated:
+            continue  # Do not reinterpret custom placement or special techniques.
+        actions = [s for s in suffix.split("；") if s and s != "加针位置与上一圈错开半组"]
+        current["notes"] = _positioned_change_note(before, after, staggered=enabled)
+        if actions:
+            current["notes"] += "；" + "；".join(actions)
     return rounds
 
 
@@ -882,7 +904,7 @@ class CrochetParamsGenerator:
             "shaping": _shaping_meta(gauge),
             "notes": (
                 "螺旋钩法：全程不引拔、不翻转，每圈第一针挂记号扣；"
-                "减针建议用隐形减针（只挑两针目的前半针）更平整。"
+                "普通圈可参考隐形减针（只挑两针目的前半针）；FLO/BLO 圈按本圈指定针法。"
                 "基于单图推理生成，比例可能需要试钩调整。"
             ),
         }

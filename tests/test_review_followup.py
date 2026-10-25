@@ -124,18 +124,19 @@ def test_progress_follows_instance_identity_and_gauge_changes_invalidate(result)
 
 
 def test_neighbor_staggering_tracks_preceding_increase_and_can_be_restored(result):
-    marker = "加针位置与上一圈错开半组"
     rounds = deepcopy(result["params"]["parts"][0]["rounds"])
-    assert marker in rounds[2]["notes"]
+    assert rounds[3]["notes"] == "(X,V,X)×6"
     rounds[0]["stitches"] = 12
-    rounds[1]["increase"] = 0
+    rounds[1]["stitches"] = 18
+    rounds[2]["increase"] = 0
     updated = edit_rounds(result, 0, rounds)
-    assert marker not in updated["params"]["parts"][0]["rounds"][2]["notes"]
+    assert updated["params"]["parts"][0]["rounds"][3]["notes"] == "(2X,V)×6，隔2针加1针"
     restored_rounds = deepcopy(updated["params"]["parts"][0]["rounds"])
     restored_rounds[0]["stitches"] = 6
-    restored_rounds[1]["increase"] = 6
+    restored_rounds[1]["stitches"] = 12
+    restored_rounds[2]["increase"] = 6
     restored = edit_rounds(updated, 0, restored_rounds)
-    assert marker in restored["params"]["parts"][0]["rounds"][2]["notes"]
+    assert restored["params"]["parts"][0]["rounds"][3]["notes"] == "(X,V,X)×6"
 
 
 def test_neighbor_change_preserves_unchanged_custom_instructions(result):

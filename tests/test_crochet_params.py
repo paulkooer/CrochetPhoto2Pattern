@@ -274,10 +274,10 @@ STANDARD_TABLE = [
 
 
 def test_standard_inc_dec_table():
-    """逐条对照通行标准：符号记法与"隔N针"必须与发布图解完全一致。"""
+    """基础均匀分组的符号与间隔表；生成时的明确错位另有逐针回归。"""
     import re
 
-    from app.models.crochet_params import _sphere_rounds
+    from app.models.crochet_params import _change_note, _sphere_rounds
     rounds = _sphere_rounds(36)
     transitions = {}
     prev = None
@@ -286,7 +286,8 @@ def test_standard_inc_dec_table():
             transitions[(prev, r["stitches"])] = r["notes"]
         prev = r["stitches"]
     for before, after, expected_gap, expected_sym in STANDARD_TABLE:
-        notes = transitions[(before, after)]
+        assert (before, after) in transitions
+        notes = _change_note(before, after)
         assert expected_sym in notes, (before, after, notes)
         if expected_gap == 0:
             assert ("每针都加" in notes) if after > before else ("每2针并1针" in notes), notes
@@ -328,10 +329,11 @@ def test_special_rounds_notes():
     by_row = {r["row"]: r for r in rounds}
     assert by_row[1]["notes"] == "魔法环起6针（X×6）"
     assert by_row[2]["notes"] == "加针×6（V×6，每针都加）"          # 6→12
-    # 连续加针圈带错开半组提示（PlanetJune 技法，M2.9）
+    # 连续 +6 圈交替使用组尾和组中加针；操作式本身给出位置。
     assert by_row[3]["notes"].startswith("(X,V)×6，隔1针加1针")   # 12→18
-    assert "错开半组" in by_row[3]["notes"]
-    assert by_row[6]["notes"].startswith("(4X,V)×6，隔4针加1针")  # 30→36
+    assert by_row[4]["notes"] == "(X,V,X)×6"                  # 18→24
+    assert by_row[6]["notes"] == "(2X,V,2X)×6"               # 30→36
+    assert all("错开半组" not in rd["notes"] for rd in rounds)
     assert by_row[13]["notes"].startswith("(4X,A)×6，隔4针减1针")  # 36→30
     assert by_row[16]["notes"].startswith("(X,A)×6，隔1针减1针")   # 18→12
     assert by_row[17]["notes"].startswith("减针×6（A×6，每2针并1针）")  # 12→6
@@ -666,7 +668,7 @@ def test_one_piece_merge():
     assert max(sts) >= 30                               # 含头部最宽圈
     notes = "".join(r.get("notes") or "" for r in op["rounds"])
     assert "颈部" in notes and "无痕收口" in notes
-    assert any("错开半组" in (r.get("notes") or "") for r in op["rounds"])
+    assert any("(X,V,X)×6" in (r.get("notes") or "") for r in op["rounds"])
     # 装配：一体件有分阶段填充，且无头身缝合步骤
     asm = params["assembly_instructions"]
     assert "分阶段填充" in asm and "接合到身体顶部" not in asm
