@@ -1,4 +1,5 @@
 """Synthetic loop-placement cases, not copies of any published pattern."""
+import importlib.util
 from copy import deepcopy
 from xml.etree import ElementTree as ET
 
@@ -195,7 +196,11 @@ def test_loop_note_mismatch_is_checked_and_preserved_across_edit_backup_and_prin
     updated = edit_rounds(result, 0, rounds)
     restored = import_backup(PatternResult.from_result(updated).to_backup(), "loops-restored")
     assert rounds[2]["notes"] in export_markdown(restored["params"], result=restored)
-    assert export_pdf(restored["params"], result=restored).startswith(b"%PDF")
+    if importlib.util.find_spec("reportlab") is None:
+        with pytest.raises(ImportError, match="reportlab"):
+            export_pdf(restored["params"], result=restored)
+    else:
+        assert export_pdf(restored["params"], result=restored).startswith(b"%PDF")
     report = export_parade_report(restored)
     assert report.complete and "\n6[scfl,scfl2inc]\n" in report.text
     rounds[2]["notes"] = "FLO((2X,V)×6)"
