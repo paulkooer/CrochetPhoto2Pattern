@@ -48,10 +48,16 @@ def test_invalid_backup_has_actionable_error(payload, message):
         decode_backup_json(payload)
 
 
-def test_excessive_json_nesting_has_actionable_error():
-    depth = 10_000  # Exceeds both Python and C JSON decoder recursion limits.
-    with pytest.raises(ValueError, match="嵌套过深"):
-        decode_backup_json("[" * depth + "0" + "]" * depth)
+def test_decoder_recursion_has_actionable_error(monkeypatch):
+    # Decoder depth limits vary across Python versions and platforms. Exercise
+    # the failure boundary without assuming a particular payload must hit it.
+    def exhausted_decoder(*args, **kwargs):
+        raise RecursionError("decoder recursion limit")
+
+    monkeypatch.setattr("app.utils.backup.json.loads", exhausted_decoder)
+    with pytest.raises(ValueError, match="嵌套过深") as error:
+        decode_backup_json('{"analysis":{},"structure":{},"params":{}}')
+    assert isinstance(error.value.__cause__, RecursionError)
 
 
 def test_limit_is_utf8_bytes_and_exact_boundary_is_allowed():

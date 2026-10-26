@@ -17,6 +17,13 @@ project must not claim validated dimensions, material usage, time, or finished-i
 The uncommitted/unpushed statements below describe each local verification snapshot;
 current commits and remote check results are available on that PR.
 
+The first remote run showed that Python 3.14 can decode the test's 10,000 nested arrays
+before correctly rejecting the non-object root. Replace that interpreter-specific recursion
+assumption with an injected decoder `RecursionError`, preserving application validation.
+Related backup/project tests: **41 passed in 4.23s**; Ruff, mypy and diff checks pass.
+Local Python 3.14.4 reproduces the original difference and verifies exception translation.
+Final cross-version results are recorded in the PR's latest Checks.
+
 2026-10-26 progress continuity review: fix order-dependent retention of outer-layer progress
 in deeper reserved-loop join chains. Collect direct changes before propagating all effects;
 retain independent parts and unchanged foundations. Paginated patterns now identify the next
