@@ -453,7 +453,8 @@ def refresh_derived(params: dict) -> dict:
     quantities = {_part_name(p): _part_quantity(p) for p in parts}
     params["assembly_instructions"] = build_assembly(
         set(quantities), params.get("skirt_style", "ring"), quantities,
-        params.get("assembly_plan"), openings=_openings_by_part(parts))
+        params.get("assembly_plan"), openings=_openings_by_part(parts),
+        stitch_attachments=params.get("stitch_attachments"))
     return params
 
 
@@ -586,12 +587,6 @@ class CrochetParamsGenerator:
                         "stitches": hem_st,
                         "notes": f"{hem_st}X（不加不减）",
                     })
-                if style.skirt_style == "attached":
-                    # 挑后半针法：身体腰圈只挑前半针，裙子钩在预留后半针上
-                    rounds_raw[0]["notes"] = (
-                        f"在身体腰部（身体最上 1–2 圈）挑后半针起针{waist_st}X"
-                        "（身体该圈钩时只挑前半针，留后半针给裙子）"
-                    )
                 if style.ruffle_hem:
                     rounds_raw.append({
                         "row": len(rounds_raw) + 1,
@@ -608,7 +603,7 @@ class CrochetParamsGenerator:
                     f"实际高约 {actual_h}cm。"
                 )
                 if style.skirt_style == "attached":
-                    skirt_notes += "腰部挑后半针钩织，免缝合更服帖。"
+                    skirt_notes = "挑针接裙，免缝合；具体基底圈、预留圈与针目范围见装配说明。"
                 else:
                     skirt_notes += "腰部套入身体后缝合固定。"
                 if style.ruffle_hem:
@@ -773,15 +768,16 @@ class CrochetParamsGenerator:
             part.quantity = _part_quantity({"quantity": sp.get("count", 1)})
             crochet_parts.append(part)
 
+        sections: dict[str, tuple[int, int]] = {}
         if style.one_piece:
             # 延迟导入：onepiece 引用本模块针法代数（bridge_rounds 等）
             from .onepiece import merge_head_body
 
             crochet_parts = merge_head_body(
-                crochet_parts, gauge)
+                crochet_parts, gauge, sections=sections)
 
         return CrochetParamsGenerator._build_result(
-            analysis, crochet_parts, gauge, style, structure)
+            analysis, crochet_parts, gauge, style, structure, body_rows=sections.get("body"))
 
 
     @staticmethod
@@ -856,7 +852,8 @@ class CrochetParamsGenerator:
     def _build_result(analysis: ImageAnalysis, parts: list[CrochetPart],
                       gauge: Gauge = DEFAULT_GAUGE,
                       style: "ShapingStyle | None" = None,
-                      structure: dict[str, Any] | None = None) -> dict[str, Any]:
+                      structure: dict[str, Any] | None = None, *,
+                      body_rows: tuple[int, int] | None = None) -> dict[str, Any]:
         """Assemble the result dict: materials / assembly / time scale with parts.
 
         双态收敛出口：parts 以 CrochetPart 模型参与构造、配色与校验，
@@ -865,16 +862,25 @@ class CrochetParamsGenerator:
         """
         style = style or DEFAULT_STYLE
         part_dicts = [p.model_dump() for p in parts]
+        assembly_plan = structure_connection_plan(structure or {})
+        stitch_attachments = None
+        if style.skirt_style == "attached":
+            from .stitch_attachments import prepare_attached_skirt
+
+            stitch_attachments = prepare_attached_skirt(
+                part_dicts, body_rows=body_rows, assembly_plan=assembly_plan)
+            for part in part_dicts:
+                if part["name"] == "裙子":
+                    part["height_cm"] = round(len(part["rounds"]) * gauge.row_h_cm, 1)
         part_names = {p["name"] for p in part_dicts}
         total_stitches = sum(
             r["stitches"] * _part_quantity(p)
             for p in part_dicts for r in p["rounds"])
 
         quantities = {p["name"]: _part_quantity(p) for p in part_dicts}
-        assembly_plan = structure_connection_plan(structure or {})
         assembly = build_assembly(
             part_names, style.skirt_style, quantities, assembly_plan,
-            openings=_openings_by_part(part_dicts))
+            openings=_openings_by_part(part_dicts), stitch_attachments=stitch_attachments)
 
         # F13 生成门禁：生成器自己产出的图解必须通过自检，代数矛盾
         # 在此处拦截（而不是等到结果页才显示警告）
@@ -883,6 +889,8 @@ class CrochetParamsGenerator:
         validation = validate_pattern({
             "parts": part_dicts,
             "gauge": gauge_payload,
+            "skirt_style": style.skirt_style,
+            **({"stitch_attachments": stitch_attachments} if stitch_attachments is not None else {}),
         })
         if not validation["ok"]:
             raise PatternGenerationError(
@@ -910,4 +918,6 @@ class CrochetParamsGenerator:
         }
         if assembly_plan is not None:
             result["assembly_plan"] = assembly_plan
+        if stitch_attachments is not None:
+            result["stitch_attachments"] = stitch_attachments
         return result

@@ -11,6 +11,7 @@
 | Third-party rights and takedown / 第三方权利与下架 | [policy](../THIRD_PARTY_CONTENT_EN.md) · [process](../NOTICE_AND_TAKEDOWN_EN.md) | [政策](../THIRD_PARTY_CONTENT.md) · [流程](../NOTICE_AND_TAKEDOWN.md) |
 | Physical trials and calibration / 实体试钩与校准 | [physical-trials.en.md](physical-trials.en.md) | [physical-trials.md](physical-trials.md) |
 | Processing flow / 系统处理流程 | [flow.en.md](flow.en.md) | [flow.md](flow.md) |
+| Saved crochet projects and reserved-loop joins / 钩织工程与预留半针接合 | [User guide](../README.md#save-and-reopen-a-pattern) · [Schemas](schemas/project_state.schema.json) | [使用与格式](project-format.md) |
 | Public structure candidates / 公开结构候选 | [catalog](public-pattern-candidates-20261011.json) | [配色反例](color-layout-diagnostic-20261011.json) |
 | External rule references / 外部规则参考证据 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
 | Audit brief for external AI review / 外部 AI 审核交待 | [audit-brief.md](audit-brief.md) | [audit-brief.md](audit-brief.md) |

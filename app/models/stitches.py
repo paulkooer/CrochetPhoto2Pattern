@@ -20,6 +20,28 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# Shared by the result page and both printable exports. CYC defines sc2tog as
+# "single crochet 2 stitches together"; PlanetJune distinguishes invdec from it.
+# These letters are this project's convention, not a universal chart standard.
+STITCH_LEGEND_ZH = (
+    "记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针），"
+    "W=1针目钩3短针，M=三针短针并一针，B=枣形针（5卷长针并1，进出各1针）；"
+    "FLO=只挑前半针，BLO=只挑后半针；(4X,V)×6 = “4短针+1加针”重复 6 次。"
+)
+STITCH_LEGEND_US = (
+    "Stitch Key: X = sc (single crochet) · V = 2 sc in same st (increase) · "
+    "A = sc2tog (single crochet 2 stitches together) · SL = sl st · CH = ch。"
+    "sc2tog 与隐形减针（invdec）操作不同；此处字母为本项目约定，其他图解请以其图例为准。"
+)
+ROUND_WORKING_GUIDANCE = (
+    "钩法：默认螺旋钩（不引拔、不翻转），每圈第一针挂记号扣；具体做法以本圈说明为准。"
+    "普通圈可参考隐形减针（只挑两针目的前半针）；FLO/BLO 圈按本圈指定针法。"
+)
+PLACEMENT_GUIDANCE = (
+    "加针点提示：按操作式给出的段尾或段中位置钩织，不再额外错位；每圈起点以记号扣为准。"
+    "改用 CH 起立＋SL 引拔圈钩法时，须重新核对起立针计数、换色边界与加减针位置。"
+)
+
 
 @dataclass(frozen=True)
 class Stitch:

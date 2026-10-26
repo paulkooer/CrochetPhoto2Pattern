@@ -684,7 +684,8 @@ def test_skirt_attached_style_and_ruffle():
         *_sd(["身体", "裙子"]),
         style=ShapingStyle(skirt_style="attached", ruffle_hem=True))
     skirt = [p for p in params["parts"] if p["name"] == "裙子"][0]
-    assert "后半针" in (skirt["rounds"][0].get("notes") or "")
+    assert "BLO(" in (skirt["rounds"][0].get("notes") or "")
+    assert params["stitch_attachments"]["connections"][0]["source_part"] == "裙子"
     last = skirt["rounds"][-1]
     assert last["stitches"] == skirt["rounds"][-2]["stitches"] * 2    # 波浪摆翻倍
     assert "波浪裙摆" in (last.get("notes") or "") and "免缝合" in skirt.get("notes")

@@ -6,16 +6,13 @@ import re as _re
 from app import PRODUCT_NAME
 from app.models.instruction_checks import round_expression
 from app.models.stitch_notation import NotationError, format_stitch_expression
-from app.schemas import difficulty_label
-
-# U30：双语记号对照（X/V/A 日式 Amigurumi 惯例 ↔ CYC 西方体系，
-# 对应关系经 craftyarncouncil.com/standards/crochet-chart-symbols 核实）
-_LEGEND_BILINGUAL = (
-    "> **记号对照（Stitch Key）**：X = sc (single crochet) · "
-    "V = 2 sc in same st (increase) · A = sc2tog (invisible decrease) · "
-    "SL = sl st · CH = ch。X/V/A 为日式 Amigurumi 惯例记号，与西方 "
-    "CYC 图解体系对照如上。"
+from app.models.stitches import (
+    PLACEMENT_GUIDANCE,
+    ROUND_WORKING_GUIDANCE,
+    STITCH_LEGEND_US,
+    STITCH_LEGEND_ZH,
 )
+from app.schemas import difficulty_label
 
 _INVISIBLE = _re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
@@ -120,25 +117,11 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     lines.append("---")
 
     # Materials
-    lines.append(
-        "> 记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针），"
-        "W=1针目钩3短针，M=三针短针并一针，B=枣形针（5卷长针并1，"
-        "进出各1针——不改变针数）；FLO=只挑前半针，BLO=只挑后半针；"
-        "(4X,V)×6 = “4短针+1加针”重复 6 次"
-    )
+    lines.append("> " + STITCH_LEGEND_ZH)
     from app.models.stitches import glossary_note_lines
     lines.extend(glossary_note_lines())
     lines.append(">")
-    lines.append(
-        "> 钩法：螺旋钩（不引拔、不翻转），每圈第一针挂记号扣；"
-        "普通圈可参考隐形减针（只挑两针目的前半针）；FLO/BLO 圈按本圈指定针法"
-    )
-    lines.append(">")
-    lines.append(
-        "> 中文社区图解常见\u201c每圈 CH 起立 + SL 引拔\u201d的引拔圈钩法——"
-        "与螺旋钩针数节奏完全一致（起立锁针通常不计入针数；若图解注明"
-        "\u201c计为 1 针\u201d则按图解），按习惯任选即可"
-    )
+    lines.append("> " + ROUND_WORKING_GUIDANCE)
     lines.append(">")
     lines.append(
         "> 环起困难的替代法：锁 4 针引拔成环，首圈针数全部钩入环心后拉紧"
@@ -146,14 +129,9 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         "（社区通行）"
     )
     lines.append(">")
-    lines.append(
-        "> 加针点提示：螺旋钩时每圈起点自动漂移 1 针，加针点自然错位、"
-        "不易出棱角；若改用引拔圈，请逐圈手动错开加针位（日语圈法则是"
-        "\u201c奇数段放段尾、偶数段放段中\u201d——固定同点加针会钩出"
-        "六角形，toruyuri 増し目の法則有照片实证）"
-    )
+    lines.append("> " + PLACEMENT_GUIDANCE)
     lines.append(">")
-    lines.append(_LEGEND_BILINGUAL)
+    lines.append("> " + STITCH_LEGEND_US)
     lines.append("")
     lines.append("## 🧵 所需材料")
     lines.append("")
@@ -236,7 +214,9 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         lines.append("---")
 
     # Assembly
-    assembly = params.get("assembly_instructions", "")
+    from app.models.assembly import assembly_for_pattern
+
+    assembly = assembly_for_pattern(params)
     if assembly:
         lines.append("## 🔧 装配说明")
         lines.append("")

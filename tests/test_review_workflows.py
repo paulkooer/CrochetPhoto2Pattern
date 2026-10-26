@@ -70,9 +70,12 @@ def test_import_rejects_bad_metadata_without_mutation(result, field, value):
 def test_invalid_edit_retains_current_result_and_cached_exports(result):
     import json
 
+    from app.ui.export_cache import EXPORT_CACHE_VERSION
+
     at = AppTest.from_string(_RENDER, default_timeout=30)
     at.session_state["audit_result"] = result
     at.session_state["pdf_review-result"] = b"cached-pdf"
+    at.session_state["pdf_format_review-result"] = EXPORT_CACHE_VERSION
     at.session_state["share_token_review-result"] = "cached-token"
     at.run()
     invalid = deepcopy(result["params"])
@@ -82,6 +85,7 @@ def test_invalid_edit_retains_current_result_and_cached_exports(result):
     assert not at.exception
     assert at.session_state["audit_result"] == result
     assert at.session_state["pdf_review-result"] == b"cached-pdf"
+    assert at.session_state["pdf_format_review-result"] == EXPORT_CACHE_VERSION
     assert at.session_state["share_token_review-result"] == "cached-token"
     assert any("自检失败" in error.value for error in at.error)
     with pytest.raises(ValueError, match="自检失败"):

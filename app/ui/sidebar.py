@@ -14,6 +14,9 @@ def render_sidebar() -> None:
                     "openai_base_url_input", "anthropic_base_url_input"):
             st.session_state.pop(key, None)
         st.caption("本地视觉与人工确认，无需 API Key。")
+        from app.ui.backup_import import render_backup_import
+
+        render_backup_import()
         st.divider()
         st.subheader("🧵 编织密度（小样）")
         preset = st.select_slider(

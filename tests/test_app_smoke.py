@@ -110,6 +110,8 @@ def test_manual_tab_generates_result_end_to_end():
 
 def test_manual_regenerate_applies_edited_json():
     """局部修正：编辑 JSON（删圈）→ 重新生成 → rows/rounds 保持同步。"""
+    from app.ui.export_cache import EXPORT_CACHE_VERSION
+
     at = AppTest.from_file(_APP, default_timeout=30)
     at.run()
     at.button(key="btn_manual").click().run()
@@ -125,6 +127,7 @@ def test_manual_regenerate_applies_edited_json():
     edited["parts"][0]["rounds"] = edited["parts"][0]["rounds"][:3]
     edited["gauge"] = {"stitches_per_10cm": "20", "rows_per_10cm": "16"}
     at.session_state[f"pdf_{rid}"] = b"%PDF-cached-old-pattern"
+    at.session_state[f"pdf_format_{rid}"] = EXPORT_CACHE_VERSION
     at.session_state[f"share_token_{rid}"] = "cached-old-pattern"
 
     import json as _json
@@ -141,6 +144,7 @@ def test_manual_regenerate_applies_edited_json():
     assert updated["gauge"] == updated["params"]["gauge"] == {
         "stitches_per_10cm": 20.0, "rows_per_10cm": 16.0}
     assert f"pdf_{rid}" not in at.session_state
+    assert f"pdf_format_{rid}" not in at.session_state
     assert f"share_token_{rid}" not in at.session_state
     # 过期的 rows=999 不得复活：rows 不再是存储字段（由 len(rounds) 派生）
     assert "rows" not in head
@@ -158,6 +162,8 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
     import json
     from copy import deepcopy
 
+    from app.ui.export_cache import EXPORT_CACHE_VERSION
+
     original = _mock_result("reject-edit")
     edited = deepcopy(original["params"])
     if invalid == "bool_count":
@@ -171,6 +177,7 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
     at = AppTest.from_file(_APP, default_timeout=30)
     at.session_state["result"] = deepcopy(original)
     at.session_state["pdf_reject-edit"] = b"existing-pdf"
+    at.session_state["pdf_format_reject-edit"] = EXPORT_CACHE_VERSION
     at.session_state["share_token_reject-edit"] = "existing-share"
     at.run()
     if route == "edit":
@@ -186,6 +193,7 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
     assert any(error in str(item.value) for item in at.error)
     assert at.session_state["result"] == original
     assert at.session_state["pdf_reject-edit"] == b"existing-pdf"
+    assert at.session_state["pdf_format_reject-edit"] == EXPORT_CACHE_VERSION
     assert at.session_state["share_token_reject-edit"] == "existing-share"
 
 

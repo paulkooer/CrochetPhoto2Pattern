@@ -118,15 +118,15 @@ def test_markdown_preamble_includes_ring_start_alternative():
 
 
 def test_preamble_mentions_joined_rounds_convention():
-    """导出前言注明引拔圈（中文社区主流）与螺旋钩等价——跨社区钩法桥接。"""
+    """改用引拔圈须重新核对起立针与针位，不能直接互换。"""
     params, analysis = _sample_params()
     md = export_markdown(params, analysis)
-    assert "引拔圈钩法" in md and "针数节奏完全一致" in md
+    assert "引拔圈钩法" in md and "重新核对起立针计数" in md
 
 
 def test_preamble_mentions_increase_offset_rule():
-    """螺旋钩加针点自动漂移 vs 引拔圈需手动错开——toruyuri 日语法则
-    （奇数段段尾/偶数段段中），固定同点加针会成六角形。"""
+    """排针操作式已经指定错位，不应再由通用前言要求每圈额外移一针。"""
     params, analysis = _sample_params()
     md = export_markdown(params, analysis)
-    assert "自动漂移" in md and "六角形" in md and "段尾" in md
+    assert "不再额外错位" in md and "记号扣" in md and "段尾" in md
+    assert "自动漂移" not in md

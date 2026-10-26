@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "completed_rounds": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "title": "Completed Rounds",
+      "type": "object"
+    },
+    "notes": {
+      "default": "",
+      "maxLength": 20000,
+      "title": "Notes",
+      "type": "string"
+    },
+    "pattern_revision": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Pattern Revision",
+      "type": "string"
+    },
+    "saved_with_version": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Saved With Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pattern_revision",
+    "saved_with_version"
+  ],
+  "title": "ProjectState",
+  "type": "object"
+}

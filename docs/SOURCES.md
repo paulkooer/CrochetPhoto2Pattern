@@ -12,6 +12,18 @@
 证据都在下表。这里只做参考验证，不训练或微调模型权重；仅取针数代数与圈结构，
 不复制创作文本或图解图片（遵循各源版权声明）。
 
+## 2026-10-25 打印图例与针位说明复核
+
+- [Craft Yarn Council 官方缩写表](https://www.craftyarncouncil.com/standards/crochet-abbreviations)：核对 sc2tog、FLO 与 BLO 的含义。X/V/A/W/M/B 为本项目图例约定，不作为所有图解通用的字母规范。
+- [PlanetJune 隐形减针教程](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-an-invisible-decrease/)：普通 sc2tog 与只挑两针目前半针的隐形减针是不同做法。修正旧 Markdown/PDF 将两者直接等同的说明，整圈 FLO/BLO 仍以本圈工艺要求为准。
+
+界面、Markdown 和 PDF 复用针法说明；删除旧前言要求每圈自动漂移一针的提示，
+按本系统已生成的明确操作式执行加针位置，不叠加额外移动。改用引拔圈时须核对
+起立针计数、换色边界与针位。以上为说明一致性修正，不是实体成形效果验证。
+`tests/test_printed_stitch_guidance.py` 使用自制图解比对文字、限定针位与 PDF 缓存升级；
+`tests/test_backup_open.py` 验证新会话直接恢复以及错误输入不覆盖当前图解。
+没有复制来源图片或完整教程，备份格式和运行时依赖不变。
+
 ## 2026-10-24 网络图例与前后半针
 
 本轮直接核对以下原始来源，仅提取挑针方式与语法事实，不复制图解或原图：

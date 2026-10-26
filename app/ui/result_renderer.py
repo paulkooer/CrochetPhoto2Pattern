@@ -8,13 +8,13 @@ from __future__ import annotations
 import html
 import json
 import re
-import uuid
 from copy import deepcopy
 
 import streamlit as st
 
 from app.models.colors import YARN_COLORS
 from app.models.gauge import gauge_from_result
+from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STITCH_LEGEND_ZH
 from app.schemas import PART_NAMES, PatternResult, difficulty_label
 from app.ui import result_logic
 from app.ui.design_system import section_heading
@@ -26,19 +26,16 @@ from app.utils.share import _BACKUP_KEYS
 # 其余后跟 `rid` 本体）。旧结果被替换时用 purge_result_state 清理。
 _WIDGET_KEY_PREFIXES = (
     "chk_", "all_", "clear_", "json_edit_", "regen_", "dl_json_", "dl_md_",
-    "dl_backup_", "dl_parade_", "import_", "importbtn_", "sz_head_",
-    "sz_height_", "sz_go_", "pdf_", "dl_pdf_", "hist_save_", "pdf_gen_",
+    "dl_backup_", "dl_parade_", "import_", "importbtn_", "import_source_", "import_file_", "sz_head_",
+    "sz_height_", "sz_go_", "pdf_", "pdf_format_", "dl_pdf_", "hist_save_", "pdf_gen_",
     "sz_", "share_", "hist_title_", "struct_edit_", "struct_go_", "struct_",
     # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
     "share_token_", "edit_", "export_trace_", "export_cache_",
     "progress_", "progress_page_", "progress_part_",
+    "project_notes_", "project_save_",
 )
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
-
-# 备份导入的粘贴长度门禁（与 share.py 的 2MB 解压上限同源）
-_MAX_IMPORT_CHARS = 2 << 20
-
 
 # E1：零宽/BiDi 控制符（显示欺骗面——同一字段可从 LLM 输出进来）
 _INVISIBLE_RE = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
@@ -183,6 +180,17 @@ def _render_paged_progress(result: dict, slot: str) -> None:
                 st.session_state[key] = complete
         st.rerun()
     pages = max(1, (len(entries) + PROGRESS_PAGE_SIZE - 1) // PROGRESS_PAGE_SIZE)
+    next_offset = next((i for i, (_, key, _) in enumerate(entries) if not durable.get(key)), None)
+    if next_offset is not None:
+        next_copy, next_row = divmod(next_offset, len(part["rounds"]))
+        st.caption(f"下一未完成圈：第 {next_copy + 1} 个 {part['name']} · "
+                   f"第 {part['rounds'][next_row]['row']} 圈")
+    else:
+        st.caption("此部件的所有实体圈次均已完成。")
+    if st.button("▶ 前往下一未完成圈", key=f"progress_next_{rid}_{index}",
+                 disabled=next_offset is None) and next_offset is not None:
+        st.session_state[f"progress_page_{rid}_{index}"] = next_offset // PROGRESS_PAGE_SIZE
+        st.rerun()
     page = st.selectbox("进度页", range(pages), format_func=lambda n: f"{n + 1} / {pages}",
                         key=f"progress_page_{rid}_{index}")
 
@@ -199,7 +207,7 @@ def _render_paged_progress(result: dict, slot: str) -> None:
         if key not in st.session_state:
             st.session_state[key] = bool(durable.get(key))
         st.checkbox(f"第 {copy + 1} 个 · 第 {rd['row']} 圈 · {rd['stitches']} 针　"
-                    f"{md_safe(rd.get('color', ''))}　{md_safe(rd.get('notes', ''))}",
+                    f"{md_safe(rd.get('color') or '')}　{md_safe(rd.get('notes') or '')}",
                     key=key, on_change=save, args=(key,))
 
 
@@ -532,12 +540,9 @@ def render_results(result: dict, slot: str) -> None:
 
     # Section 3: Crochet Pattern  (with round progress tracking)
     section_heading(3, "钩织参数")
-    st.caption(
-        "记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针）；"
-        "(4X,V)×6 = “4短针+1加针”重复 6 次。"
-        "螺旋钩法（不引拔不翻转），每圈第一针挂记号扣；"
-        "普通圈可参考隐形减针，FLO/BLO 圈按本圈指定针法。"
-    )
+    st.caption(STITCH_LEGEND_ZH)
+    st.caption(ROUND_WORKING_GUIDANCE)
+    st.caption(PLACEMENT_GUIDANCE)
     from app.models.stitches import (
         glossary_table_markdown,
         symbol_strip_html,
@@ -576,7 +581,7 @@ def render_results(result: dict, slot: str) -> None:
         st.success(
             f"✅ 针数代数与相邻圈跳变检查通过（已检查 {_v['checked']} 圈）")
         st.caption("自检覆盖针数代数及可识别操作式的消耗、产出与加减针；自定义工艺说明仍需人工复核。"
-                   "该检查不等同于成品形状、部件连接或实际可钩性验证。")
+                   "已声明的预留半针连接也会核对圈号、针数及挑针范围；其他连接和实际成形仍需试钩确认。")
     else:
         st.warning("⚠️ 图解自检发现问题（可在局部修正中修复）：\n"
                    + "\n".join(md_safe(issue) for issue in _v["issues"]))
@@ -660,11 +665,17 @@ def render_results(result: dict, slot: str) -> None:
                     part, part_data, part_key, chk_keys_by_copy, chk_keys,
                     rounds_list, quantity, n_rounds, result, params)
 
+    from app.ui.project_save import render_project_save
+
+    render_project_save(result, slot)
+
     # Section 4: Assembly
     section_heading(4, "装配说明")
     # 装配文本内嵌部件名（模型/结构 JSON 可写）——纯文本渲染，
     # 不经 Markdown（链接/图片语法不生效）
-    asm = params.get("assembly_instructions") or ""
+    from app.models.assembly import assembly_for_pattern
+
+    asm = assembly_for_pattern(params) if _v["ok"] else params.get("assembly_instructions") or ""
     st.text(asm if isinstance(asm, str) else str(asm))
 
     # Section 5: Edit & Re-generate
@@ -758,7 +769,7 @@ def render_results(result: dict, slot: str) -> None:
                    "下载、分享和存入历史使用当前已应用的图解。")
 
     from app.models.runtime import timed_export
-    from app.ui.export_cache import cached_export, parade_payload
+    from app.ui.export_cache import EXPORT_CACHE_VERSION, cached_export, parade_payload
     export_record = st.session_state.setdefault(f"export_trace_{result_key}", {})
     export_cache = st.session_state.setdefault(f"export_cache_{result_key}", {})
     # Bind portable text to all inputs its exporter consumes, including source
@@ -867,19 +878,27 @@ def render_results(result: dict, slot: str) -> None:
             help="含解析/结构/参数的完整结果，可稍后在任意会话导入恢复",
         )
     with col_bk2:
+        # A live session must regenerate PDFs after printable guidance changes.
+        # Legacy byte-only entries have no format marker and are invalidated too.
+        pdf_key = f"pdf_{result_key}"
+        pdf_format_key = f"pdf_format_{result_key}"
+        if st.session_state.get(pdf_format_key) != EXPORT_CACHE_VERSION:
+            st.session_state.pop(pdf_key, None)
+            st.session_state.pop(pdf_format_key, None)
         # PDF（S4）：点"生成"才构建（避免每次 rerun 都渲染 PDF），
         # 字节缓存进 session 后出现下载按钮
         if st.button("🖨 生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
             try:
                 from app.utils.pdf_export import export_pdf
-                st.session_state[f"pdf_{result_key}"] = timed_export(
+                st.session_state[pdf_key] = timed_export(
                     export_record, "pdf", lambda: export_pdf(params, analysis, result=result))
+                st.session_state[pdf_format_key] = EXPORT_CACHE_VERSION
             except ImportError:
                 st.caption("PDF 导出需安装 reportlab："
                            "pip install crochet-photo2pattern[pdf]")
             except Exception as e:
                 st.error(f"PDF 生成失败: {md_safe(e)}")
-        _pdf_bytes = st.session_state.get(f"pdf_{result_key}")
+        _pdf_bytes = st.session_state.get(pdf_key)
         if _pdf_bytes and _v["ok"]:
             st.download_button("📄 下载 PDF", _pdf_bytes,
                                file_name="amigurumi_pattern.pdf",
@@ -927,26 +946,9 @@ def render_results(result: dict, slot: str) -> None:
                 st.success("✅ 已存入历史（左侧栏「我的图解」可载回）")
             except Exception as e:
                 st.error(f"存入历史失败: {md_safe(e)}")
-        with st.expander("📂 导入结果备份"):
-            pasted = st.text_area(
-                "粘贴备份 JSON 内容", height=120, key=f"import_{result_key}"
-            )
-            if st.button("导入并替换当前结果", key=f"importbtn_{result_key}"):
-                try:
-                    if len(pasted) > _MAX_IMPORT_CHARS:
-                        raise ValueError(
-                            f"粘贴内容超过 {_MAX_IMPORT_CHARS // (1024 * 1024)}MB "
-                            "上限，请分卷导入或改用历史/分享链接")
-                    # 校验 + 回填在 result_logic（纯函数，与历史载入同口径）
-                    imported = result_logic.import_backup(
-                        json.loads(pasted), uuid.uuid4().hex[:12])
-                    # 只替换当前槽位；另一个 Tab 的结果不受影响
-                    if slot in st.session_state:
-                        purge_result_state(st.session_state[slot])
-                    st.session_state[slot] = imported
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"导入失败: {md_safe(e)}")
+        from app.ui.backup_import import render_backup_import
+
+        render_backup_import(slot, result_key=result_key)
 
     with st.expander("最近一次导出耗时"):
         st.json(export_record.get("diagnostics", {}))

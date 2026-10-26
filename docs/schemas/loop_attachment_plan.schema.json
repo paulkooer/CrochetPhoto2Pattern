@@ -1,0 +1,82 @@
+{
+  "$defs": {
+    "LoopAttachment": {
+      "additionalProperties": false,
+      "properties": {
+        "end_stitch": {
+          "minimum": 1,
+          "title": "End Stitch",
+          "type": "integer"
+        },
+        "loop": {
+          "const": "BLO",
+          "default": "BLO",
+          "title": "Loop",
+          "type": "string"
+        },
+        "reservation_row": {
+          "minimum": 2,
+          "title": "Reservation Row",
+          "type": "integer"
+        },
+        "source_part": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Source Part",
+          "type": "string"
+        },
+        "source_row": {
+          "const": 1,
+          "default": 1,
+          "title": "Source Row",
+          "type": "integer"
+        },
+        "start_stitch": {
+          "const": 1,
+          "default": 1,
+          "title": "Start Stitch",
+          "type": "integer"
+        },
+        "target_part": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target Part",
+          "type": "string"
+        },
+        "target_row": {
+          "minimum": 1,
+          "title": "Target Row",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_part",
+        "target_part",
+        "target_row",
+        "reservation_row",
+        "end_stitch"
+      ],
+      "title": "LoopAttachment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "connections": {
+      "items": {
+        "$ref": "#/$defs/LoopAttachment"
+      },
+      "maxItems": 40,
+      "title": "Connections",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "title": "LoopAttachmentPlan",
+  "type": "object"
+}

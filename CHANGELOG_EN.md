@@ -8,6 +8,28 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-26 Progress dependencies and resume navigation
+
+- Fix order-dependent progress retention in deeper reserved-loop join chains. Collect direct changes first, then propagate invalidation until no further dependents are affected. Preserve independent parts and unchanged foundations.
+- Show the selected part's next unfinished physical copy and round in paginated patterns, with a navigation button that does not alter progress. Disable it when complete and return to the first round after reset.
+- Keep empty imported colors out of paginated round labels instead of displaying `None`.
+- Add connection-order permutations, transitive invalidation, reorder-only preservation, directionality and restored cross-copy navigation regressions. Project formats and dependencies are unchanged.
+
+### Added — 2026-10-26 Explicit skirt joins and saved crochet projects
+
+- Record the actual foundation round, following FLO reservation round and skirt's first-round BLO range. Generate the waist against real body stitches, use merged one-piece numbering and recompute after resizing. Waist placement remains a template choice requiring a physical trial.
+- Check referenced rounds, adjacency, counts, loop scope and matching physical copies. Reject contradictory joins during edits, imports and printable export. Render Markdown/PDF assembly from current references; legacy backups remain readable with a review notice. DSL explicitly reports unsupported cross-component reserved-loop joins.
+- Add a project-save dialog capturing current per-copy progress, personal notes, software version and a SHA-256 pattern revision. Reopening restores this state; mismatched revisions or invalid round identities leave existing work untouched.
+- Edits retain unaffected progress and notes, report cleared completed rounds, and invalidate dependent skirt progress when its body changes. Undo restores progress; paginated progress is portable too.
+- Keep pattern backup schema 1 and add independently versioned `project_state`. Share links and ordinary pattern backups omit personal state. Publish two JSON Schemas, bump export cache format to 5, and add no runtime dependencies.
+
+### Fixed — 2026-10-25 Fresh-session recovery and printed guidance
+
+- Add a sidebar backup opener without requiring a seed result or enabled history. Accept UTF-8 JSON uploads up to 20 MiB, or pasted JSON up to 2 MiB, including BOM. Reuse it on result pages while retaining the existing paste interaction.
+- Enforce byte limits and reject duplicate JSON keys, non-finite numbers, invalid encoding and incomplete backups. Replace only the target result after format and pattern validation; failures retain existing work and caches. The backup schema is unchanged.
+- Share stitch guidance across the UI, Markdown and PDF. Include FLO/BLO/W/M, distinguish sc2tog from invisible decreases, and identify letters as project conventions. Follow explicit placement without an extra automatic stitch shift; switching to joined rounds requires checking counts and positions.
+- Bump export cache format to 4 and require regeneration of old PDFs in surviving sessions. Add recovery, malformed-input, tab-isolation, print-consistency and cache-upgrade regressions without new runtime dependencies.
+
 ### Added — 2026-10-24 Scoped front/back-loop notation
 
 - Support `FLO(...)`, `BLO(...)`, `FLO: ...`, stitch suffixes such as `sc-FLO`, and standalone whole-round loop directives. Preserve counts, shaping and local loop positions.

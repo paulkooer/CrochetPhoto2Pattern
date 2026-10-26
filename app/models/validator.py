@@ -202,6 +202,12 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                         "确认为有意工艺（如倍增圈）即可照钩")
             prev_stitches = st if st > 0 else None
 
+    if not issues:
+        from .stitch_attachments import attachment_issues
+
+        connection_issues, connection_notes = attachment_issues(params, check_notes=check_notes)
+        issues.extend(connection_issues)
+        notes.extend(connection_notes)
     return {"ok": not issues, "issues": issues, "notes": notes,
             "checked": checked,
             "max_stitch_change": max_change,

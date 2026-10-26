@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-25. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-26. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -11,6 +11,62 @@ CrochetPhoto2Pattern is a **0.2.0-beta.2 engineering candidate**. Stitch arithme
 gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
+
+2026-10-26 GitHub sync: saved projects, skirt joins and progress continuity updates use
+`feat/stitch-notation-fidelity` and [PR #18](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/18).
+The uncommitted/unpushed statements below describe each local verification snapshot;
+current commits and remote check results are available on that PR.
+
+2026-10-26 progress continuity review: fix order-dependent retention of outer-layer progress
+in deeper reserved-loop join chains. Collect direct changes before propagating all effects;
+retain independent parts and unchanged foundations. Paginated patterns now identify the next
+unfinished copy/round and provide a navigation button. Empty imported colors no longer appear
+as `None` in paginated round labels. Added 10 regressions; full suite:
+**1545 passed, 1 skipped in 76.47s; coverage 92.82%**. Repository-wide Ruff, mypy app/tests
+(138 files) and diff checks pass. Real Chrome imported a synthetic project with 307 completed
+rounds and navigated to copy 2, round 8: the preceding seven rounds on that page remained checked
+and round 8 remained unchecked. See the [resume screenshot](images/progress-resume-synthetic.png).
+An isolated offline wheel build contains 73 application files byte-identical to source.
+Project formats and dependencies are unchanged. This round remains uncommitted and unpushed,
+with no remote CI, real-photo evaluation or physical trial performed.
+
+2026-10-26 skirt joins and saved projects: bind skirt foundations to actual body rounds
+and explicitly reserve their back loops with FLO operations in the following round.
+Use merged one-piece numbering and recompute after resizing. Check references, ranges,
+copy counts, structure-graph consistency and cyclic dependencies. Render Markdown/PDF
+assembly from current references; flag legacy patterns without exact records for review.
+Projects save per-copy progress, personal notes and a pattern revision; validate the binding
+before import, report affected progress resets after editing, and restore progress with undo.
+See the [user guide](../README.md#save-and-reopen-a-pattern) and [format details](project-format.md).
+
+Added 54 regressions. Full suite: **1535 passed, 1 skipped in 74.50s; coverage 92.81%**.
+Final repository-wide Ruff, mypy app/tests (137 files), 38 attachment regressions and diff
+checks pass. Real Chrome selected different rounds on two arms, entered notes, downloaded
+the actual project JSON and reopened it in a fresh session. Both physical-copy selections
+and notes were restored without page exceptions; see the [save dialog](images/project-save-synthetic.png).
+An isolated offline wheel rebuild contains 73 application files byte-identical to final source.
+No runtime dependencies were added. Changes remain uncommitted and unpushed, with no new
+remote CI run. Placement is still a template choice, DSL lacks cross-component reserved-loop
+joins, and no new real-photo or physical-trial evidence was obtained; G3/G4 are unchanged.
+
+2026-10-25 recovery and printed-guidance review: open complete backups directly from
+the sidebar using a file (20 MiB) or pasted JSON (2 MiB), without a seed pattern or
+enabled history. Validate encoding, JSON and pattern data before replacing the target
+result; errors preserve current work. Share UI/Markdown/PDF guidance, distinguish
+ordinary/invisible decreases, include loop definitions and follow explicit placement.
+Cache format 4 requires old PDFs to be regenerated; the backup schema is unchanged.
+See [recovery instructions](../README.md#save-and-reopen-a-pattern) and
+[source review](SOURCES.en.md#2026-10-25-printed-legends-and-placement-guidance).
+
+Added 32 regression cases; final full suite: **1481 passed, 1 skipped in 71.26s;
+coverage 92.70%**. Repository-wide Ruff, mypy app/tests (132 files), offline lock
+consistency and diff checks pass. Real headless Chrome verified a fresh-session BOM
+JSON upload, restored FLO instructions and an exception-free page, using only synthetic
+data; see the [recovery screenshot](images/backup-open-synthetic.png). An isolated offline
+wheel build contains 70 application files byte-identical to the final source, including
+both new backup modules. Test services are stopped. This round remains uncommitted
+and unpushed, with no new remote CI run. No dependencies, real-photo or physical-trial
+evidence were added; G3/G4 remain unchanged.
 
 2026-10-25 pre-publication verification: **1449 passed, 1 skipped in 67.95s;
 coverage 92.56%**. Repository-wide Ruff, mypy app/tests (128 files), offline lock

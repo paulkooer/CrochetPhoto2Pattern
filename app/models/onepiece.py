@@ -15,7 +15,8 @@ from .parts import _ONE_PIECE_NAME
 from .profile_shaping import strip_dome
 
 
-def merge_head_body(parts: list[CrochetPart], gauge: Gauge) -> list[CrochetPart]:
+def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
+                    sections: dict[str, tuple[int, int]] | None = None) -> list[CrochetPart]:
     """头身一体钩（M2.10）：头顶起针→颈部不断线→身体向下→底部收口。
 
     头部保留到颈围（与身体顶端口径一致的减针链），身体筒壁反转成自顶
@@ -89,6 +90,8 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge) -> list[CrochetPart]
     # 筒壁），底部收口圈是径向圆盘不计高。merged 结构 = head_kept +
     # top_down[1:] + 收口（top_down[0]=颈围与 head_kept[-1] 同圈）。
     _axial_rounds = len(head_kept) + max(0, len(top_down) - 1)
+    if sections is not None:
+        sections["body"] = (len(head_kept), _axial_rounds)
     merged = CrochetPart(
         name=_ONE_PIECE_NAME,
         quantity=head.quantity,

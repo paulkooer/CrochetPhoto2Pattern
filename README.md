@@ -149,6 +149,39 @@ Optional pose landmarks may download model weights on first use; provide
 uv run streamlit run app/main.py
 ```
 
+### Save and reopen a pattern
+
+Choose **💾 备份完整结果** (back up the complete result) on a result page to save JSON.
+In a fresh session, expand **📂 打开备份图解** in the sidebar, upload that file, and click
+**导入并打开图解**. The restored pattern appears in the local Photo tab without generating
+a seed pattern or enabling history. Uploads accept UTF-8 JSON up to 20 MiB; the paste
+option accepts up to 2 MiB. A parameters-only JSON download is not a complete backup.
+
+Import validates the format, stitch counts and explicit operations before replacing the
+Photo result. Failed imports preserve current work, and sidebar imports leave the Manual
+tab's result untouched. The import panel on each result page replaces that page's result.
+To retain actual crochet progress, expand **🧺 我的钩织工程**, enter personal notes, choose
+**💾 保存工程（含进度）**, and download the project JSON from the dialog. Projects save
+completed rounds for each physical copy, notes and a pattern revision. Reopen them through
+the same sidebar uploader. Save again after working: each file captures the state when Save
+was clicked. Edits report affected progress resets; undo restores progress. Ordinary pattern
+backups and share links omit personal notes/progress; undo history remains session-only.
+For paginated patterns, **前往下一未完成圈** jumps to the selected part's first unchecked
+round, including later physical copies, without changing progress. For multiple layers of
+reserved-loop joins, editing a foundation clears all dependent progress regardless of record order.
+
+### Crochet an attached skirt
+
+The sidebar's attached-skirt option now identifies a body foundation round, the following
+FLO reservation round, and the exact BLO range used by the skirt's first round. Body and skirt
+copy counts must match. One-piece construction uses merged round numbers; resizing recomputes
+the connection, and Markdown/PDF render the same record. For example, a 36-stitch foundation
+at body round 11 is reserved by working round 12 into its front loops; the skirt then uses
+round 11's 36 remaining back loops. Follow the generated numbers; the waist location is a
+template choice requiring a physical trial. Legacy backups remain readable with a review
+notice when exact references are missing. The current CrochetPARADE subset skips attached
+components and reports partial export because cross-component reserved-loop joins are not implemented.
+
 ### Review and runtime limits
 
 The Photo tab uses **recognize → review → generate**. Changing the crop or mode invalidates

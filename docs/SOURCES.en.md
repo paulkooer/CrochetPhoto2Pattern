@@ -2,6 +2,19 @@
 
 [简体中文](SOURCES.md) | **English**
 
+## 2026-10-25 Printed legends and placement guidance
+
+- [Craft Yarn Council abbreviations](https://www.craftyarncouncil.com/standards/crochet-abbreviations) define sc2tog, FLO and BLO. X/V/A/W/M/B are this project's legend conventions rather than universal letter standards.
+- [PlanetJune's invisible-decrease tutorial](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-an-invisible-decrease/) distinguishes ordinary sc2tog from the front-loop invisible decrease. Correct the old Markdown/PDF equivalence; explicit per-round loop instructions take precedence.
+
+Reuse guidance in the UI, Markdown and PDF. Follow generated explicit placement without
+adding the old preamble's automatic one-stitch shift. Switching to joined rounds requires
+checking turning-chain counts, color boundaries and shaping positions. These are consistency
+fixes, not physical shape evidence. Synthetic tests in `tests/test_printed_stitch_guidance.py`
+compare wording, loop instructions and PDF cache upgrades; `tests/test_backup_open.py`
+covers fresh-session recovery and preservation of existing work after invalid imports.
+No source images, complete tutorials, schema changes or runtime dependencies were added.
+
 ## 2026-10-24 Online references and loop scope
 
 Reviewed primary sources for technique and syntax facts, without copying patterns or images:

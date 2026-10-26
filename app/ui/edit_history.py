@@ -64,6 +64,9 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
     trim_history(history)
     prepared_progress: dict = {}
     install_progress(updated, slot, progress, prepared_progress)
+    old_rid = current.get("result_id") or slot
+    prepared_progress[f"project_notes_{updated['result_id']}"] = st.session_state.get(
+        f"project_notes_{old_rid}", "")
     # All copying, metrics and serialization must succeed before session mutation.
     purge_result_state(current)
     st.session_state.update(prepared_progress)
@@ -77,7 +80,9 @@ def commit_edit(slot: str, current: dict, updated: dict) -> dict:
     progress = capture_progress(current, slot, st.session_state)
     history["undo"].append({"result": deepcopy(current), "progress": progress})
     history["redo"].clear()
-    return _install(slot, current, updated, history, retained_progress(current, updated, slot, progress))
+    retained = retained_progress(current, updated, slot, progress)
+    history["cleared_progress"] = len(progress) - len(retained)
+    return _install(slot, current, updated, history, retained)
 
 
 def restore_edit(slot: str, current: dict, direction: str) -> dict:
@@ -87,6 +92,7 @@ def restore_edit(slot: str, current: dict, direction: str) -> dict:
     if not history[direction]:
         return current
     snapshot = history[direction].pop()
+    history["cleared_progress"] = 0
     # In-process sessions may still contain snapshots made before this update.
     updated = snapshot.get("result", snapshot)
     history["redo" if direction == "undo" else "undo"].append({
@@ -107,6 +113,10 @@ def render_history(slot: str, result: dict) -> None:
         st.rerun()
     st.caption("保留本会话最近的修改（最多 12 份、合计 8 MB）；重新导入或生成会开启新的记录。")
     st.caption("材料修改保留进度；图解变化只清除受影响部件的进度，密度变化清除全部进度。撤销可恢复。")
+    progress_notice = st.empty()
+    if history.get("cleared_progress"):
+        progress_notice.warning(f"本次修改清除了 {history['cleared_progress']} 个受影响的已完成圈次；"
+                                "其他部件进度及个人备注已保留，可撤销恢复。")
     with st.expander("最近一次修改前后对比"):
         if history["comparison"]:
             before, after = history["comparison"]["修改前"], history["comparison"]["修改后"]

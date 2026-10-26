@@ -330,6 +330,9 @@ def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
 
     report = ParadeExportReport()
     warnings = report.warnings
+    if (params.get("stitch_attachments") or {}).get("connections"):
+        warnings.append("已记录跨部件预留半针接合；当前 DSL 子集不表达这类连接，"
+                        "接入部件会跳过，请以完整 Markdown/PDF 的接合步骤为准")
     body: list[str] = []
     exported_any = False
     for part in parts:
