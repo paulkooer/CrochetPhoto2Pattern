@@ -17,6 +17,9 @@ def render_sidebar() -> None:
         from app.ui.backup_import import render_backup_import
 
         render_backup_import()
+        from app.ui.trial_editor import render_trial_open
+
+        render_trial_open()
         st.divider()
         st.subheader("🧵 编织密度（小样）")
         preset = st.select_slider(

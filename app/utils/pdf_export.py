@@ -185,6 +185,20 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
     from app.models.assembly import assembly_for_pattern
 
     assembly = assembly_for_pattern(params)
+    from app.models.attachment_diagram import attachment_tables
+
+    for diagram in attachment_tables(params):
+        story.append(Paragraph("接裙圈序示意", head))
+        diagram_table = Table([[Paragraph(esc(value), cell) for value in row] for row in diagram],
+                              colWidths=[22 * mm, 60 * mm, 96 * mm], hAlign="LEFT")
+        diagram_table.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#bbc4d5")),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#edf2f8")),
+            ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+        ]))
+        story.append(diagram_table)
+        story.append(Paragraph("按基底圈 → 先预留 → 再接回的圈序执行；此表不表示实物比例或实际腰高。", small))
     if assembly:
         story.append(Paragraph("🔧 装配说明", head))
         for step in str(assembly).split("\n"):

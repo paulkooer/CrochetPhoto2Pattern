@@ -169,6 +169,10 @@ backups and share links omit personal notes/progress; undo history remains sessi
 For paginated patterns, **前往下一未完成圈** jumps to the selected part's first unchecked
 round, including later physical copies, without changing progress. For multiple layers of
 reserved-loop joins, editing a foundation clears all dependent progress regardless of record order.
+Round edits retain completed work before the first changed round; part-wide or gauge changes
+remain conservative. Use each edit control's **预览…修改影响** button to review affected parts,
+starting rounds and retained/cleared counts, then apply or cancel the preview. Preview again
+after changing inputs; applying a preview uses the latest progress.
 
 ### Crochet an attached skirt
 
@@ -181,6 +185,17 @@ round 11's 36 remaining back loops. Follow the generated numbers; the waist loca
 template choice requiring a physical trial. Legacy backups remain readable with a review
 notice when exact references are missing. The current CrochetPARADE subset skips attached
 components and reports partial export because cross-component reserved-loop joins are not implemented.
+Under local edits, **接裙位置图示与调整** shows the foundation/reservation/join sequence and
+lets you preview a different foundation round. Applying restores the old reservation, creates
+the new one and adjusts generated skirt shaping when waist counts differ. Custom instructions
+that cannot be safely reconstructed are preserved by rejecting the edit. Download the schematic
+as SVG; Markdown/PDF include the same connection sequence as a table.
+Applying a new waist pins its relative position in the candidate-round sequence. You can also
+choose **预览固定当前腰位** to pin the current round. Pattern backups and projects retain this
+preference; size and structure regeneration map it to the nearest new candidate. This fraction
+describes candidate order, not measured waist height. **预览取消腰位固定** previews a return to
+automatic placement on the next regeneration, preserving current stitches and progress. Both
+pinning and unpinning support undo.
 
 ### Review and runtime limits
 
@@ -251,6 +266,22 @@ photos and reports are ignored by Git, and passing software metrics still does n
 physical crochetability.
 
 ## Physical-trial loop
+
+Use **🧪 实体试钩记录** on a result page to enter swatch/yarn details, measured dimensions,
+usage and scoped timing, then save and download a ZIP with its original pattern. Reopen it
+through the sidebar's **🧪 打开试钩包** without generating a seed result. Live pattern edits do
+not rebind existing measurements. Downloads reflect the last successful save; trial bundles
+and crochet projects are separate. Their `*.trial.json` files work with the CLI below.
+Save partial measurements as drafts and resume them later; required measurements are checked
+when marking complete. Returning to draft retains observations, while incomplete data stays out
+of finished-item comparisons and calibration. ZIP bundles with partial drafts require this version to restore.
+Undo/redo saved records restores both the form and download; unsaved input blocks switching and
+is retained. History is session-only, limited to eight snapshots and 2 MiB combined, and omitted from ZIPs.
+The panel compares saved measurements with the source pattern. After saving a measured swatch,
+use **预览按实测密度重算** to review new stitch counts and progress impact at unchanged target
+dimensions. Regeneration retains pinned waist placement, supports undo, and leaves trial evidence
+unchanged. It replaces manual round edits and clears progress for review when density changes.
+Full-project timing is not treated as comparable to the original round-crochet baseline.
 
 Create a trial record tied to the exact pattern SHA-256, record actual gauge, dimensions,
 yarn, and active time, then generate conservative calibration candidates:

@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-26. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-28. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -11,6 +11,91 @@ CrochetPhoto2Pattern is a **0.2.0-beta.2 engineering candidate**. Stitch arithme
 gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
+
+2026-10-28 trial save history: independent undo/redo restores forms, swatches, yarn, partial
+measurements, completion status, comparisons and downloads together, preserving the live pattern,
+progress and project notes. Unsaved or invalid input blocks switching and is retained. Identical
+saves preserve redo; changed saves after undo clear it. Session-only history shares one source
+pattern and retains at most eight snapshots and 2 MiB combined; reopen/close clears it, and ZIPs omit it.
+Added 17 regressions covering capacity limits, corrupt identity/metadata, atomic save failures,
+and AppTest form/download synchronization, input protection and reopening. Full suite:
+**1712 passed, 1 skipped in 97.37s, coverage 93.24%**. Repository-wide Ruff, mypy app/tests (153 files)
+and diff checks pass; all 81 application files in the offline wheel match source byte-for-byte.
+No dependency or format changes, new real-browser checks, authorized-photo evaluation or physical
+trials; G3/G4 remain unchanged. Local checks cover this submission; remote status is tracked by
+the latest commit's Checks on [PR #18](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/18).
+See [saved-record history](physical-trials.en.md#undo-or-redo-saved-records).
+
+2026-10-28 partial trial drafts: save and resume dimensions, yarn, timing and notes in stages.
+Keep fields visible across completion-state changes and retain observations when returning to
+draft. Completion dates remain blank until entered. Completed records still enforce measured
+swatches and required observations; partial data is excluded from finished-item comparisons and
+calibration. Optional schema-1 `draft.json` binds the exact formal trial JSON bytes, with separate
+size/type/range checks; formal trial schema remains 2. Old two-file bundles remain readable;
+three-file draft restoration requires this version. Publish the draft Schema with drift checks.
+Added 26 regressions; full suite: **1695 passed, 1 skipped in 90.07s, coverage 93.17%**. Repository-wide
+Ruff, mypy app/tests (151 files) and diff checks pass; all 80 application files in the offline wheel
+match source byte-for-byte. AppTest covers partial input, status toggles, fresh-session recovery,
+completion, return to draft and atomic restore failures. No new real-browser screenshots or
+physical-trial evidence; G3/G4 stay unchanged. No new dependencies; work remains uncommitted and
+unpushed, without new remote CI. See the [draft workflow](physical-trials.en.md#record-and-restore-in-the-web-ui).
+
+2026-10-27 measured-density workflow: compare saved swatches, height, yarn and timing with the
+original pattern, keeping unmeasured/missing values explicit and full-project time separate from
+the baseline. Preview regenerating the source pattern at measured density while retaining target
+dimensions, structure, yarn specifications and pinned waist placement. Previews show density and
+progress changes; application clears affected completion marks, with undo/redo restoring work.
+Trial records/downloads remain unchanged. Added 22 regressions; related checks: **105 passed in
+5.82s**. Full suite: **1669 passed, 1 skipped in 87.65s, coverage 93.12%**. Repository-wide Ruff,
+mypy app/tests (149 files) and diff checks pass; the offline wheel's 79 application files match
+source byte-for-byte. AppTest covers preview/cancel/apply/undo/redo, saved-only inputs and source
+mismatch disabling; separate/one-piece waist references pass regressions. No new real-browser
+screenshots or physical evidence; G3/G4 remain unchanged. Formats, dependencies and global estimate
+constants are unchanged. Work remains local and uncommitted, without new remote CI.
+See the [measured-density guide](physical-trials.en.md#compare-measurements-and-regenerate-at-measured-density).
+
+2026-10-27 web trial records: add swatch/yarn drafts and completed observations for dimensions,
+yarn, scoped timing and modifications, with a height-deviation display. ZIP bundles retain the
+exact original pattern and schema-2 record. Open both from the sidebar in a fresh session, or
+restore only the record within a result panel. Live edits cannot silently rebind old trials.
+Verify hashes and source metadata with bounded archive reads; failures retain existing patterns,
+progress and notes. CLI/UI draft creation uses one byte snapshot, and downloaded records work
+with existing analysis tools. Added 33 regressions; full suite: **1647 passed, 1 skipped in 86.06s,
+coverage 93.10%**. Repository-wide Ruff, mypy app/tests (147 files) and diff checks pass. The offline
+wheel contains 78 application files byte-identical to source. AppTest covers fresh-session restore,
+editing/saving, source differences, tab isolation and atomic import failure. No new real-browser
+screenshots, physical measurements or authorized-photo evidence; G3/G4 remain unchanged.
+No new dependencies or schema changes. Work remains uncommitted/unpushed, without new remote CI.
+See the [web trial guide](physical-trials.en.md#record-and-restore-in-the-web-ui).
+
+2026-10-27 waist preference persistence: fix manual waist choices reverting to automatic placement
+after size or structure regeneration. Save a relative candidate position, map it to the nearest
+new candidate, and retain the original fraction across repeated resizes to avoid rounding drift.
+Pattern backups and projects retain the preference. Preview pinning the current waist or unpinning
+it; policy-only changes preserve current stitches, references and progress, with undo support.
+Removing the skirt drops its preference; invalid values and missing attachment context are rejected.
+Added 36 regressions covering separate/one-piece bodies, both regeneration paths, repeated resizes,
+backup/project restoration and AppTest pin/unpin/undo flows. Full suite: **1614 passed, 1 skipped
+in 90.48s, coverage 92.98%**. Repository-wide Ruff, mypy app/tests (144 files) and diff checks pass.
+The offline wheel contains 76 application files byte-identical to source. This follow-up uses
+AppTest for interactions; the real Chrome check below was not repeated. Changes remain local and
+uncommitted, without new remote CI, dependencies, real-photo or physical-trial evidence.
+Format versions are unchanged; see the [waist preference guide](project-format.md#保存腰位偏好).
+
+2026-10-27 edit impact and waist placement: retain completed rounds before the first change;
+preview part, round, size and advanced JSON edits with affected ranges and retained/cleared counts.
+Apply previews and undo/redo before rendering. The skirt editor shows a connection schematic,
+restores generated reservations and recomputes generated waist shaping when necessary, rejecting
+unsafe custom rewrites or occupied loops. SVG and Markdown/PDF sequence tables use the same data.
+Added 33 regressions, including version-5 cache invalidation; full suite: **1578 passed, 1 skipped
+in 89.95s, coverage 92.91%**. Repository-wide Ruff, mypy app/tests (143 files) and diff checks pass.
+An offline wheel contains 76 application files byte-identical to source. Real Chrome reopened
+a synthetic project and moved the waist from round 12 to 7: the preview identified body changes
+from round 8, application retained earlier progress and cleared two affected completed rounds,
+and undo/redo restored the correct references. See [waist placement](images/waist-edit-synthetic.png)
+and [edit impact](images/edit-impact-synthetic.png). These changes remain local and uncommitted;
+no new remote CI, dependencies, real-photo evaluation or physical trials. Pattern/project formats
+are unchanged; export cache version is 6. See the [project guide](project-format.md).
 
 2026-10-26 GitHub sync: saved projects, skirt joins and progress continuity updates use
 `feat/stitch-notation-fidelity` and [PR #18](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/18).

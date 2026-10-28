@@ -8,6 +8,46 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-10-28 Trial save history
+
+- Add independent undo/redo for saved swatches, yarn, partial measurements and completion status. Restore the form, comparison and download together while preserving the current pattern, crochet progress and project notes.
+- Unsaved or invalid input blocks switching and is retained. Identical saves preserve history and redo; changed saves after undo clear redo. Validation or serialization failures leave the active record and history intact.
+- Keep at most eight snapshots and 2 MiB combined in the session, sharing the source pattern. Reopening or closing a record clears history; ZIPs omit it. Trial formats and dependencies are unchanged.
+
+### Added — 2026-10-28 Resumable partial trial measurements
+
+- Save dimensions, yarn, timing and notes in stages with missing values left blank, then restore in a later session. Keep fields visible across completion-state changes and leave completion dates blank until entered.
+- Returning a completed record to draft retains observations. Completion still requires a measured swatch, date, required measurements and consistent modification details. Partial measurements stay out of finished-item comparisons and calibration.
+- Add optional schema-1 `draft.json` to ZIP bundles, bound to the exact trial JSON bytes with separate type/range checks and a 512 KiB limit. Failed saves/imports preserve current work. Publish the draft JSON Schema.
+- Formal trial records remain schema 2. Original two-file bundles and completed records stay compatible; three-file draft restoration requires this version. No new dependencies or physical-trial evidence.
+
+### Added — 2026-10-27 Saved measurement comparisons and density previews
+
+- Compare saved swatch density, height, yarn and timing with the original pattern. Keep unmeasured/missing values explicit, distinguish full-project time from the baseline, and identify modification effects.
+- Preview regeneration of the original pattern from a saved measured swatch, retaining target dimensions, structure, yarn specifications and pinned waist placement while rebuilding rounds and joins. Equal density preserves custom edits; a different source cannot use this action.
+- Show stitch/row density in edit previews. Applying changed density clears completed rounds for review, preserves notes and supports undo. Trial records/downloads stay unchanged; unsaved form values do not drive regeneration.
+- Existing formats, generator constants and dependencies remain unchanged. No new physical measurements or finished-item validation.
+
+### Added — 2026-10-27 Physical trial recording in the web UI
+
+- Add draft/completed trial forms for anonymous IDs, swatches, yarn, measured size/usage, scoped timing and pattern modifications, with a height-deviation display. Retain trial schema 2 and existing calibration rules.
+- Download the exact source pattern and record together as ZIP. Reopen both from the sidebar in a fresh session or restore only the record within a result panel. Live edits never rebind measurements; Photo and Manual trials remain separate.
+- Verify source hashes and derived metadata, bound archive reads and reject damaged or mismatched contents without replacing current work. Trial records remain separate from backups, projects and shares; downloads reflect the last successful save.
+- Share draft creation from one bounded byte snapshot between CLI and UI, preventing metadata/hash reads from seeing different file states. Reject duplicate JSON keys, non-finite numbers and oversized input. No new dependencies or physical-trial evidence.
+
+### Fixed — 2026-10-27 Preserve waist preferences across regeneration
+
+- Save a manually selected waist's relative position in the candidate sequence. Size and structure regeneration map it to a new candidate while retaining the original fraction across repeated resizes. Pattern backups and projects retain the preference; older patterns remain automatic.
+- Add impact previews for pinning the current waist and unpinning it. Policy-only changes retain current stitches and progress, support undo, and take effect on the next regeneration. Explicit skirt removal also drops the preference.
+- Validate optional `params.skirt_waist_position` and its attached-skirt context. Retain schematic downloads and show a review message for valid imported joins outside the adjustable body region. Pattern/project schemas remain at 1 with no new dependencies.
+
+### Added — 2026-10-27 Edit impact previews and skirt waist placement
+
+- Retain completed rounds before the first changed instruction, color or row. Insertions, deletions and reordering never transfer progress to shifted work; gauge, part-wide, dependent joins and physical-pair changes remain conservative.
+- Preview part, round, size and advanced JSON edits with affected ranges, retained/cleared counts and derived changes. Apply the reviewed candidate using current progress or cancel; preview application and undo/redo run before rendering to prevent stale widgets.
+- Add a connection schematic and actual waist-round selector. Restore generated reservation instructions, create the new FLO reservation and resize recognized generated skirt shaping when needed. Reject unsafe custom rewrites, existing loop techniques and occupied reservations.
+- Download SVG schematics and include matching sequence tables in Markdown/PDF. Bump export cache to 6; pattern/project formats stay unchanged. No new runtime dependencies or physical-trial evidence.
+
 ### Fixed — 2026-10-26 Progress dependencies and resume navigation
 
 - Fix order-dependent progress retention in deeper reserved-loop join chains. Collect direct changes first, then propagate invalidation until no further dependents are affected. Preserve independent parts and unchanged foundations.

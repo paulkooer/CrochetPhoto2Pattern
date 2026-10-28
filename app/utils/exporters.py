@@ -217,6 +217,13 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     from app.models.assembly import assembly_for_pattern
 
     assembly = assembly_for_pattern(params)
+    from app.models.attachment_diagram import attachment_tables
+
+    for diagram in attachment_tables(params):
+        lines.extend(["## 接裙圈序示意", "", "| 步骤 | 部件与圈号 | 针目与操作 |",
+                      "| --- | --- | --- |"])
+        lines.extend("| " + " | ".join(_md_cell(value) for value in row) + " |" for row in diagram)
+        lines.extend(["", "按基底圈 → 先预留 → 再接回的圈序执行；此表不表示实物比例或实际腰高。", ""])
     if assembly:
         lines.append("## 🔧 装配说明")
         lines.append("")

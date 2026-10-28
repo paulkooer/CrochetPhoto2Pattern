@@ -66,7 +66,7 @@ render_results(st.session_state.result, "result")
         assert instruction in captions
 
 
-@pytest.mark.parametrize("old_version", [None, 3])
+@pytest.mark.parametrize("old_version", [None, 3, 5])
 def test_pdf_from_previous_guidance_is_removed_and_regenerated(old_version, monkeypatch):
     from app.ui.export_cache import EXPORT_CACHE_VERSION
     from app.ui.result_renderer import purge_result_state

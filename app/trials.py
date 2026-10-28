@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import statistics
 import sys
 from collections.abc import Iterable
@@ -252,28 +253,44 @@ def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _read_json(path: Path, max_bytes: int) -> Any:
+def _read_bytes(path: Path, max_bytes: int) -> bytes:
     if not path.is_file():
         raise TrialDataError(f"file does not exist: {path}")
     if path.stat().st_size > max_bytes:
         raise TrialDataError(f"file exceeds {max_bytes} byte limit: {path.name}")
+    with path.open("rb") as handle:
+        blob = handle.read(max_bytes + 1)
+    if len(blob) > max_bytes:
+        raise TrialDataError(f"file exceeds {max_bytes} byte limit: {path.name}")
+    return blob
+
+
+def _finite_json_number(value: str) -> float:
+    number = float(value)
+    if not math.isfinite(number):
+        raise TrialDataError("JSON numbers must be finite")
+    return number
+
+
+def decode_trial_json(blob: bytes, *, max_bytes: int = MAX_TRIAL_BYTES) -> Any:
+    """Bounded decoding shared by local files and in-memory trial bundles."""
+    if len(blob) > max_bytes:
+        raise TrialDataError(f"file exceeds {max_bytes} byte limit")
     try:
         return json.loads(
-            path.read_text(encoding="utf-8"),
+            blob.decode("utf-8-sig"),
             object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_finite_json_number,
+            parse_float=_finite_json_number,
         )
     except TrialDataError:
         raise
     except Exception as exc:
-        raise TrialDataError(f"invalid JSON in {path.name}: {exc}") from exc
+        raise TrialDataError(f"invalid trial JSON: {exc}") from exc
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+def _read_json(path: Path, max_bytes: int) -> Any:
+    return decode_trial_json(_read_bytes(path, max_bytes), max_bytes=max_bytes)
 
 
 def _application_version() -> str:
@@ -323,7 +340,16 @@ def create_trial_draft(
 ) -> dict[str, Any]:
     """Create an editable draft bound to an exact generated pattern file."""
     path = Path(pattern_path).expanduser().resolve()
-    payload = _read_json(path, MAX_PATTERN_BYTES)
+    return create_trial_draft_from_bytes(_read_bytes(path, MAX_PATTERN_BYTES),
+                                         trial_id=trial_id, maker_id=maker_id, cohort=cohort)
+
+
+def create_trial_draft_from_bytes(
+    blob: bytes, *, trial_id: str, maker_id: str,
+    cohort: Literal["calibration", "validation"] = "calibration",
+) -> dict[str, Any]:
+    """Hash the same bounded bytes used to derive metadata; no temporary file."""
+    payload = decode_trial_json(blob, max_bytes=MAX_PATTERN_BYTES)
     if not isinstance(payload, dict):
         raise TrialDataError("pattern JSON root must be an object")
     params = payload.get("params", payload)
@@ -337,7 +363,7 @@ def create_trial_draft(
     analysis = payload.get("analysis") or {}
     try:
         source = PatternSource(
-            sha256=_sha256(path),
+            sha256=hashlib.sha256(blob).hexdigest(),
             application_version=_application_version(),
             target_height_cm=finite_float(analysis["height_cm"]),
             gauge=TrialGauge.model_validate(gauge),

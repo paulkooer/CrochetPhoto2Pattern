@@ -11,7 +11,7 @@ import streamlit as st
 from app.models.crochet_params import refresh_derived
 from app.models.geometry import normalize_structure
 from app.models.materials import YarnSpec
-from app.ui.edit_history import commit_edit, render_history
+from app.ui.edit_history import commit_edit, preview_edit, render_history
 from app.ui.result_logic import rebuild_params, regenerate_with_structure
 
 
@@ -161,6 +161,9 @@ def render_pattern_editor(result: dict, slot: str) -> None:
 
     rid = result.get("result_id") or slot
     render_history(slot, result)
+    from app.ui.skirt_editor import render_skirt_editor
+
+    render_skirt_editor(result, slot)
     with st.expander("🧩 可视化编辑部件", expanded=False):
         st.caption("调整尺寸与数量会重新计算逐圈针法；之前手改的逐圈针数会被替换，可撤销恢复。")
         parts = result["structure"].get("parts", [])
@@ -258,8 +261,9 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                             if target
                             else []
                         )
+                previewed = st.form_submit_button("预览部件修改影响")
                 submitted = st.form_submit_button("应用部件修改")
-            if submitted:
+            if submitted or previewed:
                 try:
                     candidate = edit_structure_part(
                         result,
@@ -270,7 +274,10 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                         position=position,
                         attachments=attachments,
                     )
-                    _apply(slot, result, candidate)
+                    if previewed:
+                        preview_edit(slot, result, candidate)
+                    else:
+                        _apply(slot, result, candidate)
                 except Exception as exc:
                     st.error(f"部件修改失败：{md_safe(exc)}")
     with st.expander("🧵 逐圈表格编辑", expanded=False):
@@ -311,9 +318,15 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                 "跨层挑针、锁针连接等特殊工艺仍需人工核对。"
             )
             _render_stitch_calculator(f"edit_{rid}_notation{index}")
-            if st.button("应用逐圈修改", key=f"edit_{rid}_roundapply"):
+            previewed_rounds = st.button("预览逐圈修改影响", key=f"edit_{rid}_roundpreview")
+            apply_rounds = st.button("应用逐圈修改", key=f"edit_{rid}_roundapply")
+            if apply_rounds or previewed_rounds:
                 try:
-                    _apply(slot, result, edit_rounds(result, index, edited))
+                    candidate = edit_rounds(result, index, edited)
+                    if previewed_rounds:
+                        preview_edit(slot, result, candidate)
+                    else:
+                        _apply(slot, result, candidate)
                 except Exception as exc:
                     st.error(f"逐圈修改失败：{md_safe(exc)}")
     with st.expander("🧶 按实际毛线与试片估算用量", expanded=False):

@@ -1,0 +1,139 @@
+{
+  "$defs": {
+    "TrialObservationDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "active_minutes": {
+          "anyOf": [
+            {
+              "gt": 0,
+              "le": 100000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active Minutes"
+        },
+        "completed_on": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed On"
+        },
+        "modifications": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 50,
+          "title": "Modifications",
+          "type": "array"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "overall_height_cm": {
+          "anyOf": [
+            {
+              "gt": 0.0,
+              "le": 300.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overall Height Cm"
+        },
+        "pattern_modified": {
+          "default": false,
+          "title": "Pattern Modified",
+          "type": "boolean"
+        },
+        "time_scope": {
+          "default": "full_project",
+          "enum": [
+            "round_crochet_baseline",
+            "full_project"
+          ],
+          "title": "Time Scope",
+          "type": "string"
+        },
+        "yarn_used_grams": {
+          "anyOf": [
+            {
+              "gt": 0.0,
+              "le": 5000.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Yarn Used Grams"
+        },
+        "yarn_used_meters": {
+          "anyOf": [
+            {
+              "gt": 0.0,
+              "le": 100000.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Yarn Used Meters"
+        }
+      },
+      "title": "TrialObservationDraft",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Sidecar is bound to the exact trial JSON, which binds the source pattern.",
+  "properties": {
+    "observation": {
+      "$ref": "#/$defs/TrialObservationDraft"
+    },
+    "record_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "record_sha256",
+    "observation"
+  ],
+  "title": "TrialDraftState",
+  "type": "object"
+}

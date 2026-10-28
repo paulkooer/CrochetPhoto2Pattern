@@ -10,6 +10,15 @@ from app.models.parts import _ONE_PIECE_NAME
 from app.models.profile_shaping import strip_dome
 from app.models.stitch_notation import NotationError, format_stitch_expression
 
+WAIST_POSITION_KEY = "skirt_waist_position"
+
+
+def validate_waist_position(value: object) -> float:
+    """An explicit JSON number in [0, 1]; NaN, booleans and strings are not positions."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1:
+        raise ValueError("固定腰位须为 0–1 之间的有限数值，不能是布尔值或文本")
+    return float(value)
+
 
 class LoopAttachment(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -59,6 +68,13 @@ def attachment_issues(params: dict, *, check_notes: bool = True) -> tuple[list[s
     """Legacy patterns remain readable; declared references are never guessed."""
     parts = {p.get("name"): p for p in params.get("parts", []) if isinstance(p, dict)}
     attached = params.get("skirt_style") == "attached" and "裙子" in parts
+    if WAIST_POSITION_KEY in params:
+        try:
+            validate_waist_position(params[WAIST_POSITION_KEY])
+        except ValueError as exc:
+            return [str(exc)], []
+        if not attached or "stitch_attachments" not in params:
+            return ["固定腰位需要挑针接裙及精确接合记录；取消该偏好后可使用其他做法"], []
     if "stitch_attachments" not in params:
         return [], (["旧接裙图解未记录精确基底圈及预留圈；请重新生成或人工核对后再钩织"] if attached else [])
     try:
@@ -142,7 +158,7 @@ def attachment_issues(params: dict, *, check_notes: bool = True) -> tuple[list[s
 
 
 def prepare_attached_skirt(parts: list[dict], *, body_rows: tuple[int, int] | None = None,
-                           assembly_plan: dict | None = None) -> dict:
+                           assembly_plan: dict | None = None, target_row: int | None = None) -> dict:
     """Compile the generated skirt against actual body rounds, before validation."""
     from app.models.crochet_params import _change_note, bridge_rounds
 
@@ -167,6 +183,11 @@ def prepare_attached_skirt(parts: list[dict], *, body_rows: tuple[int, int] | No
         start, end = len(rounds) - len(wall), len(rounds)
     else:
         start, end = body_rows[0] - 1, body_rows[1]
+    if target_row is not None:
+        candidates = [i for i, row in enumerate(rounds[:-1]) if row["row"] == target_row]
+        if len(candidates) != 1:
+            raise ValueError("所选基底圈不存在或没有下一圈")
+        start, end = candidates[0], candidates[0] + 2
     if end - start < 2:
         raise ValueError("身体筒壁不足两圈，无法明确预留接裙针目；请增加高度或选择独立裙筒")
     desired = start + (end - start - 2) * (0.4 if body_rows else 0.6)

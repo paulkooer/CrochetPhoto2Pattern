@@ -668,6 +668,9 @@ def render_results(result: dict, slot: str) -> None:
     from app.ui.project_save import render_project_save
 
     render_project_save(result, slot)
+    from app.ui.trial_editor import render_trial_editor
+
+    render_trial_editor(result, slot)
 
     # Section 4: Assembly
     section_heading(4, "装配说明")
@@ -691,7 +694,7 @@ def render_results(result: dict, slot: str) -> None:
         st.success("✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！")
     if st.session_state.pop(_struct_ok_flag, False):
         st.success("✅ 已按修正后的部件结构重新生成图解与装配说明！")
-    from app.ui.edit_history import commit_edit
+    from app.ui.edit_history import commit_edit, preview_edit
     from app.ui.pattern_editor import render_pattern_editor
     render_pattern_editor(result, slot)
     st.caption("也可使用下方尺寸滑块或高级 JSON 编辑。")
@@ -716,15 +719,20 @@ def render_results(result: dict, slot: str) -> None:
                 "整体高度 (cm)", min(10.0, _current_height), max(60.0, _current_height),
                 _current_height, 0.5,
                 key=f"sz_height_{result_key}")
-        if st.button("📐 按新尺寸重新生成", key=f"sz_go_{result_key}"):
+        preview_size = st.button("预览尺寸修改影响", key=f"edit_{result_key}_size_preview")
+        apply_size = st.button("📐 按新尺寸重新生成", key=f"sz_go_{result_key}")
+        if apply_size or preview_size:
             try:
                 # 业务逻辑在 result_logic（纯函数，可离线单测）
                 _new_result = result_logic.regenerate_with_size(
                     result, _new_head, _new_height)
-                _installed = commit_edit(slot, result, _new_result)
-                _new_rid = _installed["result_id"]
-                st.session_state[f"sz_{_new_rid}_ok"] = True
-                st.rerun()
+                if preview_size:
+                    preview_edit(slot, result, _new_result)
+                else:
+                    _installed = commit_edit(slot, result, _new_result)
+                    _new_rid = _installed["result_id"]
+                    st.session_state[f"sz_{_new_rid}_ok"] = True
+                    st.rerun()
             except Exception as e:
                 st.error(f"尺寸重生成失败: {md_safe(e)}")
 
@@ -741,15 +749,20 @@ def render_results(result: dict, slot: str) -> None:
             height=360,
             key=f"struct_edit_{result_key}",
         )
-        if st.button("🧩 校验结构并重新生成", key=f"struct_go_{result_key}"):
+        preview_structure = st.button("预览结构 JSON 修改影响", key=f"edit_{result_key}_structure_preview")
+        apply_structure = st.button("🧩 校验结构并重新生成", key=f"struct_go_{result_key}")
+        if apply_structure or preview_structure:
             try:
                 # 校验 + 重生成在 result_logic（纯函数，可离线单测）
                 _updated = result_logic.regenerate_with_structure(
                     result, json.loads(structure_json))
-                _installed = commit_edit(slot, result, _updated)
-                new_result_id = _installed["result_id"]
-                st.session_state[f"struct_{new_result_id}_ok"] = True
-                st.rerun()
+                if preview_structure:
+                    preview_edit(slot, result, _updated)
+                else:
+                    _installed = commit_edit(slot, result, _updated)
+                    new_result_id = _installed["result_id"]
+                    st.session_state[f"struct_{new_result_id}_ok"] = True
+                    st.rerun()
             except Exception as e:
                 st.error(f"结构校验或重生成失败: {md_safe(e)}")
 
@@ -794,15 +807,20 @@ def render_results(result: dict, slot: str) -> None:
 
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     with col_btn1:
-        if st.button("🔄 重新生成", key=f"regen_{result_key}"):
+        preview_json = st.button("预览 JSON 修改影响", key=f"edit_{result_key}_json_preview")
+        apply_json = st.button("🔄 重新生成", key=f"regen_{result_key}")
+        if apply_json or preview_json:
             try:
                 corrected = json.loads(correction_json)
                 candidate = deepcopy(result)
                 candidate["params"] = rebuild_params(corrected)
                 candidate["gauge"] = candidate["params"].get("gauge")
-                installed = commit_edit(slot, result, candidate)
-                st.session_state[f"regen_{installed['result_id']}_ok"] = True
-                st.rerun()
+                if preview_json:
+                    preview_edit(slot, result, candidate)
+                else:
+                    installed = commit_edit(slot, result, candidate)
+                    st.session_state[f"regen_{installed['result_id']}_ok"] = True
+                    st.rerun()
             except Exception as e:
                 st.error(f"解析/应用失败: {md_safe(e)}")
     with col_btn2:
