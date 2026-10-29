@@ -14,7 +14,10 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.models.geometry import StructureGeometry
+from app.models.stitch_attachments import LoopAttachmentPlan
+from app.models.trial_draft import TrialDraftState
 from app.schemas import CrochetPart, ImageAnalysis, PatternResult
+from app.utils.project import ProjectState
 
 # pydantic 的 model_json_schema 定义在 ModelMetaclass 上（类方法而非实例
 # 方法），mypy 需要显式的"类类型"注解
@@ -25,6 +28,9 @@ SCHEMA_MODELS: dict[str, ModelType] = {
     "structure_geometry": StructureGeometry,
     "image_analysis": ImageAnalysis,
     "crochet_part": CrochetPart,
+    "loop_attachment_plan": LoopAttachmentPlan,
+    "project_state": ProjectState,
+    "trial_draft_state": TrialDraftState,
 }
 
 

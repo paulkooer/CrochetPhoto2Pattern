@@ -79,7 +79,7 @@
 - toruyuri「円の増し目の法則」（日语圈全文逐字，第 4 套语言体系
   段/目/増し目）：错位加针机理——奇数段段尾/偶数段段中，逐圈错位成
   圆、固定同点成六角形（照片实证）；起针数实验（3 最小、10 露洞、
-  5–6 常见）。螺旋自动漂移 vs 引拔需手动错开的提醒已进导出前言。
+  5–6 常见）。导出前言按明确操作式执行针位，改用引拔圈须重新核对。
   https://toruyuri.com/2020/02/02/wanomashime/
 - Zepiany ES-Bee + Melonchillo 圆环法则（西语圈全文逐字，第 5 套
   语言体系 vuelta/pb/aum/dis/AM）：30 峰对称球；**第 3 例真实出版
@@ -199,7 +199,8 @@ def test_exported_sphere_matches_official_parade_example():
             "magic_ring": True, "rounds": _sphere_rounds(max_stitches=36)}
     text = export_parade_dsl({"params": {"parts": [part]}})
     body = [ln.strip() for ln in text.splitlines() if ln.strip() and not ln.startswith("#")]
-    assert body[:5] == ["ring", "sc6inc", "6sc2inc", "6[sc,sc2inc]", "6[2sc,sc2inc]"]
+    # R4 now explicitly centers the increase, retaining the official syntax.
+    assert body[:5] == ["ring", "sc6inc", "6sc2inc", "6[sc,sc2inc]", "6[sc,sc2inc,sc]"]
     assert lint_parade_dsl(text) == []
 
 
@@ -231,7 +232,10 @@ def test_ideal_sphere_follows_source_sin_profile():
     rounds = _ideal_sphere_rounds(diameter, gauge)
     seq = [r["stitches"] for r in rounds]
     n = len(seq)
-    assert n == int(diameter / gauge.row_h_cm + 0.5)
+    # 几何属性（不复述实现）：行数覆盖极点到极点的经线弧长 πD/2，而非直径 D。
+    # 误差不超过一行高（量化余量）。此前实现误用 n=D/row_h，经线短约 π/2 倍，
+    # 使“理想球”偏扁（F-09）。
+    assert abs(n * gauge.row_h_cm - math.pi * diameter / 2) <= gauge.row_h_cm
 
     peak = seq.index(max(seq))
     assert abs(peak - (n - 1) / 2) <= max(2, n // 6)   # 峰在赤道附近
@@ -240,13 +244,16 @@ def test_ideal_sphere_follows_source_sin_profile():
     for j in range(n // 2):                             # sin 对称（±1 档容差）
         assert abs(seq[j] - seq[n - 1 - j]) <= 6
 
-    # 理论 sin 目标 N = π·D·sin(π·y/D)/s（原文 N = C/s），本输出落在其
-    # 6 等分量化 + 动态钳制的可行域内
+    # 理论 sin 目标 N = π·D·sin(θ)/s（原文 N = C/s），极角 θ 在 (0,π) 上按
+    # 行数均分；本输出落在其 6 等分量化 + 动态钳制的可行域内
     for j, st in enumerate(seq, 1):
-        y = (j - 0.5) * gauge.row_h_cm
-        theta = math.pi * min(y, diameter) / diameter
+        theta = math.pi * (j - 0.5) / n
         raw = math.pi * diameter * math.sin(theta) / gauge.stitch_w_cm
         assert abs(st - raw) <= 6 + 6, (j, st, raw)
+
+    # 相邻圈变化不超过经典短针平面圆 +6 规则（修正行数后不应再出现 +12 跳变）
+    for before, after in zip(seq, seq[1:], strict=False):
+        assert abs(after - before) <= 6, (before, after)
 
     result = validate_pattern({"parts": [{"name": "头部", "rounds": rounds}]})
     assert result["ok"], result["issues"]
@@ -476,16 +483,16 @@ def test_validator_catches_published_kangaroo_leg_round5_contradiction():
 # ── Supergurumi（德国专业设计工作室）"The Chubby Bee" 印证 ──────────────────
 # 55 圈头身一体（66 针峰值）、Schachenmayr Catania 棉线（125m/50g =
 # 250m/100g，标注 Sport/Fine(2)）、2.5mm 钩。专业结构全收录：黄黑条纹
-# 逐圈换色（R19/25/31/37/44 五条边界）、BLO（前半针）脊线圈、"仅钩 1 短针"
+# 逐圈换色（R19/25/31/37/44 五条边界）、FLO（前半针）脊线圈、"仅钩 1 短针"
 # 的螺旋移位圈、错位（staggered）增减圈、收尾 3 针递减的奇数圈序列
 # （33→30→27→24→21→18→15→12→9→6）。每圈代数经机械核对全部自洽。
 # https://www.supergurumi.com/amigurumi-crochet-bee-pattern
 
 def _bee_body_rounds() -> list[dict]:
-    """头身一体 55 圈（逐字转录为聚合计数；黄色=Dandelion 黑色=Black）。
+    """头身一体的 55 条围长采样（聚合计数；黄色=Dandelion 黑色=Black）。
 
-    BLO 圈与"1 短针移位圈"以 notes 记录：校验器只看聚合计数；移位圈
-    不改变围长，按同针数转录（我们的圈=围长采样模型）。
+    FLO 圈保留操作式；其余主要为聚合计数，并不代表已保留全部针位。
+    "1 短针移位圈"不改变围长，按同针数记录，无法还原实际移位操作。
     """
     yellow, black = "黄色", "黑色"
     return [
@@ -495,7 +502,7 @@ def _bee_body_rounds() -> list[dict]:
         {"row": 4, "stitches": 16},
         {"row": 5, "stitches": 16},
         {"row": 6, "stitches": 20, "increase": 4,
-         "notes": "前半针（BLO）：完整一圈只挑前半针——鼻线分界"},
+         "notes": "FLO((3X,V)×4)；鼻线分界"},
         {"row": 7, "stitches": 24, "increase": 4},
         {"row": 8, "stitches": 30, "increase": 6},
         {"row": 9, "stitches": 36, "increase": 6},
@@ -503,7 +510,7 @@ def _bee_body_rounds() -> list[dict]:
         *({"row": r, "stitches": 42} for r in range(11, 18)),
         {"row": 18, "stitches": 36, "decrease": 6},
         {"row": 19, "stitches": 42, "increase": 6, "color": black,
-         "notes": "换色至黑色 + 前半针（BLO）——第一条条纹分界"},
+         "notes": "FLO((5X,V)×6)；换色至黑色"},
         {"row": 20, "stitches": 48, "increase": 6, "color": black},
         {"row": 21, "stitches": 54, "increase": 6, "color": black},
         {"row": 22, "stitches": 60, "increase": 6, "color": black},
@@ -564,11 +571,17 @@ def test_bee_color_bands_export_as_parade_color_directives():
     assert dsl.count("COLOR:") == 6
 
 
-def test_bee_body_translates_fully_to_parade():
-    """55 圈全部可译（含 BLO 圈 R6：16→20 inc-4）——零诚实降级。"""
-    dsl = export_parade_dsl({"params": {"parts": [_bee_body_part()]}})
+def test_bee_aggregate_fixture_preserves_flo_and_reports_inferred_placement():
+    """FLO 圈须保留挑针；其余聚合行明确报告推断，不声称还原原作针位。"""
+    from app.utils.parade_export import export_parade_report
+
+    report = export_parade_report({"params": {"parts": [_bee_body_part()]}})
+    dsl = report.text
+    assert report.complete and report.exported_rounds == 55
+    assert report.inferred_rounds == 52
     assert "超出可译子集" not in dsl
-    assert "4[3sc,sc2inc]" in dsl    # 16→20（BLO 圈的聚合翻译）
+    assert "4[3scfl,scfl2inc]" in dsl
+    assert "6[5scfl,scfl2inc]" in dsl
     assert "6[9sc,sc2tog]" in dsl    # 66→60（每组消费 9+2 针）
     assert "3[sc,sc2tog]" in dsl     # 9→6 收尾
     assert lint_parade_dsl(dsl) == []
@@ -585,7 +598,7 @@ def test_bee_legs_and_eyes_pass_with_quantity():
                 {"row": 4, "stitches": 15},
                 {"row": 5, "stitches": 12, "decrease": 3},
                 {"row": 6, "stitches": 6, "decrease": 6},
-                {"row": 7, "stitches": 6, "notes": "前半针（BLO）"},
+                {"row": 7, "stitches": 6, "notes": "FLO(6X)"},
                 {"row": 8, "stitches": 9, "increase": 3},
                 {"row": 9, "stitches": 12, "increase": 3},
             ]}
@@ -1160,7 +1173,7 @@ def test_intl_snout_oval_start_verbatim():
 #    "Join with slst, ch 1"（此处 ch 1 不计针，与 Hookers Don't Bite
 #    "First Ch 1 does not count as a stitch" 一致），同一主体内螺旋
 #    与合圈混用；头部 R62 用 (sc, sk)×6 跳针收口（12→6，与 sc2tog
-#    同数不同法）；R29 FLO 颈圈（42→42 计数中性）与蜜蜂 BLO 颈圈互证。
+#    同数不同法）；R29 FLO 颈圈（42→42 计数中性）与蜜蜂 FLO 颈圈互证。
 # https://www.tinycurl.co/monsieur-bear-free-amigurumi-crochet-pattern/
 # https://squirrelpicnic.com/2015/04/24/motley-the-bear-crochet-pattern/
 
@@ -1354,8 +1367,8 @@ def test_intl_minion_body_taper_boundary_decrease():
 #    増す必要数の半分の目で増し目"；逐圈错位 → 圆，固定同点 → 六角形
 #    （原文附照片实证："増し目の箇所がずれて、円に近い状態になります"
 #    vs "毎回同じ箇所で増し目をすると、正六角形のような形になります"）。
-#    本图解为螺旋钩（起点每圈自动漂移）——该提醒已进导出前言；引拔圈
-#    需手动按此法则错开。
+#    导出前言按明确操作式执行加针位置，不额外移动起点；改用引拔圈
+#    须重新核对起立针计数与针位。
 # ② 起针数实验：最小 3、最大 10（10 会露洞不推荐）、5–6 最常见——
 #    与 MR5 胡萝卜/MR7 耳/MR8 低缝兔等既有夹具互证。
 # ③ Hamanaka（日本最大手芸纱线商）系教程（ameblo 转载，摘要级）：
@@ -1681,7 +1694,9 @@ def test_intl_red_heart_bear_one_piece_waist():
                 {"row": 17, "stitches": 24, "increase": 12,
                  "notes": "2 sc in each sc——颈口倍增（inc 12 = 前圈 12）"},
                 {"row": 18, "stitches": 36, "increase": 12,
-                 "notes": "(2 sc, 1 sc)×12"},
+                 # The old fixture abbreviated a same-stitch increase as
+                 # "2 sc", which instead means two ordinary source stitches.
+                 "notes": "(inc, 1 sc)×12"},
                 {"row": 19, "stitches": 36},
                 {"row": 20, "stitches": 36},
                 {"row": 21, "stitches": 36},
@@ -1723,7 +1738,7 @@ def test_intl_red_heart_bear_five_small_parts():
            "rounds": [
                {"row": 1, "stitches": 8},
                {"row": 2, "stitches": 12, "increase": 4,
-                "notes": "(2 sc, 1 sc)×4"},
+                "notes": "(inc, 1 sc)×4"},
                {"row": 3, "stitches": 12},
                {"row": 4, "stitches": 12},
                {"row": 5, "stitches": 8, "decrease": 4,
@@ -1748,7 +1763,7 @@ def test_intl_red_heart_bear_five_small_parts():
            "rounds": [
                {"row": 1, "stitches": 10},
                {"row": 2, "stitches": 15, "increase": 5,
-                "notes": "(2 sc, 1 sc)×5"},
+                "notes": "(inc, 1 sc)×5"},
                {"row": 3, "stitches": 15},
                {"row": 4, "stitches": 15},
                {"row": 5, "stitches": 15},
@@ -1765,7 +1780,7 @@ def test_intl_red_heart_bear_five_small_parts():
             "rounds": [
                 {"row": 1, "stitches": 10},
                 {"row": 2, "stitches": 15, "increase": 5,
-                 "notes": "(2 sc, 1 sc)×5"},
+                 "notes": "(inc, 1 sc)×5"},
                 {"row": 3, "stitches": 15},
                 {"row": 4, "stitches": 10, "decrease": 5,
                  "notes": "(sc2tog, 1 sc)×5"},

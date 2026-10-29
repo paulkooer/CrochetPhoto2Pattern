@@ -15,6 +15,107 @@ automatically into qualifying trials. See [online evidence scope](SOURCES.en.md)
 
 ## 1. Create a draft from an exact pattern
 
+### Record and restore in the web UI
+
+Expand **🧪 实体试钩记录** on a result page, enter a trial ID, stable anonymous maker ID and
+cohort, then choose **以当前图解新建试钩**. The original pattern snapshot stays fixed while
+you enter measurements.
+
+1. Enter the measured swatch, hook and yarn details, save, and download the draft ZIP.
+   Initial gauge values come from the pattern; replace them with actual measurements before
+   checking **已实际测量小样**.
+2. Enter dimensions, usage, timing and notes in stages, leaving unmeasured values blank and
+   saving as a draft. Once finished, check **标记为完成（需填写必填测量）** and provide the
+   completion date, height, yarn grams and active minutes. Timing defaults to the full project;
+   select the round-only scope only when that
+   matches the measured operations. Declare any pattern changes, one per line. Saving shows
+   measured height deviation from the original target.
+3. Download the updated ZIP. Downloads contain the last successfully saved state; unsaved or
+   invalid inputs do not replace it. Saving a completed record as a draft retains its measurements
+   for further work. Fields stay visible when completion status changes; blank dates are not
+   silently replaced with today's date.
+4. In a fresh session, use the sidebar's **🧪 打开试钩包** to reopen the ZIP without generating
+   another pattern. This replaces the Photo result and its active trial, leaving the Manual
+   result alone. The restore control inside a result's trial panel replaces only that trial,
+   preserving the current pattern.
+
+Editing the live pattern does not rebind an existing trial: the panel flags the difference and
+retains its original source. Declare changes actually used in the physical work; for a new design,
+download the old trial before closing it and starting another. Each result page edits one trial
+at a time, with independent Photo and Manual workspaces.
+
+### Undo or redo saved records
+
+After saving, use **↶ 撤销保存** or **↷ 重做保存** to restore swatches, yarn, measurements and
+draft/completed status. The form, comparison table and download switch together, preserving the
+current pattern, crochet progress and project notes. Unsaved changes or invalid fields block
+undo/redo while retaining your input; save first, or restore the fields to their saved values.
+Saving changed content after undo clears redo. Saving identical content adds no history and
+preserves redo.
+
+History stays in the current session: undo and redo share a limit of eight snapshots and 2 MiB,
+dropping earlier retained entries when needed. The source pattern is kept only once. Reopening
+a trial bundle or closing the record clears history; ZIP downloads omit it. To keep a particular
+version permanently, switch to it and download.
+
+### Bundle format and saved content
+
+The ZIP contains `pattern.json` and `<trial-id>.trial.json`, retaining trial schema 2. Partial
+measurements add optional `draft.json` using independent schema 1; see its
+[JSON Schema](schemas/trial_draft_state.schema.json). Its `record_sha256` binds the exact trial
+JSON bytes, which in turn bind the original pattern. Do not mix files from different downloads.
+Draft measurements may be missing, but supplied values still obey ranges and length limits. Restoration
+verifies the exact source-byte SHA-256 and its target height, gauge, physical stitch/round counts
+and estimated time. Limits are 20 MiB for the pattern and 512 KiB each for the trial JSON and optional
+draft. ZIP members are read with bounds in memory, never extracted to disk. Corrupt, duplicate,
+undefined extra members, path-bearing,
+non-finite or mismatched contents leave current work intact.
+
+Partial observations stay outside completed evidence: `*.trial.json` remains `status="draft"`
+with `observation=null`, excluded from finished-item comparisons and calibration. Marking complete
+and saving validates the full record before moving observations into it and removing `draft.json`.
+Returning to draft moves measurements back without deleting them. Swatch/yarn-only drafts and
+completed records still use the original two-file ZIP. The new version reads old bundles; restoring
+a three-file draft bundle requires this version. Older CLI tools can still read its formal record
+and ignore the draft-status sample.
+
+Trial bundles omit crochet progress, project notes and undo history. Trial records are separate
+from ordinary pattern backups, projects and share links; save a crochet project separately to
+retain progress. Download before closing the session. Restoring a record does not independently
+verify the physical measurements or change generator constants.
+
+### Compare measurements and regenerate at measured density
+
+The comparison table uses the last successfully saved measurements: stitch/row gauge, finished
+height, yarn and time. Differences are measured/reference minus one. Unconfirmed swatches are
+not presented as measurements; missing legacy yarn estimates remain unavailable. Full-project
+time is labelled as a different scope, without a baseline-time percentage. Modified trials can
+still show deviations, but these also include the changes made to the pattern.
+
+Drafts with a saved measured swatch and completed trials can both drive density regeneration:
+
+1. Enter measured stitches/rows per 10 cm, confirm the swatch was measured, and save the record.
+2. The current pattern must match the trial's original source and its density must differ.
+   Reopen the original trial bundle from the sidebar if necessary.
+3. Choose **预览按实测密度重算** and inspect the density, stitch/material totals and progress
+   impact under local edits, then apply or cancel. Preview again after changing inputs or records.
+4. Save the updated pattern. Download and close the old trial before starting a trial of the new pattern.
+
+Regeneration retains target dimensions, structure, color-generation inputs, yarn specifications
+and the pinned waist fraction, while rebuilding rounds and exact joins. It replaces manual round
+edits. A density change clears completed-round marks for review while keeping project notes;
+undo restores the old density, pattern and progress. An identical density does not regenerate or
+erase custom instructions. The original trial and its ZIP remain unchanged. This uses measured
+gauge, without inferring a scaling factor from one finished height or changing global yarn/time
+constants; another physical trial is still needed to assess the result.
+
+### Create and aggregate with the CLI
+
+Extract the web bundle's `*.trial.json` into `trial_data/` to use the existing `analyze` command.
+Keep its `pattern.json` bytes unchanged for review. With `draft.json`, the trial JSON bytes are also
+checked; complete and save through the UI instead of editing or reformatting archive members.
+Drafts do not become completed samples. Alternatively, create a draft with the CLI:
+
 Generate complete pattern JSON, then bind a trial record to its SHA-256:
 
 ```bash
@@ -85,9 +186,9 @@ uv run crochet2pattern-trials analyze \
 ```
 
 - `0`: both yarn-weight and baseline-time groups contain at least five completed,
-  unmodified trials, covering at least three pattern hashes and two anonymous makers.
+  unmodified trials, covering at least three upgraded design fingerprints and two anonymous makers.
 - `1`: invalid record schema, ranges, duplicate ID, or JSON.
-- `2`: report created, but quantity or diversity is insufficient.
+- `2`: report created, but quantity, diversity or design-identity verification is insufficient.
 
 `--allow-insufficient` is available for exploration, but
 `summary.calibration_ready` remains false.
@@ -95,8 +196,8 @@ uv run crochet2pattern-trials analyze \
 ### Independent holdout validation
 
 Candidate constants may use only `calibration` records. Prepare at least three additional
-completed, unmodified `validation` records with baseline time scope, at least two pattern
-hashes, and two anonymous makers. Holdout hashes must not appear in calibration:
+completed, unmodified `validation` records with baseline time scope, at least two design
+fingerprints, and two anonymous makers. Holdout designs must not appear in calibration:
 
 ```bash
 uv run crochet2pattern-trials init \
@@ -112,10 +213,44 @@ uv run crochet2pattern-trials analyze \
   --out trial_outputs/release-review.json
 ```
 
-`--require-validation` exits `2` for an undersized holdout or overlapping hashes.
-`independent_validation.sample_ready=true` proves only quantity, diversity, and isolation;
+`--require-validation` exits `2` for insufficient samples, unverified design identity or overlap.
+Current `pattern.design_fingerprint_version="1"` normalizes gauge and physical round-count,
+increase/decrease sequences. It ignores part order, labels, colors, diagnostics and equivalent
+grouping of identical copies while retaining round order and total multiplicity. Cosmetic
+reordering cannot inflate diversity. This conservative count-based identity does not prove
+complete technique or physical equivalence; different techniques with identical counts may
+share an identity. Exact source-SHA overlap is also checked across cohorts for all record ages.
+`independent_validation.sample_ready=true` proves only quantity, design diversity, and isolation;
 it does not prove that current or candidate constants are accurate. Review the size,
 weight, and time error distributions manually.
+
+### Upgrade legacy records
+
+Records with missing or unversioned fingerprints remain readable and contribute to measurement
+distributions, but cannot establish design diversity or calibration readiness until upgraded.
+See `summary.unverified_design_records`. When
+`independent_validation.design_identity_complete=false`, a false
+`cohort_pattern_hashes_disjoint` means independence is unverified, not necessarily a known overlap.
+
+Opening an original trial ZIP verifies the exact source SHA, original metadata, legacy fingerprint
+when present, and the incomplete-measurement sidecar binding before upgrading identity. Original
+source bytes, maker, swatch, completed observations and partial measurements are retained. On
+resaving, the sidecar binds to the new record bytes. Both two-file and three-file bundles work.
+
+Standalone records can be upgraded without re-entering measurements:
+
+```bash
+uv run crochet2pattern-trials migrate \
+  --pattern original-pattern.json \
+  --record trial_data/old.trial.json \
+  --out trial_data_upgraded/old.trial.json
+```
+
+Use exact original source bytes; even reformatting changes the SHA and is rejected. Existing
+outputs require `--force`, which never permits overwriting either input, including aliases.
+Failures preserve inputs and existing output. Analyze the upgraded directory rather than loading
+both versions of one `trial_id`. Trial schema remains 2 and report schema remains 3, with an
+additional optional fingerprint-algorithm version field.
 
 ## 4. Report semantics
 

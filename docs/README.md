@@ -11,9 +11,11 @@
 | Third-party rights and takedown / 第三方权利与下架 | [policy](../THIRD_PARTY_CONTENT_EN.md) · [process](../NOTICE_AND_TAKEDOWN_EN.md) | [政策](../THIRD_PARTY_CONTENT.md) · [流程](../NOTICE_AND_TAKEDOWN.md) |
 | Physical trials and calibration / 实体试钩与校准 | [physical-trials.en.md](physical-trials.en.md) | [physical-trials.md](physical-trials.md) |
 | Processing flow / 系统处理流程 | [flow.en.md](flow.en.md) | [flow.md](flow.md) |
+| Saved crochet projects and reserved-loop joins / 钩织工程与预留半针接合 | [User guide](../README.md#save-and-reopen-a-pattern) · [Schemas](schemas/project_state.schema.json) | [使用与格式](project-format.md) |
+| Editable grid projects and recoloring history / 平面网格工程与修色历史 | [Features](../README.md#features) | [使用与失败保护](project-format.md#平面网格工程与修色历史) |
 | Public structure candidates / 公开结构候选 | [catalog](public-pattern-candidates-20261011.json) | [配色反例](color-layout-diagnostic-20261011.json) |
 | External rule references / 外部规则参考证据 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
-| Audit brief for external AI review / 外部 AI 审核交待 | [audit-brief.md](audit-brief.md) | [audit-brief.md](audit-brief.md) |
+| Opus 5.5 whole-system review brief / Opus 5.5 全系统审核交待 | [Pinned review brief (Chinese)](audit-brief-opus-20261029.md) | [固定版本审核交待](audit-brief-opus-20261029.md) |
 | Single-image 3D design / 单图 3D 重建设计 | [3d-reconstruction-design.en.md](3d-reconstruction-design.en.md) | [3d-reconstruction-design.md](3d-reconstruction-design.md) |
 
 Root-level user and community documents are also bilingual:
@@ -42,3 +44,5 @@ not current operating instructions. They remain in their original Chinese; use
 - [局部配色观测前后对照 / Spatial color observation comparison](color-layout-observation-20261011.json)
 
 - [轮廓拟合前后对照 / Profile fitting comparison](profile-fit-comparison-20261014.json)
+
+- [旧版外部审核交待 / Earlier external review brief](audit-brief.md) — historical context; use the pinned Opus brief above for the 2026-10-29 review.

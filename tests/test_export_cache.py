@@ -1,4 +1,6 @@
 """Export reuse must not leak sessions or return stale pattern/provenance text."""
+import hashlib
+import json
 from copy import deepcopy
 
 import pytest
@@ -74,6 +76,21 @@ def test_failed_refresh_cannot_reuse_old_value_and_can_retry():
         cached_export(cache, "markdown", {"revision": 2}, fail)
     assert "markdown" not in cache
     assert cached_export(cache, "markdown", {"revision": 2}, lambda: "new") == "new"
+
+
+@pytest.mark.parametrize("old_format", [None, 2, 3, 4, 6, 7])
+def test_legacy_cache_is_rebuilt_after_export_semantics_change(old_format):
+    from app.ui.export_cache import cached_export
+
+    source = {"params": {"parts": []}, "export_version": "same-installed-version"}
+    old_source = source if old_format is None else {"cache_version": old_format, "source": source}
+    legacy_fingerprint = hashlib.sha256(json.dumps(
+        old_source, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode()).hexdigest()
+    cache = {"parade": {"fingerprint": legacy_fingerprint,
+                        "value": {"text": "old uniform sequence"}, "bytes": 32}}
+    current = {"text": "explicit ordered sequence with loop qualifiers", "inferred_rounds": 0}
+    assert cached_export(cache, "parade", source, lambda: current) == current
 
 
 def test_cache_bounded_in_utf8_bytes_and_returned_objects_are_isolated(monkeypatch):

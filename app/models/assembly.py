@@ -36,13 +36,34 @@ def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
     return openings
 
 
+def assembly_for_pattern(params: dict) -> str:
+    """Render declared loop references from current data, not stale saved prose."""
+    if "stitch_attachments" not in params:
+        return params.get("assembly_instructions") or ""
+    parts = params.get("parts", [])
+    quantities = {_part_name(p): int(p.get("quantity", 1)) for p in parts}
+    return build_assembly(set(quantities), params.get("skirt_style", "ring"), quantities,
+                          params.get("assembly_plan"), _openings_by_part(parts), params["stitch_attachments"])
+
+
 def build_assembly(part_names, skirt_style: str = "ring",
                    quantities: dict[str, int] | None = None,
                    assembly_plan: dict[str, Any] | None = None,
-                   openings: dict[str, int] | None = None) -> str:
+                   openings: dict[str, int] | None = None,
+                   stitch_attachments: dict | None = None) -> str:
     """Build assembly text from the v2 graph, with a legacy name fallback."""
     quantities = quantities or {}
     openings = openings or {}
+
+    def skirt_connection() -> str:
+        from .stitch_attachments import LoopAttachmentPlan, attachment_steps
+
+        if stitch_attachments is not None:
+            plan = LoopAttachmentPlan.model_validate(stitch_attachments)
+            for connection in plan.connections:
+                if connection.source_part == "裙子":
+                    return attachment_steps(connection)
+        return "接裙位置待核对：旧图解未记录精确基底圈及预留圈，请先核对或重新生成后再钩织。"
 
     def opening_note(name: str) -> str:
         n = openings.get(name)
@@ -105,7 +126,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
             steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
         if "裙子" in part_names:
             if skirt_style == "attached":
-                steps.append("裙子已挑后半针钩在身体腰部，无需缝合")
+                steps.append(skirt_connection())
             else:
                 skirt_n = openings.get("裙子")
                 skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
@@ -206,7 +227,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
             steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
         elif canonical and source == "裙子" and target in ("身体", _ONE_PIECE_NAME):
             if skirt_style == "attached":
-                steps.append(f"裙子已挑后半针钩在{target_label}腰部，无需缝合")
+                steps.append(skirt_connection())
             else:
                 skirt_n = openings.get("裙子")
                 skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""

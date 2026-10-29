@@ -141,6 +141,20 @@ def _change_note(before: int, after: int) -> str:
     return f"({','.join(operations)})×6，均匀减{amount}针"
 
 
+def _positioned_change_note(before: int, after: int, *, staggered: bool = False) -> str:
+    """An explicit centered variant for alternate consecutive +6 rounds.
+
+    Split an even plain-stitch gap around V; odd gaps retain the end-of-group
+    increase. Counts, source consumption and round starts do not change. This
+    only specifies placement, not a measured improvement in finished shape.
+    """
+    plain = before // 6 - 1
+    if staggered and after - before == 6 and before % 6 == 0 and plain >= 2 and plain % 2 == 0:
+        half = "X" if plain == 2 else f"{plain // 2}X"
+        return f"({half},V,{half})×6"
+    return _change_note(before, after)
+
+
 def _increase_rounds(max_stitches: int) -> list[dict[str, Any]]:
     """Increase rounds shared by sphere/cylinder/cup: magic ring 6 → max_stitches.
 
@@ -183,13 +197,21 @@ class PatternGenerationError(RuntimeError):
 
 
 def _mark_staggered(rounds: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """连续加针圈提示错开半组（避免六边形棱线；PlanetJune 实证技法）。"""
+    """Write executable alternating placement instead of a prose-only hint."""
     for i in range(1, len(rounds)):
-        if rounds[i].get("increase") and rounds[i - 1].get("increase"):
-            rounds[i]["notes"] = (
-                (rounds[i].get("notes") or "")
-                + "；加针位置与上一圈错开半组"
-            )
+        current, previous = rounds[i], rounds[i - 1]
+        enabled = bool(current.get("increase") and previous.get("increase")
+                       and not current.get("decrease") and not previous.get("decrease"))
+        before, after = previous["stitches"], current["stitches"]
+        note = current.get("notes") or ""
+        prefix, _, suffix = note.partition("；")
+        generated = {_change_note(before, after), _positioned_change_note(before, after, staggered=True)}
+        if prefix not in generated:
+            continue  # Do not reinterpret custom placement or special techniques.
+        actions = [s for s in suffix.split("；") if s and s != "加针位置与上一圈错开半组"]
+        current["notes"] = _positioned_change_note(before, after, staggered=enabled)
+        if actions:
+            current["notes"] += "；" + "；".join(actions)
     return rounds
 
 
@@ -246,16 +268,17 @@ def _ideal_sphere_rounds(
     """
     import math
 
-    n = max(5, int(diameter_cm / gauge.row_h_cm + 0.5))
-    row_h = gauge.row_h_cm
+    # 行数覆盖的是极点到极点的经线弧长 πD/2，而非直径 D（F-09）。此前
+    # n=D/row_h 少了约 π/2≈1.57 倍，使“理想球”逐圈针数够宽但经线太短——
+    # 成品偏扁。正确 n=πD/(2·row_h)，每行占固定极角 Δθ=π/n。
+    n = max(5, int(round(math.pi * diameter_cm / (2.0 * gauge.row_h_cm))))
     targets = []
     for j in range(1, n + 1):
-        y = (j - 0.5) * row_h
-        theta = math.pi * min(y, diameter_cm) / max(diameter_cm, 1e-9)
-        w = diameter_cm * math.sin(theta)
+        theta = math.pi * (j - 0.5) / n        # 极角在 (0, π) 上均分
+        w = diameter_cm * math.sin(theta)      # 该极角处横截面直径
         if egg:
             w *= (1.0 + egg_e * math.cos(theta))
-        st = math.pi * w / gauge.stitch_w_cm
+        st = math.pi * w / gauge.stitch_w_cm   # 周长 π·w 除以针宽 = 针数
         targets.append(max(6, int(round(st / 6.0)) * 6))
     # 连续几何变化率按 gauge 计算，并上量化到六等分针法。
     clamped = [targets[0]]
@@ -431,7 +454,8 @@ def refresh_derived(params: dict) -> dict:
     quantities = {_part_name(p): _part_quantity(p) for p in parts}
     params["assembly_instructions"] = build_assembly(
         set(quantities), params.get("skirt_style", "ring"), quantities,
-        params.get("assembly_plan"), openings=_openings_by_part(parts))
+        params.get("assembly_plan"), openings=_openings_by_part(parts),
+        stitch_attachments=params.get("stitch_attachments"))
     return params
 
 
@@ -564,12 +588,6 @@ class CrochetParamsGenerator:
                         "stitches": hem_st,
                         "notes": f"{hem_st}X（不加不减）",
                     })
-                if style.skirt_style == "attached":
-                    # 挑后半针法：身体腰圈只挑前半针，裙子钩在预留后半针上
-                    rounds_raw[0]["notes"] = (
-                        f"在身体腰部（身体最上 1–2 圈）挑后半针起针{waist_st}X"
-                        "（身体该圈钩时只挑前半针，留后半针给裙子）"
-                    )
                 if style.ruffle_hem:
                     rounds_raw.append({
                         "row": len(rounds_raw) + 1,
@@ -586,7 +604,7 @@ class CrochetParamsGenerator:
                     f"实际高约 {actual_h}cm。"
                 )
                 if style.skirt_style == "attached":
-                    skirt_notes += "腰部挑后半针钩织，免缝合更服帖。"
+                    skirt_notes = "挑针接裙，免缝合；具体基底圈、预留圈与针目范围见装配说明。"
                 else:
                     skirt_notes += "腰部套入身体后缝合固定。"
                 if style.ruffle_hem:
@@ -667,10 +685,12 @@ class CrochetParamsGenerator:
                     height_cm=actual_h,
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
+                    magic_ring=True,  # F-13：底部圆盘以魔法环起针（首圈 note 即“魔法环起6针”）
                     notes=(
                         f"照片驱动轮廓身体（筒壁高约 {actual_h}cm，逐圈针数随照片"
                         f"剖面变化；底部另含圆盘）。末圈保持颈部开口不收针："
-                        f"填充棉花后断线留 15cm，与头部开口边逐针缝合成闭口。"
+                        f"填充棉花后断线留 15cm，将此颈部开口圈与头部底部（闭合球体的下半）"
+                        f"逐针缝合固定、封住开口。"
                     ),
                 )
 
@@ -691,6 +711,7 @@ class CrochetParamsGenerator:
                     height_cm=actual_h,
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
+                    magic_ring=True,  # F-13：圆盘起底以魔法环起针
                     notes=(
                         f"圆柱身体（筒壁高约 {actual_h}cm，另含底部圆盘直径 "
                         f"{round(max_st * gauge.stitch_w_cm / 3.14159, 1)}cm）。"
@@ -714,6 +735,7 @@ class CrochetParamsGenerator:
                     height_cm=actual_h,
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "skin" if part_name in _SKIN_PARTS else "body"),
+                    magic_ring=True,  # F-13：肢体底部小圆盘以魔法环起针
                     notes=f"{part_name}（筒壁长约 {actual_h}cm，另含底部小圆盘），两端留线头便于缝合。",
                 )
 
@@ -751,15 +773,16 @@ class CrochetParamsGenerator:
             part.quantity = _part_quantity({"quantity": sp.get("count", 1)})
             crochet_parts.append(part)
 
+        sections: dict[str, tuple[int, int]] = {}
         if style.one_piece:
             # 延迟导入：onepiece 引用本模块针法代数（bridge_rounds 等）
             from .onepiece import merge_head_body
 
             crochet_parts = merge_head_body(
-                crochet_parts, gauge)
+                crochet_parts, gauge, sections=sections)
 
         return CrochetParamsGenerator._build_result(
-            analysis, crochet_parts, gauge, style, structure)
+            analysis, crochet_parts, gauge, style, structure, body_rows=sections.get("body"))
 
 
     @staticmethod
@@ -834,7 +857,8 @@ class CrochetParamsGenerator:
     def _build_result(analysis: ImageAnalysis, parts: list[CrochetPart],
                       gauge: Gauge = DEFAULT_GAUGE,
                       style: "ShapingStyle | None" = None,
-                      structure: dict[str, Any] | None = None) -> dict[str, Any]:
+                      structure: dict[str, Any] | None = None, *,
+                      body_rows: tuple[int, int] | None = None) -> dict[str, Any]:
         """Assemble the result dict: materials / assembly / time scale with parts.
 
         双态收敛出口：parts 以 CrochetPart 模型参与构造、配色与校验，
@@ -843,16 +867,25 @@ class CrochetParamsGenerator:
         """
         style = style or DEFAULT_STYLE
         part_dicts = [p.model_dump() for p in parts]
+        assembly_plan = structure_connection_plan(structure or {})
+        stitch_attachments = None
+        if style.skirt_style == "attached":
+            from .stitch_attachments import prepare_attached_skirt
+
+            stitch_attachments = prepare_attached_skirt(
+                part_dicts, body_rows=body_rows, assembly_plan=assembly_plan)
+            for part in part_dicts:
+                if part["name"] == "裙子":
+                    part["height_cm"] = round(len(part["rounds"]) * gauge.row_h_cm, 1)
         part_names = {p["name"] for p in part_dicts}
         total_stitches = sum(
             r["stitches"] * _part_quantity(p)
             for p in part_dicts for r in p["rounds"])
 
         quantities = {p["name"]: _part_quantity(p) for p in part_dicts}
-        assembly_plan = structure_connection_plan(structure or {})
         assembly = build_assembly(
             part_names, style.skirt_style, quantities, assembly_plan,
-            openings=_openings_by_part(part_dicts))
+            openings=_openings_by_part(part_dicts), stitch_attachments=stitch_attachments)
 
         # F13 生成门禁：生成器自己产出的图解必须通过自检，代数矛盾
         # 在此处拦截（而不是等到结果页才显示警告）
@@ -861,6 +894,8 @@ class CrochetParamsGenerator:
         validation = validate_pattern({
             "parts": part_dicts,
             "gauge": gauge_payload,
+            "skirt_style": style.skirt_style,
+            **({"stitch_attachments": stitch_attachments} if stitch_attachments is not None else {}),
         })
         if not validation["ok"]:
             raise PatternGenerationError(
@@ -882,10 +917,12 @@ class CrochetParamsGenerator:
             "shaping": _shaping_meta(gauge),
             "notes": (
                 "螺旋钩法：全程不引拔、不翻转，每圈第一针挂记号扣；"
-                "减针建议用隐形减针（只挑两针目的前半针）更平整。"
+                "普通圈可参考隐形减针（只挑两针目的前半针）；FLO/BLO 圈按本圈指定针法。"
                 "基于单图推理生成，比例可能需要试钩调整。"
             ),
         }
         if assembly_plan is not None:
             result["assembly_plan"] = assembly_plan
+        if stitch_attachments is not None:
+            result["stitch_attachments"] = stitch_attachments
         return result

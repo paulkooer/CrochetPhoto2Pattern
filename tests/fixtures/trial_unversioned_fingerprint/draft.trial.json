@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "trial_id": "opus-legacy",
+  "maker_id": "reviewer",
+  "status": "draft",
+  "cohort": "calibration",
+  "pattern": {
+    "sha256": "4b33b8c9295ec8089897a80145d1bb5ec044989bce53291480984339efe9ed0c",
+    "design_fingerprint": "41509579d7f74c8e679e0d3baaa1e13abd0ab3267f1d0fbb7c04c1384228fb84",
+    "application_version": "0.2.0b2",
+    "target_height_cm": 18.0,
+    "gauge": {
+      "stitches_per_10cm": 13.0,
+      "rows_per_10cm": 16.0
+    },
+    "total_stitches": 1224,
+    "total_physical_rounds": 66,
+    "estimated_time_minutes": 144
+  },
+  "swatch": {
+    "measured": false,
+    "stitches_per_10cm": 13.0,
+    "rows_per_10cm": 16.0,
+    "hook_mm": null,
+    "yarn_brand": null,
+    "yarn_line": null,
+    "yarn_lot": null,
+    "fiber": null
+  },
+  "observation": null
+}

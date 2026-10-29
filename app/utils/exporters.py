@@ -1,29 +1,45 @@
 """Markdown export for generated crochet patterns."""
 from __future__ import annotations
 
+import html as _html
 import re as _re
 
 from app import PRODUCT_NAME
-from app.schemas import difficulty_label
-
-# U30：双语记号对照（X/V/A 日式 Amigurumi 惯例 ↔ CYC 西方体系，
-# 对应关系经 craftyarncouncil.com/standards/crochet-chart-symbols 核实）
-_LEGEND_BILINGUAL = (
-    "> **记号对照（Stitch Key）**：X = sc (single crochet) · "
-    "V = 2 sc in same st (increase) · A = sc2tog (invisible decrease) · "
-    "SL = sl st · CH = ch。X/V/A 为日式 Amigurumi 惯例记号，与西方 "
-    "CYC 图解体系对照如上。"
+from app.models.instruction_checks import round_expression
+from app.models.stitch_notation import (
+    NotationError,
+    format_stitch_expression,
+    mentions_invisible_decrease,
 )
+from app.models.stitches import (
+    PLACEMENT_GUIDANCE,
+    ROUND_WORKING_GUIDANCE,
+    STITCH_LEGEND_US,
+    STITCH_LEGEND_ZH,
+)
+from app.schemas import difficulty_label
 
 _INVISIBLE = _re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
 
+def _md_text(value) -> str:
+    """自由文本（含模型/备份可控）→ 可安全渲染的 Markdown。
+
+    导出的 Markdown 既下载成 .md，又在结果页经 st.markdown 渲染；两处都会
+    解析链接 [..](..)、图片 ![..](..) 与内联 HTML。处理三步，与
+    result_renderer.md_safe 同口径：剥零宽/BiDi → 转义反斜杠与方括号
+    （链接/图片语法失效）→ HTML 转义（<img> 等字面显示）。不折叠换行，
+    供段落与列表行使用。"""
+    text = _INVISIBLE.sub("", str(value))
+    text = text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+    return _html.escape(text)
+
+
 def _md_cell(value) -> str:
-    """表格单元格转义（V1）+ 零宽/BiDi 剥离（G6/E1 同源补全）：
+    """表格单元格转义：在 _md_text 基础上再转义竖线、折叠换行。
     竖线破坏列数、换行破坏行结构——GFM 表格单元格内不允许换行。
     与 PDF 路径的 esc() 同一工程惯例。"""
-    text = _INVISIBLE.sub("", str(value))
-    return text.replace("\\", "\\\\").replace("|", "\\|").replace(
+    return _md_text(value).replace("|", "\\|").replace(
         "\r\n", " ").replace("\n", " ").replace("\r", " ")
 
 
@@ -32,7 +48,7 @@ def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
 
     专业图解（Supergurumi/DROPS 等）以 "[4 sc, 1 inc] repeat" 表达均匀
     分组圈，X/V/A 记号约定见导出图例；均匀分组前提与 parade 导出器的
-    _round_tokens 一致。groups==1（单次增/减）同样渲染为 "(4X,V)"——
+    _aggregate_round_tokens 一致。groups==1（单次增/减）同样渲染为 "(4X,V)"——
     与 parade 发射器允许单分组保持同口径（外部 AI 审核发现的不一致）。
     """
     if (inc and dec) or (not inc and not dec):
@@ -71,13 +87,12 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     lines: list[str] = []
     lines.append("# 🧶 Amigurumi 钩织图解")
     lines.append("")
-    import html
 
     for note in provenance_lines(result):
-        lines.append("> " + html.escape(_md_cell(note)).replace("[", "\\[").replace("]", "\\]"))
+        lines.append("> " + _md_cell(note))
     lines.append("")
     if analysis:
-        lines.append(f"> 体型：{analysis.get('body_type', '—')}  ·  "
+        lines.append(f"> 体型：{_md_cell(analysis.get('body_type', '—'))}  ·  "
                      f"目标头径：{analysis.get('head_diameter_cm', '—')} cm  ·  "
                      f"目标高度：{analysis.get('height_cm', '—')} cm  ·  "
                      f"难度：{difficulty_label(str(analysis.get('difficulty', '—')))}")
@@ -118,25 +133,11 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     lines.append("---")
 
     # Materials
-    lines.append(
-        "> 记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针），"
-        "W=1针目钩3短针，M=三针短针并一针，B=枣形针（5卷长针并1，"
-        "进出各1针——不改变针数）；"
-        "(4X,V)×6 = “4短针+1加针”重复 6 次"
-    )
+    lines.append("> " + STITCH_LEGEND_ZH)
     from app.models.stitches import glossary_note_lines
     lines.extend(glossary_note_lines())
     lines.append(">")
-    lines.append(
-        "> 钩法：螺旋钩（不引拔、不翻转），每圈第一针挂记号扣；"
-        "减针建议用隐形减针（只挑两针目的前半针）"
-    )
-    lines.append(">")
-    lines.append(
-        "> 中文社区图解常见\u201c每圈 CH 起立 + SL 引拔\u201d的引拔圈钩法——"
-        "与螺旋钩针数节奏完全一致（起立锁针通常不计入针数；若图解注明"
-        "\u201c计为 1 针\u201d则按图解），按习惯任选即可"
-    )
+    lines.append("> " + ROUND_WORKING_GUIDANCE)
     lines.append(">")
     lines.append(
         "> 环起困难的替代法：锁 4 针引拔成环，首圈针数全部钩入环心后拉紧"
@@ -144,14 +145,9 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         "（社区通行）"
     )
     lines.append(">")
-    lines.append(
-        "> 加针点提示：螺旋钩时每圈起点自动漂移 1 针，加针点自然错位、"
-        "不易出棱角；若改用引拔圈，请逐圈手动错开加针位（日语圈法则是"
-        "\u201c奇数段放段尾、偶数段放段中\u201d——固定同点加针会钩出"
-        "六角形，toruyuri 増し目の法則有照片实证）"
-    )
+    lines.append("> " + PLACEMENT_GUIDANCE)
     lines.append(">")
-    lines.append(_LEGEND_BILINGUAL)
+    lines.append("> " + STITCH_LEGEND_US)
     lines.append("")
     lines.append("## 🧵 所需材料")
     lines.append("")
@@ -184,8 +180,8 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         lines.append("")
         if quantity > 1:
             lines.append(f"- **制作数量**：{quantity} 个相同部件")
-        lines.append(f"- **形状**：{pd.get('type', '—')}")
-        lines.append(f"- **颜色**：{pd.get('color', '—')}")
+        lines.append(f"- **形状**：{_md_cell(pd.get('type', '—'))}")
+        lines.append(f"- **颜色**：{_md_cell(pd.get('color', '—'))}")
         if pd.get("diameter_cm"):
             lines.append(f"- **直径**：{pd['diameter_cm']} cm")
         if pd.get("height_cm"):
@@ -212,10 +208,20 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
                     st_n = inc_n = dec_n = 0
                 inc = f"+{inc_n}" if inc_n else "—"
                 dec = f"-{dec_n}" if dec_n else "—"
-                # 专业写法列：聚合数翻译为图例约定的重复记号（均匀分组时）；
-                # JSON 改坏/非均匀形态降级为 '—'
+                # Explicit formulas carry placement: do not regenerate a
+                # different, uniformly distributed pattern from their totals.
                 rep = "—"
-                if prev_st is not None and st_n and (inc_n or dec_n):
+                try:
+                    expression = round_expression(rd.get("notes"))
+                except NotationError:
+                    expression = None
+                    rep = "请核对说明中的操作式"
+                if expression is not None:
+                    if mentions_invisible_decrease(rd.get("notes")) and not expression.has_invisible_decrease:
+                        rep = "请核对说明中的隐形减针工艺"
+                    else:
+                        rep = format_stitch_expression(expression)
+                elif rep == "—" and not rd.get("notes") and prev_st is not None and st_n and (inc_n or dec_n):
                     rep = _repeat_notation(st_n, prev_st, inc_n, dec_n) or "—"
                 lines.append(
                     f"| {_md_cell(rd.get('row',''))} | {_md_cell(rd.get('stitches',''))} | "
@@ -227,12 +233,24 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         lines.append("---")
 
     # Assembly
-    assembly = params.get("assembly_instructions", "")
+    from app.models.assembly import assembly_for_pattern
+
+    assembly = assembly_for_pattern(params)
+    from app.models.attachment_diagram import attachment_tables
+
+    for diagram in attachment_tables(params):
+        lines.extend(["## 接裙圈序示意", "", "| 步骤 | 部件与圈号 | 针目与操作 |",
+                      "| --- | --- | --- |"])
+        lines.extend("| " + " | ".join(_md_cell(value) for value in row) + " |" for row in diagram)
+        lines.extend(["", "按基底圈 → 先预留 → 再接回的圈序执行；此表不表示实物比例或实际腰高。", ""])
     if assembly:
         lines.append("## 🔧 装配说明")
         lines.append("")
+        # 装配文本含插值的部件名，且旧备份的 assembly_instructions 为原样自由
+        # 文本——两者都可能夹带链接/图片语法。逐行转义内联元字符（保留行结构，
+        # 不折叠），有序列表前缀 "N. " 不含元字符故不受影响。
         for step in assembly.split("\n"):
-            lines.append(step)
+            lines.append(_md_text(step))
         lines.append("")
 
     lines.append("---")

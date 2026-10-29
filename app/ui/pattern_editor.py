@@ -11,7 +11,7 @@ import streamlit as st
 from app.models.crochet_params import refresh_derived
 from app.models.geometry import normalize_structure
 from app.models.materials import YarnSpec
-from app.ui.edit_history import commit_edit, render_history
+from app.ui.edit_history import commit_edit, preview_edit, render_history
 from app.ui.result_logic import rebuild_params, regenerate_with_structure
 
 
@@ -59,13 +59,15 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
     updated["params"] = rebuild_params(updated["params"], check_notes=False)
     part = updated["params"]["parts"][index]
     original = result["params"]["parts"][index]["rounds"]
-    from app.models.crochet_params import _change_note
+    from app.models.crochet_params import _change_note, _positioned_change_note
 
     for i, rd in enumerate(part["rounds"]):
         old = original[i]
         changed = any(rd.get(k, 0) != old.get(k, 0) for k in ("stitches", "increase", "decrease"))
-        staggered = bool(i and rd["increase"] and part["rounds"][i - 1]["increase"])
-        was_staggered = bool(i and old.get("increase") and original[i - 1].get("increase"))
+        staggered = bool(i and rd["increase"] and part["rounds"][i - 1]["increase"]
+                         and not rd["decrease"] and not part["rounds"][i - 1]["decrease"])
+        was_staggered = bool(i and old.get("increase") and original[i - 1].get("increase")
+                             and not old.get("decrease") and not original[i - 1].get("decrease"))
         if i:
             changed |= part["rounds"][i - 1]["stitches"] != original[i - 1]["stitches"]
         # Explicit user wording is retained; unchanged generated instructions must
@@ -78,7 +80,10 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
             prefix, _, suffix = old_note.partition("；")
             old_before = original[i - 1]["stitches"] if i else None
             recognized = not prefix or (
-                old_before is not None and prefix == _change_note(old_before, old["stitches"])
+                old_before is not None and prefix in {
+                    _change_note(old_before, old["stitches"]),
+                    _positioned_change_note(old_before, old["stitches"], staggered=was_staggered),
+                }
             ) or (i == 0 and part.get("magic_ring") and re.fullmatch(
                 r"魔法环起\s*\d+\s*针(?:（X×\d+）)?", prefix
             ))
@@ -87,9 +92,7 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
                     raise ValueError(f"第 {rd['row']} 圈含自定义或特殊工艺说明，请同时修改说明后再应用")
                 continue  # An unchanged custom instruction is not a generated hint.
             before = part["rounds"][i - 1]["stitches"] if i else None
-            if not changed:
-                rd["notes"] = prefix
-            elif before is None:
+            if before is None:
                 method = "魔法环" if part.get("magic_ring") else "按原起针方式"
                 rd["notes"] = f"{method}起 {rd['stitches']} 针"
             elif rd["increase"] and rd["decrease"]:
@@ -102,12 +105,10 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
                 else:
                     rd["notes"] = f"本圈共 {rd['stitches']} 针；含复合加减针，请补充具体针法和位置"
             else:
-                rd["notes"] = _change_note(before, rd["stitches"])
+                rd["notes"] = _positioned_change_note(before, rd["stitches"], staggered=staggered)
             # Staggering is generated from the new transitions; it is not a
             # finishing action and may no longer apply after a numeric edit.
             actions = [s for s in suffix.split("；") if s and s != "加针位置与上一圈错开半组"]
-            if staggered:
-                actions.append("加针位置与上一圈错开半组")
             if actions:
                 rd["notes"] += "；" + "；".join(actions)
     from app.models.validator import require_valid_pattern
@@ -132,11 +133,41 @@ def _apply(slot, result, candidate):
     st.rerun()
 
 
+def _render_stitch_calculator(key: str) -> None:
+    from app.models.stitch_notation import NotationError, parse_stitch_notation
+
+    expression = st.text_input(
+        "针法计算器（可选）", placeholder="例如：(2X,V)×6", key=key,
+        help="支持 BLO((2X,V)×6)、4sc-FLO 等明确写法；计算结果不会自动应用到图解。",
+    )
+    if not expression.strip():
+        return
+    try:
+        counts = parse_stitch_notation(expression)
+    except NotationError as exc:
+        st.error(str(exc))
+        return
+    if counts is None:
+        st.info("请输入完整操作式；此写法含尚未支持的针法或文字说明，请人工核对。")
+        return
+    st.info(
+        f"消耗上一圈 {counts.consumed} 针 → 本圈 {counts.produced} 针；"
+        f"加 {counts.increase} 针，减 {counts.decrease} 针。"
+    )
+
+
 def render_pattern_editor(result: dict, slot: str) -> None:
     from app.ui.result_renderer import md_safe
 
     rid = result.get("result_id") or slot
     render_history(slot, result)
+    from app.ui.leg_join import render_leg_join
+    from app.ui.skirt_editor import render_skirt_editor
+    from app.ui.stitch_connections import render_stitch_connections
+
+    render_skirt_editor(result, slot)
+    render_leg_join(f"{slot}_{rid}", result)
+    render_stitch_connections(result, slot)
     with st.expander("🧩 可视化编辑部件", expanded=False):
         st.caption("调整尺寸与数量会重新计算逐圈针法；之前手改的逐圈针数会被替换，可撤销恢复。")
         parts = result["structure"].get("parts", [])
@@ -234,8 +265,9 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                             if target
                             else []
                         )
+                previewed = st.form_submit_button("预览部件修改影响")
                 submitted = st.form_submit_button("应用部件修改")
-            if submitted:
+            if submitted or previewed:
                 try:
                     candidate = edit_structure_part(
                         result,
@@ -246,7 +278,10 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                         position=position,
                         attachments=attachments,
                     )
-                    _apply(slot, result, candidate)
+                    if previewed:
+                        preview_edit(slot, result, candidate)
+                    else:
+                        _apply(slot, result, candidate)
                 except Exception as exc:
                     st.error(f"部件修改失败：{md_safe(exc)}")
     with st.expander("🧵 逐圈表格编辑", expanded=False):
@@ -280,9 +315,22 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                 "更改针数时，未手改的原针法说明会自动更新；自定义说明请同步核对。"
                 "收口与留线说明会保留；无法识别的特殊工艺需同时修改说明。"
             )
-            if st.button("应用逐圈修改", key=f"edit_{rid}_roundapply"):
+            st.caption(
+                "独立操作式会按整圈核对，例如 (2X,V)×6 或 (2 sc,inc)×6：消耗 18 针，"
+                "产出 24 针，加 6 针。支持 X/V/A/W/M、美式短针缩写及重复组。"
+                "FLO=只挑前半针，BLO=只挑后半针；可写 BLO((2X,V)×6) 或 4sc-FLO；"
+                "跨层挑针、锁针连接等特殊工艺仍需人工核对。"
+            )
+            _render_stitch_calculator(f"edit_{rid}_notation{index}")
+            previewed_rounds = st.button("预览逐圈修改影响", key=f"edit_{rid}_roundpreview")
+            apply_rounds = st.button("应用逐圈修改", key=f"edit_{rid}_roundapply")
+            if apply_rounds or previewed_rounds:
                 try:
-                    _apply(slot, result, edit_rounds(result, index, edited))
+                    candidate = edit_rounds(result, index, edited)
+                    if previewed_rounds:
+                        preview_edit(slot, result, candidate)
+                    else:
+                        _apply(slot, result, candidate)
                 except Exception as exc:
                     st.error(f"逐圈修改失败：{md_safe(exc)}")
     with st.expander("🧶 按实际毛线与试片估算用量", expanded=False):

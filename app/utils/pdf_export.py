@@ -12,6 +12,12 @@ import re
 from typing import Any
 
 from app import PRODUCT_NAME, theme
+from app.models.stitches import (
+    PLACEMENT_GUIDANCE,
+    ROUND_WORKING_GUIDANCE,
+    STITCH_LEGEND_US,
+    STITCH_LEGEND_ZH,
+)
 from app.schemas import difficulty_label
 
 
@@ -101,15 +107,8 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
         "工时是未校准的低置信度经验值，只按针数与实体圈次计算；"
         "不含缝合、填充、换色、刺绣、返工和休息。",
         small))
-    story.append(Paragraph(
-        "记号：X=短针，V=加针，A=减针；(2X,V)×6 = “2 短针 + 1 加针”重复 6 次。"
-        "螺旋钩（不引拔不翻转），每圈第一针挂记号扣；减针建议隐形减针。",
-        small))
-    story.append(Paragraph(
-        "Stitch Key: X = sc (single crochet) · V = 2 sc in same st (increase) · "
-        "A = sc2tog (invisible decrease) · SL = sl st · CH = ch。"
-        "X/V/A 为日式 Amigurumi 惯例，与西方 CYC 图解体系对照如上。",
-        small))
+    for instruction in (STITCH_LEGEND_ZH, STITCH_LEGEND_US, ROUND_WORKING_GUIDANCE, PLACEMENT_GUIDANCE):
+        story.append(Paragraph(esc(instruction), small))
     story.append(Spacer(1, 6))
 
     # 材料
@@ -183,7 +182,23 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
             story.append(rt)
 
     # 装配
-    assembly = params.get("assembly_instructions") or ""
+    from app.models.assembly import assembly_for_pattern
+
+    assembly = assembly_for_pattern(params)
+    from app.models.attachment_diagram import attachment_tables
+
+    for diagram in attachment_tables(params):
+        story.append(Paragraph("接裙圈序示意", head))
+        diagram_table = Table([[Paragraph(esc(value), cell) for value in row] for row in diagram],
+                              colWidths=[22 * mm, 60 * mm, 96 * mm], hAlign="LEFT")
+        diagram_table.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#bbc4d5")),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#edf2f8")),
+            ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+        ]))
+        story.append(diagram_table)
+        story.append(Paragraph("按基底圈 → 先预留 → 再接回的圈序执行；此表不表示实物比例或实际腰高。", small))
     if assembly:
         story.append(Paragraph("🔧 装配说明", head))
         for step in str(assembly).split("\n"):

@@ -9,6 +9,9 @@ from typing import TypeVar
 
 T = TypeVar("T", str, dict)
 MAX_EXPORT_CACHE_BYTES = 2 << 20
+# Increment when export semantics or cached report fields change, including
+# source-tree hot reloads where the installed package version stays unchanged.
+EXPORT_CACHE_VERSION = 8
 
 
 def cached_export(cache: dict, name: str, source: dict, build: Callable[[], T]) -> T:
@@ -18,7 +21,8 @@ def cached_export(cache: dict, name: str, source: dict, build: Callable[[], T]) 
     oversized output is still downloadable, but is not retained here.
     """
     fingerprint = hashlib.sha256(json.dumps(
-        source, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
+        {"cache_version": EXPORT_CACHE_VERSION, "source": source},
+        ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
     ).encode()).hexdigest()
     entry = cache.get(name)
     if entry is not None and entry["fingerprint"] == fingerprint:

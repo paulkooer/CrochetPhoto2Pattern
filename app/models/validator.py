@@ -7,11 +7,13 @@ correctness checking 理念：把"代数自洽"从测试层暴露给用户。
    限制，见第 5 处先验降级）；
 3. 生成器先验（notes 提示，非硬错误——印证校准）：非 6 倍数圈与
    超平滑节奏圈只提示、正常导出；加减速混用圈、加针超源针圈、减针
-   超纯 A 配对圈超出均匀分组表达，由 Parade 导出器跳过并留 warning。
+   超纯 A 配对圈超出均匀分组表达；没有明确可译操作式时 Parade 跳过并提示。
    混用圈在真实图解的面部/异形塑形中常见（如垂耳兔眼窝圈
    7X,7V,A,7V,7X）；加针超源在空间加针工艺中常见（如 granny 四角
    往锁针空间加针）——均完全可钩；
-4. 圈数非空（schema 层已拦，这里兜底 JSON 直改路径）。
+4. 圈数非空（schema 层已拦，这里兜底 JSON 直改路径）；
+5. 可识别的完整操作式：源针目、产出与加减针须和数值一致；
+   未知针法、跨层工艺与自由说明不部分猜读，仍需人工核对。
 
 输出的 issues 是"部件名 + 圈号 + 具体矛盾"的可读列表——用户据此用
 局部修正修复，而不是拿到一份默默错误的图解。
@@ -20,7 +22,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..schemas import MAX_PART_ROUNDS, MAX_PATTERN_PARTS, MAX_ROUND_STITCHES
+from ..schemas import MAX_PART_ROUNDS, MAX_PATTERN_PARTS, MAX_ROUND_STITCHES, MAX_TOTAL_ROUNDS
 from ..utils.counts import integer_count as _integer_count
 from .gauge import gauge_from_mapping
 
@@ -72,6 +74,12 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
             f"部件数量 {len(parts)} 超过上限 {MAX_PATTERN_PARTS}，仅检查前 "
             f"{MAX_PATTERN_PARTS} 个")
         parts = parts[:MAX_PATTERN_PARTS]
+    total_rounds = sum(len(p["rounds"]) for p in parts
+                       if isinstance(p, dict) and isinstance(p.get("rounds"), list))
+    if total_rounds > MAX_TOTAL_ROUNDS:
+        issues.append(
+            f"全部部件圈数合计 {total_rounds} 超过总量上限 {MAX_TOTAL_ROUNDS}；"
+            "请减少部件数或单件圈数")
     for index, part in enumerate(parts, 1):
         if not isinstance(part, dict):
             issues.append(f"第 {index} 个部件：必须是对象")
@@ -104,8 +112,10 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                 issues.append(f"{name} 第 {i} 圈：必须是对象")
                 prev_stitches = None
                 continue
-            # Legacy dict patterns may omit row labels; explicit labels must
-            # be positive and unique to keep progress-widget identities valid.
+            # Legacy dict patterns may omit row labels; explicit labels must be
+            # positive and unique to keep progress-widget identities valid.
+            # 不强制递增：插入/重排圈的编辑会产生非递增但唯一的标签，进度按
+            # 位置标识跟踪而非圈号（见 test_edit_impact），应允许其往返保存。
             if "row" in rd:
                 try:
                     row = _integer_count(rd["row"])
@@ -135,17 +145,19 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
             if check_notes:
                 from .instruction_checks import instruction_issues
 
-                for issue in instruction_issues(rd.get("notes"), st, inc, dec):
+                for issue in instruction_issues(
+                    rd.get("notes"), st, inc, dec, previous_stitches=prev_stitches,
+                ):
                     issues.append(f"{name} 第 {i} 圈：{issue}")
             if inc > 0 and dec > 0:
                 # 印证修正：真实图解的面部/异形塑形常在同圈混用加减速
                 # （垂耳兔眼窝圈 7X,7V,A,7V,7X：30→43），代数与可执行性
                 # 均成立——只是超出本生成器的均匀分组表达，降级为提示；
-                # parade 导出器会诚实跳过该圈
+                # 没有完整可解析操作式时，parade 导出器会跳过该圈。
                 notes.append(
                     f"{name} 第 {i} 圈：同圈混用加针 {inc} 与减针 {dec}——"
                     "面部/异形塑形的常见写法，可钩；超出均匀分组表达，"
-                    "CrochetPARADE 导出将跳过此圈")
+                    "CrochetPARADE 导出需要完整可解析的操作式，否则跳过此圈")
             if st < 1:
                 issues.append(f"{name} 第 {i} 圈：针数 {st} 无效")
             elif st < 6 or st % 6:
@@ -166,12 +178,12 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                     # 表达的限制而非可钩性边界——granny 四角往锁针空间
                     # 加针（12→28，每边每圈 +4，Lion Brand/Marching North
                     # 逐字源）、贝壳花与 W（1 针目 3 短针）往单针塞多针，
-                    # 均完全可钩。降级为 notes，导出器跳过该圈。
+                    # 均完全可钩。降级为 notes，导出器需明确操作式。
                     notes.append(
                         f"{name} 第 {i} 圈：加针 {inc} 超过上圈 "
                         f"{prev_stitches} 个源针——若为往锁针空间或单针内"
                         "多针的工艺（granny 四角、贝壳花、W 泡芙）则完全"
-                        "可钩；超出均匀分组 (aX,V)×n 表达，导出将跳过此圈")
+                        "可钩；超出均匀分组 (aX,V)×n 表达，导出需完整可解析的操作式")
                 if dec > prev_stitches // 2:
                     # 印证修正（第 5 处先验降级，外部 AI 审核发现）：
                     # "A 不多于源针一半"只对纯 A（2并1）成立；词表中的
@@ -179,12 +191,12 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                     # 可钩的组合减针——机械反例：上一圈 4 针用一次
                     # sc4tog 收到 1 针（1 = 4 + 0 − 3，而 3 > 4//2）。
                     # decrease 字段语义是"净减少针数"，不能同时当作
-                    # "A 的数量"。降级为 notes，导出器跳过该圈。
+                    # "A 的数量"。降级为 notes，导出器需明确操作式。
                     notes.append(
                         f"{name} 第 {i} 圈：减针 {dec} 超过上圈 "
                         f"{prev_stitches} 针的纯 A（2并1）配对上限——若含"
                         " M 三并一/sc4tog/跳针等组合减针则完全可钩；超出"
-                        "均匀分组 (aX,A)×n 表达，导出将跳过此圈")
+                        "均匀分组 (aX,A)×n 表达，导出需完整可解析的操作式")
                 # V2 → 印证修正：|Δ| 上限是本生成器的平滑度先验而非
                 # 可钩性边界（真实图解的 8→16 倍增圈常见且完全可钩）。
                 # 超限降级为 notes；allow_wide_jump 只是抑制这条 note 的
@@ -198,6 +210,12 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                         "确认为有意工艺（如倍增圈）即可照钩")
             prev_stitches = st if st > 0 else None
 
+    if not issues:
+        from .stitch_attachments import attachment_issues
+
+        connection_issues, connection_notes = attachment_issues(params, check_notes=check_notes)
+        issues.extend(connection_issues)
+        notes.extend(connection_notes)
     return {"ok": not issues, "issues": issues, "notes": notes,
             "checked": checked,
             "max_stitch_change": max_change,

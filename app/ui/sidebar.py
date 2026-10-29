@@ -14,6 +14,12 @@ def render_sidebar() -> None:
                     "openai_base_url_input", "anthropic_base_url_input"):
             st.session_state.pop(key, None)
         st.caption("本地视觉与人工确认，无需 API Key。")
+        from app.ui.backup_import import render_backup_import
+
+        render_backup_import()
+        from app.ui.trial_editor import render_trial_open
+
+        render_trial_open()
         st.divider()
         st.subheader("🧵 编织密度（小样）")
         preset = st.select_slider(
@@ -51,7 +57,8 @@ def render_sidebar() -> None:
                      "玩偶头主流形状",
             )
             st.checkbox("头身一体钩（免缝合）", value=False, key="style_onepiece",
-                        help="头收针到颈围后不断线直接钩身体")
+                        help="头收针到颈围后不断线直接钩身体；身体顶端比头宽时无法一体钩，"
+                             "生成会提示改为分件")
             st.select_slider(
                 "裙子做法", options=["ring", "attached"], value="ring",
                 format_func={"ring": "独立裙筒（腰部环起）",

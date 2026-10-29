@@ -15,7 +15,8 @@ _DOCS = _REPO / "docs" / "schemas"
 def test_schema_docs_exist_and_in_sync():
     schemas = build_schema_docs()
     assert set(schemas) == {
-        "pattern_result", "structure_geometry", "image_analysis", "crochet_part"}
+        "pattern_result", "structure_geometry", "image_analysis", "crochet_part",
+        "loop_attachment_plan", "project_state", "trial_draft_state"}
     for name, schema in schemas.items():
         path = _DOCS / f"{name}.schema.json"
         assert path.is_file(), f"{path} 缺失——运行 write_schema_docs 重新生成"

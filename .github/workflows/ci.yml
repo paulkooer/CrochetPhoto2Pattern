@@ -20,15 +20,54 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # 只构建不推送：防止 Dockerfile / 依赖图腐化（锁定安装、非 root、
-      # HEALTHCHECK 的组合已在本仓库验证过容器冒烟）
+      # 构建但不推送；load 进本地 daemon 后实际运行容器做冒烟，防止 Dockerfile /
+      # 依赖图腐化只在部署时才暴露（此前只构建不运行，审核 F-18）。
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
           context: .
           push: false
+          load: true
+          tags: crochet-photo2pattern:ci
           cache-from: type=gha
           cache-to: type=gha,mode=minimal
+
+      - name: Container smoke (health, non-root, production flags)
+        run: |
+          docker run -d --name app -p 8501:8501 crochet-photo2pattern:ci
+          for i in $(seq 1 45); do
+            curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null 2>&1 && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8501/_stcore/health
+          curl -fsS http://127.0.0.1:8501/ | grep -qi "<html"
+          # 非 root 运行；生产镜像不向浏览器暴露异常堆栈（F-16）
+          test "$(docker exec app id -u)" = "1000"
+          docker inspect --format '{{json .Config.Cmd}}' app | grep -q -- '--client.showErrorDetails=none'
+          # 上传解码依赖须为已修复版本（F-02）
+          docker exec app python -c "import PIL; assert int(PIL.__version__.split('.')[0]) >= 13, PIL.__version__; print('pillow', PIL.__version__)"
+          # /_stcore/health 在脚本运行前就会返回 ok，探不到运行期缺库；这里导入应用
+          # 模块并真正调用应用依赖的 OpenCV 算子（运行阶段未装任何 apt 包，缺系统库
+          # 即在此失败）。
+          docker exec app python -c "import app.models.orchestrator, app.ui.result_renderer"
+          docker exec -i app python - <<'EOF'
+          import cv2
+          import numpy as np
+
+          img = np.zeros((64, 64, 3), np.uint8)
+          img[16:48, 16:48] = 200
+          mask = np.zeros(img.shape[:2], np.uint8)
+          bgd, fgd = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
+          cv2.grabCut(img, mask, (8, 8, 48, 48), bgd, fgd, 1, cv2.GC_INIT_WITH_RECT)
+          cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+          assert not cascade.empty()
+          assert cv2.cvtColor(img, cv2.COLOR_RGB2LAB).shape == (64, 64, 3)
+          print("cv2", cv2.__version__, "grabCut/Haar/cvtColor OK")
+          EOF
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs app || true
 
   type-check:
     runs-on: ubuntu-latest

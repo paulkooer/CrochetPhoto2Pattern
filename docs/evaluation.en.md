@@ -74,8 +74,19 @@ Hashes cannot detect cropped/transcoded near-duplicates, and tags require human 
 Strict thresholds are the higher of manifest values and these floors: 30 cases, 0.5 case
 part recall, 0.6 macro F1, 0.8 case pass/flare/color accuracy, and 1.0 pattern validity and
 complete Parade export rates. `release_readiness.automated_passed` reports automated
-readiness separately from `summary.passed` quality metrics. `release_approved` remains
-false: photo authenticity, labels, rights evidence and physical trials require review.
+readiness separately from `summary.passed` quality metrics.
+
+> **Known limitation (audit F-10)**: parts started from a ring or foundation chain (a
+> separate skirt tube's waist) cannot yet be exported faithfully to Parade. Exporting them
+> as a magic-ring `scNinc` would close the open tube into a flat disc, so these parts report
+> `complete=False`. Because the release dataset must include skirt cases (flare accuracy) and
+> the complete-Parade-export floor is fixed at 1.0, **a dataset with skirts cannot pass that
+> floor automatically yet**. G3 can pass with skirts only after a faithful chain-ring start
+> lands in the Parade exporter, or after that floor is explicitly lowered or waived for
+> ring-start parts. Earlier versions counted these parts as complete and overstated G3 readiness.
+
+`release_approved` remains false: photo authenticity, labels, rights evidence and physical
+trials require review.
 
 As of 2026-10-11, report schema 3 (input manifest remains 2) uses release policy 2.
 Part precision/recall/F1 score final `params.parts`. Every case must agree across

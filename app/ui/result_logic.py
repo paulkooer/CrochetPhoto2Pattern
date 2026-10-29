@@ -14,7 +14,7 @@ from typing import Any
 
 from app import software_version
 from app.models.crochet_params import CrochetParamsGenerator, refresh_derived
-from app.models.gauge import ShapingStyle, gauge_from_result
+from app.models.gauge import Gauge, ShapingStyle, gauge_from_result
 from app.models.geometry import PROPORTIONS_HEAD_BODY_PREFIX, normalize_structure
 from app.models.sizing import sizing_meta_for_analysis
 from app.schemas import MAX_PATTERN_PARTS, ImageAnalysis, PatternResult
@@ -153,7 +153,7 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
     sizing = sizing_meta_for_analysis(
         analysis, "user_resize",
         photo_head_to_height_ratio=old_sizing.get("photo_head_to_height_ratio"))
-    return PatternResult.from_result({
+    updated = PatternResult.from_result({
         **result,
         "generator_version": software_version(),
         "analysis": analysis.model_dump(),
@@ -162,13 +162,29 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
         "gauge": asdict(gauge),
         "sizing": sizing,
     }).to_result_dict()
+    from app.models.skirt_edit import preserve_skirt_waist
+
+    return preserve_skirt_waist(result, updated)
 
 
 def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
     """StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI。"""
     structure = normalize_structure(corrected_structure)
-    analysis = ImageAnalysis(**result["analysis"])
     gauge = gauge_from_result(result)
+    return _regenerate_geometry(result, structure, gauge)
+
+
+def regenerate_with_gauge(result: dict, stitches_per_10cm: float, rows_per_10cm: float) -> dict:
+    """Recompute rounds at measured density while keeping the target geometry."""
+    gauge = Gauge(stitches_per_10cm, rows_per_10cm)
+    if gauge == gauge_from_result(result):
+        # A no-op must not erase manually edited rounds by regenerating them.
+        return deepcopy(result)
+    return _regenerate_geometry(result, normalize_structure(result["structure"]), gauge)
+
+
+def _regenerate_geometry(result: dict, structure: dict, gauge: Gauge) -> dict:
+    analysis = ImageAnalysis(**result["analysis"])
     params = CrochetParamsGenerator.generate_params(
         analysis, structure,
         color_bands=result.get("color_bands"),
@@ -176,13 +192,16 @@ def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
         gauge=gauge, style=_result_style(result),
         spans=result.get("spans"))
     _preserve_yarn_spec(result, params)
-    return PatternResult.from_result({
+    updated = PatternResult.from_result({
         **result,
         "generator_version": software_version(),
         "structure": structure,
         "params": params,
         "gauge": asdict(gauge),
     }).to_result_dict()
+    from app.models.skirt_edit import preserve_skirt_waist
+
+    return preserve_skirt_waist(result, updated)
 
 
 def import_backup(data: dict, result_id: str) -> dict:

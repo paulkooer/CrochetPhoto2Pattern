@@ -83,9 +83,27 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Stage timings, fallback reasons, and a runtime budget. Historical imported results retain their original usage metadata.
 - Strictly validated advanced structure editing with local regeneration.
 - Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
-- Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows.
-- Stitch-arithmetic validation, ring charts, progress tracking, per-color bills of
+- Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows. Failed generation,
+  restoration or editing preserves the current grid and undo/redo history; downloads match
+  the displayed result. See the [Chinese grid-project guide](docs/project-format.md#平面网格工程与修色历史).
+- Stitch-arithmetic and supported round-notation checks, an editor calculator for
+  consumed/output stitches and increases/decreases, ring charts, progress tracking, per-color bills of
   materials, share links, SQLite history, JSON backup, Markdown, and optional PDF export.
+- Explicit stitch order is preserved in Markdown, symbol strips and CrochetPARADE,
+  including mixed shaping and nested repeats. Aggregate-only export counts inferred
+  placement separately; prose-only placement hints and special techniques still need review.
+- Opt-in stitch-parent inspection maps explicit formulas to the preceding round's stitch
+  indices, including scoped FLO/BLO. Browse 24 operations per page and download that window
+  as SVG/JSON; this shows associations rather than physical shape or tension. See the
+  [Chinese inspection guide](docs/project-format.md#逐针连接核对).
+- Scoped front/back-loop notation, such as `BLO((2X,V)×6)` or `4sc-FLO`, retains
+  counts and exact loop positions through checks, charts and exports. F/B labels mark
+  chart positions; unresolved loop instructions stop that part's DSL export for review.
+- Preserve explicit `inv-sc2tog` technique identity in counting, edits, backups and printed
+  notation. The current DSL/chart subset requests review for invisible decreases instead of
+  substituting ordinary decreases. Charts retain the pattern's actual round numbers.
+- Consecutive +6 rounds specify end/center placement directly, such as `(X,V,X)×6`.
+  Numeric edits update affected neighboring instructions while retaining finishing steps.
 - EXIF orientation correction and defensive image/input size limits.
 - Authorized-photo evaluation and independent physical-trial tooling.
 
@@ -126,7 +144,8 @@ Optional pose landmarks may download model weights on first use; provide
   set `CROCHET_HISTORY_MODE=single_user` to use the server's local SQLite database.
   Shared/public deployments must keep `disabled`; history has no user authentication
   or ownership isolation. Existing databases are preserved. Share links embed compressed
-  pattern data in the URL and should not contain sensitive material.
+  pattern data in the URL; opening one still sends the token to the host running the app,
+  so links should not contain sensitive material.
 - `.env`, authorized evaluation photos, evaluation outputs, and physical-trial records
   are ignored by Git by default. Always review staged files for credentials, private
   photos, and personal information.
@@ -139,6 +158,70 @@ Optional pose landmarks may download model weights on first use; provide
 ```bash
 uv run streamlit run app/main.py
 ```
+
+### Save and reopen a pattern
+
+Choose **💾 备份完整结果** (back up the complete result) on a result page to save JSON.
+In a fresh session, expand **📂 打开备份图解** in the sidebar, upload that file, and click
+**导入并打开图解**. The restored pattern appears in the local Photo tab without generating
+a seed pattern or enabling history. Uploads accept UTF-8 JSON up to 20 MiB; the paste
+option accepts up to 2 MiB. A parameters-only JSON download is not a complete backup.
+
+Import validates the format, stitch counts and explicit operations before replacing the
+Photo result. Failed imports preserve current work, and sidebar imports leave the Manual
+tab's result untouched. The import panel on each result page replaces that page's result.
+To retain actual crochet progress, expand **🧺 我的钩织工程**, enter personal notes, choose
+**💾 保存工程（含进度）**, and download the project JSON from the dialog. Projects save
+completed rounds for each physical copy, notes and a pattern revision. Reopen them through
+the same sidebar uploader. Save again after working: each file captures the state when Save
+was clicked. Edits report affected progress resets; undo restores progress. Ordinary pattern
+backups and share links omit personal notes/progress; undo history remains session-only.
+Backups, share links, project files and trial bundles also omit photo-derived data (the 96 px
+`preview` thumbnail and the hand-corrected `mask_review` silhouette).
+Similarly named custom parts, including names ending in `copy2`, track each physical copy
+independently. Bulk completion and reset affect only the selected part and preserve project notes.
+For paginated patterns, **前往下一未完成圈** jumps to the selected part's first unchecked
+round, including later physical copies, without changing progress. For multiple layers of
+reserved-loop joins, editing a foundation clears all dependent progress regardless of record order.
+Round edits retain completed work before the first changed round; part-wide or gauge changes
+remain conservative. Use each edit control's **预览…修改影响** button to review affected parts,
+starting rounds and retained/cleared counts, then apply or cancel the preview. Preview again
+after changing inputs; applying a preview uses the latest progress.
+
+Under local edits, **锁针并腿方案（手动核对）** records each leg's open round, stitch count and
+marker, plus the bridge chain count. It calculates a join round with one single crochet per
+opening stitch and on each side of each chain. View and download a count-only SVG diagram;
+download the standalone plan and preview it before restoring by upload or JSON paste. Optionally select two current pattern parts to compare round
+numbers, stitch counts and copy counts, with reminders for later rounds and finishing instructions.
+Generating or importing a new result, applying an edit, undoing or redoing clears this tool's
+inputs, preview and part selections. Download the plan first to restore it afterward; failed
+operations retain the current plan.
+Manually verify the openings, start and direction; the
+plan does not modify the pattern and cannot be imported as a pattern or project. See the
+[Chinese guide](docs/project-format.md#手动规划锁针并腿).
+
+### Crochet an attached skirt
+
+The sidebar's attached-skirt option now identifies a body foundation round, the following
+FLO reservation round, and the exact BLO range used by the skirt's first round. Body and skirt
+copy counts must match. One-piece construction uses merged round numbers; resizing recomputes
+the connection, and Markdown/PDF render the same record. For example, a 36-stitch foundation
+at body round 11 is reserved by working round 12 into its front loops; the skirt then uses
+round 11's 36 remaining back loops. Follow the generated numbers; the waist location is a
+template choice requiring a physical trial. Legacy backups remain readable with a review
+notice when exact references are missing. The current CrochetPARADE subset skips attached
+components and reports partial export because cross-component reserved-loop joins are not implemented.
+Under local edits, **接裙位置图示与调整** shows the foundation/reservation/join sequence and
+lets you preview a different foundation round. Applying restores the old reservation, creates
+the new one and adjusts generated skirt shaping when waist counts differ. Custom instructions
+that cannot be safely reconstructed are preserved by rejecting the edit. Download the schematic
+as SVG; Markdown/PDF include the same connection sequence as a table.
+Applying a new waist pins its relative position in the candidate-round sequence. You can also
+choose **预览固定当前腰位** to pin the current round. Pattern backups and projects retain this
+preference; size and structure regeneration map it to the nearest new candidate. This fraction
+describes candidate order, not measured waist height. **预览取消腰位固定** previews a return to
+automatic placement on the next regeneration, preserving current stitches and progress. Both
+pinning and unpinning support undo.
 
 ### Review and runtime limits
 
@@ -209,6 +292,22 @@ photos and reports are ignored by Git, and passing software metrics still does n
 physical crochetability.
 
 ## Physical-trial loop
+
+Use **🧪 实体试钩记录** on a result page to enter swatch/yarn details, measured dimensions,
+usage and scoped timing, then save and download a ZIP with its original pattern. Reopen it
+through the sidebar's **🧪 打开试钩包** without generating a seed result. Live pattern edits do
+not rebind existing measurements. Downloads reflect the last successful save; trial bundles
+and crochet projects are separate. Their `*.trial.json` files work with the CLI below.
+Save partial measurements as drafts and resume them later; required measurements are checked
+when marking complete. Returning to draft retains observations, while incomplete data stays out
+of finished-item comparisons and calibration. ZIP bundles with partial drafts require this version to restore.
+Undo/redo saved records restores both the form and download; unsaved input blocks switching and
+is retained. History is session-only, limited to eight snapshots and 2 MiB combined, and omitted from ZIPs.
+The panel compares saved measurements with the source pattern. After saving a measured swatch,
+use **预览按实测密度重算** to review new stitch counts and progress impact at unchanged target
+dimensions. Regeneration retains pinned waist placement, supports undo, and leaves trial evidence
+unchanged. It replaces manual round edits and clears progress for review when density changes.
+Full-project timing is not treated as comparable to the original round-crochet baseline.
 
 Create a trial record tied to the exact pattern SHA-256, record actual gauge, dimensions,
 yarn, and active time, then generate conservative calibration candidates:

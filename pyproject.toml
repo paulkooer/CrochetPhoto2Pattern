@@ -28,7 +28,9 @@ dependencies = [
     # 上界 <2.0：Streamlit 大版本常有破坏性 API 变更，升 2.x 需人工验证
     "streamlit>=1.40.0,<2.0",
     "pydantic>=2.0",
-    "pillow>=10.0",
+    # 下限锁到 13.0.0：Pillow 12.x 及更早在图像解码路径有多项已知漏洞
+    # （见 dependency-security 工作流），而上传路径会解码不可信图片。
+    "pillow>=13.0.0",
     "python-dotenv>=1.0",
     # 本地视觉分析（haar 人脸检测）；缺失时自动退纯默认值路径。
     # 上界 <5：OpenCV 5.x 移除了 legacy CascadeClassifier API。

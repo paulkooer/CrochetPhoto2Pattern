@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "trial_id": "legacy-extra",
+  "maker_id": "reviewer",
+  "status": "completed",
+  "cohort": "calibration",
+  "pattern": {
+    "sha256": "6549d4e04202e4798e7113607abcfc255d4a991649c1323a2af3cb6410183dcc",
+    "application_version": "0.2.0b2",
+    "target_height_cm": 18.0,
+    "gauge": {
+      "stitches_per_10cm": 13.0,
+      "rows_per_10cm": 16.0
+    },
+    "total_stitches": 1224,
+    "total_physical_rounds": 66,
+    "estimated_time_minutes": 144
+  },
+  "swatch": {
+    "measured": true,
+    "stitches_per_10cm": 13.0,
+    "rows_per_10cm": 16.0,
+    "hook_mm": null,
+    "yarn_brand": null,
+    "yarn_line": null,
+    "yarn_lot": null,
+    "fiber": null
+  },
+  "observation": {
+    "completed_on": "2026-10-29",
+    "overall_height_cm": 18.0,
+    "yarn_used_grams": 60.0,
+    "yarn_used_meters": null,
+    "active_minutes": 144,
+    "time_scope": "round_crochet_baseline",
+    "pattern_modified": false,
+    "modifications": [],
+    "notes": null
+  }
+}

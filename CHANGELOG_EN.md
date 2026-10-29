@@ -8,6 +8,205 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-29 Whole-round prose and formula consistency
+
+- Reject claims such as `6V，均匀减6针` or `6X，隔2针加1针` when the formula contains no corresponding shaping. Check outer increase/decrease repetition counts, direction and every-stitch wording so correct arithmetic cannot hide contradictory technique instructions.
+- Compare normalized decimal strings instead of converting untrusted prose counts to integers. Excessive digits produce bounded diagnostics; equivalent zero-padded counts remain accepted.
+- Share checks across edits, imports and exports. Failed imports retain the current pattern, progress and notes for retry. Conditional/future-round prose retains its existing interpretation; pattern/project formats and export-cache version are unchanged.
+
+### Fixed — 2026-10-29 Trial identity migration and independent-sample gates
+
+- Upgrade legacy bundles only after verifying exact source bytes, original metadata and any legacy fingerprint. Retain observations, partial measurements and source bytes; rebind sidecars when resaving.
+- Version 1 canonicalizes gauge and physical round-sequence multiplicity, ignoring part order, labels and equivalent copy grouping while preserving round order and quantities. Cosmetic reordering cannot establish design diversity or holdout independence.
+- Always check source-SHA overlap across cohorts. Legacy records remain reportable, but unverified identity blocks readiness and calibration candidates; expose identity completeness and pending-upgrade counts.
+- Add `crochet2pattern-trials migrate` for standalone records with their exact source. Retain measurements, forbid input overwrites and preserve existing output on replacement failure. Trial/report root schemas remain 2/3.
+
+### Security — 2026-10-29 Effective dependency audit and patched dependencies
+
+- The dependency audit now exports the fixed requirements of every extra from `uv.lock` and checks each package, fails when that export is empty, and runs on every pull request. The former `--local` invocation audited no packages inside the uv overlay yet reported success.
+- Upgrade Pillow to 13.0.0 (uploads decode untrusted images), Streamlit to 1.66.1 (which no longer depends on GitPython) and certifi to 2026.10.23, clearing the known advisories in the lock. The Pillow lower bound is now 13.0.0.
+- Uploads are decoded only as JPEG/PNG, matching the uploader. The Docker production image starts with `--client.showErrorDetails=none`, so uncaught exceptions no longer show types, messages or tracebacks in the browser; local development keeps full tracebacks.
+
+### Security — 2026-10-29 Escaped external text and local-only photo data
+
+- Free text from share links and imported backups, such as part names, colors and notes, is escaped on result pages and in Markdown exports, so it can no longer render external images or disguised links. Markdown table cells additionally escape pipes and fold line breaks.
+- Share links, backups, project files and trial bundles omit photo-derived data (the 96 px `preview` thumbnail and the hand-corrected `mask_review` silhouette). In-session results and local history keep thumbnails, and history accepts only locally generated JPEG data URLs.
+- Pattern revision hashes exclude photo-derived data. Projects saved earlier with a thumbnail still restore their progress and notes and omit the thumbnail when saved again; the project format remains schema 1.
+
+### Fixed — 2026-10-29 Generation correctness and export consistency
+
+- One-piece head-and-body generation now refuses, with advice to use separate parts, when the body top is wider than the head, instead of silently producing a pattern that only increases and has no head ball; safety eyes use the head's own peak. Ideal ball/egg rows follow the meridian arc πD/2, fixing flattened shapes and consecutive +12 jumps.
+- Parts started from a ring or chain (such as a separate skirt tube) are reported as partial CrochetPARADE exports instead of complete magic-ring exports. Datasets with skirts therefore cannot meet the G3 complete-Parade-export floor yet; see [evaluation](docs/evaluation.en.md). Bodies and limbs that start from a magic ring are flagged accordingly.
+- C2C row arrows now match the color reading order, and contradictions between "increase/decrease 1 every N stitches" or "evenly increase/decrease N" notes and the formula are reported. Skirt joins state the FLO/BLO orientation premise, and the profiled body's last round is sewn to the head's closed bottom. Export cache version 8 regenerates old Markdown and Parade caches.
+
+### Fixed — 2026-10-29 Import validation and resource limits
+
+- Share-link decoding rejects NaN/Infinity and duplicate keys, matching backup import. Legacy structure shape, type and color fields must be scalars, preventing persistent result-page errors after import.
+- Add a 16,000-round total across parts (the 2,000-round per-part and 64-part limits are unchanged), bounding import, export and progress costs for oversized backups.
+- Grids over 10,000 cells use a raster preview without symbols and build the SVG only when its download is clicked, with unchanged content. An 80,000-cell grid's session footprint drops from about 15 MiB to 1.2 MiB; common sizes generated with default ratios keep the vector preview.
+- Grid dithering caches the nearest color per rounded RGB value and diffuses error with scalar arithmetic, producing identical cells. Photos dither about 1.5–4.5× faster and flat or noisy areas over 20× faster (a 48,000-cell noise image drops from about 17 s to 0.5 s).
+
+### Fixed — 2026-10-29 G4 trial gates count design fingerprints
+
+- Distinct patterns and calibration/validation isolation now use a design fingerprint (normalized gauge and per-round stitch structure) instead of byte hashes that change with diagnostics timing, thumbnails, colors or yarn labels, so regenerating one design counts once. Byte hashes still verify integrity, and older records without fingerprints fall back to them.
+
+### Changed — 2026-10-29 Container image and CI
+
+- The CI Docker job now runs the built container: it probes health, checks the non-root user and production flags, and calls OpenCV GrabCut, Haar and color conversion, failing on missing libraries or startup errors.
+- The runtime stage no longer installs libglib through apt: the opencv-python-headless wheel bundles its libraries, so builds no longer depend on deb.debian.org.
+- Share-link wording now says no extra backend or database is needed while the token is still sent to the host running the app; the post-load notice no longer claims permanent automatic saving.
+
+### Fixed — 2026-10-29 Custom-part and bulk-progress isolation
+
+- Disambiguate checkbox identifiers across the complete pattern when a custom name such as `practice_copy2` aliases another part's second copy. This fixes duplicate-widget errors and restoration of one completion as two, while retaining existing session identifiers for ordinary names.
+- Share the mapping across inline/paginated progress, project saving/restoration, edits and undo. Removing stale rounds no longer deletes similarly named parts' completions. Saved part names, instance IDs, round numbers and project formats remain unchanged.
+- Update bulk completion, reset and resume navigation through callbacks before rendering, avoiding interrupted reruns that discard other parts' progress or project notes. Files that already contain incorrect completions still need review against the physical work.
+
+### Fixed — 2026-10-29 Grid generation, project saving and failure preservation
+
+- Convert NumPy assignment indices to native integers in both plain and dithered generation. This fixes project JSON serialization errors that also interrupted UI generation; the project format remains 1.0.
+- Prepare the complete preview and downloads before changing the current grid or histories during generation, restoration, cell/rectangle recoloring and undo/redo. Preparation failures display an error and preserve the grid, editor inputs and both history stacks for retry.
+- Reset history and coordinates only after successful replacement. No-op edits retain redo and cached output; SVG, Markdown and project JSON stay aligned with the preview after edits and history switches.
+
+### Fixed — 2026-10-29 Invisible-decrease identity and actual round labels
+
+- Preserve `inv-sc2tog` in the operation tree, iteration and canonical notation instead of merging it into A because both consume two stitches and produce one. Counting, edits and existing backups remain supported.
+- Explicitly report invisible decreases and their prose cues outside the current DSL/chart subset. DSL stops at that round and reports partial export; Markdown retains the technique or requests review, and PDF retains original notes. Skirt editing rejects automatic FLO reservation on these rounds.
+- Use recorded round numbers in ring charts, symbol strips and truncated-strip headings, with positional fallback for legacy missing labels. Increment export cache version to 7 to regenerate old reports and PDF caches.
+
+### Added — 2026-10-29 Stitch-parent connection inspector
+
+- Add an opt-in adjacent-round inspector informed by connectivity and explicit-domain conventions in CrochetPARADE, stitch-grapher and related GitHub projects. Preserve ordered X/V/A/W/M operations and scoped FLO/BLO while displaying source and produced stitch indices.
+- Show 24 operations per page, skipping repeated subtrees by counts. Download the current SVG window or JSON bound to the pattern hash. Explain missing formulas, first rounds and unsupported techniques without inferring positions from totals.
+- Inspection preserves patterns, progress and notes; edits reset the view. No dependencies or pattern/project formats changed. The diagram is not a physical layout or tension simulation.
+
+### Fixed — 2026-10-29 Result replacement and leg-join state cleanup
+
+- Release the old result's leg-join restore preview, inputs and part selections when generation, successful import or editing replaces it, preventing session-state accumulation. Failed operations retain the current plan.
+- Match complete result-ID boundaries during cleanup so another result with the same ID prefix keeps its progress, notes and export cache.
+- Replace leg-join preview and calculation output together, clearing old controls after edits so users can continue entering plans. Photo and Manual results remain independent.
+
+### Fixed — Stable part selection for leg-join comparison
+
+- Track selected part names rather than list positions: reordering keeps the selected part, deletion or renaming clears it with a prompt, and copy-count changes are rechecked.
+
+### Changed — Remind users about later rounds and finishing
+
+- During leg-join comparison, flag later rounds and finishing-related wording for manual review. Matching counts only establishes agreement with the pattern record; it does not infer an open edge or physical feasibility.
+
+### Added — Preview leg-join plan restoration
+
+- Compare current and proposed inputs before applying or cancelling a restore. Changing the source file, restore method or current inputs invalidates the preview and preserves the inputs until a fresh preview is made.
+
+### Added — Leg-join count diagram
+
+- Display and download an SVG of both leg openings, the two chain sides and the resulting stitch count. The diagram follows current inputs and explicitly does not depict actual stitch positions, direction or physical proportions; patterns and projects remain unchanged.
+
+### Added — Compare leg-join plans with the current pattern
+
+- Choose the two corresponding pattern parts to compare round numbers and stitch counts. Check at least two copies when both sides use the same part; report missing rounds, mismatched counts and insufficient copies.
+- Comparison changes neither pattern nor progress and does not verify real openings, markers or direction. Part choices are not included in the standalone plan.
+
+### Added — Restore manual leg-join plans
+
+- Upload or paste a previously downloaded plan. Validate version, fields, values, markers and recalculated totals before restoring the form. The 16 KiB limit, duplicate-key rejection and atomic validation preserve current inputs on failure; successful restoration leaves pattern and progress unchanged.
+- Standalone plans are not bound to a pattern or interchangeable with project backups; openings and direction still require manual review.
+
+### Added — Manual chain-bridge leg-join plan
+
+- Add a separate planning aid to record each open leg round, stitch count and marker, plus bridge chains. Validate input ranges and calculate a round with one single crochet per opening stitch and on both sides of every chain; download a standalone JSON plan.
+- The tool does not verify that openings or stitch locations exist and does not generate or change patterns. Plans cannot be imported as patterns or projects; other techniques and physical results need manual review.
+
+### Added — 2026-10-28 Trial save history
+
+- Add independent undo/redo for saved swatches, yarn, partial measurements and completion status. Restore the form, comparison and download together while preserving the current pattern, crochet progress and project notes.
+- Unsaved or invalid input blocks switching and is retained. Identical saves preserve history and redo; changed saves after undo clear redo. Validation or serialization failures leave the active record and history intact.
+- Keep at most eight snapshots and 2 MiB combined in the session, sharing the source pattern. Reopening or closing a record clears history; ZIPs omit it. Trial formats and dependencies are unchanged.
+
+### Added — 2026-10-28 Resumable partial trial measurements
+
+- Save dimensions, yarn, timing and notes in stages with missing values left blank, then restore in a later session. Keep fields visible across completion-state changes and leave completion dates blank until entered.
+- Returning a completed record to draft retains observations. Completion still requires a measured swatch, date, required measurements and consistent modification details. Partial measurements stay out of finished-item comparisons and calibration.
+- Add optional schema-1 `draft.json` to ZIP bundles, bound to the exact trial JSON bytes with separate type/range checks and a 512 KiB limit. Failed saves/imports preserve current work. Publish the draft JSON Schema.
+- Formal trial records remain schema 2. Original two-file bundles and completed records stay compatible; three-file draft restoration requires this version. No new dependencies or physical-trial evidence.
+
+### Added — 2026-10-27 Saved measurement comparisons and density previews
+
+- Compare saved swatch density, height, yarn and timing with the original pattern. Keep unmeasured/missing values explicit, distinguish full-project time from the baseline, and identify modification effects.
+- Preview regeneration of the original pattern from a saved measured swatch, retaining target dimensions, structure, yarn specifications and pinned waist placement while rebuilding rounds and joins. Equal density preserves custom edits; a different source cannot use this action.
+- Show stitch/row density in edit previews. Applying changed density clears completed rounds for review, preserves notes and supports undo. Trial records/downloads stay unchanged; unsaved form values do not drive regeneration.
+- Existing formats, generator constants and dependencies remain unchanged. No new physical measurements or finished-item validation.
+
+### Added — 2026-10-27 Physical trial recording in the web UI
+
+- Add draft/completed trial forms for anonymous IDs, swatches, yarn, measured size/usage, scoped timing and pattern modifications, with a height-deviation display. Retain trial schema 2 and existing calibration rules.
+- Download the exact source pattern and record together as ZIP. Reopen both from the sidebar in a fresh session or restore only the record within a result panel. Live edits never rebind measurements; Photo and Manual trials remain separate.
+- Verify source hashes and derived metadata, bound archive reads and reject damaged or mismatched contents without replacing current work. Trial records remain separate from backups, projects and shares; downloads reflect the last successful save.
+- Share draft creation from one bounded byte snapshot between CLI and UI, preventing metadata/hash reads from seeing different file states. Reject duplicate JSON keys, non-finite numbers and oversized input. No new dependencies or physical-trial evidence.
+
+### Fixed — 2026-10-27 Preserve waist preferences across regeneration
+
+- Save a manually selected waist's relative position in the candidate sequence. Size and structure regeneration map it to a new candidate while retaining the original fraction across repeated resizes. Pattern backups and projects retain the preference; older patterns remain automatic.
+- Add impact previews for pinning the current waist and unpinning it. Policy-only changes retain current stitches and progress, support undo, and take effect on the next regeneration. Explicit skirt removal also drops the preference.
+- Validate optional `params.skirt_waist_position` and its attached-skirt context. Retain schematic downloads and show a review message for valid imported joins outside the adjustable body region. Pattern/project schemas remain at 1 with no new dependencies.
+
+### Added — 2026-10-27 Edit impact previews and skirt waist placement
+
+- Retain completed rounds before the first changed instruction, color or row. Insertions, deletions and reordering never transfer progress to shifted work; gauge, part-wide, dependent joins and physical-pair changes remain conservative.
+- Preview part, round, size and advanced JSON edits with affected ranges, retained/cleared counts and derived changes. Apply the reviewed candidate using current progress or cancel; preview application and undo/redo run before rendering to prevent stale widgets.
+- Add a connection schematic and actual waist-round selector. Restore generated reservation instructions, create the new FLO reservation and resize recognized generated skirt shaping when needed. Reject unsafe custom rewrites, existing loop techniques and occupied reservations.
+- Download SVG schematics and include matching sequence tables in Markdown/PDF. Bump export cache to 6; pattern/project formats stay unchanged. No new runtime dependencies or physical-trial evidence.
+
+### Fixed — 2026-10-26 Progress dependencies and resume navigation
+
+- Fix order-dependent progress retention in deeper reserved-loop join chains. Collect direct changes first, then propagate invalidation until no further dependents are affected. Preserve independent parts and unchanged foundations.
+- Show the selected part's next unfinished physical copy and round in paginated patterns, with a navigation button that does not alter progress. Disable it when complete and return to the first round after reset.
+- Keep empty imported colors out of paginated round labels instead of displaying `None`.
+- Add connection-order permutations, transitive invalidation, reorder-only preservation, directionality and restored cross-copy navigation regressions. Project formats and dependencies are unchanged.
+
+### Added — 2026-10-26 Explicit skirt joins and saved crochet projects
+
+- Record the actual foundation round, following FLO reservation round and skirt's first-round BLO range. Generate the waist against real body stitches, use merged one-piece numbering and recompute after resizing. Waist placement remains a template choice requiring a physical trial.
+- Check referenced rounds, adjacency, counts, loop scope and matching physical copies. Reject contradictory joins during edits, imports and printable export. Render Markdown/PDF assembly from current references; legacy backups remain readable with a review notice. DSL explicitly reports unsupported cross-component reserved-loop joins.
+- Add a project-save dialog capturing current per-copy progress, personal notes, software version and a SHA-256 pattern revision. Reopening restores this state; mismatched revisions or invalid round identities leave existing work untouched.
+- Edits retain unaffected progress and notes, report cleared completed rounds, and invalidate dependent skirt progress when its body changes. Undo restores progress; paginated progress is portable too.
+- Keep pattern backup schema 1 and add independently versioned `project_state`. Share links and ordinary pattern backups omit personal state. Publish two JSON Schemas, bump export cache format to 5, and add no runtime dependencies.
+
+### Fixed — 2026-10-25 Fresh-session recovery and printed guidance
+
+- Add a sidebar backup opener without requiring a seed result or enabled history. Accept UTF-8 JSON uploads up to 20 MiB, or pasted JSON up to 2 MiB, including BOM. Reuse it on result pages while retaining the existing paste interaction.
+- Enforce byte limits and reject duplicate JSON keys, non-finite numbers, invalid encoding and incomplete backups. Replace only the target result after format and pattern validation; failures retain existing work and caches. The backup schema is unchanged.
+- Share stitch guidance across the UI, Markdown and PDF. Include FLO/BLO/W/M, distinguish sc2tog from invisible decreases, and identify letters as project conventions. Follow explicit placement without an extra automatic stitch shift; switching to joined rounds requires checking counts and positions.
+- Bump export cache format to 4 and require regeneration of old PDFs in surviving sessions. Add recovery, malformed-input, tab-isolation, print-consistency and cache-upgrade regressions without new runtime dependencies.
+
+### Added — 2026-10-24 Scoped front/back-loop notation
+
+- Support `FLO(...)`, `BLO(...)`, `FLO: ...`, stitch suffixes such as `sc-FLO`, and standalone whole-round loop directives. Preserve counts, shaping and local loop positions.
+- Retain qualifiers in Markdown, label chart positions F/B with tooltips, and emit CrochetPARADE `scfl`/`scbl` plus shaping suffixes. Bump export cache format to 3.
+- Reject conflicting scopes. Unresolved loop prose and first-round loops without a supported foundation no longer fall back to ordinary sc. Manual notes remain saveable; partial DSL exports retain the valid prefix and other parts. Distinguish generated tail-threading closures from crochet-loop instructions and qualify general invisible-decrease advice.
+- Recheck the original bee pattern and correct fixture/glossary BLO labels to FLO. Export tests check actual loop types and separately report inferred placement in the remaining aggregate rounds.
+- Synthetic tests cover limits, independent counts, placement, edits, backups, printable exports and calculator interaction. No third-party patterns, new dependencies, external simulation or physical trial were added.
+
+### Changed — 2026-10-24 Generate explicit increase placement
+
+- For consecutive +6 rounds, split even plain-stitch gaps around V: 18→24 uses `(X,V,X)×6` and 30→36 uses `(2X,V,2X)×6`; odd gaps retain end-of-group increases. New patterns no longer append a separate vague half-group shift instruction.
+- Numeric edits update affected neighboring placement while preserving finishing actions and custom arrangements. Legacy backups retain their original notes on import.
+- Cover ladder/ideal/egg heads, gauge presets, one-piece construction, edit restoration and idempotence. This specifies operations; it does not establish an improvement in physical shape.
+
+### Fixed — 2026-10-24 Preserve stitch placement
+
+- Retain ordered repeat groups in the notation parser. Markdown stitch columns, symbol strips and CrochetPARADE exports now preserve explicit placement instead of replacing staggered or clustered shaping with uniform groups.
+- Export explicit mixed shaping, W/M stitches, uneven placement and nested groups, keeping each source round on one line. Contradictory or ambiguous instructions stop that part at its valid prefix; other parts still export.
+- Report physical `inferred_rounds` for aggregate-only uniform fallback. Free prose and textual placement hints still require review; Markdown no longer invents formulas alongside custom prose. Mixed rounds without explicit placement display a review marker.
+- Reuse compiled rounds across identical copies and expand only visible chart symbols. Keep large repeats compact, version export caches independently of package releases, and prevent metadata line breaks from becoming DSL instructions.
+
+### Added — 2026-10-24 Round-notation checks
+
+- Count X/V/A/W/M, US sc/inc/dec aliases (including sc-inc, sc2tog and inv-sc2tog), and repeat groups, including split positions, mixed shaping and non-six-sector rounds.
+- Edits, backup imports and Markdown/PDF exports compare consumed stitches, output stitches, increases and decreases against numeric fields. Previously accepted contradictory notation must be corrected before applying or exporting.
+- Add an optional calculator to the round editor. It displays all four counts without changing the pattern. Unknown techniques and free prose still require manual review.
+- Bound repeat counts, nesting and expression size without expanding repeats. Clarify four ambiguous increase abbreviations in historical fixtures. New tests use synthetic examples; local reference files are not included. No new dependencies.
+
 ### Added — 2026-10-15 Foreground correction brush
 
 - Add a local photo canvas with add/erase, brush sizing, overlay visibility, undo for the last 20 strokes and reset to automatic segmentation. Each completed stroke updates the selection.

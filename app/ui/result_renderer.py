@@ -8,14 +8,14 @@ from __future__ import annotations
 import html
 import json
 import re
-import uuid
 from copy import deepcopy
 
 import streamlit as st
 
 from app.models.colors import YARN_COLORS
 from app.models.gauge import gauge_from_result
-from app.schemas import PART_NAMES, PatternResult, difficulty_label
+from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STITCH_LEGEND_ZH
+from app.schemas import PART_NAMES, PatternResult, difficulty_label, strip_photo_derived
 from app.ui import result_logic
 from app.ui.design_system import section_heading
 from app.ui.result_logic import rebuild_params, result_profile
@@ -26,19 +26,17 @@ from app.utils.share import _BACKUP_KEYS
 # 其余后跟 `rid` 本体）。旧结果被替换时用 purge_result_state 清理。
 _WIDGET_KEY_PREFIXES = (
     "chk_", "all_", "clear_", "json_edit_", "regen_", "dl_json_", "dl_md_",
-    "dl_backup_", "dl_parade_", "import_", "importbtn_", "sz_head_",
-    "sz_height_", "sz_go_", "pdf_", "dl_pdf_", "hist_save_", "pdf_gen_",
+    "dl_backup_", "dl_parade_", "import_", "importbtn_", "import_source_", "import_file_", "sz_head_",
+    "sz_height_", "sz_go_", "pdf_", "pdf_format_", "dl_pdf_", "hist_save_", "pdf_gen_",
     "sz_", "share_", "hist_title_", "struct_edit_", "struct_go_", "struct_",
     # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
     "share_token_", "edit_", "export_trace_", "export_cache_",
     "progress_", "progress_page_", "progress_part_",
+    "project_notes_", "project_save_",
+    "leg_join_result_", "leg_join_manual_result_",
 )
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
-
-# 备份导入的粘贴长度门禁（与 share.py 的 2MB 解压上限同源）
-_MAX_IMPORT_CHARS = 2 << 20
-
 
 # E1：零宽/BiDi 控制符（显示欺骗面——同一字段可从 LLM 输出进来）
 _INVISIBLE_RE = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
@@ -142,8 +140,11 @@ def purge_result_state(result: dict) -> None:
     rid = result.get("result_id")
     if not rid:
         return
+    namespaces = {p + rid for p in _WIDGET_KEY_PREFIXES}
+    descendants = tuple(namespace + "_" for namespace in namespaces)
     for key in list(st.session_state.keys()):
-        if str(key).startswith(tuple(p + rid for p in _WIDGET_KEY_PREFIXES)):
+        # Match the complete ID, keeping another result whose ID begins with rid.
+        if str(key) in namespaces or str(key).startswith(descendants):
             del st.session_state[key]
 
 
@@ -160,29 +161,46 @@ def _render_paged_progress(result: dict, slot: str) -> None:
     index = st.selectbox("进度部件", range(len(parts)),
                          format_func=lambda i: parts[i]["name"], key=f"progress_part_{rid}")
     part = parts[index]
-    entries = list(progress_entries({**result, "params": {"parts": [part]}}, slot))
+    entries = list(progress_entries(result, slot, part_index=index))
     for _, key, _ in entries:
         if key in st.session_state:
             if st.session_state[key]:
                 durable[key] = True
             else:
                 durable.pop(key, None)
-    done = sum(bool(durable.get(key)) for _, key, _ in entries)
-    st.progress(done / len(entries) if entries else 0,
-                text=f"{part['name']}：已完成 {done}/{len(entries)} 圈次")
-    left, right = st.columns(2)
-    clear = left.button("↩️ 重置进度", key=f"clear_{rid}_{part['name']}")
-    complete = right.button("✅ 全部完成", key=f"all_{rid}_{part['name']}")
-    if clear or complete:
+
+    def set_completed(value: bool) -> None:
         for _, key, _ in entries:
-            if complete:
+            if value:
                 durable[key] = True
             else:
                 durable.pop(key, None)
             if key in st.session_state:
-                st.session_state[key] = complete
-        st.rerun()
+                st.session_state[key] = value
+
+    done = sum(bool(durable.get(key)) for _, key, _ in entries)
+    st.progress(done / len(entries) if entries else 0,
+                text=f"{md_safe(part['name'])}：已完成 {done}/{len(entries)} 圈次")
+    left, right = st.columns(2)
+    left.button("↩️ 重置进度", key=f"clear_{rid}_{part['name']}",
+                on_click=set_completed, args=(False,))
+    right.button("✅ 全部完成", key=f"all_{rid}_{part['name']}",
+                 on_click=set_completed, args=(True,))
     pages = max(1, (len(entries) + PROGRESS_PAGE_SIZE - 1) // PROGRESS_PAGE_SIZE)
+    next_offset = next((i for i, (_, key, _) in enumerate(entries) if not durable.get(key)), None)
+    if next_offset is not None:
+        next_copy, next_row = divmod(next_offset, len(part["rounds"]))
+        st.caption(f"下一未完成圈：第 {next_copy + 1} 个 {md_safe(part['name'])} · "
+                   f"第 {part['rounds'][next_row]['row']} 圈")
+    else:
+        st.caption("此部件的所有实体圈次均已完成。")
+
+    def go_to_next() -> None:
+        if next_offset is not None:
+            st.session_state[f"progress_page_{rid}_{index}"] = next_offset // PROGRESS_PAGE_SIZE
+
+    st.button("▶ 前往下一未完成圈", key=f"progress_next_{rid}_{index}",
+              disabled=next_offset is None, on_click=go_to_next)
     page = st.selectbox("进度页", range(pages), format_func=lambda n: f"{n + 1} / {pages}",
                         key=f"progress_page_{rid}_{index}")
 
@@ -199,7 +217,7 @@ def _render_paged_progress(result: dict, slot: str) -> None:
         if key not in st.session_state:
             st.session_state[key] = bool(durable.get(key))
         st.checkbox(f"第 {copy + 1} 个 · 第 {rd['row']} 圈 · {rd['stitches']} 针　"
-                    f"{md_safe(rd.get('color', ''))}　{md_safe(rd.get('notes', ''))}",
+                    f"{md_safe(rd.get('color') or '')}　{md_safe(rd.get('notes') or '')}",
                     key=key, on_change=save, args=(key,))
 
 
@@ -218,10 +236,13 @@ def _render_part_progress(
 ) -> None:
     """单个部件的进度区（fragment）。
 
-    勾选/取消勾选只重跑本区块——几十个 checkbox 不再各自触发整页
-    rerun（fable5.1 审核 P2）。「重置/全部完成」按钮与其它流程仍走
-    st.rerun() 整页刷新，语义与旧版一致。
+    勾选和批量更新只重跑本区块。按钮回调先修改精确的圈次集合，
+    避免中途整页刷新触发 Streamlit 清理后续部件的控件状态。
     """
+    def set_completed(value: bool) -> None:
+        for key in chk_keys:
+            st.session_state[key] = value
+
     # Checkbox widget state is the single source of truth for progress.
     # It is updated by Streamlit before the rerun, so the counts below
     # already include the click that triggered this run (no one-step lag).
@@ -232,7 +253,7 @@ def _render_part_progress(
     rounds_label = (f"{n_rounds} 圈/个，共 {physical_rounds} 圈次"
                     if quantity > 1 else f"{n_rounds} 圈")
     label_exp = (
-        f"{part_data['name']}{quantity_label}（{rounds_label}）"
+        f"{md_safe(part_data['name'])}{quantity_label}（{rounds_label}）"
         f"　已完成 {n_done}/{physical_rounds} 圈次"
     )
     with st.expander(label_exp):
@@ -259,7 +280,8 @@ def _render_part_progress(
                         unsafe_allow_html=True)
                     _strip = render_symbol_strip(part)
                     if _strip:
-                        st.markdown("**逐圈符号条**（×=短针，V=加针，A=减针）")
+                        st.markdown("**逐圈符号条**（×=短针，V=加针，A=减针，W=一放三，M=三并一；F/B=前/后半针）")
+                        st.caption("可识别操作式按原顺序显示；只有总针数时为均匀分布示意，文字错位提示需另行核对。")
                         st.markdown(html_box(_strip, min(
                             30 + 16 * min(len(part.get("rounds", [])), 24)
                             + 10, 560), scroll=True), unsafe_allow_html=True)
@@ -272,18 +294,14 @@ def _render_part_progress(
         st.markdown("**逐圈进度**：勾选已完成的圈")
         col_clear, col_all = st.columns(2)
         with col_clear:
-            if st.button("↩️ 重置进度", key=f"clear_{part_key}"):
-                for k in chk_keys:
-                    st.session_state[k] = False
-                st.rerun()
+            st.button("↩️ 重置进度", key=f"clear_{part_key}",
+                      on_click=set_completed, args=(False,))
         with col_all:
-            if st.button("✅ 全部完成", key=f"all_{part_key}"):
-                for k in chk_keys:
-                    st.session_state[k] = True
-                st.rerun()
+            st.button("✅ 全部完成", key=f"all_{part_key}",
+                      on_click=set_completed, args=(True,))
         for copy, copy_keys in enumerate(chk_keys_by_copy, 1):
             if quantity > 1:
-                st.markdown(f"**第 {copy} 个 {part_data['name']}**")
+                st.markdown(f"**第 {copy} 个 {md_safe(part_data['name'])}**")
             for i, r in enumerate(rounds_list):
                 rd = r
                 inc_str = f"+{rd['increase']}" if rd.get("increase") else ""
@@ -357,7 +375,7 @@ def render_results(result: dict, slot: str) -> None:
     unknown = [p for p in analysis.get("parts", []) if p not in PART_NAMES]
     if unknown:
         st.caption("⚠️ 未识别的部件 "
-                   + "、".join(html.escape(_plain_text(p)) for p in unknown)
+                   + "、".join(md_safe(p) for p in unknown)
                    + " 使用已有结构与图解，请人工核对形状；不支持从该名称自动推断")
 
     color_evidence = (result.get("vision_meta") or {}).get("color_observation")
@@ -500,8 +518,12 @@ def render_results(result: dict, slot: str) -> None:
         rows.append({
             "部件": part.get("name", "?"),
             "数量": part.get("count", 1),
-            "形状": {"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
-                     "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—")),
+            # shape 正常是字符串；非标量（旧备份注入的 dict/list）会让 dict.get
+            # 抛 unhashable TypeError，这里降级为「—」而非崩溃（import 侧已拦截，
+            # 此为渲染层兜底）。
+            "形状": ({"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
+                      "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—"))
+                     if isinstance(part.get("shape"), (str, type(None))) else "—"),
             "尺寸": "，".join(dims) or "—",
             "位置 / 旋转": "；".join(poses) or "旧版未记录",
             "连接": "；".join(connections) or "独立部件 / 未记录",
@@ -531,11 +553,9 @@ def render_results(result: dict, slot: str) -> None:
 
     # Section 3: Crochet Pattern  (with round progress tracking)
     section_heading(3, "钩织参数")
-    st.caption(
-        "记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针）；"
-        "(4X,V)×6 = “4短针+1加针”重复 6 次。"
-        "螺旋钩法（不引拔不翻转），每圈第一针挂记号扣；减针建议隐形减针（只挑前半针）"
-    )
+    st.caption(STITCH_LEGEND_ZH)
+    st.caption(ROUND_WORKING_GUIDANCE)
+    st.caption(PLACEMENT_GUIDANCE)
     from app.models.stitches import (
         glossary_table_markdown,
         symbol_strip_html,
@@ -573,8 +593,8 @@ def render_results(result: dict, slot: str) -> None:
     if _v["ok"]:
         st.success(
             f"✅ 针数代数与相邻圈跳变检查通过（已检查 {_v['checked']} 圈）")
-        st.caption("自检仅覆盖针数代数和可识别的文字矛盾；自定义工艺说明仍需人工复核。"
-                   "该检查不等同于成品形状、部件连接或实际可钩性验证。")
+        st.caption("自检覆盖针数代数及可识别操作式的消耗、产出与加减针；自定义工艺说明仍需人工复核。"
+                   "已声明的预留半针连接也会核对圈号、针数及挑针范围；其他连接和实际成形仍需试钩确认。")
     else:
         st.warning("⚠️ 图解自检发现问题（可在局部修正中修复）：\n"
                    + "\n".join(md_safe(issue) for issue in _v["issues"]))
@@ -606,12 +626,19 @@ def render_results(result: dict, slot: str) -> None:
         else:
             st.text(f"  - {mat}")
 
-    # 同名部件（历史坏结果/JSON 编辑复制部件）会生成冲突 widget key → 整页
-    # 崩溃；重名时追加序号后缀。正常结果首个部件不带后缀，key 保持稳定。
-    from app.ui.progress_state import MAX_INLINE_ROUNDS, physical_rounds
+    # 按完整图解为每份实体分配勾选编号；历史坏结果中的重名部件仍用
+    # 序号区分批量按钮。正常未冲突的编号保持稳定。
+    from app.ui.progress_state import MAX_INLINE_ROUNDS, physical_rounds, progress_copy_prefixes
     if physical_rounds(result) > MAX_INLINE_ROUNDS:
         _render_paged_progress(result, slot)
     else:
+        all_copy_prefixes = progress_copy_prefixes(result, slot)
+        valid_keys = {f"{prefix}{index}"
+                      for part, prefixes in zip(params.get("parts", []), all_copy_prefixes, strict=True)
+                      for prefix in prefixes for index in range(len(part.get("rounds", [])))}
+        for key in list(st.session_state):
+            if str(key).startswith(f"chk_{result_key}_") and key not in valid_keys:
+                del st.session_state[key]
         seen_names: dict = {}
         for part_index, part in enumerate(params.get("parts", [])):
             part_data = part
@@ -622,27 +649,9 @@ def render_results(result: dict, slot: str) -> None:
             rounds_list = part_data.get("rounds", [])
             n_rounds = len(rounds_list)
             quantity = max(1, int(part_data.get("quantity", 1)))
-            # 第一份沿用历史 key，第二份起使用 copyN 命名；这样旧会话进度不丢，
-            # 又能让成对部件的两份实体各自勾选。圈数/数量缩小时清掉越界状态。
-            copy_prefixes = [
-                f"chk_{part_key}_" if copy == 0 else f"chk_{part_key}_copy{copy + 1}_"
-                for copy in range(quantity)
-            ]
-            stale = []
-            all_part_prefix = f"chk_{part_key}_"
-            for key in st.session_state:
-                if not key.startswith(all_part_prefix):
-                    continue
-                match = re.match(
-                    rf"^{re.escape(all_part_prefix)}(?:copy(\d+)_)?(\d+)$", key)
-                if not match:
-                    continue
-                copy_number = int(match.group(1) or 1)
-                round_index = int(match.group(2))
-                if copy_number > quantity or round_index >= n_rounds:
-                    stale.append(key)
-            for k in stale:
-                del st.session_state[k]
+            # Share the full-pattern mapping with paging, project save and restore.
+            # Similar custom names must not alias another physical copy's keys.
+            copy_prefixes = all_copy_prefixes[part_index]
             # Checkbox widget state is the single source of truth for progress.
             # It is updated by Streamlit before the rerun, so the counts below
             # already include the click that triggered this run (no one-step lag).
@@ -658,11 +667,20 @@ def render_results(result: dict, slot: str) -> None:
                     part, part_data, part_key, chk_keys_by_copy, chk_keys,
                     rounds_list, quantity, n_rounds, result, params)
 
+    from app.ui.project_save import render_project_save
+
+    render_project_save(result, slot)
+    from app.ui.trial_editor import render_trial_editor
+
+    render_trial_editor(result, slot)
+
     # Section 4: Assembly
     section_heading(4, "装配说明")
     # 装配文本内嵌部件名（模型/结构 JSON 可写）——纯文本渲染，
     # 不经 Markdown（链接/图片语法不生效）
-    asm = params.get("assembly_instructions") or ""
+    from app.models.assembly import assembly_for_pattern
+
+    asm = assembly_for_pattern(params) if _v["ok"] else params.get("assembly_instructions") or ""
     st.text(asm if isinstance(asm, str) else str(asm))
 
     # Section 5: Edit & Re-generate
@@ -678,7 +696,7 @@ def render_results(result: dict, slot: str) -> None:
         st.success("✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！")
     if st.session_state.pop(_struct_ok_flag, False):
         st.success("✅ 已按修正后的部件结构重新生成图解与装配说明！")
-    from app.ui.edit_history import commit_edit
+    from app.ui.edit_history import commit_edit, preview_edit
     from app.ui.pattern_editor import render_pattern_editor
     render_pattern_editor(result, slot)
     st.caption("也可使用下方尺寸滑块或高级 JSON 编辑。")
@@ -703,15 +721,20 @@ def render_results(result: dict, slot: str) -> None:
                 "整体高度 (cm)", min(10.0, _current_height), max(60.0, _current_height),
                 _current_height, 0.5,
                 key=f"sz_height_{result_key}")
-        if st.button("📐 按新尺寸重新生成", key=f"sz_go_{result_key}"):
+        preview_size = st.button("预览尺寸修改影响", key=f"edit_{result_key}_size_preview")
+        apply_size = st.button("📐 按新尺寸重新生成", key=f"sz_go_{result_key}")
+        if apply_size or preview_size:
             try:
                 # 业务逻辑在 result_logic（纯函数，可离线单测）
                 _new_result = result_logic.regenerate_with_size(
                     result, _new_head, _new_height)
-                _installed = commit_edit(slot, result, _new_result)
-                _new_rid = _installed["result_id"]
-                st.session_state[f"sz_{_new_rid}_ok"] = True
-                st.rerun()
+                if preview_size:
+                    preview_edit(slot, result, _new_result)
+                else:
+                    _installed = commit_edit(slot, result, _new_result)
+                    _new_rid = _installed["result_id"]
+                    st.session_state[f"sz_{_new_rid}_ok"] = True
+                    st.rerun()
             except Exception as e:
                 st.error(f"尺寸重生成失败: {md_safe(e)}")
 
@@ -728,15 +751,20 @@ def render_results(result: dict, slot: str) -> None:
             height=360,
             key=f"struct_edit_{result_key}",
         )
-        if st.button("🧩 校验结构并重新生成", key=f"struct_go_{result_key}"):
+        preview_structure = st.button("预览结构 JSON 修改影响", key=f"edit_{result_key}_structure_preview")
+        apply_structure = st.button("🧩 校验结构并重新生成", key=f"struct_go_{result_key}")
+        if apply_structure or preview_structure:
             try:
                 # 校验 + 重生成在 result_logic（纯函数，可离线单测）
                 _updated = result_logic.regenerate_with_structure(
                     result, json.loads(structure_json))
-                _installed = commit_edit(slot, result, _updated)
-                new_result_id = _installed["result_id"]
-                st.session_state[f"struct_{new_result_id}_ok"] = True
-                st.rerun()
+                if preview_structure:
+                    preview_edit(slot, result, _updated)
+                else:
+                    _installed = commit_edit(slot, result, _updated)
+                    new_result_id = _installed["result_id"]
+                    st.session_state[f"struct_{new_result_id}_ok"] = True
+                    st.rerun()
             except Exception as e:
                 st.error(f"结构校验或重生成失败: {md_safe(e)}")
 
@@ -756,7 +784,7 @@ def render_results(result: dict, slot: str) -> None:
                    "下载、分享和存入历史使用当前已应用的图解。")
 
     from app.models.runtime import timed_export
-    from app.ui.export_cache import cached_export, parade_payload
+    from app.ui.export_cache import EXPORT_CACHE_VERSION, cached_export, parade_payload
     export_record = st.session_state.setdefault(f"export_trace_{result_key}", {})
     export_cache = st.session_state.setdefault(f"export_cache_{result_key}", {})
     # Bind portable text to all inputs its exporter consumes, including source
@@ -781,15 +809,20 @@ def render_results(result: dict, slot: str) -> None:
 
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     with col_btn1:
-        if st.button("🔄 重新生成", key=f"regen_{result_key}"):
+        preview_json = st.button("预览 JSON 修改影响", key=f"edit_{result_key}_json_preview")
+        apply_json = st.button("🔄 重新生成", key=f"regen_{result_key}")
+        if apply_json or preview_json:
             try:
                 corrected = json.loads(correction_json)
                 candidate = deepcopy(result)
                 candidate["params"] = rebuild_params(corrected)
                 candidate["gauge"] = candidate["params"].get("gauge")
-                installed = commit_edit(slot, result, candidate)
-                st.session_state[f"regen_{installed['result_id']}_ok"] = True
-                st.rerun()
+                if preview_json:
+                    preview_edit(slot, result, candidate)
+                else:
+                    installed = commit_edit(slot, result, candidate)
+                    st.session_state[f"regen_{installed['result_id']}_ok"] = True
+                    st.rerun()
             except Exception as e:
                 st.error(f"解析/应用失败: {md_safe(e)}")
     with col_btn2:
@@ -818,6 +851,8 @@ def render_results(result: dict, slot: str) -> None:
             "\"过松/过紧针目\"物理分析与逐针动画——本应用代数自检之外的"
             "独立检查工具。语法映射基于其官方手册的已核对子集。")
         st.caption("本应用只检查导出完整性与文本语法，尚未运行外部仿真；仿真结果也不能替代实体试钩。")
+        st.caption("可识别操作式保留针法顺序及明确的 FLO/BLO；挑针范围不清时停止该部件导出。"
+                   "仅文字描述的错位和收口动作需对照原图解核对。")
         try:
             if not _v["ok"]:
                 raise ValueError("请先修复图解自检错误")
@@ -825,6 +860,9 @@ def render_results(result: dict, slot: str) -> None:
                 export_cache, "parade", {"params": serializable_params, "export_version": software_version()},
                 lambda: parade_payload(result))
             _parade_text = _parade["text"]
+            if _parade["inferred_rounds"]:
+                st.caption(f"{_parade['inferred_rounds']} 个实体圈次仅按数值均匀安排针位；"
+                           "其余可识别操作式保留针法顺序，特殊工艺及文字错位提示仍需核对。")
             if not _parade["complete"]:
                 st.warning("仅导出部分图解；不可视为完整验证："
                            f"{_parade['exported_rounds']}/{_parade['requested_rounds']} 圈次，"
@@ -846,9 +884,12 @@ def render_results(result: dict, slot: str) -> None:
     # ── 完整结果备份/导入（刷新会丢 session，备份 JSON 可跨会话恢复）───────
     # F24：备份键集走 _BACKUP_KEYS 与分享同构——旧版只写三键，导入后
     # 快速调尺寸会把一体件拆回分件、egg 退化 ladder（style/spans 全丢）
-    backup_json = json.dumps(PatternResult.from_result({
+    # 下载的备份也可能被转发分享（分享链接过大时本就建议改用它），因此剔除
+    # 照片衍生数据（preview 缩略图 + mask_review 主体剪影），与文档“只携带图解”
+    # 的声明一致。本机历史缩略图另走 history 列保存，不受影响。
+    backup_json = json.dumps(strip_photo_derived(PatternResult.from_result({
         **result, "params": serializable_params,
-    }).to_backup(), ensure_ascii=False)
+    }).to_backup()), ensure_ascii=False)
     col_bk1, col_bk2, col_bk3 = st.columns(3)
     with col_bk1:
         st.download_button(
@@ -860,19 +901,27 @@ def render_results(result: dict, slot: str) -> None:
             help="含解析/结构/参数的完整结果，可稍后在任意会话导入恢复",
         )
     with col_bk2:
+        # A live session must regenerate PDFs after printable guidance changes.
+        # Legacy byte-only entries have no format marker and are invalidated too.
+        pdf_key = f"pdf_{result_key}"
+        pdf_format_key = f"pdf_format_{result_key}"
+        if st.session_state.get(pdf_format_key) != EXPORT_CACHE_VERSION:
+            st.session_state.pop(pdf_key, None)
+            st.session_state.pop(pdf_format_key, None)
         # PDF（S4）：点"生成"才构建（避免每次 rerun 都渲染 PDF），
         # 字节缓存进 session 后出现下载按钮
         if st.button("🖨 生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
             try:
                 from app.utils.pdf_export import export_pdf
-                st.session_state[f"pdf_{result_key}"] = timed_export(
+                st.session_state[pdf_key] = timed_export(
                     export_record, "pdf", lambda: export_pdf(params, analysis, result=result))
+                st.session_state[pdf_format_key] = EXPORT_CACHE_VERSION
             except ImportError:
                 st.caption("PDF 导出需安装 reportlab："
                            "pip install crochet-photo2pattern[pdf]")
             except Exception as e:
                 st.error(f"PDF 生成失败: {md_safe(e)}")
-        _pdf_bytes = st.session_state.get(f"pdf_{result_key}")
+        _pdf_bytes = st.session_state.get(pdf_key)
         if _pdf_bytes and _v["ok"]:
             st.download_button("📄 下载 PDF", _pdf_bytes,
                                file_name="amigurumi_pattern.pdf",
@@ -920,26 +969,9 @@ def render_results(result: dict, slot: str) -> None:
                 st.success("✅ 已存入历史（左侧栏「我的图解」可载回）")
             except Exception as e:
                 st.error(f"存入历史失败: {md_safe(e)}")
-        with st.expander("📂 导入结果备份"):
-            pasted = st.text_area(
-                "粘贴备份 JSON 内容", height=120, key=f"import_{result_key}"
-            )
-            if st.button("导入并替换当前结果", key=f"importbtn_{result_key}"):
-                try:
-                    if len(pasted) > _MAX_IMPORT_CHARS:
-                        raise ValueError(
-                            f"粘贴内容超过 {_MAX_IMPORT_CHARS // (1024 * 1024)}MB "
-                            "上限，请分卷导入或改用历史/分享链接")
-                    # 校验 + 回填在 result_logic（纯函数，与历史载入同口径）
-                    imported = result_logic.import_backup(
-                        json.loads(pasted), uuid.uuid4().hex[:12])
-                    # 只替换当前槽位；另一个 Tab 的结果不受影响
-                    if slot in st.session_state:
-                        purge_result_state(st.session_state[slot])
-                    st.session_state[slot] = imported
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"导入失败: {md_safe(e)}")
+        from app.ui.backup_import import render_backup_import
+
+        render_backup_import(slot, result_key=result_key)
 
     with st.expander("最近一次导出耗时"):
         st.json(export_record.get("diagnostics", {}))

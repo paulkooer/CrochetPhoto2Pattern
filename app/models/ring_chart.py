@@ -9,9 +9,12 @@ SVG 结构：配色圆 + 右侧引线标注（圈号 · 针数 · 颜色名）�
 from __future__ import annotations
 
 import html
+from itertools import islice
 from typing import Any
 
 from app import theme
+from app.models.instruction_checks import instruction_issues, round_expression
+from app.models.stitch_notation import NotationError, mentions_invisible_decrease
 
 _SVG_W, _SVG_H = 320, 320
 
@@ -88,7 +91,7 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
         color_span = f'<tspan dx="6">{html.escape(str(c))}</tspan>' if c else ""
         lines.append(
             f'<text x="{side}" y="{ly + 8}" font-size="9.5" fill="{theme.INK}">'
-            f'<tspan font-weight="600">R{i + 1}</tspan>'
+            f'<tspan font-weight="600">R{html.escape(str(rd.get("row", i + 1)))}</tspan>'
             f'<tspan dx="6">{rd.get("stitches", "?")}X</tspan>{color_span}</text>')
     lines.append("</svg>")
     return "\n".join(lines)
@@ -106,7 +109,7 @@ def _rgb_hex_lookup() -> dict[str, str]:
     return _HEX_CACHE
 
 
-def _spread_operations(total: int, special: int, symbol: str) -> list[str]:
+def _spread_operations(total: int, special: int, symbol: str, limit: int | None = None) -> list[str]:
     """Distribute increases/decreases evenly across crochet operations."""
     total = max(0, int(total))
     special = max(0, min(int(special), total))
@@ -116,12 +119,14 @@ def _spread_operations(total: int, special: int, symbol: str) -> list[str]:
     # (X X X X V) × 6, with no floating-point drift.
     return [
         symbol if ((i + 1) * special) // total > (i * special) // total else "X"
-        for i in range(total)
+        for i in range(total if limit is None else min(total, limit))
     ]
 
 
-def _round_operation_sequence(rounds: list[dict[str, Any]], index: int) -> list[str]:
-    """Compile aggregate round counts into operations on the previous round.
+def _round_operation_sequence(
+    rounds: list[dict[str, Any]], index: int, limit: int | None = None,
+) -> list[str]:
+    """Prefer explicit operation order; aggregate fallback is only a sketch.
 
     V consumes one stitch and produces two; A consumes two and produces one.
     Therefore an increase round has ``previous_stitches`` operations, while a
@@ -132,14 +137,36 @@ def _round_operation_sequence(rounds: list[dict[str, Any]], index: int) -> list[
     stitches = max(0, int(rd.get("stitches", 0) or 0))
     increase = max(0, int(rd.get("increase") or 0))
     decrease = max(0, int(rd.get("decrease") or 0))
+    previous = max(0, int(rounds[index - 1].get("stitches", 0) or 0)) if index else None
+    if instruction_issues(rd.get("notes"), stitches, increase, decrease, previous_stitches=previous):
+        return []
+    if previous is not None and stitches != previous + increase - decrease:
+        return []
+    if index == 0 and (increase or decrease):
+        return []
+    if mentions_invisible_decrease(rd.get("notes")):
+        return []  # Its stitch count is known; its distinct technique has no glyph here.
+    try:
+        expression = round_expression(rd.get("notes"))
+    except NotationError:
+        return []
+    if expression is not None:
+        if index == 0 and expression.has_loop_technique:
+            return []  # The strip cannot infer the missing foundation's loops.
+        return list(islice(expression.iter_stitches(), limit))
     if index == 0:
-        return ["X"] * stitches
+        return ["X"] * (stitches if limit is None else min(stitches, limit))
     if increase and not decrease:
-        previous = max(0, int(rounds[index - 1].get("stitches", 0) or 0))
-        return _spread_operations(previous, increase, "V")
+        if previous is None or increase > previous:
+            return []
+        return _spread_operations(previous, increase, "V", limit)
     if decrease and not increase:
-        return _spread_operations(stitches, decrease, "A")
-    return ["X"] * stitches
+        if previous is None or decrease > previous // 2:
+            return []
+        return _spread_operations(stitches, decrease, "A", limit)
+    if increase and decrease:
+        return []  # Totals do not determine mixed shaping positions.
+    return ["X"] * (stitches if limit is None else min(stitches, limit))
 
 
 def render_symbol_strip(part: Any, max_marks: int = 18,
@@ -160,10 +187,13 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
     all_rounds = rounds
     start_row = max(0, len(all_rounds) - max_rounds)
     rounds = all_rounds[start_row:]
+    if not rounds:
+        return ""
+    first_row = html.escape(str(rounds[0].get("row", start_row + 1)))
 
-    mark_w, row_h, left = 14, 16, 46
+    mark_w, row_h, left = 14, 24, 100
     width = left + max_marks * mark_w + 60
-    height = len(rounds) * row_h + 30
+    height = len(rounds) * row_h + 46
     hex_of = _rgb_hex_lookup()
 
     lines = [
@@ -174,10 +204,10 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
         f'stroke="{theme.RULE}" rx="3"/>',
         f'<text x="8" y="16" font-size="11" fill="{theme.INK}">'
         f'{html.escape(str(name))} 逐圈符号条'
-        f'（{"自起针圈后 " + str(start_row + 1) + " 圈起" if start_row else "自起针圈"}）</text>',
+        f'（{"自第 " + first_row + " 圈起" if start_row else "自起针圈"}）</text>',
         # 图例
-        f'<text x="{width - 150}" y="16" font-size="9.5" fill="{theme.INK_SOFT}">'
-        f'图例：×=短针　V=加针　A=减针</text>',
+        f'<text x="8" y="32" font-size="9.5" fill="{theme.INK_SOFT}">'
+        f'图例：× / V / A / W / M；F=前半针，B=后半针</text>',
     ]
 
     def _glyph_x(x: float, y: float) -> str:
@@ -197,27 +227,41 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
                 f'stroke-width="1.4"/>')
 
     for ri, rd in enumerate(rounds):
-        y = 30 + ri * row_h
+        y = 46 + ri * row_h
         c = rd.get("color")
         stroke = hex_of.get(c, theme.INK) if c else theme.INK
         n = int(rd.get("stitches", 0) or 0)
-        seq = _round_operation_sequence(all_rounds, start_row + ri)
+        seq = _round_operation_sequence(all_rounds, start_row + ri, max_marks)
         shown = min(len(seq), max_marks)
         marks = []
         for mi, kind in enumerate(seq[:shown]):
             gx = left + mi * mark_w + mark_w / 2
             gy = y + 4
-            glyph = {"X": _glyph_x, "V": _glyph_v, "A": _glyph_a}[kind](gx, gy)
+            symbol, _, loop = kind.partition("-")
+            if symbol in ("W", "M"):
+                glyph = (f'<text x="{gx:.1f}" y="{gy + 4:.1f}" text-anchor="middle" '
+                         f'font-size="11" fill="{stroke}">{symbol}</text>')
+            else:
+                glyph = {"X": _glyph_x, "V": _glyph_v, "A": _glyph_a}[symbol](gx, gy)
+            if loop:
+                glyph += (f'<title>{loop}：只挑{"前" if loop == "FLO" else "后"}半针</title>'
+                          f'<text x="{gx:.1f}" y="{gy + 14:.1f}" text-anchor="middle" '
+                          f'font-size="8" fill="{stroke}">{loop[0]}</text>')
             marks.append(f'<g data-kind="{kind}">{glyph}</g>')
         row_svg = "".join(marks)
-        overflow = len(seq) - shown
+        total_operations = max(0, n - int(rd.get("increase") or 0)) if seq else 0
+        overflow = total_operations - shown
         suffix = (f'<text x="{left + max_marks * mark_w + 4:.1f}" y="{y + 8}" '
                   f'font-size="9" fill="{theme.INK_SOFT}">+{overflow}</text>'
                   if overflow > 0 else "")
-        label = f'R{start_row + ri + 1} 成圈 {n}X'
+        label = f'R{rd.get("row", start_row + ri + 1)} 成圈 {n}X'
         lines.append(
             f'<text x="8" y="{y + 8:.1f}" font-size="9.5" fill="{theme.INK}">'
             f'{html.escape(label)}</text>')
         lines.append(row_svg + suffix)
+        if not seq and n:
+            pending = "隐形减针工艺待核对" if mentions_invisible_decrease(rd.get("notes")) else "针位待核对"
+            lines.append(f'<text x="{left}" y="{y + 8}" font-size="10" '
+                         f'fill="{theme.INK_SOFT}">{pending}</text>')
     lines.append("</svg>")
     return "\n".join(lines)

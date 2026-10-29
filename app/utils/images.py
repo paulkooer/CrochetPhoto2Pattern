@@ -17,6 +17,11 @@ MAX_UPLOAD_SIDE = 16_384
 # 更大的像素只会在缓存（最多 4 张）、st.image 全帧传输和白底合成时放大
 # 内存——39.7MP RGBA 合成实测峰值 +650MB。2048 给预览留一档余量。
 MAX_DECODED_SIDE = 2048
+# 只允许解码与上传控件 type=["jpg","jpeg","png"] 一致的格式。Pillow 默认会
+# 嗅探全部已注册解码器（TIFF/BMP/GIF/JPEG2000/XBM…），把以 .png 结尾的
+# 任意格式文件送进对应解码器，扩大了不可信输入的攻击面。传 formats= 后
+# Pillow 只尝试这两种解码器，其余格式直接报错。
+ALLOWED_UPLOAD_FORMATS = ("JPEG", "PNG")
 
 
 def load_image_bytes(data: bytes) -> Image.Image | None:
@@ -26,7 +31,7 @@ def load_image_bytes(data: bytes) -> Image.Image | None:
             raise ValueError(f"图片超过 {MAX_UPLOAD_MB}MB 上限")
         with BytesIO(data) as source, warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            with Image.open(source) as original:
+            with Image.open(source, formats=ALLOWED_UPLOAD_FORMATS) as original:
                 _validate_upload_dimensions(original)
                 image = ImageOps.exif_transpose(_apply_jpeg_draft(original))
                 image = _downsample(image)
@@ -113,7 +118,7 @@ def load_image_file(path) -> Image.Image | None:
             raise ValueError(f"图片超过 {MAX_UPLOAD_MB}MB 上限")
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            image: Image.Image = Image.open(path)
+            image: Image.Image = Image.open(path, formats=ALLOWED_UPLOAD_FORMATS)
         _validate_upload_dimensions(image)
         image = _apply_jpeg_draft(image)
         image = ImageOps.exif_transpose(image)
@@ -148,7 +153,7 @@ def load_uploaded_image(uploaded_file) -> Image.Image | None:
         # 分配内存。先将其警告升级为异常，再执行更严格的产品像素上限。
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            image: Image.Image = Image.open(uploaded_file)
+            image: Image.Image = Image.open(uploaded_file, formats=ALLOWED_UPLOAD_FORMATS)
         _validate_upload_dimensions(image)
         image = _apply_jpeg_draft(image)
         image = ImageOps.exif_transpose(image)

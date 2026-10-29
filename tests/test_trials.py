@@ -66,6 +66,10 @@ def _record(
         "cohort": cohort,
         "pattern": {
             "sha256": pattern_hash or f"{index % 3 + 1:064x}",
+            # Synthetic current identities isolate report arithmetic from source
+            # restoration; frozen legacy/source checks live in identity_migration.
+            "design_fingerprint": pattern_hash or f"{index % 3 + 1:064x}",
+            "design_fingerprint_version": "1",
             "application_version": "0.2.0b1",
             "target_height_cm": 20.0,
             "gauge": {"stitches_per_10cm": 13.0, "rows_per_10cm": 16.0},

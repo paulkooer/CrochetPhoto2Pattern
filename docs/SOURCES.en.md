@@ -2,6 +2,145 @@
 
 [简体中文](SOURCES.md) | **English**
 
+## 2026-10-29 Invisible-decrease identity and round-label consistency
+
+Rechecked the action definition in [PlanetJune's invisible-decrease tutorial](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-an-invisible-decrease/).
+The tutorial describes invdec as a distinct technique. This system's glossary already separated
+it from ordinary sc2tog, but the operation tree collapsed `inv-sc2tog` into A because both have
+2→1 arithmetic. That lost technique identity in canonical notation and DSL output.
+
+Keep the explicit token and compact repeats. Markdown retains it and PDF keeps original notes.
+The current DSL subset stops at the affected round and reports partial export; symbol strips
+and connection inspection request manual review. Do not substitute an ordinary or FLO decrease.
+Standalone `invdec` and Chinese/English prose cues also request review without becoming a
+guessed executable formula. Automatic skirt reservation rejects these techniques.
+
+Synthetic examples: `2X,inv-sc2tog` on 4→3 previously became `2X,A` / `2sc,sc2tog`; it now
+retains the token and stops unsupported DSL translation. Recorded rows 7, 19 and 23 previously
+appeared as 1, 2 and 3 in the old charts; actual labels now survive, with positional fallback
+for legacy missing labels. `tests/test_technique_fidelity.py` covers technique/count identity,
+round trips, partial-copy accounting, print preservation, atomic skirt-edit rejection and chart
+labels. Export cache version is 7; no physical-trial or external-simulation evidence was added.
+
+## 2026-10-29 GitHub comparison and stitch-parent inspection
+
+Reviewed maintainer-owned repositories and domain documents against the current local-vision,
+explicit-formula and saved-project architecture:
+
+| Primary source | Relevant idea | Decision for this system |
+|---|---|---|
+| [CrochetPARADE capabilities](https://github.com/stassev/CrochetPARADE/blob/main/capabilities.md) | Inspect stitch connectivity and export diagrams | Add an adjacent-round association view; retain the existing DSL export without importing its simulation code |
+| [stitch-grapher README](https://github.com/bilgesucakir/stitch-grapher) | Separate working-order edges (`NEXT`) from parent associations (`PARENT`); increases/decreases branch or merge | Draw only parent associations, retaining this system's existing scoped FLO/BLO syntax |
+| [KnittingPatternMaker conventions](https://github.com/John-Donnelly/KnittingPatternMaker/blob/main/docs/KNITTING_NOTES.md) | Make reading order and technique assumptions explicit | Number from the formula's starting point; do not transplant flat-knitting right/wrong-side rules into spiral crochet |
+| [Tesserow documentation](https://github.com/deiussum/tesserow) | Keep editable charts and written instructions aligned under technique-specific constraints | Record as a future grid-workflow reference; do not apply mosaic constraints to C2C or amigurumi |
+
+The independently implemented window maps X/V/A/W/M to source and produced stitch indices,
+preserving order and scoped loops. Missing, ambiguous, inconsistent or unsupported formulas
+produce a reason rather than inferred placement. First rounds, cross-component joins and the
+detailed technique of invisible decreases are outside this view.
+
+Repeated subtrees are skipped by counts and each UI page creates at most 24 operations. In a
+synthetic `(X,V,X)×25000` case, 75,000 operations produce 100,000 stitches; the final page has
+24 operations, with 2,529 UTF-8 JSON bytes and 16,917 SVG bytes. This demonstrates bounded
+output, not a speed comparison with an earlier viewer or improved photo/physical accuracy.
+
+`tests/test_stitch_connections.py` checks independent parent/child expectations, property-based
+windows, nested-repeat offsets, large rounds, loop scope, unsupported techniques, SVG escaping
+and session isolation. No upstream code, images, complete patterns or dependencies were added.
+No upstream parser, 3D simulation or physical trial was run.
+
+## Local reference: manual chain-bridge leg-join planning
+
+Reviewed the user-supplied `Downloads/gz/gz2/IMG_5068.JPG` for joining two legs with a
+chain bridge. The planning aid counts two complete openings and one single crochet on
+each side of each chain; round and marker references are supplied by the maker. Examples
+and test values are original, with no source instructions or images copied. The source
+states personal-use and copyright restrictions. The tool does not verify that openings or
+stitch locations exist, automatically join parts, or establish physical crochetability.
+
+## 2026-10-25 Printed legends and placement guidance
+
+- [Craft Yarn Council abbreviations](https://www.craftyarncouncil.com/standards/crochet-abbreviations) define sc2tog, FLO and BLO. X/V/A/W/M/B are this project's legend conventions rather than universal letter standards.
+- [PlanetJune's invisible-decrease tutorial](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-an-invisible-decrease/) distinguishes ordinary sc2tog from the front-loop invisible decrease. Correct the old Markdown/PDF equivalence; explicit per-round loop instructions take precedence.
+
+Reuse guidance in the UI, Markdown and PDF. Follow generated explicit placement without
+adding the old preamble's automatic one-stitch shift. Switching to joined rounds requires
+checking turning-chain counts, color boundaries and shaping positions. These are consistency
+fixes, not physical shape evidence. Synthetic tests in `tests/test_printed_stitch_guidance.py`
+compare wording, loop instructions and PDF cache upgrades; `tests/test_backup_open.py`
+covers fresh-session recovery and preservation of existing work after invalid imports.
+No source images, complete tutorials, schema changes or runtime dependencies were added.
+
+## 2026-10-24 Online references and loop scope
+
+Reviewed primary sources for technique and syntax facts, without copying patterns or images:
+
+- [Supergurumi robot pattern](https://www.supergurumi.com/amigurumi-robot-crochet-pattern): whole-round front/back-loop instructions occur alongside shaping; totals alone omit technique.
+- [PlanetJune loop comparison](https://www.planetjune.com/blog/amigurumi-help/fuzzy-to-brushed-crochet/): BLO and both-loop samples differ in shape, supporting retention of loop qualifiers.
+- [Supergurumi bee pattern](https://www.supergurumi.com/amigurumi-crochet-bee-pattern): head/body R6/R19 and leg R7 specify front loops. Correct the fixture and glossary's mistaken BLO labels to FLO. Only these three formulas are added; the body fixture's 55 circumference samples do not reproduce all original placement or offset operations. Its export test explicitly checks 52 inferred rounds.
+- [Official CrochetPARADE HTML manual](https://github.com/stassev/CrochetPARADE/blob/main/Manual.html), stitch table and `stitch_nameNinc/Ntog`, plus [capabilities §1.5](https://github.com/stassev/CrochetPARADE/blob/main/capabilities.md): verified `scfl`/`scbl` and shaping suffixes. The older `Manual.md` omits this loop vocabulary; no upstream implementation was incorporated.
+
+The bounded syntax now accepts `BLO((X,V,X)×5)`, `FLO: 12X`, and local qualifiers
+such as `2X,4sc-FLO,2X`. A standalone `BLO;12X` directive applies to the whole round.
+Markdown retains qualifiers, chart symbols carry F/B labels, and DSL emits qualified
+stitches. Same-position scope conflicts fail validation. Unresolved prose remains usable
+manually but stops that part's DSL export, as does a first-round loop without a supported
+foundation. Generated cut-tail threading is recognized as finishing, not FLO crochet.
+
+Synthetic before/after cases: 15→20 `BLO((X,V,X)×5)` previously became ordinary
+uniform sc and now emits `5[scbl,scbl2inc,scbl]`; local `2X,4sc-FLO,2X` previously
+became `8sc` and now emits `2sc,4scfl,2sc`; conflicting `FLO;BLO;8X` is rejected.
+`tests/test_loop_notation.py` covers independent counts, ordered scopes, bounds, copies,
+edits, backup and printable exports. The calculator interaction test also covers local FLO.
+
+Support is limited to existing X/V/A/W/M operations on the preceding round. Layered
+work, returning to reserved loops and invisible-decrease/loop combinations require
+review. No gauge, size or yarn calibration, official parser execution, external simulation
+or physical trial was performed. This does not establish physical shape fidelity.
+
+## 2026-10-24 Stitch order and export consistency
+
+Generation now replaces vague half-group shift hints with explicit center/end
+placement on consecutive +6 rounds with even plain-stitch gaps. For example,
+`(X,V,X)×6` still consumes 18 stitches and produces 24. The split-group notation
+was observed in the local references; this is a project placement rule, not a
+reconstruction of that complete pattern or evidence of rounder physical results.
+`tests/test_generated_stitch_placement.py` covers sequence order, idempotence,
+finishing notes, legacy backups, numeric edits, all gauge presets, three head
+modes and separate/one-piece construction.
+
+Rechecked the [official CrochetPARADE manual](https://github.com/stassev/CrochetPARADE/blob/main/Manual.md)
+for one-round-per-line output, consecutive source attachments and repeat groups.
+The existing short-stitch increase/decrease vocabulary remains in use. No external
+implementation was incorporated and no external simulation was run.
+
+Direct before/after probes used synthetic expressions: split-position 18→24 shaping
+previously became uniform groups; mixed 6→6 shaping and clustered 18→30 increases
+were skipped; a contradictory formula on 6→12 was ignored. The current exporter
+preserves the first three operation sequences and stops at the contradictory round.
+`tests/test_notation_fidelity.py` compares emitted and drawn positions against an
+independent operation sequence and a small DSL expansion oracle. It also covers
+nested repeats, W/M, physical copies, valid-prefix export and bounded chart rendering.
+Markdown shares the ordered expression. Aggregate-only fallback is counted separately
+in the DSL report; prose-only staggering, loop techniques, non-ring starts and finishing
+actions still require review. These are software checks, not physical trials.
+
+## 2026-10-24 Local references and round notation
+
+At the user's request, inspected the JOLA reference images in `Downloads/gz`:
+`IMG_5035.JPG`, `IMG_5038.JPG`, `gz2/IMG_5053.JPG` and `gz2/IMG_5057.JPG`.
+Observations include material tables, separate stitch totals, split-position
+repeat groups, and the distinction between ordinary stitches and work through
+multiple layers. No original images, PDFs or full pattern transcription were added.
+
+The resulting notation checks and editor calculator use synthetic expressions in
+`tests/test_stitch_notation.py`. Complete supported clauses are treated as whole
+rounds; unknown stitches or prose are never partially interpreted. Layered work,
+chain joins, color placement, eyes and assembly are outside this check's scope.
+Four historical fixtures now use explicit `inc` instead of ambiguous `2 sc`;
+this corrects fixture abbreviations, not the original published patterns.
+Evidence covers counting and software boundaries, not photo accuracy or physical trials.
+
 ## 2026-10-15 Foreground correction canvas
 
 The [Streamlit bidirectional-component guide](https://docs.streamlit.io/develop/concepts/custom-components/components-v1/intro)
