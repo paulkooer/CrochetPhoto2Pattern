@@ -205,6 +205,25 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
         assert "actions/setup-python" not in workflow
 
 
+def test_production_image_flags_and_ci_container_smoke():
+    dockerfile = (_REPO / "Dockerfile").read_text(encoding="utf-8")
+    # 生产镜像：非 root，未捕获异常不向浏览器暴露堆栈/内部路径
+    assert "USER appuser" in dockerfile
+    assert '"--client.showErrorDetails=none"' in dockerfile
+
+    workflow = (_REPO / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    docker_job = workflow.split("\n  docker:\n", 1)[1].split("\n  type-check:\n", 1)[0]
+    # 只构建不运行时，镜像运行期缺库/启动失败要到部署才暴露：CI 必须真正
+    # 起容器、探活、核对运行身份与生产标志，并实际调用 OpenCV。
+    assert "load: true" in docker_job
+    assert "docker run" in docker_job
+    assert "/_stcore/health" in docker_job
+    assert 'id -u)" = "1000"' in docker_job
+    assert "--client.showErrorDetails=none" in docker_job
+    assert "docker exec -i app python - <<'EOF'" in docker_job
+    assert "cv2.grabCut" in docker_job
+
+
 def test_pose_extra_avoids_vulnerable_protobuf_and_unverified_python_versions():
     pyproject = (_REPO / "pyproject.toml").read_text(encoding="utf-8")
     lock = (_REPO / "uv.lock").read_text(encoding="utf-8")
