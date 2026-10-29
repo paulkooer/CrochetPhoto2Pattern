@@ -64,6 +64,12 @@ class TrialGauge(_StrictModel):
 
 class PatternSource(_StrictModel):
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    # 设计指纹（F-03）：由规范化的密度与逐圈针数结构算出，排除 diagnostics
+    # 耗时、preview、usage、时间戳、配色等不影响实物的字段。校准/验证的
+    # “不同图解”计数与队列隔离改用它——否则同一设计重复生成（或仅改线材
+    # 标签）会产生不同的字节 sha256 而被误计为多个独立图解。可选以兼容旧记录，
+    # 缺失时回退 sha256（旧口径）。
+    design_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     application_version: str = Field(min_length=1, max_length=80)
     target_height_cm: TrialFloat = Field(gt=0.0, le=200.0)
     gauge: TrialGauge
@@ -344,6 +350,32 @@ def create_trial_draft(
                                          trial_id=trial_id, maker_id=maker_id, cohort=cohort)
 
 
+def _design_fingerprint(params: dict[str, Any]) -> str:
+    """规范化设计指纹：密度 + 逐部件（名称/数量/逐圈针数、加减针）。
+
+    只取决定实物钩织的结构，排除 diagnostics 耗时、preview、usage、时间戳、
+    配色等；因此同一设计重复生成或仅改线材/配色标签得到同一指纹（F-03）。"""
+    gauge = params.get("gauge") or {}
+    parts = params.get("parts") or []
+    core = {
+        "gauge": [gauge.get("stitches_per_10cm"), gauge.get("rows_per_10cm")],
+        "parts": [
+            {
+                "name": part.get("name"),
+                "quantity": part.get("quantity", 1),
+                "rounds": [
+                    [rd.get("stitches"), rd.get("increase") or 0, rd.get("decrease") or 0]
+                    for rd in (part.get("rounds") or []) if isinstance(rd, dict)
+                ],
+            }
+            for part in parts if isinstance(part, dict)
+        ],
+    }
+    encoded = json.dumps(core, sort_keys=True, ensure_ascii=False,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def create_trial_draft_from_bytes(
     blob: bytes, *, trial_id: str, maker_id: str,
     cohort: Literal["calibration", "validation"] = "calibration",
@@ -364,6 +396,7 @@ def create_trial_draft_from_bytes(
     try:
         source = PatternSource(
             sha256=hashlib.sha256(blob).hexdigest(),
+            design_fingerprint=_design_fingerprint(params),
             application_version=_application_version(),
             target_height_cm=finite_float(analysis["height_cm"]),
             gauge=TrialGauge.model_validate(gauge),
@@ -589,11 +622,15 @@ def analyze_trials(
         if record.observation is not None
         and record.observation.time_scope == "round_crochet_baseline"
     ]
-    distinct_patterns = {record.pattern.sha256 for record in eligible}
-    distinct_time_patterns = {record.pattern.sha256 for record in time_eligible}
-    validation_patterns = {record.pattern.sha256 for record in validation_eligible}
+    # 按设计指纹（缺失则回退 sha256）判定“不同图解”，而非易变的字节哈希（F-03）。
+    def _design_key(record: TrialRecord) -> str:
+        return record.pattern.design_fingerprint or record.pattern.sha256
+
+    distinct_patterns = {_design_key(record) for record in eligible}
+    distinct_time_patterns = {_design_key(record) for record in time_eligible}
+    validation_patterns = {_design_key(record) for record in validation_eligible}
     validation_time_patterns = {
-        record.pattern.sha256 for record in validation_time_eligible
+        _design_key(record) for record in validation_time_eligible
     }
     distinct_makers = {record.maker_id for record in eligible}
     distinct_time_makers = {record.maker_id for record in time_eligible}
