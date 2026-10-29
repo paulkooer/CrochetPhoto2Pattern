@@ -518,8 +518,12 @@ def render_results(result: dict, slot: str) -> None:
         rows.append({
             "部件": part.get("name", "?"),
             "数量": part.get("count", 1),
-            "形状": {"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
-                     "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—")),
+            # shape 正常是字符串；非标量（旧备份注入的 dict/list）会让 dict.get
+            # 抛 unhashable TypeError，这里降级为「—」而非崩溃（import 侧已拦截，
+            # 此为渲染层兜底）。
+            "形状": ({"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
+                      "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—"))
+                     if isinstance(part.get("shape"), (str, type(None))) else "—"),
             "尺寸": "，".join(dims) or "—",
             "位置 / 旋转": "；".join(poses) or "旧版未记录",
             "连接": "；".join(connections) or "独立部件 / 未记录",

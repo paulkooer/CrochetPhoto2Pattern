@@ -29,6 +29,15 @@ def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return value
 
 
+def loads_strict(text: str) -> Any:
+    """json.loads 的严格变体：拒绝 NaN/Infinity 与重复键。
+
+    与备份导入同口径，供分享 token 解码等其他不可信 JSON 入口复用，避免
+    各入口对非有限数值/重复键的处理不一致。"""
+    return json.loads(text, parse_constant=_reject_constant, parse_float=_finite_float,
+                      object_pairs_hook=_unique_object)
+
+
 def decode_backup_json(payload: bytes | str, *, max_bytes: int = MAX_BACKUP_BYTES) -> dict[str, Any]:
     """Decode UTF-8 (including BOM), before the existing schema/notation checks.
 
@@ -48,8 +57,7 @@ def decode_backup_json(payload: bytes | str, *, max_bytes: int = MAX_BACKUP_BYTE
     if not text.strip():
         raise ValueError("请上传备份文件或粘贴完整备份 JSON")
     try:
-        data = json.loads(text, parse_constant=_reject_constant, parse_float=_finite_float,
-                          object_pairs_hook=_unique_object)
+        data = loads_strict(text)
     except json.JSONDecodeError as exc:
         raise ValueError(f"备份不是有效 JSON（第 {exc.lineno} 行，第 {exc.colno} 列）") from exc
     except RecursionError as exc:

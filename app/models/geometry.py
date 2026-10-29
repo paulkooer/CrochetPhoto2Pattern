@@ -211,6 +211,13 @@ def normalize_structure(structure: Any) -> dict[str, Any]:
         part = dict(source)
         if "instances" in part:
             raise ValueError("旧格式部件不能包含 instances；请使用完整的 schema_version=2.0 结构")
+        # 展示字段只允许标量：渲染层用 part["shape"] 做 dict 键查找，传入
+        # 列表/字典会抛 TypeError 让结果页在 import 之后的 rerun 崩溃
+        #（F-06：旧格式 structure 此前只校验尺寸/数量，未约束这些字段）。
+        for field in ("shape", "type", "color"):
+            if field in part and part[field] is not None and not isinstance(
+                    part[field], (str, int, float)):
+                raise ValueError(f"{name} 的 {field} 必须是文本或数值")
         for field in ("diameter_cm", "height_cm", "length_cm"):
             if part.get(field) is None:
                 part.pop(field, None)

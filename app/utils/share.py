@@ -12,6 +12,7 @@ import zlib
 from typing import Any
 
 from ..schemas import RESULT_KEYS, SCHEMA_VERSION, PatternResult, strip_photo_derived
+from .backup import loads_strict
 
 _MAX_TOKEN_CHARS = 6000
 # 解压后 2MB 上限（F29）。按字节计：blob 已 UTF-8 编码，zlib 的
@@ -66,7 +67,9 @@ def decode_result(token: str) -> dict[str, Any] | None:
                 or decoder.unused_data or decoder.unconsumed_tail):
             return None
         blob = unpacked.decode("utf-8", errors="strict")
-        data = json.loads(blob)
+        # 与备份导入同口径：拒绝 NaN/Infinity 与重复键，避免分享链接比备份
+        # 文件更宽松（F-06：此前 json.loads 接受这两类病态输入）。
+        data = loads_strict(blob)
         if not isinstance(data, dict) or not all(
                 isinstance(data.get(k), dict) for k in ("analysis", "structure", "params")):
             return None
