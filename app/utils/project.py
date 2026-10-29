@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app import software_version
-from app.schemas import PatternResult
+from app.schemas import PatternResult, strip_photo_derived
 from app.ui.progress_state import progress_entries
 
 MAX_PROJECT_NOTES = 20_000
@@ -26,7 +26,8 @@ class ProjectState(BaseModel):
 
 def pattern_revision(result: dict) -> str:
     # Session IDs, progress and personal notes are intentionally outside this hash.
-    data = PatternResult.from_result(result).to_backup()
+    # 照片衍生数据（preview/mask_review）同样剔除：图解身份不应随照片缩略图而变。
+    data = strip_photo_derived(PatternResult.from_result(result).to_backup())
     encoded = json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
                          allow_nan=False).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
@@ -36,7 +37,8 @@ def project_backup(result: dict, progress: dict[str, bool], notes: str = "") -> 
     from app.models.validator import require_valid_pattern
 
     require_valid_pattern(result["params"])
-    data = PatternResult.from_result(result).to_backup()
+    # 工程文件会下载到用户设备、也可能被转发——只携带图解，剔除照片衍生数据。
+    data = strip_photo_derived(PatternResult.from_result(result).to_backup())
     state = ProjectState(pattern_revision=pattern_revision(data), saved_with_version=software_version(),
                          completed_rounds=progress, notes=notes)
     _validate_progress(result, state.completed_rounds)

@@ -1,6 +1,7 @@
 """Markdown export for generated crochet patterns."""
 from __future__ import annotations
 
+import html as _html
 import re as _re
 
 from app import PRODUCT_NAME
@@ -21,12 +22,24 @@ from app.schemas import difficulty_label
 _INVISIBLE = _re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
 
+def _md_text(value) -> str:
+    """自由文本（含模型/备份可控）→ 可安全渲染的 Markdown。
+
+    导出的 Markdown 既下载成 .md，又在结果页经 st.markdown 渲染；两处都会
+    解析链接 [..](..)、图片 ![..](..) 与内联 HTML。处理三步，与
+    result_renderer.md_safe 同口径：剥零宽/BiDi → 转义反斜杠与方括号
+    （链接/图片语法失效）→ HTML 转义（<img> 等字面显示）。不折叠换行，
+    供段落与列表行使用。"""
+    text = _INVISIBLE.sub("", str(value))
+    text = text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+    return _html.escape(text)
+
+
 def _md_cell(value) -> str:
-    """表格单元格转义（V1）+ 零宽/BiDi 剥离（G6/E1 同源补全）：
+    """表格单元格转义：在 _md_text 基础上再转义竖线、折叠换行。
     竖线破坏列数、换行破坏行结构——GFM 表格单元格内不允许换行。
     与 PDF 路径的 esc() 同一工程惯例。"""
-    text = _INVISIBLE.sub("", str(value))
-    return text.replace("\\", "\\\\").replace("|", "\\|").replace(
+    return _md_text(value).replace("|", "\\|").replace(
         "\r\n", " ").replace("\n", " ").replace("\r", " ")
 
 
@@ -74,13 +87,12 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     lines: list[str] = []
     lines.append("# 🧶 Amigurumi 钩织图解")
     lines.append("")
-    import html
 
     for note in provenance_lines(result):
-        lines.append("> " + html.escape(_md_cell(note)).replace("[", "\\[").replace("]", "\\]"))
+        lines.append("> " + _md_cell(note))
     lines.append("")
     if analysis:
-        lines.append(f"> 体型：{analysis.get('body_type', '—')}  ·  "
+        lines.append(f"> 体型：{_md_cell(analysis.get('body_type', '—'))}  ·  "
                      f"目标头径：{analysis.get('head_diameter_cm', '—')} cm  ·  "
                      f"目标高度：{analysis.get('height_cm', '—')} cm  ·  "
                      f"难度：{difficulty_label(str(analysis.get('difficulty', '—')))}")
@@ -168,8 +180,8 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         lines.append("")
         if quantity > 1:
             lines.append(f"- **制作数量**：{quantity} 个相同部件")
-        lines.append(f"- **形状**：{pd.get('type', '—')}")
-        lines.append(f"- **颜色**：{pd.get('color', '—')}")
+        lines.append(f"- **形状**：{_md_cell(pd.get('type', '—'))}")
+        lines.append(f"- **颜色**：{_md_cell(pd.get('color', '—'))}")
         if pd.get("diameter_cm"):
             lines.append(f"- **直径**：{pd['diameter_cm']} cm")
         if pd.get("height_cm"):
@@ -234,8 +246,11 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
     if assembly:
         lines.append("## 🔧 装配说明")
         lines.append("")
+        # 装配文本含插值的部件名，且旧备份的 assembly_instructions 为原样自由
+        # 文本——两者都可能夹带链接/图片语法。逐行转义内联元字符（保留行结构，
+        # 不折叠），有序列表前缀 "N. " 不含元字符故不受影响。
         for step in assembly.split("\n"):
-            lines.append(step)
+            lines.append(_md_text(step))
         lines.append("")
 
     lines.append("---")

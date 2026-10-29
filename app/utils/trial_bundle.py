@@ -9,7 +9,7 @@ from typing import Literal
 from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 from app.models.trial_draft import TrialDraftState, TrialObservationDraft
-from app.schemas import PatternResult
+from app.schemas import PatternResult, strip_photo_derived
 from app.trials import (
     MAX_PATTERN_BYTES,
     MAX_TRIAL_BYTES,
@@ -56,7 +56,10 @@ def _checked_bundle(source: bytes, record: TrialRecord,
 
 def create_trial_bundle(result: dict, *, trial_id: str, maker_id: str,
                         cohort: Literal["calibration", "validation"] = "calibration") -> TrialBundle:
-    source = json.dumps(PatternResult.from_result(result).to_backup(), ensure_ascii=False,
+    # 试钩包会发给第三方制作者——剔除照片衍生数据（缩略图 + 主体剪影），
+    # 只携带图解本身。
+    backup = strip_photo_derived(PatternResult.from_result(result).to_backup())
+    source = json.dumps(backup, ensure_ascii=False,
                         sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
     record = TrialRecord.model_validate(create_trial_draft_from_bytes(
         source, trial_id=trial_id, maker_id=maker_id, cohort=cohort))

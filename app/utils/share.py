@@ -11,7 +11,7 @@ import json
 import zlib
 from typing import Any
 
-from ..schemas import RESULT_KEYS, SCHEMA_VERSION, PatternResult
+from ..schemas import RESULT_KEYS, SCHEMA_VERSION, PatternResult, strip_photo_derived
 
 _MAX_TOKEN_CHARS = 6000
 # 解压后 2MB 上限（F29）。按字节计：blob 已 UTF-8 编码，zlib 的
@@ -37,8 +37,9 @@ def encode_result(result: dict[str, Any]) -> str | None:
     序列化走 PatternResult：pydantic 部件对象自动 dump，schema_version
     随 token 下发供未来版本识别。
     """
-    payload = PatternResult.from_result(result).to_backup()
-    payload.pop("preview", None)
+    # 分享 token 剔除照片衍生数据（preview 缩略图 + geometry.mask_review
+    # 主体剪影）——分享链接会发给他人，只应携带图解。
+    payload = strip_photo_derived(PatternResult.from_result(result).to_backup())
     blob = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     if len(blob) > _MAX_DECOMPRESSED_BYTES:
         return None

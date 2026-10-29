@@ -323,3 +323,23 @@ class PatternResult(BaseModel):
         data = {k: getattr(self, k) for k in RESULT_KEYS}
         data["schema_version"] = self.schema_version
         return data
+
+
+def strip_photo_derived(backup: Mapping[str, Any]) -> dict[str, Any]:
+    """剔除照片衍生数据，供导出到会离开本机的载体前调用。
+
+    两类数据来自用户上传的照片，而非图解本身：
+    - 顶层 ``preview``：96px 照片缩略图（仅供本机历史侧栏缩略图）；
+    - ``geometry.mask_review``：人工修正后的主体剪影位图（160×160）。
+    备份文件、分享链接、工程文件与试钩包导出前统一剔除；文档声明这些载体
+    “只携带图解”。mask_review 剔除后不影响重算——它仅作“已人工修正”的
+    存在性标记被读取，剪影本身不参与几何/配色计算。返回浅拷贝，不改原 dict。
+    """
+    cleaned = dict(backup)
+    cleaned.pop("preview", None)
+    geometry = cleaned.get("geometry")
+    if isinstance(geometry, Mapping) and "mask_review" in geometry:
+        geometry = dict(geometry)
+        geometry.pop("mask_review", None)
+        cleaned["geometry"] = geometry
+    return cleaned

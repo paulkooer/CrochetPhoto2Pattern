@@ -29,6 +29,17 @@ _SQL_LIKE_ESCAPE_CLAUSE = "ESCAPE '!'"
 
 _PREVIEW_DATA_URL_PREFIX = "data:image/jpeg;base64,"
 
+
+def _safe_preview(preview: Any) -> str | None:
+    """只接受本机生成的 JPEG data URL 缩略图。
+
+    侧栏用 st.image(preview) 渲染该字段；导入的备份或手改 DB 可能把它换成
+    远程 URL 或其他内容，会让服务端/浏览器去请求未验证来源。保存与列出时
+    都在此收口，非法值一律丢弃（不影响图解本体，仅缺缩略图）。"""
+    if isinstance(preview, str) and preview.startswith(_PREVIEW_DATA_URL_PREFIX):
+        return preview
+    return None
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS patterns (
     rid        TEXT PRIMARY KEY,
@@ -127,7 +138,7 @@ def save_result(result: dict[str, Any], title: str | None = None) -> str:
     blob = json.dumps({**record.to_result_dict(),
                        "schema_version": record.schema_version},
                       ensure_ascii=False)
-    preview = result.get("preview")
+    preview = _safe_preview(result.get("preview"))
     with _connection() as conn:
         conn.execute(
             "INSERT OR REPLACE INTO patterns "
@@ -177,7 +188,7 @@ def list_results(limit: int = 30, query: str | None = None,
     params.append(limit)
     with _connection() as conn:
         rows = conn.execute(sql, params).fetchall()
-    return [{"rid": r, "created_at": t, "summary": s, "preview": pv,
+    return [{"rid": r, "created_at": t, "summary": s, "preview": _safe_preview(pv),
              "title": ti}
             for r, t, s, pv, ti in rows]
 
@@ -204,11 +215,8 @@ def load_result(rid: str) -> dict[str, Any] | None:
         return None
     # preview 只是历史列表的缩略图展示字段；手改 DB 注入非 JPEG data URL
     # 的内容时直接丢弃，不让 UI 渲染未验证数据（不影响图解本体）
-    preview = data.get("preview")
-    if preview is not None and (
-            not isinstance(preview, str)
-            or not preview.startswith(_PREVIEW_DATA_URL_PREFIX)):
-        data["preview"] = None
+    if data.get("preview") is not None:
+        data["preview"] = _safe_preview(data.get("preview"))
     # 未来 schema 版本的历史记录不猜测兼容性；旧记录（无版本键）照常载入
     version = data.get("schema_version")
     if version is not None and version != SCHEMA_VERSION:
