@@ -6,6 +6,7 @@ import streamlit as st
 from app.models.gauge import gauge_from_ui
 from app.models.grid_pattern import (
     GRID_PROJECT_MAX_BYTES,
+    GridPattern,
     crop_image_fraction,
     export_grid_markdown,
     export_grid_project,
@@ -69,6 +70,45 @@ def _reset_grid_editor_state() -> None:
     st.session_state.grid_redo_stack = []
 
 
+def _replace_grid(pattern: GridPattern) -> None:
+    """Prepare every output before clearing inputs or either history stack."""
+    prepared = _rendered_grid_view(pattern)
+    _reset_grid_editor_state()
+    st.session_state.grid_view = prepared
+    st.session_state.pop("grid_edit_notice", None)
+
+
+def _record_grid_edit(pattern: GridPattern, notice: str) -> None:
+    prepared = _rendered_grid_view(pattern)
+    undo = list(st.session_state.get("grid_undo_stack", []))
+    _bounded_history_append(undo, st.session_state.grid_view["pattern_payload"])
+    st.session_state.update({"grid_view": prepared, "grid_undo_stack": undo,
+                             "grid_redo_stack": [], "grid_edit_notice": notice})
+
+
+def _restore_grid_history(direction: str) -> bool:
+    if direction not in ("undo", "redo"):
+        raise ValueError("无效的网格历史方向")
+    source_key = f"grid_{direction}_stack"
+    source = st.session_state.get(source_key, [])
+    if not source:
+        return False
+    prepared = _rendered_grid_view(grid_pattern_from_payload(source[-1]))
+    target_key = "grid_redo_stack" if direction == "undo" else "grid_undo_stack"
+    target = list(st.session_state.get(target_key, []))
+    _bounded_history_append(target, st.session_state.grid_view["pattern_payload"])
+    notice = "已撤销最近一次修色" if direction == "undo" else "已重做最近一次修色"
+    st.session_state.update({"grid_view": prepared, source_key: list(source[:-1]),
+                             target_key: target, "grid_edit_notice": notice})
+    return True
+
+
+def _show_grid_error(action: str, exc: Exception) -> None:
+    from app.ui.result_renderer import md_safe
+
+    st.error(f"{action}失败，原有图案和撤销/重做记录保持不变：{md_safe(exc)}")
+
+
 def render_tab_grid() -> None:
     st.subheader("🎨 制作平面像素图案")
     st.markdown(
@@ -91,14 +131,14 @@ def render_tab_grid() -> None:
                 if project_file.size > GRID_PROJECT_MAX_BYTES:
                     raise ValueError("grid project exceeds the size limit")
                 restored_pattern = import_grid_project(project_file.getvalue())
-                _reset_grid_editor_state()
-                st.session_state.grid_view = _rendered_grid_view(restored_pattern)
+                _replace_grid(restored_pattern)
+            except Exception as exc:
+                _show_grid_error("网格工程恢复", exc)
+            else:
                 st.session_state.grid_project_notice = (
                     f"已恢复 {restored_pattern.width} × {restored_pattern.height} "
                     "可编辑网格")
                 st.rerun()
-            except ValueError as exc:
-                st.error(f"网格工程恢复失败：{exc}")
     restore_notice = st.session_state.pop("grid_project_notice", None)
     if restore_notice:
         st.success(f"✅ {restore_notice}，撤销/重做历史已重新开始。")
@@ -176,16 +216,18 @@ def render_tab_grid() -> None:
             if cropped_image is not None and st.button(
                 "🎨 生成网格图案", type="primary", width="stretch", key="btn_grid"
             ):
-                with st.spinner("生成中…"):
-                    pattern = generate_grid_pattern(
-                        cropped_image, grid_width=grid_width,
-                        n_colors=n_colors, aspect_ratio=aspect, resample=resample,
-                        dither=dither,
-                    )
-                    # 预渲染字符串保证普通 rerun 轻量；额外保存纯整数色板索引，
-                    # 仅在用户明确修色时恢复 GridPattern 并重新渲染。
-                    _reset_grid_editor_state()
-                    st.session_state.grid_view = _rendered_grid_view(pattern)
+                try:
+                    with st.spinner("生成中…"):
+                        pattern = generate_grid_pattern(
+                            cropped_image, grid_width=grid_width,
+                            n_colors=n_colors, aspect_ratio=aspect, resample=resample,
+                            dither=dither,
+                        )
+                        # Keep cached strings and lightweight editable indices;
+                        # install only after all renderers and exports succeed.
+                        _replace_grid(pattern)
+                except Exception as exc:
+                    _show_grid_error("网格生成", exc)
 
     if "grid_view" in st.session_state:
         view = st.session_state.grid_view
@@ -204,25 +246,25 @@ def render_tab_grid() -> None:
                     "↶ 撤销修色", key="grid_undo", width="stretch",
                     disabled=not undo_stack,
                 ):
-                    previous_payload = undo_stack.pop()
-                    _bounded_history_append(
-                        redo_stack, view["pattern_payload"])
-                    st.session_state.grid_view = _rendered_grid_view(
-                        grid_pattern_from_payload(previous_payload))
-                    st.session_state.grid_edit_notice = "已撤销最近一次修色"
-                    st.rerun()
+                    try:
+                        restored = _restore_grid_history("undo")
+                    except Exception as exc:
+                        _show_grid_error("网格撤销", exc)
+                    else:
+                        if restored:
+                            st.rerun()
             with history_c2:
                 if st.button(
                     "↷ 重做修色", key="grid_redo", width="stretch",
                     disabled=not redo_stack,
                 ):
-                    next_payload = redo_stack.pop()
-                    _bounded_history_append(
-                        undo_stack, view["pattern_payload"])
-                    st.session_state.grid_view = _rendered_grid_view(
-                        grid_pattern_from_payload(next_payload))
-                    st.session_state.grid_edit_notice = "已重做最近一次修色"
-                    st.rerun()
+                    try:
+                        restored = _restore_grid_history("redo")
+                    except Exception as exc:
+                        _show_grid_error("网格重做", exc)
+                    else:
+                        if restored:
+                            st.rerun()
 
             with st.expander("✏️ 单格 / 矩形修色（不重新量化图片）", expanded=False):
                 edit_mode = st.radio(
@@ -305,34 +347,35 @@ def render_tab_grid() -> None:
                     key=color_key,
                 )
                 if st.button(apply_label, key="grid_apply_cell"):
-                    editable_pattern = grid_pattern_from_payload(payload)
-                    selected_index = palette_names.index(selected_name)
-                    if edit_mode == "单格":
-                        changed = recolor_grid_cell(
-                            editable_pattern,
-                            image_row_start,
-                            image_col_start,
-                            selected_index,
-                        )
+                    try:
+                        editable_pattern = grid_pattern_from_payload(payload)
+                        selected_index = palette_names.index(selected_name)
+                        if edit_mode == "单格":
+                            changed = recolor_grid_cell(
+                                editable_pattern,
+                                image_row_start,
+                                image_col_start,
+                                selected_index,
+                            )
+                        else:
+                            changed = recolor_grid_region(
+                                editable_pattern,
+                                image_row_start,
+                                image_row_end,
+                                image_col_start,
+                                image_col_end,
+                                selected_index,
+                            )
+                        if changed:
+                            _record_grid_edit(editable_pattern,
+                                              f"{edit_description} 中 {changed} 格已改为{selected_name}")
+                    except Exception as exc:
+                        _show_grid_error("网格修色", exc)
                     else:
-                        changed = recolor_grid_region(
-                            editable_pattern,
-                            image_row_start,
-                            image_row_end,
-                            image_col_start,
-                            image_col_end,
-                            selected_index,
-                        )
-                    if changed:
-                        _bounded_history_append(undo_stack, payload)
-                        redo_stack.clear()
-                        st.session_state.grid_view = _rendered_grid_view(
-                            editable_pattern)
-                        st.session_state.grid_edit_notice = (
-                            f"{edit_description} 中 {changed} 格已改为{selected_name}")
-                        st.rerun()
-                    else:
-                        st.info("所选区域已经全部是该颜色，没有产生修改。")
+                        if changed:
+                            st.rerun()
+                        else:
+                            st.info("所选区域已经全部是该颜色，没有产生修改。")
                 edit_notice = st.session_state.pop("grid_edit_notice", None)
                 if edit_notice is not None:
                     st.success(

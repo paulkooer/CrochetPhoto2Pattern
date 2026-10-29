@@ -2,6 +2,62 @@
 
 [简体中文](SOURCES.md) | **English**
 
+## 2026-10-29 Invisible-decrease identity and round-label consistency
+
+Rechecked the action definition in [PlanetJune's invisible-decrease tutorial](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-an-invisible-decrease/).
+The tutorial describes invdec as a distinct technique. This system's glossary already separated
+it from ordinary sc2tog, but the operation tree collapsed `inv-sc2tog` into A because both have
+2→1 arithmetic. That lost technique identity in canonical notation and DSL output.
+
+Keep the explicit token and compact repeats. Markdown retains it and PDF keeps original notes.
+The current DSL subset stops at the affected round and reports partial export; symbol strips
+and connection inspection request manual review. Do not substitute an ordinary or FLO decrease.
+Standalone `invdec` and Chinese/English prose cues also request review without becoming a
+guessed executable formula. Automatic skirt reservation rejects these techniques.
+
+Synthetic examples: `2X,inv-sc2tog` on 4→3 previously became `2X,A` / `2sc,sc2tog`; it now
+retains the token and stops unsupported DSL translation. Recorded rows 7, 19 and 23 previously
+appeared as 1, 2 and 3 in the old charts; actual labels now survive, with positional fallback
+for legacy missing labels. `tests/test_technique_fidelity.py` covers technique/count identity,
+round trips, partial-copy accounting, print preservation, atomic skirt-edit rejection and chart
+labels. Export cache version is 7; no physical-trial or external-simulation evidence was added.
+
+## 2026-10-29 GitHub comparison and stitch-parent inspection
+
+Reviewed maintainer-owned repositories and domain documents against the current local-vision,
+explicit-formula and saved-project architecture:
+
+| Primary source | Relevant idea | Decision for this system |
+|---|---|---|
+| [CrochetPARADE capabilities](https://github.com/stassev/CrochetPARADE/blob/main/capabilities.md) | Inspect stitch connectivity and export diagrams | Add an adjacent-round association view; retain the existing DSL export without importing its simulation code |
+| [stitch-grapher README](https://github.com/bilgesucakir/stitch-grapher) | Separate working-order edges (`NEXT`) from parent associations (`PARENT`); increases/decreases branch or merge | Draw only parent associations, retaining this system's existing scoped FLO/BLO syntax |
+| [KnittingPatternMaker conventions](https://github.com/John-Donnelly/KnittingPatternMaker/blob/main/docs/KNITTING_NOTES.md) | Make reading order and technique assumptions explicit | Number from the formula's starting point; do not transplant flat-knitting right/wrong-side rules into spiral crochet |
+| [Tesserow documentation](https://github.com/deiussum/tesserow) | Keep editable charts and written instructions aligned under technique-specific constraints | Record as a future grid-workflow reference; do not apply mosaic constraints to C2C or amigurumi |
+
+The independently implemented window maps X/V/A/W/M to source and produced stitch indices,
+preserving order and scoped loops. Missing, ambiguous, inconsistent or unsupported formulas
+produce a reason rather than inferred placement. First rounds, cross-component joins and the
+detailed technique of invisible decreases are outside this view.
+
+Repeated subtrees are skipped by counts and each UI page creates at most 24 operations. In a
+synthetic `(X,V,X)×25000` case, 75,000 operations produce 100,000 stitches; the final page has
+24 operations, with 2,529 UTF-8 JSON bytes and 16,917 SVG bytes. This demonstrates bounded
+output, not a speed comparison with an earlier viewer or improved photo/physical accuracy.
+
+`tests/test_stitch_connections.py` checks independent parent/child expectations, property-based
+windows, nested-repeat offsets, large rounds, loop scope, unsupported techniques, SVG escaping
+and session isolation. No upstream code, images, complete patterns or dependencies were added.
+No upstream parser, 3D simulation or physical trial was run.
+
+## Local reference: manual chain-bridge leg-join planning
+
+Reviewed the user-supplied `Downloads/gz/gz2/IMG_5068.JPG` for joining two legs with a
+chain bridge. The planning aid counts two complete openings and one single crochet on
+each side of each chain; round and marker references are supplied by the maker. Examples
+and test values are original, with no source instructions or images copied. The source
+states personal-use and copyright restrictions. The tool does not verify that openings or
+stitch locations exist, automatically join parts, or establish physical crochetability.
+
 ## 2026-10-25 Printed legends and placement guidance
 
 - [Craft Yarn Council abbreviations](https://www.craftyarncouncil.com/standards/crochet-abbreviations) define sc2tog, FLO and BLO. X/V/A/W/M/B are this project's legend conventions rather than universal letter standards.

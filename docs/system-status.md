@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-28. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-29. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -11,6 +11,147 @@ CrochetPhoto2Pattern is a **0.2.0-beta.2 engineering candidate**. Stitch arithme
 gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
+
+2026-10-29 progress isolation and bulk operations: disambiguate custom names such as
+`practice_copy2` that previously aliased another part's physical copy, causing duplicate widgets
+and restoration of one completion as two. Inline/paginated views, saving, restoration, edits and
+undo share the complete pattern's identifier mapping; stale-round cleanup preserves similarly
+named parts' valid progress. Use callbacks before rendering for bulk completion, reset and resume
+navigation to preserve other parts' progress and project notes across reruns. Added **15 regressions**,
+including property tests and AppTest; related checks: **101 passed in 29.60s**. Repository-wide
+Ruff, mypy app/tests (164 files) and diff checks pass. Full suite: **1883 passed, 1 skipped in
+120.45s, coverage 94.10%** (Python 3.12.13). No dependencies, project formats or saved
+part/instance/round identities changed. Previously misrecorded completions require review against
+the physical work before resaving. No new wheel build, real-browser checks, authorized-photo
+evaluation or physical trials; G3/G4 remain unchanged. These results are from local verification;
+consult GitHub Actions for remote CI after submission. See the
+[Chinese isolation guide](project-format.md#名称相似的部件与进度隔离).
+
+2026-10-29 grid generation and failure preservation: convert assignment indices from NumPy
+scalars to native integers in plain and dithered generation, fixing project JSON serialization
+errors that interrupted UI generation. Prepare complete previews, legends, written/C2C charts,
+Markdown and project JSON before changing the grid or histories during generation, restoration,
+cell/rectangle recoloring and undo/redo. Preparation failures retain the grid, inputs and both
+histories for retry. Prepare history copies, reset coordinates/history only on successful
+replacement, and retain redo for no-op edits. Added **30 regressions**, covering both sampling
+and quantization choices, renderer/export failure injection, corrupt snapshots, rectangle
+inputs, retries, download alignment and Photo/trial state isolation. Full suite: **1868 passed,
+1 skipped in 116.72s, coverage 94.05%** (Python 3.12.13). Repository-wide Ruff, mypy app/tests
+(163 files) and diff checks pass. No dependencies changed; grid projects remain format 1.0 and
+pattern/crochet-project formats are unchanged. No new wheel build, real-browser checks,
+authorized-photo evaluation or physical trials; G3/G4 remain unchanged. Changes are local and
+uncommitted, with no new remote CI. See the [Chinese grid-project guide](project-format.md#平面网格工程与修色历史).
+
+2026-10-29 technique and chart consistency: preserve `inv-sc2tog` in the operation tree,
+iteration and canonical notation rather than merging it with ordinary A/sc2tog due to equal
+2→1 arithmetic. Counting, edits and backups remain compatible. The current DSL subset stops
+at invisible-decrease rounds and reports partial export; Markdown retains explicit technique
+or requests review, PDF keeps original notes, and diagrams request review. Automatic skirt
+reservation rejects these techniques while preserving the current pattern on failure. Ring
+charts, symbol strips and truncated headings retain actual round labels, with positional
+fallback for legacy missing labels and safe empty display windows. Export cache version is **7**.
+Added **25 regressions**; full suite: **1838 passed, 1 skipped in 111.52s, coverage 93.47%**
+(Python 3.12.13). Repository-wide Ruff, mypy app/tests (162 files) and diff checks pass. No
+dependencies or pattern/project formats changed. No new wheel build, real-browser checks,
+external simulation, authorized-photo evaluation or physical trials; G3/G4 remain unchanged.
+Changes are local and uncommitted, with no new remote CI. See the
+[rule review](SOURCES.en.md#2026-10-29-invisible-decrease-identity-and-round-label-consistency)
+and [Chinese compatibility notes](project-format.md#隐形减针与图示圈号).
+
+2026-10-29 GitHub-informed stitch-parent inspection: add an opt-in adjacent-round diagram and
+table informed by CrochetPARADE/stitch-grapher connectivity and explicit technique conventions
+in grid projects. Preserve X/V/A/W/M order and FLO/BLO scope; require a complete formula that
+matches both rounds. Show 24 operations per page and skip repeated subtrees by counts, including
+a final-page test with 100,000 produced stitches. SVG/JSON downloads match the selected window;
+JSON identifies its range, coverage and pattern hash, omitting private progress and notes.
+Explain first rounds, absent formulas and unsupported techniques; associations do not describe
+yarn paths, physical shape or tension. Added **35 regressions**, including property tests and
+AppTest. Related checks: **215 passed in 10.04s**. Full suite: **1813 passed, 1 skipped in
+120.81s, coverage 93.46%** (Python 3.12.13). Repository-wide Ruff, mypy app/tests (161 files)
+and diff checks pass. No dependencies or pattern/project formats changed. No new wheel build,
+real-browser checks, upstream parser/simulation runs, authorized-photo evaluation or physical
+trials; G3/G4 remain unchanged. Changes are local and uncommitted, with no new remote CI.
+See the [project comparison](SOURCES.en.md#2026-10-29-github-comparison-and-stitch-parent-inspection)
+and [Chinese user guide](project-format.md#逐针连接核对).
+
+2026-10-29 result replacement state cleanup: release the old pattern's leg-join restore preview,
+inputs and part selections, and match complete result-ID boundaries to retain other results with
+the same ID prefix. Replace preview and calculation output together to clear old comparison
+controls after edits and allow continued entry. Added 6 regressions; AppTest covers Photo/Manual
+yarn edits, continued entry, undo, failed-import preservation, successful-import cleanup, and
+isolation of progress, notes and the other tab's plan. Full suite: **1778 passed, 1 skipped in
+110.63s, coverage 93.39%** (Python 3.12.13). Repository-wide Ruff, mypy app/tests (157 files) and
+diff checks pass. No dependencies or file formats changed. No new real-browser checks,
+authorized-photo evaluation or physical trials; G3/G4 remain unchanged. Changes are local and
+uncommitted, with no new remote CI. See the [Chinese session guide](project-format.md#手动规划锁针并腿).
+
+2026-10-28 stable leg-join comparison selections: track selected parts by name, retain selection
+when reordered, clear and prompt after removal or rename, and recheck when copy counts change.
+Users must still confirm selections against the physical work; selections are not saved in the
+plan. Added 3 regressions; plan tests: **60 passed in 8.84s**; full suite: **1772 passed,
+1 skipped in 102.47s, coverage 93.39%**. Repository-wide Ruff, mypy app/tests (157 files) and
+diff checks pass. No new dependencies, real-browser checks, authorized-photo evaluation or physical
+trials; G3/G4 remain unchanged. Changes are local and uncommitted, with no new remote CI. See the
+[Chinese planning guide](project-format.md#手动规划锁针并腿).
+
+2026-10-28 leg-join technique reminders: pattern comparison flags later rounds and selected-round
+wording mentioning finishing for manual review. Matching numbers establish only agreement with
+the pattern record, not an actual opening or feasible join. Added 3 regressions; related checks:
+**89 passed in 6.83s**; full suite: **1769 passed, 1 skipped in 110.94s, coverage 93.38%**.
+Repository-wide Ruff, mypy app/tests (157 files) and diff checks pass. No new dependencies,
+real-browser checks, authorized-photo evaluation or physical trials; G3/G4 remain unchanged.
+Changes are local and uncommitted, with no new remote CI. See the
+[Chinese planning guide](project-format.md#手动规划锁针并腿).
+
+2026-10-28 leg-join restoration preview: compare current and proposed fields before applying or
+cancelling. Changes to source bytes, restore method or current input invalidate the preview and
+preserve the input. Previews are session-only and do not modify patterns or progress; openings and
+direction still need manual review. Added 5 regressions; related checks: **86 passed in 6.91s**;
+full suite: **1766 passed, 1 skipped in 126.95s, coverage 93.38%**. Repository-wide Ruff,
+mypy app/tests (157 files) and diff checks pass. No new dependencies, real-browser checks,
+authorized-photo evaluation or physical trials; G3/G4 remain unchanged. Changes are local and
+uncommitted, with no new remote CI. See the [Chinese planning guide](project-format.md#手动规划锁针并腿).
+
+2026-10-28 leg-join count diagram: a valid plan displays both openings, the two chain sides and
+the resulting round count; an SVG download follows the current inputs. It explicitly does not
+depict physical proportions, stitch positions or direction, and does not change patterns or
+projects. Added 3 regressions; related checks: **81 passed in 5.31s**; full suite: **1761 passed,
+1 skipped in 139.00s, coverage 93.36%**. Repository-wide Ruff, mypy app/tests (157 files) and
+diff checks pass. No new dependencies, real-browser checks, authorized-photo evaluation or
+physical trials; G3/G4 remain unchanged. Work is local and uncommitted, with no new remote CI.
+See the [Chinese planning guide](project-format.md#手动规划锁针并腿).
+
+2026-10-28 compare manual leg-join plans with current pattern: select the corresponding left/right
+parts and compare round numbers and stitch counts. Both sides selecting one part require at least
+two copies. Missing rounds, mismatches and insufficient copies are reported. Comparison changes
+neither pattern, progress nor plan, and does not verify physical openings, markers, direction or
+feasibility. Added 11 regressions; plan tests: **46 passed in 1.95s**; full suite: **1758 passed,
+1 skipped in 99.38s, coverage 93.35%**. Repository-wide Ruff, mypy app/tests (156 files) and diff
+checks pass. No new dependencies, real-browser checks, authorized-photo evaluation or physical
+trials; G3/G4 remain unchanged. Work is local and uncommitted, with no new remote CI. See the
+[Chinese planning guide](project-format.md#手动规划锁针并腿).
+
+2026-10-28 restore manual leg-join plans: upload or paste a saved plan and validate size, version,
+fields, marker ranges and recomputed totals before replacing form inputs. Corrupt, duplicate,
+invalid or inconsistent data preserves current input. Successful restoration leaves pattern and
+progress unchanged; standalone plans are not bound to a pattern and require manual verification.
+Added 19 regressions; related checks: **67 passed in 3.63s**; full suite: **1747 passed, 1 skipped
+in 96.16s, coverage 93.32%**. Repository-wide Ruff, mypy app/tests (156 files) and diff checks pass.
+No new dependencies, real-browser checks, authorized-photo evaluation or physical trials; G3/G4
+remain unchanged. Changes are local and uncommitted, with no new remote CI. See the
+[Chinese planning guide](project-format.md#手动规划锁针并腿).
+
+2026-10-28 manual chain-bridge leg-join planning: a separate aid records two leg opening rounds,
+stitch counts, markers and chain count, then calculates the joining round with one single crochet
+per opening stitch and on each side of every chain. Download the plan as standalone JSON. Users
+provide the references; the tool does not verify real openings or automatically generate a join.
+It leaves pattern/progress intact and cannot be imported as a project. Synthetic examples were
+used without copying the source images or instructions. Added 16 regressions; related tests:
+**48 passed in 3.21s**; full suite: **1728 passed, 1 skipped in 96.99s, coverage 93.28%**.
+Repository-wide Ruff, mypy app/tests (156 files) and diff checks pass. No new dependencies,
+real-browser checks, authorized-photo evaluation or physical trials; G3/G4 remain unchanged.
+Changes are local and uncommitted, with no new remote CI. See the
+[Chinese planning guide](project-format.md#手动规划锁针并腿).
 
 2026-10-28 trial save history: independent undo/redo restores forms, swatches, yarn, partial
 measurements, completion status, comparisons and downloads together, preserving the live pattern,

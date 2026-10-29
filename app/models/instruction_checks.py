@@ -7,6 +7,7 @@ from .stitch_notation import (
     NotationError,
     StitchExpression,
     UnsupportedLoopError,
+    mentions_invisible_decrease,
     mentions_loop_technique,
     parse_stitch_expression,
 )
@@ -72,9 +73,10 @@ def round_expression(text: object) -> StitchExpression | None:
     if len(expressions) > 1:
         raise NotationError("针法说明含多个独立操作式，请合并为一个完整的本圈操作式")
     expression = expressions[0] if expressions else None
+    if (expression is not None and mentions_invisible_decrease(text)
+            and (loops or expression.has_loop_technique)):
+        raise UnsupportedLoopError("隐形减针与 FLO/BLO 的组合需人工核对，请明确具体针法")
     if expression is not None and loops:
-        if re.search(r"inv-sc2tog", text, re.I):
-            raise UnsupportedLoopError("隐形减针与 FLO/BLO 的组合需人工核对，请明确具体针法")
         expression = expression.with_loop(next(iter(loops)))
     if unsupported or (loops and expression is None):
         raise UnsupportedLoopError("挑针说明缺少明确的操作式或范围，请使用 BLO(12X)、sc-FLO 等写法")

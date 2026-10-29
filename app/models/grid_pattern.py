@@ -404,8 +404,11 @@ def generate_grid_pattern(
     if len(best_idx) != len(pixels):
         raise RuntimeError("palette assignment count does not match grid pixels")
     for bi, _px in zip(best_idx, pixels):  # noqa: B905 - length checked above
-        name, yarn_rgb = palette[bi]
-        flat.append(GridCell(col_index=bi, color_name=name, rgb=yarn_rgb))
+        # NumPy assignment arrays yield scalar int64 values. Keep the editable
+        # model and JSON payload native, as required by project import/export.
+        palette_index = int(bi)
+        name, yarn_rgb = palette[palette_index]
+        flat.append(GridCell(col_index=palette_index, color_name=name, rgb=yarn_rgb))
     cells = [flat[r * grid_width:(r + 1) * grid_width]
              for r in range(grid_height)]
 

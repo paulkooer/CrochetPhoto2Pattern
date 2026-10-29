@@ -8,6 +8,67 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-29 Custom-part and bulk-progress isolation
+
+- Disambiguate checkbox identifiers across the complete pattern when a custom name such as `practice_copy2` aliases another part's second copy. This fixes duplicate-widget errors and restoration of one completion as two, while retaining existing session identifiers for ordinary names.
+- Share the mapping across inline/paginated progress, project saving/restoration, edits and undo. Removing stale rounds no longer deletes similarly named parts' completions. Saved part names, instance IDs, round numbers and project formats remain unchanged.
+- Update bulk completion, reset and resume navigation through callbacks before rendering, avoiding interrupted reruns that discard other parts' progress or project notes. Files that already contain incorrect completions still need review against the physical work.
+
+### Fixed — 2026-10-29 Grid generation, project saving and failure preservation
+
+- Convert NumPy assignment indices to native integers in both plain and dithered generation. This fixes project JSON serialization errors that also interrupted UI generation; the project format remains 1.0.
+- Prepare the complete preview and downloads before changing the current grid or histories during generation, restoration, cell/rectangle recoloring and undo/redo. Preparation failures display an error and preserve the grid, editor inputs and both history stacks for retry.
+- Reset history and coordinates only after successful replacement. No-op edits retain redo and cached output; SVG, Markdown and project JSON stay aligned with the preview after edits and history switches.
+
+### Fixed — 2026-10-29 Invisible-decrease identity and actual round labels
+
+- Preserve `inv-sc2tog` in the operation tree, iteration and canonical notation instead of merging it into A because both consume two stitches and produce one. Counting, edits and existing backups remain supported.
+- Explicitly report invisible decreases and their prose cues outside the current DSL/chart subset. DSL stops at that round and reports partial export; Markdown retains the technique or requests review, and PDF retains original notes. Skirt editing rejects automatic FLO reservation on these rounds.
+- Use recorded round numbers in ring charts, symbol strips and truncated-strip headings, with positional fallback for legacy missing labels. Increment export cache version to 7 to regenerate old reports and PDF caches.
+
+### Added — 2026-10-29 Stitch-parent connection inspector
+
+- Add an opt-in adjacent-round inspector informed by connectivity and explicit-domain conventions in CrochetPARADE, stitch-grapher and related GitHub projects. Preserve ordered X/V/A/W/M operations and scoped FLO/BLO while displaying source and produced stitch indices.
+- Show 24 operations per page, skipping repeated subtrees by counts. Download the current SVG window or JSON bound to the pattern hash. Explain missing formulas, first rounds and unsupported techniques without inferring positions from totals.
+- Inspection preserves patterns, progress and notes; edits reset the view. No dependencies or pattern/project formats changed. The diagram is not a physical layout or tension simulation.
+
+### Fixed — 2026-10-29 Result replacement and leg-join state cleanup
+
+- Release the old result's leg-join restore preview, inputs and part selections when generation, successful import or editing replaces it, preventing session-state accumulation. Failed operations retain the current plan.
+- Match complete result-ID boundaries during cleanup so another result with the same ID prefix keeps its progress, notes and export cache.
+- Replace leg-join preview and calculation output together, clearing old controls after edits so users can continue entering plans. Photo and Manual results remain independent.
+
+### Fixed — Stable part selection for leg-join comparison
+
+- Track selected part names rather than list positions: reordering keeps the selected part, deletion or renaming clears it with a prompt, and copy-count changes are rechecked.
+
+### Changed — Remind users about later rounds and finishing
+
+- During leg-join comparison, flag later rounds and finishing-related wording for manual review. Matching counts only establishes agreement with the pattern record; it does not infer an open edge or physical feasibility.
+
+### Added — Preview leg-join plan restoration
+
+- Compare current and proposed inputs before applying or cancelling a restore. Changing the source file, restore method or current inputs invalidates the preview and preserves the inputs until a fresh preview is made.
+
+### Added — Leg-join count diagram
+
+- Display and download an SVG of both leg openings, the two chain sides and the resulting stitch count. The diagram follows current inputs and explicitly does not depict actual stitch positions, direction or physical proportions; patterns and projects remain unchanged.
+
+### Added — Compare leg-join plans with the current pattern
+
+- Choose the two corresponding pattern parts to compare round numbers and stitch counts. Check at least two copies when both sides use the same part; report missing rounds, mismatched counts and insufficient copies.
+- Comparison changes neither pattern nor progress and does not verify real openings, markers or direction. Part choices are not included in the standalone plan.
+
+### Added — Restore manual leg-join plans
+
+- Upload or paste a previously downloaded plan. Validate version, fields, values, markers and recalculated totals before restoring the form. The 16 KiB limit, duplicate-key rejection and atomic validation preserve current inputs on failure; successful restoration leaves pattern and progress unchanged.
+- Standalone plans are not bound to a pattern or interchangeable with project backups; openings and direction still require manual review.
+
+### Added — Manual chain-bridge leg-join plan
+
+- Add a separate planning aid to record each open leg round, stitch count and marker, plus bridge chains. Validate input ranges and calculate a round with one single crochet per opening stitch and on both sides of every chain; download a standalone JSON plan.
+- The tool does not verify that openings or stitch locations exist and does not generate or change patterns. Plans cannot be imported as patterns or projects; other techniques and physical results need manual review.
+
 ### Added — 2026-10-28 Trial save history
 
 - Add independent undo/redo for saved swatches, yarn, partial measurements and completion status. Restore the form, comparison and download together while preserving the current pattern, crochet progress and project notes.

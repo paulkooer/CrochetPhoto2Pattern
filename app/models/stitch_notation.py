@@ -40,6 +40,13 @@ def mentions_loop_technique(text: object) -> bool:
     ))
 
 
+def mentions_invisible_decrease(text: object) -> bool:
+    return isinstance(text, str) and bool(re.search(
+        r"(?<![A-Za-z])(?:inv-sc2tog|invdec|invisible[ -]+decreases?)(?![A-Za-z])|隐形减针",
+        text, re.I,
+    ))
+
+
 @dataclass(frozen=True)
 class StitchCounts:
     consumed: int = 0
@@ -71,6 +78,8 @@ _COUNTS = {
 }
 _CANONICAL = {alias: symbol for alias, counts in _COUNTS.items()
               for symbol in "XVAWM" if counts == _COUNTS[symbol]}
+# Equal stitch arithmetic does not make these two decrease techniques identical.
+_CANONICAL["INV-SC2TOG"] = "inv-sc2tog"
 
 
 @dataclass(frozen=True)
@@ -95,12 +104,19 @@ class StitchExpression:
 
     @property
     def has_loop_technique(self) -> bool:
-        return (self.stitch is not None and "-" in self.stitch
+        return (self.stitch is not None and self.stitch.endswith(("-FLO", "-BLO"))
                 or any(child.has_loop_technique for child in self.children))
+
+    @property
+    def has_invisible_decrease(self) -> bool:
+        return (self.stitch == "inv-sc2tog"
+                or any(child.has_invisible_decrease for child in self.children))
 
     def with_loop(self, loop: str) -> StitchExpression:
         """Apply a scoped loop qualifier without expanding repeats or losing counts."""
         if self.stitch is not None:
+            if self.has_invisible_decrease:
+                raise UnsupportedLoopError("隐形减针与 FLO/BLO 的组合需人工核对，请明确具体针法")
             symbol, _, existing = self.stitch.partition("-")
             if existing and existing != loop:
                 raise NotationError("针法说明在同一针位同时指定 FLO 和 BLO，请明确挑针范围")
@@ -109,7 +125,7 @@ class StitchExpression:
 
 
 def format_stitch_expression(expression: StitchExpression) -> str:
-    """Canonical X/V/A/W/M notation, retaining order, loop qualifiers and repeats."""
+    """Retain order, scoped loops, invisible decreases and compact repeats."""
     if expression.stitch is not None:
         if expression.repeats == 1:
             return expression.stitch
@@ -219,7 +235,7 @@ def parse_stitch_expression(text: str) -> StitchExpression | None:
         return None
     if too_many:
         raise NotationError("针法说明过长，请简化重复组")
-    if mentions_loop_technique(text) and re.search(r"inv-sc2tog", text, re.I):
+    if mentions_loop_technique(text) and mentions_invisible_decrease(text):
         raise UnsupportedLoopError("隐形减针与 FLO/BLO 的组合需人工核对，请明确具体针法")
     parser = _Parser(tokens)
     result = parser.sequence()

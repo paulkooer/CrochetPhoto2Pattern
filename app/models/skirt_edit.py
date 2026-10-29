@@ -13,6 +13,7 @@ from app.models.stitch_attachments import (
     prepare_attached_skirt,
     validate_waist_position,
 )
+from app.models.stitch_notation import mentions_invisible_decrease
 from app.models.validator import require_valid_pattern
 
 _RESERVATION = "为裙子保留接合位，见装配说明"
@@ -74,8 +75,9 @@ def move_skirt_join(result: dict, target_row: int) -> dict:
            and c["target_row"] == target_row for c in params["stitch_attachments"]["connections"]):
         raise ValueError("该圈预留针目已用于其他部件")
     expression = round_expression(reserve.get("notes"))
-    if expression is None or expression.has_loop_technique:
-        raise ValueError("新预留圈已有特殊挑针或无法识别的说明，请选择普通针法圈")
+    if (expression is None or expression.has_loop_technique
+            or mentions_invisible_decrease(reserve.get("notes"))):
+        raise ValueError("新预留圈已有特殊工艺或无法识别的说明，请选择普通针法圈")
     changed_waist = base["stitches"] != connection["end_stitch"]
     original_skirt = deepcopy(skirt)
     if changed_waist:

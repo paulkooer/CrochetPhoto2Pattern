@@ -33,6 +33,7 @@ _WIDGET_KEY_PREFIXES = (
     "share_token_", "edit_", "export_trace_", "export_cache_",
     "progress_", "progress_page_", "progress_part_",
     "project_notes_", "project_save_",
+    "leg_join_result_", "leg_join_manual_result_",
 )
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
@@ -139,8 +140,11 @@ def purge_result_state(result: dict) -> None:
     rid = result.get("result_id")
     if not rid:
         return
+    namespaces = {p + rid for p in _WIDGET_KEY_PREFIXES}
+    descendants = tuple(namespace + "_" for namespace in namespaces)
     for key in list(st.session_state.keys()):
-        if str(key).startswith(tuple(p + rid for p in _WIDGET_KEY_PREFIXES)):
+        # Match the complete ID, keeping another result whose ID begins with rid.
+        if str(key) in namespaces or str(key).startswith(descendants):
             del st.session_state[key]
 
 
@@ -157,28 +161,31 @@ def _render_paged_progress(result: dict, slot: str) -> None:
     index = st.selectbox("进度部件", range(len(parts)),
                          format_func=lambda i: parts[i]["name"], key=f"progress_part_{rid}")
     part = parts[index]
-    entries = list(progress_entries({**result, "params": {"parts": [part]}}, slot))
+    entries = list(progress_entries(result, slot, part_index=index))
     for _, key, _ in entries:
         if key in st.session_state:
             if st.session_state[key]:
                 durable[key] = True
             else:
                 durable.pop(key, None)
-    done = sum(bool(durable.get(key)) for _, key, _ in entries)
-    st.progress(done / len(entries) if entries else 0,
-                text=f"{part['name']}：已完成 {done}/{len(entries)} 圈次")
-    left, right = st.columns(2)
-    clear = left.button("↩️ 重置进度", key=f"clear_{rid}_{part['name']}")
-    complete = right.button("✅ 全部完成", key=f"all_{rid}_{part['name']}")
-    if clear or complete:
+
+    def set_completed(value: bool) -> None:
         for _, key, _ in entries:
-            if complete:
+            if value:
                 durable[key] = True
             else:
                 durable.pop(key, None)
             if key in st.session_state:
-                st.session_state[key] = complete
-        st.rerun()
+                st.session_state[key] = value
+
+    done = sum(bool(durable.get(key)) for _, key, _ in entries)
+    st.progress(done / len(entries) if entries else 0,
+                text=f"{part['name']}：已完成 {done}/{len(entries)} 圈次")
+    left, right = st.columns(2)
+    left.button("↩️ 重置进度", key=f"clear_{rid}_{part['name']}",
+                on_click=set_completed, args=(False,))
+    right.button("✅ 全部完成", key=f"all_{rid}_{part['name']}",
+                 on_click=set_completed, args=(True,))
     pages = max(1, (len(entries) + PROGRESS_PAGE_SIZE - 1) // PROGRESS_PAGE_SIZE)
     next_offset = next((i for i, (_, key, _) in enumerate(entries) if not durable.get(key)), None)
     if next_offset is not None:
@@ -187,10 +194,13 @@ def _render_paged_progress(result: dict, slot: str) -> None:
                    f"第 {part['rounds'][next_row]['row']} 圈")
     else:
         st.caption("此部件的所有实体圈次均已完成。")
-    if st.button("▶ 前往下一未完成圈", key=f"progress_next_{rid}_{index}",
-                 disabled=next_offset is None) and next_offset is not None:
-        st.session_state[f"progress_page_{rid}_{index}"] = next_offset // PROGRESS_PAGE_SIZE
-        st.rerun()
+
+    def go_to_next() -> None:
+        if next_offset is not None:
+            st.session_state[f"progress_page_{rid}_{index}"] = next_offset // PROGRESS_PAGE_SIZE
+
+    st.button("▶ 前往下一未完成圈", key=f"progress_next_{rid}_{index}",
+              disabled=next_offset is None, on_click=go_to_next)
     page = st.selectbox("进度页", range(pages), format_func=lambda n: f"{n + 1} / {pages}",
                         key=f"progress_page_{rid}_{index}")
 
@@ -226,10 +236,13 @@ def _render_part_progress(
 ) -> None:
     """单个部件的进度区（fragment）。
 
-    勾选/取消勾选只重跑本区块——几十个 checkbox 不再各自触发整页
-    rerun（fable5.1 审核 P2）。「重置/全部完成」按钮与其它流程仍走
-    st.rerun() 整页刷新，语义与旧版一致。
+    勾选和批量更新只重跑本区块。按钮回调先修改精确的圈次集合，
+    避免中途整页刷新触发 Streamlit 清理后续部件的控件状态。
     """
+    def set_completed(value: bool) -> None:
+        for key in chk_keys:
+            st.session_state[key] = value
+
     # Checkbox widget state is the single source of truth for progress.
     # It is updated by Streamlit before the rerun, so the counts below
     # already include the click that triggered this run (no one-step lag).
@@ -281,15 +294,11 @@ def _render_part_progress(
         st.markdown("**逐圈进度**：勾选已完成的圈")
         col_clear, col_all = st.columns(2)
         with col_clear:
-            if st.button("↩️ 重置进度", key=f"clear_{part_key}"):
-                for k in chk_keys:
-                    st.session_state[k] = False
-                st.rerun()
+            st.button("↩️ 重置进度", key=f"clear_{part_key}",
+                      on_click=set_completed, args=(False,))
         with col_all:
-            if st.button("✅ 全部完成", key=f"all_{part_key}"):
-                for k in chk_keys:
-                    st.session_state[k] = True
-                st.rerun()
+            st.button("✅ 全部完成", key=f"all_{part_key}",
+                      on_click=set_completed, args=(True,))
         for copy, copy_keys in enumerate(chk_keys_by_copy, 1):
             if quantity > 1:
                 st.markdown(f"**第 {copy} 个 {part_data['name']}**")
@@ -613,12 +622,19 @@ def render_results(result: dict, slot: str) -> None:
         else:
             st.text(f"  - {mat}")
 
-    # 同名部件（历史坏结果/JSON 编辑复制部件）会生成冲突 widget key → 整页
-    # 崩溃；重名时追加序号后缀。正常结果首个部件不带后缀，key 保持稳定。
-    from app.ui.progress_state import MAX_INLINE_ROUNDS, physical_rounds
+    # 按完整图解为每份实体分配勾选编号；历史坏结果中的重名部件仍用
+    # 序号区分批量按钮。正常未冲突的编号保持稳定。
+    from app.ui.progress_state import MAX_INLINE_ROUNDS, physical_rounds, progress_copy_prefixes
     if physical_rounds(result) > MAX_INLINE_ROUNDS:
         _render_paged_progress(result, slot)
     else:
+        all_copy_prefixes = progress_copy_prefixes(result, slot)
+        valid_keys = {f"{prefix}{index}"
+                      for part, prefixes in zip(params.get("parts", []), all_copy_prefixes, strict=True)
+                      for prefix in prefixes for index in range(len(part.get("rounds", [])))}
+        for key in list(st.session_state):
+            if str(key).startswith(f"chk_{result_key}_") and key not in valid_keys:
+                del st.session_state[key]
         seen_names: dict = {}
         for part_index, part in enumerate(params.get("parts", [])):
             part_data = part
@@ -629,27 +645,9 @@ def render_results(result: dict, slot: str) -> None:
             rounds_list = part_data.get("rounds", [])
             n_rounds = len(rounds_list)
             quantity = max(1, int(part_data.get("quantity", 1)))
-            # 第一份沿用历史 key，第二份起使用 copyN 命名；这样旧会话进度不丢，
-            # 又能让成对部件的两份实体各自勾选。圈数/数量缩小时清掉越界状态。
-            copy_prefixes = [
-                f"chk_{part_key}_" if copy == 0 else f"chk_{part_key}_copy{copy + 1}_"
-                for copy in range(quantity)
-            ]
-            stale = []
-            all_part_prefix = f"chk_{part_key}_"
-            for key in st.session_state:
-                if not key.startswith(all_part_prefix):
-                    continue
-                match = re.match(
-                    rf"^{re.escape(all_part_prefix)}(?:copy(\d+)_)?(\d+)$", key)
-                if not match:
-                    continue
-                copy_number = int(match.group(1) or 1)
-                round_index = int(match.group(2))
-                if copy_number > quantity or round_index >= n_rounds:
-                    stale.append(key)
-            for k in stale:
-                del st.session_state[k]
+            # Share the full-pattern mapping with paging, project save and restore.
+            # Similar custom names must not alias another physical copy's keys.
+            copy_prefixes = all_copy_prefixes[part_index]
             # Checkbox widget state is the single source of truth for progress.
             # It is updated by Streamlit before the rerun, so the counts below
             # already include the click that triggered this run (no one-step lag).

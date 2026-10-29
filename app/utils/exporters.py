@@ -5,7 +5,11 @@ import re as _re
 
 from app import PRODUCT_NAME
 from app.models.instruction_checks import round_expression
-from app.models.stitch_notation import NotationError, format_stitch_expression
+from app.models.stitch_notation import (
+    NotationError,
+    format_stitch_expression,
+    mentions_invisible_decrease,
+)
 from app.models.stitches import (
     PLACEMENT_GUIDANCE,
     ROUND_WORKING_GUIDANCE,
@@ -201,7 +205,10 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
                     expression = None
                     rep = "请核对说明中的操作式"
                 if expression is not None:
-                    rep = format_stitch_expression(expression)
+                    if mentions_invisible_decrease(rd.get("notes")) and not expression.has_invisible_decrease:
+                        rep = "请核对说明中的隐形减针工艺"
+                    else:
+                        rep = format_stitch_expression(expression)
                 elif rep == "—" and not rd.get("notes") and prev_st is not None and st_n and (inc_n or dec_n):
                     rep = _repeat_notation(st_n, prev_st, inc_n, dec_n) or "—"
                 lines.append(

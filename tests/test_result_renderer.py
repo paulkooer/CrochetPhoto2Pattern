@@ -1,4 +1,6 @@
 """Round-7 review: revived silhouette check and crash-proof provenance text."""
+import pytest
+
 from app.ui import result_renderer as rr
 
 
@@ -47,3 +49,48 @@ def test_crafted_confidence_and_ratio_cannot_crash_rendering():
     assert rr._ratio_text({"photo_head_to_height_ratio": None}) == "None"
     assert rr._ratio_text({"photo_head_to_height_ratio": "junk"}) == "junk"
     assert rr._ratio_text({"photo_head_to_height_ratio": 0.42857}) == "0.429"
+
+
+@pytest.mark.parametrize("slot", ["result", "manual_result"])
+def test_replacing_result_releases_leg_join_draft_and_selection_state(monkeypatch, slot):
+    prefix = f"leg_join_{slot}_old_"
+    discarded = {
+        prefix + "pending": {"plan": {"result_stitches": 35}},
+        prefix + "left_selection": "左腿",
+        prefix + "right_selection": "右腿",
+        prefix + "notice": (True, "方案已恢复"),
+        prefix + "paste": '{"kind": "manual_leg_chain_join_plan"}',
+        prefix + "left_row": 7,
+    }
+    retained = {
+        f"leg_join_{slot}_older_pending": {"plan": {"result_stitches": 42}},
+        "trial_workspace_result": {"record": "saved independently"},
+        "project_notes_other": "另一个工程的备注",
+    }
+    state = discarded | retained
+    monkeypatch.setattr(rr.st, "session_state", state)
+
+    rr.purge_result_state({"result_id": "old"})
+
+    assert state == retained
+
+
+def test_result_cleanup_respects_namespace_boundary_and_is_repeatable(monkeypatch):
+    discarded = {
+        "pdf_abc": b"old PDF", "chk_abc_腿部_0": True,
+        "export_cache_abc": {"markdown": "old pattern"},
+        "project_notes_abc": "旧备注", "sz_abc_ok": True,
+    }
+    retained = {
+        "pdf_abcdef": b"other PDF", "chk_abcdef_腿部_0": True,
+        "export_cache_abcdef": {"markdown": "other pattern"},
+        "project_notes_abcdef": "新备注", "sz_abcdef_ok": True,
+        "unrelated": 9,
+    }
+    state = discarded | retained
+    monkeypatch.setattr(rr.st, "session_state", state)
+
+    rr.purge_result_state({"result_id": "abc"})
+    rr.purge_result_state({"result_id": "abc"})
+
+    assert state == retained

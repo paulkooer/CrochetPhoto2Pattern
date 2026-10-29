@@ -30,7 +30,7 @@ from typing import Any
 
 from app.models.colors import YARN_COLORS
 from app.models.instruction_checks import instruction_issues, round_expression
-from app.models.stitch_notation import NotationError, StitchExpression
+from app.models.stitch_notation import NotationError, StitchExpression, mentions_invisible_decrease
 from app.schemas import MAX_ROUND_STITCHES
 from app.utils.counts import integer_count as _integer_count
 
@@ -50,6 +50,7 @@ _HEADER = (
     "# Explicit formulas retain stitch order and scoped FLO/BLO (scfl/scbl).\n"
     "# Unresolved loop instructions stop that part. Prose-only placement and\n"
     "# finishing instructions are not executed; review them in the pattern.\n"
+    "# Invisible decreases stop that part; their technique is not translated.\n"
 )
 
 
@@ -130,6 +131,8 @@ def _round_translation(previous: int, rd: Any) -> tuple[str | None, bool, str]:
     issues = instruction_issues(rd.get("notes"), stitches, inc, dec, previous_stitches=previous)
     if issues:
         return None, False, "；".join(issues)
+    if mentions_invisible_decrease(rd.get("notes")):
+        return None, False, "隐形减针不在当前 DSL 翻译子集内，请对照原说明核对工艺"
     try:
         expression = round_expression(rd.get("notes"))
     except NotationError as exc:
@@ -185,6 +188,8 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport) -> list[str]:
         report.complete = False
         return []
     first_issues = instruction_issues(first.get("notes"), n_first, 0, 0)
+    if mentions_invisible_decrease(first.get("notes")):
+        first_issues.append("隐形减针不在当前 DSL 翻译子集内")
     try:
         first_expression = round_expression(first.get("notes"))
         if first_expression is not None and first_expression.has_loop_technique:

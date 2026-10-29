@@ -83,16 +83,25 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Stage timings, fallback reasons, and a runtime budget. Historical imported results retain their original usage metadata.
 - Strictly validated advanced structure editing with local regeneration.
 - Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
-- Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows.
+- Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows. Failed generation,
+  restoration or editing preserves the current grid and undo/redo history; downloads match
+  the displayed result. See the [Chinese grid-project guide](docs/project-format.md#平面网格工程与修色历史).
 - Stitch-arithmetic and supported round-notation checks, an editor calculator for
   consumed/output stitches and increases/decreases, ring charts, progress tracking, per-color bills of
   materials, share links, SQLite history, JSON backup, Markdown, and optional PDF export.
 - Explicit stitch order is preserved in Markdown, symbol strips and CrochetPARADE,
   including mixed shaping and nested repeats. Aggregate-only export counts inferred
   placement separately; prose-only placement hints and special techniques still need review.
+- Opt-in stitch-parent inspection maps explicit formulas to the preceding round's stitch
+  indices, including scoped FLO/BLO. Browse 24 operations per page and download that window
+  as SVG/JSON; this shows associations rather than physical shape or tension. See the
+  [Chinese inspection guide](docs/project-format.md#逐针连接核对).
 - Scoped front/back-loop notation, such as `BLO((2X,V)×6)` or `4sc-FLO`, retains
   counts and exact loop positions through checks, charts and exports. F/B labels mark
   chart positions; unresolved loop instructions stop that part's DSL export for review.
+- Preserve explicit `inv-sc2tog` technique identity in counting, edits, backups and printed
+  notation. The current DSL/chart subset requests review for invisible decreases instead of
+  substituting ordinary decreases. Charts retain the pattern's actual round numbers.
 - Consecutive +6 rounds specify end/center placement directly, such as `(X,V,X)×6`.
   Numeric edits update affected neighboring instructions while retaining finishing steps.
 - EXIF orientation correction and defensive image/input size limits.
@@ -166,6 +175,8 @@ completed rounds for each physical copy, notes and a pattern revision. Reopen th
 the same sidebar uploader. Save again after working: each file captures the state when Save
 was clicked. Edits report affected progress resets; undo restores progress. Ordinary pattern
 backups and share links omit personal notes/progress; undo history remains session-only.
+Similarly named custom parts, including names ending in `copy2`, track each physical copy
+independently. Bulk completion and reset affect only the selected part and preserve project notes.
 For paginated patterns, **前往下一未完成圈** jumps to the selected part's first unchecked
 round, including later physical copies, without changing progress. For multiple layers of
 reserved-loop joins, editing a foundation clears all dependent progress regardless of record order.
@@ -173,6 +184,18 @@ Round edits retain completed work before the first changed round; part-wide or g
 remain conservative. Use each edit control's **预览…修改影响** button to review affected parts,
 starting rounds and retained/cleared counts, then apply or cancel the preview. Preview again
 after changing inputs; applying a preview uses the latest progress.
+
+Under local edits, **锁针并腿方案（手动核对）** records each leg's open round, stitch count and
+marker, plus the bridge chain count. It calculates a join round with one single crochet per
+opening stitch and on each side of each chain. View and download a count-only SVG diagram;
+download the standalone plan and preview it before restoring by upload or JSON paste. Optionally select two current pattern parts to compare round
+numbers, stitch counts and copy counts, with reminders for later rounds and finishing instructions.
+Generating or importing a new result, applying an edit, undoing or redoing clears this tool's
+inputs, preview and part selections. Download the plan first to restore it afterward; failed
+operations retain the current plan.
+Manually verify the openings, start and direction; the
+plan does not modify the pattern and cannot be imported as a pattern or project. See the
+[Chinese guide](docs/project-format.md#手动规划锁针并腿).
 
 ### Crochet an attached skirt
 

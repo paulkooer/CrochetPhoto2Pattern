@@ -14,7 +14,7 @@ from typing import Any
 
 from app import theme
 from app.models.instruction_checks import instruction_issues, round_expression
-from app.models.stitch_notation import NotationError
+from app.models.stitch_notation import NotationError, mentions_invisible_decrease
 
 _SVG_W, _SVG_H = 320, 320
 
@@ -91,7 +91,7 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
         color_span = f'<tspan dx="6">{html.escape(str(c))}</tspan>' if c else ""
         lines.append(
             f'<text x="{side}" y="{ly + 8}" font-size="9.5" fill="{theme.INK}">'
-            f'<tspan font-weight="600">R{i + 1}</tspan>'
+            f'<tspan font-weight="600">R{html.escape(str(rd.get("row", i + 1)))}</tspan>'
             f'<tspan dx="6">{rd.get("stitches", "?")}X</tspan>{color_span}</text>')
     lines.append("</svg>")
     return "\n".join(lines)
@@ -144,6 +144,8 @@ def _round_operation_sequence(
         return []
     if index == 0 and (increase or decrease):
         return []
+    if mentions_invisible_decrease(rd.get("notes")):
+        return []  # Its stitch count is known; its distinct technique has no glyph here.
     try:
         expression = round_expression(rd.get("notes"))
     except NotationError:
@@ -185,6 +187,9 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
     all_rounds = rounds
     start_row = max(0, len(all_rounds) - max_rounds)
     rounds = all_rounds[start_row:]
+    if not rounds:
+        return ""
+    first_row = html.escape(str(rounds[0].get("row", start_row + 1)))
 
     mark_w, row_h, left = 14, 24, 100
     width = left + max_marks * mark_w + 60
@@ -199,7 +204,7 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
         f'stroke="{theme.RULE}" rx="3"/>',
         f'<text x="8" y="16" font-size="11" fill="{theme.INK}">'
         f'{html.escape(str(name))} 逐圈符号条'
-        f'（{"自起针圈后 " + str(start_row + 1) + " 圈起" if start_row else "自起针圈"}）</text>',
+        f'（{"自第 " + first_row + " 圈起" if start_row else "自起针圈"}）</text>',
         # 图例
         f'<text x="8" y="32" font-size="9.5" fill="{theme.INK_SOFT}">'
         f'图例：× / V / A / W / M；F=前半针，B=后半针</text>',
@@ -249,13 +254,14 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
         suffix = (f'<text x="{left + max_marks * mark_w + 4:.1f}" y="{y + 8}" '
                   f'font-size="9" fill="{theme.INK_SOFT}">+{overflow}</text>'
                   if overflow > 0 else "")
-        label = f'R{start_row + ri + 1} 成圈 {n}X'
+        label = f'R{rd.get("row", start_row + ri + 1)} 成圈 {n}X'
         lines.append(
             f'<text x="8" y="{y + 8:.1f}" font-size="9.5" fill="{theme.INK}">'
             f'{html.escape(label)}</text>')
         lines.append(row_svg + suffix)
         if not seq and n:
+            pending = "隐形减针工艺待核对" if mentions_invisible_decrease(rd.get("notes")) else "针位待核对"
             lines.append(f'<text x="{left}" y="{y + 8}" font-size="10" '
-                         f'fill="{theme.INK_SOFT}">针位待核对</text>')
+                         f'fill="{theme.INK_SOFT}">{pending}</text>')
     lines.append("</svg>")
     return "\n".join(lines)

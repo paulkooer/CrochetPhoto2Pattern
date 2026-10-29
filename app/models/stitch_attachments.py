@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from app.models.instruction_checks import round_expression
 from app.models.parts import _ONE_PIECE_NAME
 from app.models.profile_shaping import strip_dome
-from app.models.stitch_notation import NotationError, format_stitch_expression
+from app.models.stitch_notation import NotationError, format_stitch_expression, mentions_invisible_decrease
 
 WAIST_POSITION_KEY = "skirt_waist_position"
 
@@ -199,6 +199,8 @@ def prepare_attached_skirt(parts: list[dict], *, body_rows: tuple[int, int] | No
     expression = round_expression(reserve["notes"])
     if expression is None:
         raise ValueError("身体预留圈缺少可识别的针法操作式")
+    if mentions_invisible_decrease(reserve.get("notes")):
+        raise ValueError("身体预留圈含隐形减针，无法自动改为 FLO 预留；请人工核对")
     _, _, suffix = reserve["notes"].partition("；")
     reserve["notes"] = "FLO(" + format_stitch_expression(expression) + ")；为裙子保留接合位，见装配说明"
     if suffix:

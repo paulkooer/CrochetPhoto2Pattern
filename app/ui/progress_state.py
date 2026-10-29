@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 
 MAX_INLINE_ROUNDS = 500
 PROGRESS_PAGE_SIZE = 50
@@ -15,23 +16,50 @@ def physical_rounds(result: dict) -> int:
     return sum(len(p["rounds"]) * p.get("quantity", 1) for p in result["params"]["parts"])
 
 
-def progress_entries(result: dict, slot: str):
+def progress_copy_prefixes(result: dict, slot: str) -> list[list[str]]:
+    """Keep legacy widget keys unless a part name aliases another copy's prefix."""
+    rid = result.get("result_id") or slot
+    prefixes = [
+        [f"chk_{rid}_{part['name']}_" + (f"copy{copy + 1}_" if copy else "")
+         for copy in range(max(1, int(part.get("quantity", 1))))]
+        for part in result["params"]["parts"]
+    ]
+    counts = Counter(prefix for copies in prefixes for prefix in copies)
+    reserved = set(counts)
+    for part_index, copies in enumerate(prefixes):
+        for copy, prefix in enumerate(copies):
+            if counts[prefix] > 1:
+                candidate = f"{prefix}part{part_index + 1}_copy{copy + 1}_"
+                # A custom name may also look exactly like our disambiguation.
+                while candidate in reserved:
+                    candidate += "_"
+                copies[copy] = candidate
+                reserved.add(candidate)
+    return prefixes
+
+
+def progress_entries(result: dict, slot: str, *, part_index: int | None = None):
     """Yield semantic identity, widget key and part for each physical round.
 
     Graph instances have stable IDs; legacy patterns use copy ordinals. Part
     names and row numbers are unique at the validated edit/import boundary.
     """
-    rid = result.get("result_id") or slot
+    parts = result["params"]["parts"]
+    if (part_index is not None
+            and (type(part_index) is not int or not 0 <= part_index < len(parts))):
+        raise ValueError("进度部件索引无效")
+    prefixes = progress_copy_prefixes(result, slot)
     structure = result.get("structure") or {}
     graph = {p["name"]: p for p in structure.get("parts", [])}
-    for part in result["params"]["parts"]:
+    for selected_index, part in enumerate(parts):
+        if part_index is not None and selected_index != part_index:
+            continue
         name = part["name"]
         instances = (
             graph.get(name, {}).get("instances", []) if structure.get("schema_version") == "2.0" else []
         )
-        for copy in range(part.get("quantity", 1)):
+        for copy, prefix in enumerate(prefixes[selected_index]):
             instance = instances[copy]["instance_id"] if copy < len(instances) else f"copy{copy + 1}"
-            prefix = f"chk_{rid}_{name}_" + (f"copy{copy + 1}_" if copy else "")
             for index, rd in enumerate(part["rounds"]):
                 identity = json.dumps([name, instance, rd["row"]], ensure_ascii=False)
                 yield identity, f"{prefix}{index}", part
