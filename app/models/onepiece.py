@@ -38,27 +38,27 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
     wall = strip_dome(body_sts)                    # 自底向上
     neck = wall[-1] if wall else 24                # 身体顶端（近颈）针数
 
-    head_sts = [r.stitches for r in head.rounds]
-    head_max = max(head_sts)
-    if neck <= head_max:
-        # 常规：头比颈宽——保留到减针链中首个 ≥ neck 的圈，丢弃更小的收口圈
-        head_kept: list[int] = []
-        for r in head.rounds:
-            head_kept.append(r.stitches)
-            if r.stitches >= neck and (r.decrease or 0) > 0:
-                break
-        while len(head_kept) > 1 and head_kept[-1] < neck:
-            head_kept.pop()
-    else:
-        # F-08：颈围比头部最大围还大（身体比头宽）。旧实现的 while-pop 会把
-        # 整个头部弹空、只剩起针圈，头被静默丢失。改为保留头部到峰值（丢弃
-        # 峰值之后的收口减针），再由下方 bridge 从峰值加针过渡到颈围——头仍
-        # 是完整球冠，身体在其下方加宽。
-        head_kept = head_sts[:head_sts.index(head_max) + 1]
+    head_max = max(r.stitches for r in head.rounds)
+    if neck > head_max:
+        # F-08：身体顶端（颈围）比头部最大围还宽。模板的颈部取自身体顶端，此时
+        # 头部只能一路加针并入身体，钩出来没有头部球段（旧实现静默如此）；要做
+        # 就得另行设计更窄的颈部与肩部，当前模板无依据。明确拒绝，交给用户改分件。
+        raise ValueError(
+            f"头身一体钩要求身体顶端（颈部）不宽于头部：当前颈部 {neck} 针，头部最大 {head_max} 针。"
+            "身体比头宽时请取消“头身一体钩”改为分件生成，或调小身体直径")
+
+    # 头比颈宽：保留到减针链中首个 ≥ neck 的圈，丢弃更小的收口圈
+    head_kept: list[int] = []
+    for r in head.rounds:
+        head_kept.append(r.stitches)
+        if r.stitches >= neck and (r.decrease or 0) > 0:
+            break
+    while len(head_kept) > 1 and head_kept[-1] < neck:
+        head_kept.pop()
     if head_kept[-1] != neck:
-        # F13：颈围对齐必须按当前密度逐圈桥接（上行加针或下行减针），禁止
-        # 无依据直接跳变（旧实现 head_kept.append(neck) 会产生 42→30 之类的
-        # 12 针跳变，且 increase/decrease 字段只声明 6——三方矛盾）
+        # F13：颈围对齐必须按当前密度逐圈桥接，禁止无依据直接跳变（旧实现
+        # head_kept.append(neck) 会产生 42→30 之类的 12 针跳变，
+        # 且 increase/decrease 字段只声明 6——文字/针数/代数三方矛盾）
         head_kept.extend(bridge_rounds(
             head_kept[-1], neck, gauge.max_shaping_change))
 

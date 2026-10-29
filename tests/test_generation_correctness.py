@@ -2,6 +2,8 @@
 文字加减针间隔核对。对应审核发现 F-08 / F-10 / F-13 / F-14。"""
 from __future__ import annotations
 
+import pytest
+
 from app.models.crochet_params import _cylinder_rounds, _sphere_rounds
 from app.models.gauge import PRESETS
 from app.models.instruction_checks import instruction_issues
@@ -17,22 +19,42 @@ def _part(name, typ, rounds_raw, color, magic_ring=False):
 
 
 # ── F-08：身体比头宽时，一体钩不得丢掉头部 ─────────────────────────────
-def test_one_piece_preserves_head_when_body_wider_than_head():
+def test_one_piece_rejects_body_wider_than_head():
     g = PRESETS["classic"]
     head = _part("头部", "sphere", _sphere_rounds(g.stitches_for_diameter(9.0)), "肤色", True)
     body = _part("身体", "cylinder",
                  _cylinder_rounds(max_stitches=g.stitches_for_diameter(14.0), body_rounds=8), "红色")
-    head_peak = max(r.stitches for r in head.rounds)
+    # 旧实现静默输出 6→60 单调加针、没有头部球段的“一体件”
+    with pytest.raises(ValueError, match="分件"):
+        merge_head_body([head, body], g)
+
+
+@pytest.mark.parametrize("ratio", [0.5, 0.75, 1.0, 1.25, 1.5, 2.0])
+@pytest.mark.parametrize("preset", ["classic", "dk", "fine"])
+def test_one_piece_keeps_whole_head_or_refuses(ratio, preset):
+    # 审核验收：身体/头部直径比 0.5–2.0，合并结果要么含完整头部球段，要么明确拒绝
+    g = PRESETS[preset]
+    head = _part("头部", "sphere", _sphere_rounds(g.stitches_for_diameter(9.0)), "肤色", True)
+    body = _part("身体", "cylinder", _cylinder_rounds(
+        max_stitches=g.stitches_for_diameter(9.0 * ratio), body_rounds=8), "红色")
+    head_seq = [r.stitches for r in head.rounds]
+    head_peak = max(head_seq)
     sections: dict = {}
-    merged = merge_head_body([head, body], g, sections=sections)
+    try:
+        merged = merge_head_body([head, body], g, sections=sections)
+    except ValueError as exc:
+        assert "分件" in str(exc)
+        assert max(r.stitches for r in body.rounds) > head_peak
+        return
     seq = [r.stitches for r in merged[0].rounds]
-    # 头部球冠（升到头部峰值）仍在序列里，而非被弹空成仅起针圈
-    assert head_peak in seq
-    assert sections["body"][0] >= len(_sphere_rounds(g.stitches_for_diameter(9.0))) // 2
-    # 眼睛定位在头部峰值首现处附近，而非身体最大围（60）
+    neck_index = sections["body"][0] - 1
+    head_part = seq[:neck_index + 1]
+    peak_at = head_seq.index(head_peak)
+    assert head_part[:peak_at + 1] == head_seq[:peak_at + 1]  # 头部升针段原样保留
+    assert max(head_part) == head_peak and head_part[-1] <= head_peak  # 颈部不宽于头
     import re
     eye = int(re.search(r"第 (\d+) 圈安装安全眼", merged[0].notes).group(1))
-    assert seq[eye - 1] <= head_peak + 6
+    assert eye - 2 == peak_at  # 眼睛在头部峰值首现圈的下一圈
 
 
 def test_one_piece_normal_geometry_unchanged():

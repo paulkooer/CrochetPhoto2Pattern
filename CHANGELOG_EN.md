@@ -22,7 +22,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed — 2026-10-29 Generation correctness and export consistency
 
-- One-piece patterns no longer lose the head when the body is wider: the head keeps its peak before transitioning to the neck, and safety eyes use the head's own peak. Ideal ball/egg rows follow the meridian arc πD/2, fixing flattened shapes and consecutive +12 jumps.
+- One-piece head-and-body generation now refuses, with advice to use separate parts, when the body top is wider than the head, instead of silently producing a pattern that only increases and has no head ball; safety eyes use the head's own peak. Ideal ball/egg rows follow the meridian arc πD/2, fixing flattened shapes and consecutive +12 jumps.
 - Parts started from a ring or chain (such as a separate skirt tube) are reported as partial CrochetPARADE exports instead of complete magic-ring exports. Datasets with skirts therefore cannot meet the G3 complete-Parade-export floor yet; see [evaluation](docs/evaluation.en.md). Bodies and limbs that start from a magic ring are flagged accordingly.
 - C2C row arrows now match the color reading order, and contradictions between "increase/decrease 1 every N stitches" or "evenly increase/decrease N" notes and the formula are reported. Skirt joins state the FLO/BLO orientation premise, and the profiled body's last round is sewn to the head's closed bottom. Export cache version 8 regenerates old Markdown and Parade caches.
 
