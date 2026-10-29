@@ -632,8 +632,8 @@ def test_egg_head_narrower_bottom_and_eye():
     assert len(egg) == len(ball)
     half = len(egg) // 2
     # 蛋形上宽下窄：逐行上半不窄于球、下半不宽于球（下半提前收窄），且确有不对称
-    assert all(e >= b for e, b in zip(egg[:half], ball[:half]))
-    assert all(e <= b for e, b in zip(egg[half:], ball[half:]))
+    assert all(e >= b for e, b in zip(egg[:half], ball[:half], strict=True))
+    assert all(e <= b for e, b in zip(egg[half:], ball[half:], strict=True))
     assert egg[:half] != ball[:half] or egg[half:] != ball[half:]
     r = _ideal_sphere_rounds(9.0, egg=True)
     assert 2 <= r[0]["eye_round"] <= len(r)     # 几何化眼睛定位

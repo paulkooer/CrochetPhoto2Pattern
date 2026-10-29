@@ -252,7 +252,7 @@ def test_ideal_sphere_follows_source_sin_profile():
         assert abs(st - raw) <= 6 + 6, (j, st, raw)
 
     # 相邻圈变化不超过经典短针平面圆 +6 规则（修正行数后不应再出现 +12 跳变）
-    for before, after in zip(seq, seq[1:]):
+    for before, after in zip(seq, seq[1:], strict=False):
         assert abs(after - before) <= 6, (before, after)
 
     result = validate_pattern({"parts": [{"name": "头部", "rounds": rounds}]})
