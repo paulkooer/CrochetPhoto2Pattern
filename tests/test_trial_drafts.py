@@ -157,8 +157,11 @@ def test_partial_form_survives_state_toggle_and_fresh_session_before_completion(
     assert at.date_input(key=prefix + "date").value is None
     at.number_input(key=prefix + "overall_height_cm").set_value(19.2)
     at.text_area(key=prefix + "notes").input("等线团称重后再补")
-    at.checkbox(key=prefix + "complete").check().run()
-    at.checkbox(key=prefix + "complete").uncheck().run()
+    # complete/measured 等都在 st.form 内：真实浏览器里勾选表单内控件不会触发
+    # rerun（表单只在提交时生效），且 streamlit≥1.66 的 AppTest 会在中途 .run()
+    # 丢弃未提交的表单值。故切换勾选不加 .run()，忠实模拟“填写→切换→提交”。
+    at.checkbox(key=prefix + "complete").check()
+    at.checkbox(key=prefix + "complete").uncheck()
     assert at.number_input(key=prefix + "overall_height_cm").value == 19.2
     assert at.text_area(key=prefix + "notes").value == "等线团称重后再补"
     _click(at, "保存记录并更新下载")

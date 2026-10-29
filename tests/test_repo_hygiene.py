@@ -183,9 +183,14 @@ def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
     security = (_REPO / ".github" / "workflows" / "security.yml").read_text(
         encoding="utf-8"
     )
-    assert "uv sync --locked --extra dev --extra pdf --extra pose" in security
+    # 审计锁文件导出的完整固定清单，而不是某个运行环境；曾经的
+    # `pip-audit --local` 在 uv overlay 下只审计叠加层（审计 0 个包却通过）。
+    assert "uv export --locked --all-extras" in security
     assert "pip-audit==2.10.1" in security
-    assert "pip-audit --local" in security
+    assert "--requirement audit-requirements.txt --no-deps" in security
+    assert "pip-audit --local" not in security
+    # 覆盖守卫：导出清单为空时任务必须失败（防“审计 0 个包却通过”回归）
+    assert "依赖审计覆盖为空" in security
     assert "schedule:" in security
 
     for relative in ("ci.yml", "extras.yml", "security.yml"):

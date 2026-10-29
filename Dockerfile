@@ -48,7 +48,12 @@ ENV PATH="/app/.venv/bin:$PATH" \
 USER appuser
 EXPOSE 8501
 # Key 通过环境变量注入（勿把 .env 打进镜像，见 .dockerignore）
-CMD ["streamlit", "run", "app/main.py", "--server.address=0.0.0.0", "--server.port=8501"]
+# client.showErrorDetails=none：生产镜像里未捕获异常只显示通用提示，不向
+# 浏览器暴露异常类型、消息和堆栈（含内部路径）。本地开发不加此标志，保留完整
+# 回溯便于调试；公开部署面向不可信访问者，务必保留此项。
+CMD ["streamlit", "run", "app/main.py", \
+     "--server.address=0.0.0.0", "--server.port=8501", \
+     "--client.showErrorDetails=none"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
     CMD ["python", "-c", \

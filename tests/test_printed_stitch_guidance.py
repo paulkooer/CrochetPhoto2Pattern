@@ -100,7 +100,7 @@ render_results(st.session_state.result, "result")
     assert len(built) == 1
     assert any(button.label == "📄 下载 PDF" for button in at.get("download_button"))
     # Edits/imports clean up both PDF bytes and their format marker.
-    state = dict(at.session_state.filtered_state)
+    state = dict(at.session_state.to_dict())
     monkeypatch.setattr("app.ui.result_renderer.st.session_state", state)
     purge_result_state(_result())
     assert "pdf_printed-guidance" not in state

@@ -198,7 +198,10 @@ def test_editor_disables_density_action_until_changed_measurement_is_saved():
     _click(at, "保存记录并更新下载")
     assert at.button(key="trial_gauge_preview_result").disabled
     assert any("无需重算" in c.value for c in at.caption)
-    at.number_input(key=prefix + "stitches_per_10cm").set_value(18).run()
+    # streamlit≥1.66 的 AppTest 表单语义：未提交的表单控件值会被中途 .run()
+    # 丢弃（与浏览器一致——表单值仅在提交时生效）。因此设值后直接提交，
+    # 不在中间 .run()，否则 18 不会写入保存的小样。
+    at.number_input(key=prefix + "stitches_per_10cm").set_value(18)
     assert at.button(key="trial_gauge_preview_result").disabled
     _click(at, "保存记录并更新下载")
     assert not at.button(key="trial_gauge_preview_result").disabled

@@ -26,7 +26,7 @@ render_results(st.session_state.result, "result")
 
 
 def _capture(result, at):
-    return capture_progress(result, "result", at.session_state.filtered_state)
+    return capture_progress(result, "result", at.session_state.to_dict())
 
 
 def _result(names=("练习", "练习_copy2"), quantities=(2, 1), rows=2):
