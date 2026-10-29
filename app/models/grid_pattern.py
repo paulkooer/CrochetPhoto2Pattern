@@ -587,9 +587,8 @@ def render_c2c_chart(pattern: GridPattern) -> str:
         f"C2C 逐行指令（{W}×{H} 格，共 {total_rows} 行对角）",
         "每格 = 1 个格子块（3 长针）。从左下角开始，行方向来回交替；",
         "增行 = 本行比上一行多 1 格，减行 = 少 1 格；减到 1 格后收工。",
-        "行首箭头/正反面标注按专业 written 指令惯例"
-        "（Juniper & Oakes、Lovable Loops 一致）："
-        "奇数行正面 ↙、偶数行反面 ↗。",
+        "行首箭头表示该行格子的实际工作方向（与下方颜色顺序一致）：从左下角"
+        "起钩，奇数行（正面）沿对角线向右下 ↘ 推进、偶数行（反面）翻面后向左上 ↖ 返回。",
         "起格（通行教程约定，Craftematics/Crochet.com 一致）：",
         "锁 6 针，从钩针端第 4 针起每针钩 1 长针（共 3 长针），翻面；",
         "后续每格同法钩成，再与前行格子的锁针空间引拔相连。",
@@ -612,7 +611,10 @@ def render_c2c_chart(pattern: GridPattern) -> str:
         # 正反面随翻面交替（奇数行 RS、偶数行 WS，对齐专业 written 格式）
         ordered = tiles if k % 2 == 1 else list(reversed(tiles))
         side = "正面" if k % 2 == 1 else "反面"
-        arrow = "↙" if k % 2 == 1 else "↗"
+        # F-12：箭头须与 ordered 的实际走向一致。奇数行按 x 递增、crochet_y 递减
+        # 遍历（右下 ↘），偶数行反向（左上 ↖）。此前固定 ↙/↗ 与颜色顺序水平镜像，
+        # 会让读者从错误一端起钩。
+        arrow = "↘" if k % 2 == 1 else "↖"
         seq = "、".join(name for name, _rgb, _i in ordered)
         lines.append(f"{arrow} 对角行 {k}（{n} 格，{phase}，{side}）：{seq}")
     lines.append("")

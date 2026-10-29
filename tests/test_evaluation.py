@@ -100,6 +100,9 @@ def _valid_result(parts, colors, *, flare):
         "params": {
             "parts": [{
                 "name": name,
+                # 与真实生成器一致：除腰部环起的裙子外均以魔法环起针
+                # （F-13）；裙子为环形起针，Parade 无法忠实导出（F-10）。
+                "magic_ring": name != "裙子",
                 "rounds": [{"row": 1, "stitches": 6, "increase": 0, "decrease": 0}],
             } for name in parts]
         },
@@ -142,22 +145,27 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
 
     report = evaluate_dataset(tmp_path, runner=runner)
     assert report["evaluator"]["network_images_sent"] is False
+    # 带裙案例（red-skirt）含环形起针的裙子，Parade 无法忠实导出（F-10），故
+    # 其 parade_export_ok=False，parade_export_rate 与 case_pass_rate 降为 0.5。
+    # 这是去膨胀后的真实口径（审核 F-10 验收：独立裙筒 complete is False）。
     assert report["summary"] == {
         "cases": 2,
         "tag_counts": {"test-fixture": 2},
         "pipeline_errors": 0,
         "macro_part_f1": 1.0,
-        "case_pass_rate": 1.0,
+        "case_pass_rate": 0.5,
         "flare_labeled_cases": 2,
         "flare_accuracy": 1.0,
         "color_labeled_cases": 2,
         "color_top3_accuracy": 1.0,
         "pattern_valid_rate": 1.0,
-        "parade_export_rate": 1.0,
+        "parade_export_rate": 0.5,
         "parade_syntax_rate": 1.0,
-        "passed": True,
+        "passed": False,
     }
-    assert all(case["passed"] for case in report["cases"])
+    by_id = {case["id"]: case for case in report["cases"]}
+    assert by_id["blue-doll"]["passed"] and by_id["blue-doll"]["parade_export_ok"]
+    assert not by_id["red-skirt"]["passed"] and not by_id["red-skirt"]["parade_export_ok"]
     assert report["report_schema_version"] == 3
     assert report["cases"][0]["rights"]["copyright_basis"] == "self_owned"
 
@@ -449,7 +457,15 @@ def test_release_rejects_duplicate_content_and_missing_labels(tmp_path):
     assert any("scene" in reason for reason in readiness["blocking_reasons"])
 
 
-def test_release_floors_and_complete_automated_evidence(tmp_path):
+def test_release_floors_block_until_parade_supports_ring_starts(tmp_path):
+    """发布级门槛正确应用，且暴露 F-10 已知限制。
+
+    发布策略要求同时覆盖有裙/无裙（各≥5 例），而带裙案例含环形起针的裙子，
+    Parade 无法忠实导出（complete=False，F-10），固定下限 parade_export_rate=1.0
+    因此无法随必需的裙摆覆盖达标。本测试钉死：除 Parade 外各项满分时，自动门槛
+    仍因 parade_export_rate=0.5 被正确拦下，而非被旧口径误判通过。待 Parade 锁针
+    起环语法落地（或下调该下限）后，此场景方可自动通过（见 docs/evaluation.md）。
+    """
     tags = ["full-body", "half-body", "occluded", "plain-background", "complex-background", "low-contrast"]
     cases = []
     for i in range(30):
@@ -466,7 +482,13 @@ def test_release_floors_and_complete_automated_evidence(tmp_path):
         ["头部"], ["蓝色"], flare=bool(image.getpixel((0, 0))[0] % 2)))
     assert report["thresholds"]["min_cases"] == 30
     assert report["thresholds"]["min_case_part_recall"] == 0.5
-    assert report["release_readiness"]["automated_passed"]
+    # 裙件 Parade 不完整 → 导出率 0.5；其余质量项满分（见下）。
+    assert report["summary"]["parade_export_rate"] == 0.5
+    assert report["summary"]["parade_syntax_rate"] == 1.0
+    assert report["summary"]["flare_accuracy"] == 1.0
+    assert report["summary"]["macro_part_f1"] == 1.0
+    # 唯一阻断来自质量下限（parade_export_rate < 1.0），门槛被正确拦下。
+    assert not report["release_readiness"]["automated_passed"]
     assert not report["release_readiness"]["release_approved"]
     assert report["release_readiness"]["manual_checks_required"]
     assert report["evaluator"]["mode"] == "custom_runner"

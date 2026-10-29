@@ -38,18 +38,27 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
     wall = strip_dome(body_sts)                    # 自底向上
     neck = wall[-1] if wall else 24                # 身体顶端（近颈）针数
 
-    # 头部保留至减针链中 ≥ neck 的最后一圈，丢弃更小的收口圈
-    head_kept: list[int] = []
-    for r in head.rounds:
-        head_kept.append(r.stitches)
-        if r.stitches >= neck and (r.decrease or 0) > 0:
-            break
-    while len(head_kept) > 1 and head_kept[-1] < neck:
-        head_kept.pop()
+    head_sts = [r.stitches for r in head.rounds]
+    head_max = max(head_sts)
+    if neck <= head_max:
+        # 常规：头比颈宽——保留到减针链中首个 ≥ neck 的圈，丢弃更小的收口圈
+        head_kept: list[int] = []
+        for r in head.rounds:
+            head_kept.append(r.stitches)
+            if r.stitches >= neck and (r.decrease or 0) > 0:
+                break
+        while len(head_kept) > 1 and head_kept[-1] < neck:
+            head_kept.pop()
+    else:
+        # F-08：颈围比头部最大围还大（身体比头宽）。旧实现的 while-pop 会把
+        # 整个头部弹空、只剩起针圈，头被静默丢失。改为保留头部到峰值（丢弃
+        # 峰值之后的收口减针），再由下方 bridge 从峰值加针过渡到颈围——头仍
+        # 是完整球冠，身体在其下方加宽。
+        head_kept = head_sts[:head_sts.index(head_max) + 1]
     if head_kept[-1] != neck:
-        # F13：颈围对齐必须按当前密度逐圈桥接，禁止无依据直接跳变（旧实现
-        # head_kept.append(neck) 会产生 42→30 之类的 12 针跳变，
-        # 且 increase/decrease 字段只声明 6——文字/针数/代数三方矛盾）
+        # F13：颈围对齐必须按当前密度逐圈桥接（上行加针或下行减针），禁止
+        # 无依据直接跳变（旧实现 head_kept.append(neck) 会产生 42→30 之类的
+        # 12 针跳变，且 increase/decrease 字段只声明 6——三方矛盾）
         head_kept.extend(bridge_rounds(
             head_kept[-1], neck, gauge.max_shaping_change))
 
@@ -84,8 +93,12 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
     last["notes"] = (last.get("notes") or "") + (
         "；断线留10cm，穿末圈每针前半针后拉紧（无痕收口）藏线头")
 
+    # 眼睛定位在头部自身最大围第一次出现的圈——而非整件全局最大围。身体比头
+    # 宽时全局最大在身体段（且 head_kept 已含向颈围加针的桥接圈），按全局最大
+    # 会把眼睛放到身体上（F-08）。取头部原始圈的峰值在 merged 升针侧首现处。
+    head_peak = max(r.stitches for r in head.rounds)
     eye_round = next((i + 1 for i, r in enumerate(rounds_raw)
-                      if r["stitches"] == max(merged_sts)), 2) + 1
+                      if r["stitches"] == head_peak), 2) + 1
     # F16：高度口径与独立身体一致——只计轴向堆叠圈（头部成品到颈 +
     # 筒壁），底部收口圈是径向圆盘不计高。merged 结构 = head_kept +
     # top_down[1:] + 收口（top_down[0]=颈围与 head_kept[-1] 同圈）。

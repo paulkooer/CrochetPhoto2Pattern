@@ -627,9 +627,14 @@ def test_egg_head_narrower_bottom_and_eye():
     from app.models.crochet_params import _ideal_sphere_rounds
     egg = [x["stitches"] for x in _ideal_sphere_rounds(9.0, egg=True)]
     ball = [x["stitches"] for x in _ideal_sphere_rounds(9.0)]
-    # 蛋形下半更早收窄：下半针数和 < 球的下半
+    # 蛋形与同直径球行数相同（n 只取决于直径/行高）；逐行比较避免切片长度错配
+    # 与量化/奇数行带来的和值混淆（上下半行数可差一行）。
+    assert len(egg) == len(ball)
     half = len(egg) // 2
-    assert sum(egg[half:]) < sum(ball[len(ball) - half:]) or egg[-1] < ball[-1]
+    # 蛋形上宽下窄：逐行上半不窄于球、下半不宽于球（下半提前收窄），且确有不对称
+    assert all(e >= b for e, b in zip(egg[:half], ball[:half]))
+    assert all(e <= b for e, b in zip(egg[half:], ball[half:]))
+    assert egg[:half] != ball[:half] or egg[half:] != ball[half:]
     r = _ideal_sphere_rounds(9.0, egg=True)
     assert 2 <= r[0]["eye_round"] <= len(r)     # 几何化眼睛定位
 

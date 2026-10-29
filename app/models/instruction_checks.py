@@ -37,6 +37,39 @@ def _loop_directive(clause: str) -> str | None:
     return _LOOP_DIRECTIVES.get(clause.strip().rstrip("。.!！").lower())
 
 
+_INTERVAL = re.compile(r"隔([0-9]+)针([加减])1针")
+_EVEN = re.compile(r"均匀([加减])([0-9]+)针")
+
+
+def _interval_issues(clause: str, counts) -> list[str]:
+    """F-14：核对“隔N针加/减1针”「均匀加/减N针」文字里的数字与操作式一致。
+
+    生成器口径（见 crochet_params._inc_note_by_before/_dec_note）：
+    ``(aX,V)×6`` ↔ 隔 a 针加 1 针，a = consumed/increase − 1；
+    ``(aX,A)×6`` ↔ 隔 a 针减 1 针，a = consumed/decrease − 2；
+    「均匀加/减 N 针」的 N = 加/减针数。此前只核对逗号前的操作式，文字里的
+    这些数字不参与校验（``(2X,V)×6，隔5针加1针`` 这种自相矛盾可通过）。"""
+    out: list[str] = []
+    interval = _INTERVAL.search(clause)
+    if interval is not None:
+        n = int(interval.group(1))
+        if interval.group(2) == "加" and counts.increase and counts.consumed % counts.increase == 0:
+            expected = counts.consumed // counts.increase - 1
+            if expected != n:
+                out.append(f"文字“隔{n}针加1针”与操作式不符（应为隔{expected}针）")
+        elif interval.group(2) == "减" and counts.decrease and counts.consumed % counts.decrease == 0:
+            expected = counts.consumed // counts.decrease - 2
+            if expected != n:
+                out.append(f"文字“隔{n}针减1针”与操作式不符（应为隔{expected}针）")
+    even = _EVEN.search(clause)
+    if even is not None:
+        n = int(even.group(2))
+        actual = counts.increase if even.group(1) == "加" else counts.decrease
+        if actual and actual != n:
+            out.append(f"文字“均匀{even.group(1)}{n}针”与操作式的{even.group(1)} {actual} 针不符")
+    return out
+
+
 def _clause_expression(clause: str) -> StitchExpression | None:
     generated = _GENERATED_CHANGE.fullmatch(clause) or _GENERATED_ALL.fullmatch(clause)
     plain = _PLAIN.fullmatch(clause)
@@ -130,6 +163,7 @@ def instruction_issues(
                     f"针法说明加 {counts.increase} 针、减 {counts.decrease} 针，"
                     f"与数值加 {increase} 针、减 {decrease} 针不一致"
                 )
+            issues.extend(_interval_issues(clause, counts))
     if mentions_loop_technique(text):
         try:
             round_expression(text)

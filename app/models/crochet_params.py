@@ -268,16 +268,17 @@ def _ideal_sphere_rounds(
     """
     import math
 
-    n = max(5, int(diameter_cm / gauge.row_h_cm + 0.5))
-    row_h = gauge.row_h_cm
+    # 行数覆盖的是极点到极点的经线弧长 πD/2，而非直径 D（F-09）。此前
+    # n=D/row_h 少了约 π/2≈1.57 倍，使“理想球”逐圈针数够宽但经线太短——
+    # 成品偏扁。正确 n=πD/(2·row_h)，每行占固定极角 Δθ=π/n。
+    n = max(5, int(round(math.pi * diameter_cm / (2.0 * gauge.row_h_cm))))
     targets = []
     for j in range(1, n + 1):
-        y = (j - 0.5) * row_h
-        theta = math.pi * min(y, diameter_cm) / max(diameter_cm, 1e-9)
-        w = diameter_cm * math.sin(theta)
+        theta = math.pi * (j - 0.5) / n        # 极角在 (0, π) 上均分
+        w = diameter_cm * math.sin(theta)      # 该极角处横截面直径
         if egg:
             w *= (1.0 + egg_e * math.cos(theta))
-        st = math.pi * w / gauge.stitch_w_cm
+        st = math.pi * w / gauge.stitch_w_cm   # 周长 π·w 除以针宽 = 针数
         targets.append(max(6, int(round(st / 6.0)) * 6))
     # 连续几何变化率按 gauge 计算，并上量化到六等分针法。
     clamped = [targets[0]]
@@ -684,6 +685,7 @@ class CrochetParamsGenerator:
                     height_cm=actual_h,
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
+                    magic_ring=True,  # F-13：底部圆盘以魔法环起针（首圈 note 即“魔法环起6针”）
                     notes=(
                         f"照片驱动轮廓身体（筒壁高约 {actual_h}cm，逐圈针数随照片"
                         f"剖面变化；底部另含圆盘）。末圈保持颈部开口不收针："
@@ -708,6 +710,7 @@ class CrochetParamsGenerator:
                     height_cm=actual_h,
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
+                    magic_ring=True,  # F-13：圆盘起底以魔法环起针
                     notes=(
                         f"圆柱身体（筒壁高约 {actual_h}cm，另含底部圆盘直径 "
                         f"{round(max_st * gauge.stitch_w_cm / 3.14159, 1)}cm）。"
@@ -731,6 +734,7 @@ class CrochetParamsGenerator:
                     height_cm=actual_h,
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "skin" if part_name in _SKIN_PARTS else "body"),
+                    magic_ring=True,  # F-13：肢体底部小圆盘以魔法环起针
                     notes=f"{part_name}（筒壁长约 {actual_h}cm，另含底部小圆盘），两端留线头便于缝合。",
                 )
 

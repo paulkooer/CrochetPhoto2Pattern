@@ -107,10 +107,9 @@ def test_chart_image_through_exporter_roundtrip_unaffected():
 
 # ── 网格侧第二张已发布图表：Lovable Loops「Mini Heart Square」────────────────
 # 9×9 两色（A=白底 / B=粉心）17 行对角，published written rows 逐行转录
-# （含 ↙/↗ 方向标注与非对称行）。价值：cherry 夹具验证簇计数，本夹具
+# （含方向标注与非对称行）。价值：cherry 夹具验证簇计数，本夹具
 # 验证【行内颜色序列的读取方向】——非对称行（Row 7: A×1,B×4,A×2）钉死
-# 相邻行反向的工作顺序约定，且方向标注与 Juniper & Oakes 一致
-# （奇数行 ↙ 正面 / 偶数行 ↗ 反面）。
+# 相邻行反向的工作顺序约定（奇数行正面 ↘ / 偶数行反面 ↖，与颜色顺序一致）。
 # https://lovableloops.com/mini-heart-square-c2c-crochet-pattern/
 
 _HEART_ROWS: list[list[tuple[str, int]]] = [
@@ -131,8 +130,8 @@ _HEART_ROWS: list[list[tuple[str, int]]] = [
 def test_grid_written_rows_match_published_heart_chart():
     """心形网格经本系统 C2C 渲染 → 逐行颜色序列必须复现 published 行。
 
-    编码约定 = 本渲染约定：奇数行（↙ 正面）工作顺序沿 x 升放置，
-    偶数行（↗ 反面）反向——渲染回读恰好逐行复现 published 序列，
+    编码约定 = 本渲染约定：奇数行（正面）工作顺序沿 x 升放置，
+    偶数行（反面）反向——渲染回读恰好逐行复现 published 序列，
     非对称行（7/8/9 行）因此钉死方向约定。
     """
     n = 9
@@ -162,8 +161,8 @@ def test_grid_written_rows_match_published_heart_chart():
 
     row_lines = [ln for ln in chart.split("\n") if "对角行" in ln]
     assert len(row_lines) == 17
-    assert row_lines[0].startswith("↙") and "正面" in row_lines[0]
-    assert row_lines[1].startswith("↗") and "反面" in row_lines[1]
+    assert row_lines[0].startswith("↘") and "正面" in row_lines[0]
+    assert row_lines[1].startswith("↖") and "反面" in row_lines[1]
 
     # 字母 → 毛线色名映射从无歧义行学习（Row 1 全 A、Row 6 首现 B）
     letter_to_name: dict[str, str] = {}
