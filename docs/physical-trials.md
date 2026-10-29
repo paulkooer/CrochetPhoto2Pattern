@@ -196,9 +196,12 @@ uv run crochet2pattern-trials analyze \
   --out trial_outputs/release-review.json
 ```
 
-`--require-validation` 会在留出样本不足或图解哈希重叠时返回2。报告中的
-`independent_validation.sample_ready=true` 只证明样本量、多样性和隔离条件满足，
-不会自动宣称当前或候选常数准确；仍需人工审查尺寸、克重和工时偏差分布。
+`--require-validation` 会在留出样本不足或图解哈希重叠时返回2。“不同图解”与
+队列隔离按**设计指纹**判定（规范化的密度与逐圈针数结构，排除诊断耗时、
+缩略图、配色、线材标签等不影响实物的字段），因此同一设计重复生成或仅改配色/
+线材标签不再被误计为多个独立图解（旧版按易变的字节哈希判定，见审核 F-03）。
+报告中的 `independent_validation.sample_ready=true` 只证明样本量、设计多样性和
+队列隔离满足，不会自动宣称当前或候选常数准确；仍需人工审查尺寸、克重和工时偏差分布。
 
 ## 4. 报告口径
 

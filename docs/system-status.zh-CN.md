@@ -469,7 +469,7 @@ Schema 文档同步与差异检查通过。新增 28 项回归覆盖照片确认
 | 静态检查 | 通过 | `ruff check .` |
 | 差异格式 | 通过 | `git diff --check` |
 | 依赖锁 | 通过 | `uv lock --check`，Python 3.12 解析 |
-| 依赖漏洞 | 通过 | 联合环境 `pip-audit --local` 无已知漏洞；Protobuf 高危告警已由更新后的依赖图标记为 fixed |
+| 依赖漏洞 | 待远端复核 | 审计改为 `uv export --locked --all-extras` 导出锁文件逐包审计（`pip-audit --no-deps`，不再用 `--local`——旧写法在 overlay 下审计 0 个包却报通过，审核 F-01）；并将 pillow 升到 13.0.0、certifi 升级、streamlit 升到 1.66.1（随之移除 gitpython），清除此前 46 项 GHSA。CI 需在本 SHA 实跑确认 |
 | wheel | 通过 | Python 3.12 隔离构建，三项 CLI、许可证、提示词和精选证据均须在包内 |
 
 项目正式支持范围是 Python 3.11–3.14。提交 `bb24995` 的远程核心矩阵
@@ -485,7 +485,7 @@ PDF/pose extras
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
 | G1 可复现源码 | **历史提交通过；本轮待提交复核** | 改动已审查并提交，版本、锁文件、变更日志和远程 `main` 一致 |
-| G2 支持版本自动化 | **历史提交通过；本轮待远端验证** | Python 3.11–3.14 核心 CI、PDF/pose extras 与依赖安全审计全绿 |
+| G2 支持版本自动化 | **本轮改动待远端重新验证** | Python 3.11–3.14 核心 CI、PDF/pose extras 为历史绿；依赖安全审计此前为空转误判（审核 F-01），本轮已修正审计机制并升级依赖，需 CI 在本 SHA 实跑后方可判定全绿 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 全部门槛（含 Parade 100% 完整导出） |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
