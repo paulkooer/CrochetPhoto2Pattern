@@ -1,4 +1,5 @@
 """Restore independent physical-copy progress and notes against the exact pattern."""
+import hashlib
 import json
 from copy import deepcopy
 
@@ -78,6 +79,26 @@ def test_old_pattern_backup_has_no_personal_state():
     result = _result()
     backup = PatternResult.from_result(result).to_backup()
     assert read_project_state(backup, import_backup(backup, "old")) == ({}, "")
+
+
+def test_project_saved_before_photo_data_stripping_still_restores():
+    # 早前保存的照片结果工程把 preview 缩略图计入了图解版本哈希；剔除照片衍生
+    # 数据后仍须能恢复其进度与备注，重新保存后不再携带缩略图。
+    result = {**_result(), "preview": "data:image/jpeg;base64,/9j/AAAA"}
+    legacy = PatternResult.from_result(result).to_backup()
+    encoded = json.dumps(legacy, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+                         allow_nan=False).encode("utf-8")
+    progress = _progress(result)
+    project = {**legacy, "project_state": {
+        "pattern_revision": hashlib.sha256(encoded).hexdigest(), "saved_with_version": "0.2.0b2",
+        "completed_rounds": progress, "notes": "旧工程"}}
+    assert project["project_state"]["pattern_revision"] != pattern_revision(result)
+    restored = import_backup(project, "legacy")
+    assert read_project_state(project, restored) == (progress, "旧工程")
+
+    resaved = project_backup(restored, progress, "旧工程")
+    assert "preview" not in resaved
+    assert read_project_state(resaved, import_backup(resaved, "again")) == (progress, "旧工程")
 
 
 def test_fresh_session_opens_project_and_preserves_latest_checkbox_snapshot(monkeypatch):
