@@ -459,6 +459,36 @@ def render_svg(pattern: GridPattern, cell_px: int = 14) -> str:
     return "\n".join(lines)
 
 
+def render_preview_png(pattern: GridPattern, max_width_px: int = 1200) -> bytes:
+    """大网格的位图预览：每格一个纯色方块，每 10 格一条粗线（同 SVG 约定）。
+
+    逐格 <rect>+<text> 的 SVG 约 175 B/格——80,000 格达 14 MiB，渲染约 1.3 s，
+    且每次修色都要整份重建、存进会话并推给浏览器。位图预览同尺寸约 0.15 MiB。
+    不画符号：大网格的符号在屏幕上本就无法辨认，符号见文字符号图与按需下载的 SVG。
+    """
+    from io import BytesIO
+
+    from PIL import Image, ImageDraw
+
+    from app import theme
+
+    cell = max(2, min(6, max_width_px // max(pattern.width, 1)))
+    small = Image.new("RGB", (pattern.width, pattern.height))
+    small.putdata([c.rgb for row in pattern.cells for c in row])
+    image = small.resize((pattern.width * cell, pattern.height * cell), Image.Resampling.NEAREST)
+    draw = ImageDraw.Draw(image)
+    w_px, h_px = image.size
+    for i in range(0, pattern.width + 1, 10):
+        x = min(i * cell, w_px - 1)
+        draw.line([(x, 0), (x, h_px - 1)], fill=theme.INK, width=1)
+    for i in range(0, pattern.height + 1, 10):
+        y = min(i * cell, h_px - 1)
+        draw.line([(0, y), (w_px - 1, y)], fill=theme.INK, width=1)
+    buf = BytesIO()
+    image.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
 def render_legend_markdown(pattern: GridPattern) -> str:
     """Return a Markdown table for the color legend with usage percentages."""
     lines = ["| 符号 | 颜色名称 | 用量估算 |", "|:----:|:--------:|:--------:|"]
