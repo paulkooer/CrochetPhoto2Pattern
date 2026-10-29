@@ -23,7 +23,7 @@ jobs:
       # 构建但不推送；load 进本地 daemon 后实际运行容器做冒烟，防止 Dockerfile /
       # 依赖图腐化只在部署时才暴露（此前只构建不运行，审核 F-18）。
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: false
