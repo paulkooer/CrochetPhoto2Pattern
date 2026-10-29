@@ -535,7 +535,7 @@ be rerun before claiming 100% complete export.
 | Coverage | 89.9% | clean core environment; threshold is 80% |
 | Static checks | Passed | `ruff check .` and `git diff --check` |
 | Lock | Passed | `uv lock --check` |
-| Dependency audit | Passed | combined environment has no known finding; GitHub marks the Protobuf high alert fixed |
+| Dependency audit | Pending remote re-check | the audit now exports the lock (`uv export --locked --all-extras`) and checks every pinned package (`pip-audit --no-deps`); the former `pip-audit --local` audited zero packages in the uv overlay yet passed (audit F-01). Pillow 13.0.0, certifi 2026.10.23 and Streamlit 1.66.1 (which drops GitPython) clear the 46 earlier GHSA alerts; CI must confirm on this SHA |
 | Wheel | Passed | metadata, MIT license, three CLIs, prompts, and curated evidence included |
 
 Commit `bb24995` passed the real Python matrix
@@ -550,7 +550,7 @@ and locked dependency audit
 | Gate | Status | Pass condition |
 |---|---|---|
 | G1 Reproducible source | **Historical pass; current tree pending commit/review** | reviewed commit, version, lock, changelog, and remote `main` agree |
-| G2 Supported-version automation | **Historical pass; current tree pending remote checks** | core 3.11–3.14, PDF/pose, and security audit are green |
+| G2 Supported-version automation | **Current changes pending remote re-validation** | core 3.11–3.14 and PDF/pose extras were historically green; the security audit previously passed vacuously (audit F-01). The audit and dependencies are now fixed; CI must run on this SHA before calling G2 green |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` thresholds including 100% Parade export |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

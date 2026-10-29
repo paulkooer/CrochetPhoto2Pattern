@@ -214,7 +214,12 @@ uv run crochet2pattern-trials analyze \
 ```
 
 `--require-validation` exits `2` for an undersized holdout or overlapping hashes.
-`independent_validation.sample_ready=true` proves only quantity, diversity, and isolation;
+Distinct patterns and cohort isolation use the **design fingerprint** (normalized gauge and
+per-round stitch structure, excluding diagnostics timing, thumbnails, colors and yarn labels
+that do not change the physical piece). Regenerating one design or changing only colors or
+yarn labels therefore no longer counts as several independent patterns; earlier versions used
+the volatile byte hash (audit F-03).
+`independent_validation.sample_ready=true` proves only quantity, design diversity, and isolation;
 it does not prove that current or candidate constants are accurate. Review the size,
 weight, and time error distributions manually.
 
