@@ -8,6 +8,13 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-29 Trial identity migration and independent-sample gates
+
+- Upgrade legacy bundles only after verifying exact source bytes, original metadata and any legacy fingerprint. Retain observations, partial measurements and source bytes; rebind sidecars when resaving.
+- Version 1 canonicalizes gauge and physical round-sequence multiplicity, ignoring part order, labels and equivalent copy grouping while preserving round order and quantities. Cosmetic reordering cannot establish design diversity or holdout independence.
+- Always check source-SHA overlap across cohorts. Legacy records remain reportable, but unverified identity blocks readiness and calibration candidates; expose identity completeness and pending-upgrade counts.
+- Add `crochet2pattern-trials migrate` for standalone records with their exact source. Retain measurements, forbid input overwrites and preserve existing output on replacement failure. Trial/report root schemas remain 2/3.
+
 ### Security — 2026-10-29 Effective dependency audit and patched dependencies
 
 - The dependency audit now exports the fixed requirements of every extra from `uv.lock` and checks each package, fails when that export is empty, and runs on every pull request. The former `--local` invocation audited no packages inside the uv overlay yet reported success.

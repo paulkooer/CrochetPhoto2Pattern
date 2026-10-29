@@ -12,6 +12,23 @@ gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
+2026-10-29 trial identity fixes following review of Opus commit `83d7a50`: restore legacy ZIPs,
+detect mixed-age source overlap and reject diversity created only by reordering parts. Verify
+exact source SHA, original metadata, legacy fingerprints and sidecar binding before migration;
+retain source bytes, observations and partial measurements. Algorithm version 1 conservatively
+canonicalizes gauge and physical round-sequence multiplicity while ignoring labels, order and
+equivalent copy grouping. Always check source overlap; unverified legacy identity remains
+reportable but cannot establish readiness. Add standalone `migrate` with input protection and
+rollback on output replacement failure. Added **25 regressions**, with frozen synthetic fixtures
+from pre-fingerprint and unversioned implementations, UI restoration and CLI gate checks.
+Related checks: **152 passed in 6.43s**. Full suite: **1978 passed, 2 skipped in 101.83s,
+coverage 94.17%** (Python 3.12.13, dev+pdf). Skips are the absent authorized-photo directory
+and optional mediapipe. Ruff, mypy app/tests (171 files) and diff checks pass. Trial/report root
+schemas remain 2/3, with an optional fingerprint version; standalone legacy records can be
+migrated using their exact source. These are local checks; consult the repair PR for remote
+matrix, container and security results. G3/G4 remain unchanged. See the
+[Chinese migration guide](physical-trials.md#升级旧试钩记录).
+
 2026-10-29 progress isolation and bulk operations: disambiguate custom names such as
 `practice_copy2` that previously aliased another part's physical copy, causing duplicate widgets
 and restoration of one completion as two. Inline/paginated views, saving, restoration, edits and

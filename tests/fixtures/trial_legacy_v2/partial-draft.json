@@ -1,0 +1,15 @@
+{
+  "schema_version": "1",
+  "record_sha256": "f73f2aa10d7938d6f600bcc5afb3ffd22cb547d3dc8576db4cf6cd87d581d435",
+  "observation": {
+    "completed_on": null,
+    "overall_height_cm": 18.0,
+    "yarn_used_grams": null,
+    "yarn_used_meters": null,
+    "active_minutes": null,
+    "time_scope": "full_project",
+    "pattern_modified": false,
+    "modifications": [],
+    "notes": "synthetic partial measurement"
+  }
+}

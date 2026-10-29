@@ -16,6 +16,7 @@ from app.trials import (
     TrialRecord,
     create_trial_draft_from_bytes,
     decode_trial_json,
+    upgrade_trial_record_from_bytes,
 )
 from app.ui.result_logic import import_backup, regenerate_with_gauge
 from app.utils.backup import decode_backup_json
@@ -45,12 +46,7 @@ def _checked_bundle(source: bytes, record: TrialRecord,
     # Apply the same complete-pattern checks as opening a backup, but keep the
     # original bytes: normalizing an import must never silently change its hash.
     import_backup(payload, "trial-check")
-    expected = create_trial_draft_from_bytes(source, trial_id=record.trial_id,
-                                             maker_id=record.maker_id, cohort=record.cohort)["pattern"]
-    # Producer version may differ from the version restoring this bundle.
-    expected["application_version"] = record.pattern.application_version
-    if expected != record.pattern.model_dump(mode="json"):
-        raise ValueError("试钩记录与原图解不匹配，请恢复同一次下载的记录包")
+    record = upgrade_trial_record_from_bytes(source, record)
     return TrialBundle(source, record, pattern_revision(payload), draft)
 
 
