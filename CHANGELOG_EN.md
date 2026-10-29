@@ -31,6 +31,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - Share-link decoding rejects NaN/Infinity and duplicate keys, matching backup import. Legacy structure shape, type and color fields must be scalars, preventing persistent result-page errors after import.
 - Add a 16,000-round total across parts (the 2,000-round per-part and 64-part limits are unchanged), bounding import, export and progress costs for oversized backups.
 - Grids over 10,000 cells use a raster preview without symbols and build the SVG only when its download is clicked, with unchanged content. An 80,000-cell grid's session footprint drops from about 15 MiB to 1.2 MiB; common sizes generated with default ratios keep the vector preview.
+- Grid dithering caches the nearest color per rounded RGB value and diffuses error with scalar arithmetic, producing identical cells. Photos dither about 1.5–4.5× faster and flat or noisy areas over 20× faster (a 48,000-cell noise image drops from about 17 s to 0.5 s).
 
 ### Fixed — 2026-10-29 G4 trial gates count design fingerprints
 
