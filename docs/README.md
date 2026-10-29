@@ -15,7 +15,7 @@
 | Editable grid projects and recoloring history / 平面网格工程与修色历史 | [Features](../README.md#features) | [使用与失败保护](project-format.md#平面网格工程与修色历史) |
 | Public structure candidates / 公开结构候选 | [catalog](public-pattern-candidates-20261011.json) | [配色反例](color-layout-diagnostic-20261011.json) |
 | External rule references / 外部规则参考证据 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
-| Audit brief for external AI review / 外部 AI 审核交待 | [audit-brief.md](audit-brief.md) | [audit-brief.md](audit-brief.md) |
+| Opus 5.5 whole-system review brief / Opus 5.5 全系统审核交待 | [Pinned review brief (Chinese)](audit-brief-opus-20261029.md) | [固定版本审核交待](audit-brief-opus-20261029.md) |
 | Single-image 3D design / 单图 3D 重建设计 | [3d-reconstruction-design.en.md](3d-reconstruction-design.en.md) | [3d-reconstruction-design.md](3d-reconstruction-design.md) |
 
 Root-level user and community documents are also bilingual:
@@ -44,3 +44,5 @@ not current operating instructions. They remain in their original Chinese; use
 - [局部配色观测前后对照 / Spatial color observation comparison](color-layout-observation-20261011.json)
 
 - [轮廓拟合前后对照 / Profile fitting comparison](profile-fit-comparison-20261014.json)
+
+- [旧版外部审核交待 / Earlier external review brief](audit-brief.md) — historical context; use the pinned Opus brief above for the 2026-10-29 review.
