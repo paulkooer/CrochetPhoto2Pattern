@@ -5,6 +5,7 @@ import re
 
 from .stitch_notation import (
     NotationError,
+    StitchCounts,
     StitchExpression,
     UnsupportedLoopError,
     mentions_invisible_decrease,
@@ -19,7 +20,7 @@ _START = re.compile(r"魔法环起\s*([0-9]+)\s*针(?:（X×([0-9]+)）)?[。.!�
 _GENERATED_CHANGE = re.compile(
     r"(.+)，(?:隔[0-9]+针[加减]1针|均匀[加减][0-9]+针)[。.!！]?"
 )
-_GENERATED_ALL = re.compile(r"[加减]针×[0-9]+（([VA]×[0-9]+)，(?:每针都加|每2针并1针)）")
+_GENERATED_ALL = re.compile(r"([加减])针×([0-9]+)（([VA]×[0-9]+)，(每针都加|每2针并1针)）")
 _GENERATED_CLOSURE = re.compile(
     r"断线留[0-9]+(?:\.[0-9]+)?cm，穿末圈每针前半针后拉紧(?:（无痕收口）)?藏线头"
     r"(?:（(?:无痕收口，社区/PlanetJune fastening off 通行技法|勿再减针收成6针，底部会过尖)）)?[。.!！]?"
@@ -41,7 +42,16 @@ _INTERVAL = re.compile(r"隔([0-9]+)针([加减])1针")
 _EVEN = re.compile(r"均匀([加减])([0-9]+)针")
 
 
-def _interval_issues(clause: str, counts) -> list[str]:
+def _decimal(digits: str) -> str:
+    return digits.lstrip("0") or "0"
+
+
+def _count_label(digits: str) -> str:
+    number = _decimal(digits)
+    return number if len(number) <= 18 else f"{number[:18]}…（{len(number)}位）"
+
+
+def _interval_issues(clause: str, counts: StitchCounts) -> list[str]:
     """F-14：核对“隔N针加/减1针”「均匀加/减N针」文字里的数字与操作式一致。
 
     生成器口径（见 crochet_params._inc_note_by_before/_dec_note）：
@@ -52,28 +62,48 @@ def _interval_issues(clause: str, counts) -> list[str]:
     out: list[str] = []
     interval = _INTERVAL.search(clause)
     if interval is not None:
-        n = int(interval.group(1))
-        if interval.group(2) == "加" and counts.increase and counts.consumed % counts.increase == 0:
-            expected = counts.consumed // counts.increase - 1
-            if expected != n:
-                out.append(f"文字“隔{n}针加1针”与操作式不符（应为隔{expected}针）")
-        elif interval.group(2) == "减" and counts.decrease and counts.consumed % counts.decrease == 0:
-            expected = counts.consumed // counts.decrease - 2
-            if expected != n:
-                out.append(f"文字“隔{n}针减1针”与操作式不符（应为隔{expected}针）")
+        digits, direction = interval.groups()
+        actual = counts.increase if direction == "加" else counts.decrease
+        label = f"隔{_count_label(digits)}针{direction}1针"
+        if actual == 0:
+            out.append(f"文字“{label}”与操作式不符（操作式没有{direction}针）")
+        elif counts.consumed % actual == 0:
+            expected = counts.consumed // actual - (1 if direction == "加" else 2)
+            if _decimal(digits) != str(expected):
+                out.append(f"文字“{label}”与操作式不符（应为隔{expected}针）")
     even = _EVEN.search(clause)
     if even is not None:
-        n = int(even.group(2))
-        actual = counts.increase if even.group(1) == "加" else counts.decrease
-        if actual and actual != n:
-            out.append(f"文字“均匀{even.group(1)}{n}针”与操作式的{even.group(1)} {actual} 针不符")
+        direction, digits = even.groups()
+        actual = counts.increase if direction == "加" else counts.decrease
+        if _decimal(digits) != str(actual):
+            out.append(f"文字“均匀{direction}{_count_label(digits)}针”与操作式的{direction} {actual} 针不符")
+    every = _GENERATED_ALL.fullmatch(clause)
+    if every is not None:
+        direction, digits, formula, rule = every.groups()
+        actual = counts.increase if direction == "加" else counts.decrease
+        operation = "加" if formula.startswith("V") else "减"
+        if direction != operation or _decimal(digits) != str(actual):
+            operation_count = counts.increase if operation == "加" else counts.decrease
+            out.append(f"文字“{direction}针×{_count_label(digits)}”"
+                       f"与操作式的{operation} {operation_count} 针不符")
+        expected_rule = "每针都加" if operation == "加" else "每2针并1针"
+        if rule != expected_rule:
+            out.append(f"文字“{rule}”与操作式的{operation}针不符（应为“{expected_rule}”）")
     return out
 
 
 def _clause_expression(clause: str) -> StitchExpression | None:
-    generated = _GENERATED_CHANGE.fullmatch(clause) or _GENERATED_ALL.fullmatch(clause)
+    generated = _GENERATED_CHANGE.fullmatch(clause)
+    every = _GENERATED_ALL.fullmatch(clause)
     plain = _PLAIN.fullmatch(clause)
-    text = generated[1] if generated else f"{plain[1]}X" if plain else clause
+    if generated:
+        text = generated[1]
+    elif every:
+        text = every[3]
+    elif plain:
+        text = f"{plain[1]}X"
+    else:
+        text = clause
     return parse_stitch_expression(text)
 
 
@@ -138,7 +168,7 @@ def instruction_issues(
         start = _START.fullmatch(clause)
         match = total or plain or unchanged or start
         if match is not None:
-            if any((digits.lstrip("0") or "0") != str(stitches)
+            if any(_decimal(digits) != str(stitches)
                    for digits in match.groups() if digits is not None):
                 issues.append(f"文字说明的总针数与数值 {stitches} 不一致")
             if (plain or unchanged) and (increase or decrease):

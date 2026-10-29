@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-29 Whole-round prose and formula consistency
+
+- Reject claims such as `6V，均匀减6针` or `6X，隔2针加1针` when the formula contains no corresponding shaping. Check outer increase/decrease repetition counts, direction and every-stitch wording so correct arithmetic cannot hide contradictory technique instructions.
+- Compare normalized decimal strings instead of converting untrusted prose counts to integers. Excessive digits produce bounded diagnostics; equivalent zero-padded counts remain accepted.
+- Share checks across edits, imports and exports. Failed imports retain the current pattern, progress and notes for retry. Conditional/future-round prose retains its existing interpretation; pattern/project formats and export-cache version are unchanged.
+
 ### Fixed — 2026-10-29 Trial identity migration and independent-sample gates
 
 - Upgrade legacy bundles only after verifying exact source bytes, original metadata and any legacy fingerprint. Retain observations, partial measurements and source bytes; rebind sidecars when resaving.

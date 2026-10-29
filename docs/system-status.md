@@ -12,6 +12,20 @@ gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
+2026-10-29 whole-round prose checks: reject shaping claims when the formula contains no
+corresponding increases/decreases, and cross-check outer repetition counts, direction and
+every-stitch wording. Compare normalized decimal strings so 5,000-digit claims return bounded
+diagnostics while correct zero padding remains usable. Conditional/future-round prose and
+unrecognized techniques retain their manual-review boundary. Added **31 regressions** for
+contradictions, excessive digits, valid claims, edit/import/export gates, UI failure preservation
+and correction/retry. Related checks: **147 passed in 4.41s**. Full suite: **2009 passed,
+2 skipped in 162.90s, coverage 94.20%** (Python 3.12.13, isolated locked dev+pdf environment).
+Skips are the absent authorized-photo directory and optional mediapipe. Ruff, mypy app/tests
+(172 files) and diff checks pass. No dependencies or pattern/project formats changed; export
+cache remains version 8. Consult feature-branch PR checks for remote results. No new authorized
+photo, real-browser or physical-trial evidence; G3/G4 remain unchanged. See the
+[Chinese validation guide](project-format.md#导入校验与编辑保留).
+
 2026-10-29 trial identity fixes following review of Opus commit `83d7a50`: restore legacy ZIPs,
 detect mixed-age source overlap and reject diversity created only by reordering parts. Verify
 exact source SHA, original metadata, legacy fingerprints and sidecar binding before migration;
