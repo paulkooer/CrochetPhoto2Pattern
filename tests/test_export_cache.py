@@ -78,7 +78,7 @@ def test_failed_refresh_cannot_reuse_old_value_and_can_retry():
     assert cached_export(cache, "markdown", {"revision": 2}, lambda: "new") == "new"
 
 
-@pytest.mark.parametrize("old_format", [None, 2, 3, 4, 6])
+@pytest.mark.parametrize("old_format", [None, 2, 3, 4, 6, 7])
 def test_legacy_cache_is_rebuilt_after_export_semantics_change(old_format):
     from app.ui.export_cache import cached_export
 
