@@ -15,7 +15,7 @@ import streamlit as st
 from app.models.colors import YARN_COLORS
 from app.models.gauge import gauge_from_result
 from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STITCH_LEGEND_ZH
-from app.schemas import PART_NAMES, PatternResult, difficulty_label
+from app.schemas import PART_NAMES, PatternResult, difficulty_label, strip_photo_derived
 from app.ui import result_logic
 from app.ui.design_system import section_heading
 from app.ui.result_logic import rebuild_params, result_profile
@@ -180,7 +180,7 @@ def _render_paged_progress(result: dict, slot: str) -> None:
 
     done = sum(bool(durable.get(key)) for _, key, _ in entries)
     st.progress(done / len(entries) if entries else 0,
-                text=f"{part['name']}：已完成 {done}/{len(entries)} 圈次")
+                text=f"{md_safe(part['name'])}：已完成 {done}/{len(entries)} 圈次")
     left, right = st.columns(2)
     left.button("↩️ 重置进度", key=f"clear_{rid}_{part['name']}",
                 on_click=set_completed, args=(False,))
@@ -190,7 +190,7 @@ def _render_paged_progress(result: dict, slot: str) -> None:
     next_offset = next((i for i, (_, key, _) in enumerate(entries) if not durable.get(key)), None)
     if next_offset is not None:
         next_copy, next_row = divmod(next_offset, len(part["rounds"]))
-        st.caption(f"下一未完成圈：第 {next_copy + 1} 个 {part['name']} · "
+        st.caption(f"下一未完成圈：第 {next_copy + 1} 个 {md_safe(part['name'])} · "
                    f"第 {part['rounds'][next_row]['row']} 圈")
     else:
         st.caption("此部件的所有实体圈次均已完成。")
@@ -253,7 +253,7 @@ def _render_part_progress(
     rounds_label = (f"{n_rounds} 圈/个，共 {physical_rounds} 圈次"
                     if quantity > 1 else f"{n_rounds} 圈")
     label_exp = (
-        f"{part_data['name']}{quantity_label}（{rounds_label}）"
+        f"{md_safe(part_data['name'])}{quantity_label}（{rounds_label}）"
         f"　已完成 {n_done}/{physical_rounds} 圈次"
     )
     with st.expander(label_exp):
@@ -301,7 +301,7 @@ def _render_part_progress(
                       on_click=set_completed, args=(True,))
         for copy, copy_keys in enumerate(chk_keys_by_copy, 1):
             if quantity > 1:
-                st.markdown(f"**第 {copy} 个 {part_data['name']}**")
+                st.markdown(f"**第 {copy} 个 {md_safe(part_data['name'])}**")
             for i, r in enumerate(rounds_list):
                 rd = r
                 inc_str = f"+{rd['increase']}" if rd.get("increase") else ""
@@ -375,7 +375,7 @@ def render_results(result: dict, slot: str) -> None:
     unknown = [p for p in analysis.get("parts", []) if p not in PART_NAMES]
     if unknown:
         st.caption("⚠️ 未识别的部件 "
-                   + "、".join(html.escape(_plain_text(p)) for p in unknown)
+                   + "、".join(md_safe(p) for p in unknown)
                    + " 使用已有结构与图解，请人工核对形状；不支持从该名称自动推断")
 
     color_evidence = (result.get("vision_meta") or {}).get("color_observation")
@@ -518,8 +518,12 @@ def render_results(result: dict, slot: str) -> None:
         rows.append({
             "部件": part.get("name", "?"),
             "数量": part.get("count", 1),
-            "形状": {"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
-                     "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—")),
+            # shape 正常是字符串；非标量（旧备份注入的 dict/list）会让 dict.get
+            # 抛 unhashable TypeError，这里降级为「—」而非崩溃（import 侧已拦截，
+            # 此为渲染层兜底）。
+            "形状": ({"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
+                      "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—"))
+                     if isinstance(part.get("shape"), (str, type(None))) else "—"),
             "尺寸": "，".join(dims) or "—",
             "位置 / 旋转": "；".join(poses) or "旧版未记录",
             "连接": "；".join(connections) or "独立部件 / 未记录",
@@ -880,9 +884,12 @@ def render_results(result: dict, slot: str) -> None:
     # ── 完整结果备份/导入（刷新会丢 session，备份 JSON 可跨会话恢复）───────
     # F24：备份键集走 _BACKUP_KEYS 与分享同构——旧版只写三键，导入后
     # 快速调尺寸会把一体件拆回分件、egg 退化 ladder（style/spans 全丢）
-    backup_json = json.dumps(PatternResult.from_result({
+    # 下载的备份也可能被转发分享（分享链接过大时本就建议改用它），因此剔除
+    # 照片衍生数据（preview 缩略图 + mask_review 主体剪影），与文档“只携带图解”
+    # 的声明一致。本机历史缩略图另走 history 列保存，不受影响。
+    backup_json = json.dumps(strip_photo_derived(PatternResult.from_result({
         **result, "params": serializable_params,
-    }).to_backup(), ensure_ascii=False)
+    }).to_backup()), ensure_ascii=False)
     col_bk1, col_bk2, col_bk3 = st.columns(3)
     with col_bk1:
         st.download_button(

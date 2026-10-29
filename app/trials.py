@@ -13,6 +13,7 @@ import json
 import math
 import statistics
 import sys
+from collections import Counter
 from collections.abc import Iterable
 from datetime import UTC, date, datetime
 from importlib.metadata import PackageNotFoundError, version
@@ -64,12 +65,22 @@ class TrialGauge(_StrictModel):
 
 class PatternSource(_StrictModel):
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    # Missing versions identify legacy records, whose design independence is
+    # unknown until their exact source snapshot has been checked and upgraded.
+    design_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    design_fingerprint_version: Literal["1"] | None = None
     application_version: str = Field(min_length=1, max_length=80)
     target_height_cm: TrialFloat = Field(gt=0.0, le=200.0)
     gauge: TrialGauge
     total_stitches: TrialInt = Field(gt=0)
     total_physical_rounds: TrialInt = Field(gt=0)
     estimated_time_minutes: TrialInt = Field(gt=0)
+
+    @model_validator(mode="after")
+    def _fingerprint_contract(self) -> PatternSource:
+        if self.design_fingerprint_version is not None and self.design_fingerprint is None:
+            raise ValueError("versioned design identity requires a fingerprint")
+        return self
 
 
 class SwatchMeasurement(_StrictModel):
@@ -344,6 +355,54 @@ def create_trial_draft(
                                          trial_id=trial_id, maker_id=maker_id, cohort=cohort)
 
 
+def _fingerprint_hash(core: dict[str, Any]) -> str:
+    encoded = json.dumps(core, sort_keys=True, ensure_ascii=False,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _legacy_design_fingerprint(params: dict[str, Any]) -> str:
+    """Frozen unversioned algorithm, used only to verify existing saved records."""
+    gauge = params.get("gauge") or {}
+    parts = params.get("parts") or []
+    core = {
+        "gauge": [gauge.get("stitches_per_10cm"), gauge.get("rows_per_10cm")],
+        "parts": [
+            {
+                "name": part.get("name"),
+                "quantity": part.get("quantity", 1),
+                "rounds": [
+                    [rd.get("stitches"), rd.get("increase") or 0, rd.get("decrease") or 0]
+                    for rd in (part.get("rounds") or []) if isinstance(rd, dict)
+                ],
+            }
+            for part in parts if isinstance(part, dict)
+        ],
+    }
+    return _fingerprint_hash(core)
+
+
+def _design_fingerprint(params: dict[str, Any]) -> str:
+    """Conservative identity of gauge and the multiset of physical round sequences.
+
+    Part labels/order and equivalent grouping of identical copies do not create
+    new designs. Preserve round order and multiplicity; normalize numeric spelling.
+    This count-based identity does not establish complete physical equivalence.
+    """
+    gauge = TrialGauge.model_validate(params.get("gauge") or {})
+    sequences: Counter[str] = Counter()
+    for part in params.get("parts") or []:
+        rounds = [[integer_count(rd["stitches"]), integer_count(rd.get("increase", 0)),
+                   integer_count(rd.get("decrease", 0))] for rd in part["rounds"]]
+        signature = json.dumps(rounds, separators=(",", ":"))
+        sequences[signature] += _part_quantity(part)
+    return _fingerprint_hash({
+        "version": "1",
+        "gauge": [gauge.stitches_per_10cm, gauge.rows_per_10cm],
+        "parts": [[json.loads(signature), count] for signature, count in sorted(sequences.items())],
+    })
+
+
 def create_trial_draft_from_bytes(
     blob: bytes, *, trial_id: str, maker_id: str,
     cohort: Literal["calibration", "validation"] = "calibration",
@@ -364,6 +423,8 @@ def create_trial_draft_from_bytes(
     try:
         source = PatternSource(
             sha256=hashlib.sha256(blob).hexdigest(),
+            design_fingerprint=_design_fingerprint(params),
+            design_fingerprint_version="1",
             application_version=_application_version(),
             target_height_cm=finite_float(analysis["height_cm"]),
             gauge=TrialGauge.model_validate(gauge),
@@ -387,6 +448,27 @@ def create_trial_draft_from_bytes(
     except Exception as exc:
         raise TrialDataError(f"pattern is missing required trial metadata: {exc}") from exc
     return draft.model_dump(mode="json")
+
+
+def upgrade_trial_record_from_bytes(blob: bytes, record: TrialRecord) -> TrialRecord:
+    """Verify every source field before migrating legacy identity; retain measurements."""
+    record = TrialRecord.model_validate(record.model_dump())
+    expected = create_trial_draft_from_bytes(blob, trial_id=record.trial_id,
+                                             maker_id=record.maker_id, cohort=record.cohort)["pattern"]
+    expected["application_version"] = record.pattern.application_version
+    stored = record.pattern.model_dump(mode="json")
+    comparable = dict(expected)
+    if record.pattern.design_fingerprint_version is None:
+        if record.pattern.design_fingerprint is not None:
+            payload = decode_trial_json(blob, max_bytes=MAX_PATTERN_BYTES)
+            legacy = _legacy_design_fingerprint(payload.get("params", payload))
+            if legacy != record.pattern.design_fingerprint:
+                raise TrialDataError("试钩记录与原图解不匹配：旧设计指纹无效")
+        comparable["design_fingerprint"] = stored["design_fingerprint"]
+        comparable["design_fingerprint_version"] = None
+    if comparable != stored:
+        raise TrialDataError("试钩记录与原图解不匹配，请恢复同一次下载的记录包")
+    return TrialRecord.model_validate({**record.model_dump(mode="json"), "pattern": expected})
 
 
 def load_trial_records(records_dir: str | Path) -> list[TrialRecord]:
@@ -589,12 +671,18 @@ def analyze_trials(
         if record.observation is not None
         and record.observation.time_scope == "round_crochet_baseline"
     ]
-    distinct_patterns = {record.pattern.sha256 for record in eligible}
-    distinct_time_patterns = {record.pattern.sha256 for record in time_eligible}
-    validation_patterns = {record.pattern.sha256 for record in validation_eligible}
-    validation_time_patterns = {
-        record.pattern.sha256 for record in validation_time_eligible
-    }
+    def identities(group: list[TrialRecord]) -> set[str]:
+        return {record.pattern.design_fingerprint for record in group
+                if record.pattern.design_fingerprint_version == "1"
+                and record.pattern.design_fingerprint is not None}
+
+    def unverified(group: list[TrialRecord]) -> int:
+        return sum(record.pattern.design_fingerprint_version != "1" for record in group)
+
+    distinct_patterns = identities(eligible)
+    distinct_time_patterns = identities(time_eligible)
+    validation_patterns = identities(validation_eligible)
+    validation_time_patterns = identities(validation_time_eligible)
     distinct_makers = {record.maker_id for record in eligible}
     distinct_time_makers = {record.maker_id for record in time_eligible}
     validation_makers = {record.maker_id for record in validation_eligible}
@@ -602,9 +690,19 @@ def analyze_trials(
         record.maker_id for record in validation_time_eligible
     }
     cohort_pattern_overlap = distinct_patterns & validation_patterns
+    source_overlap = ({record.pattern.sha256 for record in eligible}
+                      & {record.pattern.sha256 for record in validation_eligible})
+    identity_complete = not unverified(unmodified)
     grams_blockers: list[str] = []
     time_blockers: list[str] = []
     validation_blockers: list[str] = []
+    for group, group_blockers in ((eligible, grams_blockers), (time_eligible, time_blockers),
+                                 (validation_eligible, validation_blockers)):
+        unknown = unverified(group)
+        if unknown:
+            group_blockers.append(
+                f"design identity missing or outdated in {unknown} records; "
+                "reopen the original trial bundle or use migrate with the exact source pattern")
     if len(eligible) < MIN_CALIBRATION_TRIALS:
         grams_blockers.append(
             f"need at least {MIN_CALIBRATION_TRIALS} completed unmodified trials; have {len(eligible)}"
@@ -665,11 +763,14 @@ def analyze_trials(
             f"need at least {MIN_DISTINCT_MAKERS} distinct validation makers for time; "
             f"have {len(validation_time_makers)}"
         )
-    if cohort_pattern_overlap:
+    if cohort_pattern_overlap or source_overlap:
         validation_blockers.append(
             "calibration and validation cohorts must use disjoint pattern hashes; "
-            f"overlap={len(cohort_pattern_overlap)}"
+            f"design overlap={len(cohort_pattern_overlap)}, source overlap={len(source_overlap)}"
         )
+    if unverified(eligible):
+        validation_blockers.append(
+            "calibration design identity is incomplete; holdout independence is unverified")
     height_ratios: list[float] = []
     time_ratios: list[float] = []
     stitch_gauge_ratios: list[float] = []
@@ -754,6 +855,8 @@ def analyze_trials(
             "maker_id": record.maker_id,
             "cohort": record.cohort,
             "pattern_sha256": record.pattern.sha256,
+            "design_fingerprint": record.pattern.design_fingerprint,
+            "design_fingerprint_version": record.pattern.design_fingerprint_version,
             "pattern_modified": observation.pattern_modified,
             "calibration_eligible": calibration_eligible,
             "validation_eligible": validation_record_eligible,
@@ -815,6 +918,7 @@ def analyze_trials(
             "distinct_time_makers": len(distinct_time_makers),
             "distinct_validation_makers": len(validation_makers),
             "distinct_validation_time_makers": len(validation_time_makers),
+            "unverified_design_records": unverified(unmodified),
             "calibration_ready": ready,
             "blockers": blockers,
             "independent_validation_sample_ready": validation_sample_ready,
@@ -852,7 +956,9 @@ def analyze_trials(
             "sample_ready": validation_sample_ready,
             "automatic_pass_assigned": False,
             "blockers": validation_blockers,
-            "cohort_pattern_hashes_disjoint": not cohort_pattern_overlap,
+            "cohort_pattern_hashes_disjoint": (
+                identity_complete and not (cohort_pattern_overlap or source_overlap)),
+            "design_identity_complete": identity_complete,
             "observed": {
                 "height_ratio_actual_to_target": _distribution(
                     validation_height_ratios
@@ -940,6 +1046,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     init.add_argument("--out", required=True, help="建议使用 *.trial.json")
     init.add_argument("--force", action="store_true", help="允许覆盖已有草稿文件")
+    migrate = commands.add_parser("migrate", help="核对原图解后升级旧试钩记录的设计身份，保留测量")
+    migrate.add_argument("--pattern", required=True, help="与旧记录 SHA 完全一致的原图解 JSON")
+    migrate.add_argument("--record", required=True, help="原始 *.trial.json")
+    migrate.add_argument("--out", required=True, help="升级后的新记录文件，不可覆盖输入文件")
+    migrate.add_argument("--force", action="store_true", help="允许覆盖已有输出，不允许覆盖输入")
     analyze = commands.add_parser("analyze", help="分析目录内全部 *.trial.json")
     analyze.add_argument("--records", required=True)
     analyze.add_argument("--out", help="JSON 报告路径；省略则输出到 stdout")
@@ -993,6 +1104,26 @@ def main(argv: list[str] | None = None) -> int:
             )
             path = write_json(draft, output_path)
             print(f"试钩草稿: {path}", file=sys.stderr)
+            return 0
+        if args.command == "migrate":
+            output_path = Path(args.out).resolve()
+            for value in (args.pattern, args.record):
+                source_path = Path(value).resolve()
+                if output_path == source_path or (output_path.exists() and output_path.samefile(source_path)):
+                    raise TrialDataError("升级输出不可覆盖原图解或原记录，请选择新文件")
+            if output_path.exists() and not args.force:
+                raise TrialDataError(f"refusing to overwrite existing trial: {output_path}")
+            try:
+                record = TrialRecord.model_validate(_read_json(Path(args.record), MAX_TRIAL_BYTES))
+            except ValueError as exc:
+                raise TrialDataError(f"invalid trial record: {exc}") from exc
+            blob = _read_bytes(Path(args.pattern), MAX_PATTERN_BYTES)
+            upgraded = upgrade_trial_record_from_bytes(blob, record)
+            from app.utils.output_files import write_outputs
+
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            write_outputs({output_path: upgraded.model_dump_json(indent=2).encode("utf-8")})
+            print(f"试钩记录已升级: {output_path}", file=sys.stderr)
             return 0
         if args.command == "external-report":
             evidence = (

@@ -144,7 +144,8 @@ Optional pose landmarks may download model weights on first use; provide
   set `CROCHET_HISTORY_MODE=single_user` to use the server's local SQLite database.
   Shared/public deployments must keep `disabled`; history has no user authentication
   or ownership isolation. Existing databases are preserved. Share links embed compressed
-  pattern data in the URL and should not contain sensitive material.
+  pattern data in the URL; opening one still sends the token to the host running the app,
+  so links should not contain sensitive material.
 - `.env`, authorized evaluation photos, evaluation outputs, and physical-trial records
   are ignored by Git by default. Always review staged files for credentials, private
   photos, and personal information.
@@ -175,6 +176,8 @@ completed rounds for each physical copy, notes and a pattern revision. Reopen th
 the same sidebar uploader. Save again after working: each file captures the state when Save
 was clicked. Edits report affected progress resets; undo restores progress. Ordinary pattern
 backups and share links omit personal notes/progress; undo history remains session-only.
+Backups, share links, project files and trial bundles also omit photo-derived data (the 96 px
+`preview` thumbnail and the hand-corrected `mask_review` silhouette).
 Similarly named custom parts, including names ending in `copy2`, track each physical copy
 independently. Bulk completion and reset affect only the selected part and preserve project notes.
 For paginated patterns, **前往下一未完成圈** jumps to the selected part's first unchecked

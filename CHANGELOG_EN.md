@@ -8,6 +8,48 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-29 Trial identity migration and independent-sample gates
+
+- Upgrade legacy bundles only after verifying exact source bytes, original metadata and any legacy fingerprint. Retain observations, partial measurements and source bytes; rebind sidecars when resaving.
+- Version 1 canonicalizes gauge and physical round-sequence multiplicity, ignoring part order, labels and equivalent copy grouping while preserving round order and quantities. Cosmetic reordering cannot establish design diversity or holdout independence.
+- Always check source-SHA overlap across cohorts. Legacy records remain reportable, but unverified identity blocks readiness and calibration candidates; expose identity completeness and pending-upgrade counts.
+- Add `crochet2pattern-trials migrate` for standalone records with their exact source. Retain measurements, forbid input overwrites and preserve existing output on replacement failure. Trial/report root schemas remain 2/3.
+
+### Security — 2026-10-29 Effective dependency audit and patched dependencies
+
+- The dependency audit now exports the fixed requirements of every extra from `uv.lock` and checks each package, fails when that export is empty, and runs on every pull request. The former `--local` invocation audited no packages inside the uv overlay yet reported success.
+- Upgrade Pillow to 13.0.0 (uploads decode untrusted images), Streamlit to 1.66.1 (which no longer depends on GitPython) and certifi to 2026.10.23, clearing the known advisories in the lock. The Pillow lower bound is now 13.0.0.
+- Uploads are decoded only as JPEG/PNG, matching the uploader. The Docker production image starts with `--client.showErrorDetails=none`, so uncaught exceptions no longer show types, messages or tracebacks in the browser; local development keeps full tracebacks.
+
+### Security — 2026-10-29 Escaped external text and local-only photo data
+
+- Free text from share links and imported backups, such as part names, colors and notes, is escaped on result pages and in Markdown exports, so it can no longer render external images or disguised links. Markdown table cells additionally escape pipes and fold line breaks.
+- Share links, backups, project files and trial bundles omit photo-derived data (the 96 px `preview` thumbnail and the hand-corrected `mask_review` silhouette). In-session results and local history keep thumbnails, and history accepts only locally generated JPEG data URLs.
+- Pattern revision hashes exclude photo-derived data. Projects saved earlier with a thumbnail still restore their progress and notes and omit the thumbnail when saved again; the project format remains schema 1.
+
+### Fixed — 2026-10-29 Generation correctness and export consistency
+
+- One-piece head-and-body generation now refuses, with advice to use separate parts, when the body top is wider than the head, instead of silently producing a pattern that only increases and has no head ball; safety eyes use the head's own peak. Ideal ball/egg rows follow the meridian arc πD/2, fixing flattened shapes and consecutive +12 jumps.
+- Parts started from a ring or chain (such as a separate skirt tube) are reported as partial CrochetPARADE exports instead of complete magic-ring exports. Datasets with skirts therefore cannot meet the G3 complete-Parade-export floor yet; see [evaluation](docs/evaluation.en.md). Bodies and limbs that start from a magic ring are flagged accordingly.
+- C2C row arrows now match the color reading order, and contradictions between "increase/decrease 1 every N stitches" or "evenly increase/decrease N" notes and the formula are reported. Skirt joins state the FLO/BLO orientation premise, and the profiled body's last round is sewn to the head's closed bottom. Export cache version 8 regenerates old Markdown and Parade caches.
+
+### Fixed — 2026-10-29 Import validation and resource limits
+
+- Share-link decoding rejects NaN/Infinity and duplicate keys, matching backup import. Legacy structure shape, type and color fields must be scalars, preventing persistent result-page errors after import.
+- Add a 16,000-round total across parts (the 2,000-round per-part and 64-part limits are unchanged), bounding import, export and progress costs for oversized backups.
+- Grids over 10,000 cells use a raster preview without symbols and build the SVG only when its download is clicked, with unchanged content. An 80,000-cell grid's session footprint drops from about 15 MiB to 1.2 MiB; common sizes generated with default ratios keep the vector preview.
+- Grid dithering caches the nearest color per rounded RGB value and diffuses error with scalar arithmetic, producing identical cells. Photos dither about 1.5–4.5× faster and flat or noisy areas over 20× faster (a 48,000-cell noise image drops from about 17 s to 0.5 s).
+
+### Fixed — 2026-10-29 G4 trial gates count design fingerprints
+
+- Distinct patterns and calibration/validation isolation now use a design fingerprint (normalized gauge and per-round stitch structure) instead of byte hashes that change with diagnostics timing, thumbnails, colors or yarn labels, so regenerating one design counts once. Byte hashes still verify integrity, and older records without fingerprints fall back to them.
+
+### Changed — 2026-10-29 Container image and CI
+
+- The CI Docker job now runs the built container: it probes health, checks the non-root user and production flags, and calls OpenCV GrabCut, Haar and color conversion, failing on missing libraries or startup errors.
+- The runtime stage no longer installs libglib through apt: the opencv-python-headless wheel bundles its libraries, so builds no longer depend on deb.debian.org.
+- Share-link wording now says no extra backend or database is needed while the token is still sent to the host running the app; the post-load notice no longer claims permanent automatic saving.
+
 ### Fixed — 2026-10-29 Custom-part and bulk-progress isolation
 
 - Disambiguate checkbox identifiers across the complete pattern when a custom name such as `practice_copy2` aliases another part's second copy. This fixes duplicate-widget errors and restoration of one completion as two, while retaining existing session identifiers for ordinary names.

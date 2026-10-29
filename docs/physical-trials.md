@@ -169,9 +169,9 @@ uv run crochet2pattern-trials analyze \
 ```
 
 - `0`：克重与基础工时两组都至少有5个完成且未改图解的合格试钩，并各自覆盖至少3个
-  不同图解哈希和2名匿名制作者，可以进入人工校准审核。
+  已升级的不同设计指纹和2名匿名制作者，可以进入人工校准审核。
 - `1`：记录格式、范围、重复 ID 或 JSON 无效。
-- `2`：报告已生成，但样本数量/多样性不足。
+- `2`：报告已生成，但样本数量、多样性或设计身份验证不足。
 
 探索期可添加 `--allow-insufficient`，但报告仍保持
 `summary.calibration_ready=false`。
@@ -179,7 +179,7 @@ uv run crochet2pattern-trials analyze \
 ### 独立留出验证
 
 候选常数只能来自 `calibration`。至少另外准备3个完成、未改图解、基础工时口径的
-`validation` 记录，覆盖至少2个不同图解哈希和2名匿名制作者，而且这些哈希不得出现
+`validation` 记录，覆盖至少2个不同设计指纹和2名匿名制作者，而且这些设计不得出现
 在校准集中：
 
 ```bash
@@ -196,9 +196,39 @@ uv run crochet2pattern-trials analyze \
   --out trial_outputs/release-review.json
 ```
 
-`--require-validation` 会在留出样本不足或图解哈希重叠时返回2。报告中的
-`independent_validation.sample_ready=true` 只证明样本量、多样性和隔离条件满足，
-不会自动宣称当前或候选常数准确；仍需人工审查尺寸、克重和工时偏差分布。
+`--require-validation` 会在留出样本不足、设计身份未升级或队列重叠时返回2。
+当前 `pattern.design_fingerprint_version="1"` 使用规范化密度与各实体的逐圈针数、
+加减针序列；忽略部件排列、名称、配色、诊断与相同实体的等价分组。圈序与总数量保留，
+因此仅重排、重命名或把一对部件拆成两条记录不会增加设计数。这是保守的针数结构去重，
+不能证明完整工艺或实物等价；计数相同的不同工艺可能合并计数。跨队列同时检查原图解
+SHA，不能因新旧身份字段不同而漏掉同一文件。
+报告中的 `independent_validation.sample_ready=true` 只证明样本量、设计多样性和
+队列隔离满足，不会自动宣称当前或候选常数准确；仍需人工审查尺寸、克重和工时偏差分布。
+
+### 升级旧试钩记录
+
+旧记录没有指纹或只有无版本指纹时，仍可读取并展示测量分布；在升级前不计为已确认的
+独立设计，也不会据此给出可校准候选。报告列出 `summary.unverified_design_records`；
+`independent_validation.design_identity_complete=false` 时，
+`cohort_pattern_hashes_disjoint=false` 表示尚不能确认独立，不一定已有具体重叠。
+
+网页重新打开原试钩 ZIP 时，先核对确切图解字节 SHA、旧元数据、旧指纹（若有），
+以及未完成测量草稿与原记录的绑定，再升级身份。原图解字节、制作者、小样、完成记录
+及未完成测量保留；重新下载时草稿绑定新的记录字节。两文件和三文件旧包均可恢复。
+
+只有独立 `.trial.json` 文件时，可用同一次保存的原图解升级，不必重填测量：
+
+```bash
+uv run crochet2pattern-trials migrate \
+  --pattern original-pattern.json \
+  --record trial_data/old.trial.json \
+  --out trial_data_upgraded/old.trial.json
+```
+
+原图解即使只重新排版也会改变字节 SHA，不能用于迁移。输出默认不得覆盖已有文件；
+`--force` 只允许替换旧输出，不能覆盖原图解或输入记录，包括指向输入的别名。
+失败保留原输入和已有输出。汇总时请选择升级后的目录，不要同时加载同一 `trial_id`
+的升级前后记录。根试钩模式仍为 2，报告模式仍为 3，新增可选的指纹算法版本字段。
 
 ## 4. 报告口径
 

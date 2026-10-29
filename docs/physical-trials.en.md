@@ -186,9 +186,9 @@ uv run crochet2pattern-trials analyze \
 ```
 
 - `0`: both yarn-weight and baseline-time groups contain at least five completed,
-  unmodified trials, covering at least three pattern hashes and two anonymous makers.
+  unmodified trials, covering at least three upgraded design fingerprints and two anonymous makers.
 - `1`: invalid record schema, ranges, duplicate ID, or JSON.
-- `2`: report created, but quantity or diversity is insufficient.
+- `2`: report created, but quantity, diversity or design-identity verification is insufficient.
 
 `--allow-insufficient` is available for exploration, but
 `summary.calibration_ready` remains false.
@@ -196,8 +196,8 @@ uv run crochet2pattern-trials analyze \
 ### Independent holdout validation
 
 Candidate constants may use only `calibration` records. Prepare at least three additional
-completed, unmodified `validation` records with baseline time scope, at least two pattern
-hashes, and two anonymous makers. Holdout hashes must not appear in calibration:
+completed, unmodified `validation` records with baseline time scope, at least two design
+fingerprints, and two anonymous makers. Holdout designs must not appear in calibration:
 
 ```bash
 uv run crochet2pattern-trials init \
@@ -213,10 +213,44 @@ uv run crochet2pattern-trials analyze \
   --out trial_outputs/release-review.json
 ```
 
-`--require-validation` exits `2` for an undersized holdout or overlapping hashes.
-`independent_validation.sample_ready=true` proves only quantity, diversity, and isolation;
+`--require-validation` exits `2` for insufficient samples, unverified design identity or overlap.
+Current `pattern.design_fingerprint_version="1"` normalizes gauge and physical round-count,
+increase/decrease sequences. It ignores part order, labels, colors, diagnostics and equivalent
+grouping of identical copies while retaining round order and total multiplicity. Cosmetic
+reordering cannot inflate diversity. This conservative count-based identity does not prove
+complete technique or physical equivalence; different techniques with identical counts may
+share an identity. Exact source-SHA overlap is also checked across cohorts for all record ages.
+`independent_validation.sample_ready=true` proves only quantity, design diversity, and isolation;
 it does not prove that current or candidate constants are accurate. Review the size,
 weight, and time error distributions manually.
+
+### Upgrade legacy records
+
+Records with missing or unversioned fingerprints remain readable and contribute to measurement
+distributions, but cannot establish design diversity or calibration readiness until upgraded.
+See `summary.unverified_design_records`. When
+`independent_validation.design_identity_complete=false`, a false
+`cohort_pattern_hashes_disjoint` means independence is unverified, not necessarily a known overlap.
+
+Opening an original trial ZIP verifies the exact source SHA, original metadata, legacy fingerprint
+when present, and the incomplete-measurement sidecar binding before upgrading identity. Original
+source bytes, maker, swatch, completed observations and partial measurements are retained. On
+resaving, the sidecar binds to the new record bytes. Both two-file and three-file bundles work.
+
+Standalone records can be upgraded without re-entering measurements:
+
+```bash
+uv run crochet2pattern-trials migrate \
+  --pattern original-pattern.json \
+  --record trial_data/old.trial.json \
+  --out trial_data_upgraded/old.trial.json
+```
+
+Use exact original source bytes; even reformatting changes the SHA and is rejected. Existing
+outputs require `--force`, which never permits overwriting either input, including aliases.
+Failures preserve inputs and existing output. Analyze the upgraded directory rather than loading
+both versions of one `trial_id`. Trial schema remains 2 and report schema remains 3, with an
+additional optional fingerprint-algorithm version field.
 
 ## 4. Report semantics
 

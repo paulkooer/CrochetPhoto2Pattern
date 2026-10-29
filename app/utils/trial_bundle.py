@@ -9,13 +9,14 @@ from typing import Literal
 from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 from app.models.trial_draft import TrialDraftState, TrialObservationDraft
-from app.schemas import PatternResult
+from app.schemas import PatternResult, strip_photo_derived
 from app.trials import (
     MAX_PATTERN_BYTES,
     MAX_TRIAL_BYTES,
     TrialRecord,
     create_trial_draft_from_bytes,
     decode_trial_json,
+    upgrade_trial_record_from_bytes,
 )
 from app.ui.result_logic import import_backup, regenerate_with_gauge
 from app.utils.backup import decode_backup_json
@@ -45,18 +46,16 @@ def _checked_bundle(source: bytes, record: TrialRecord,
     # Apply the same complete-pattern checks as opening a backup, but keep the
     # original bytes: normalizing an import must never silently change its hash.
     import_backup(payload, "trial-check")
-    expected = create_trial_draft_from_bytes(source, trial_id=record.trial_id,
-                                             maker_id=record.maker_id, cohort=record.cohort)["pattern"]
-    # Producer version may differ from the version restoring this bundle.
-    expected["application_version"] = record.pattern.application_version
-    if expected != record.pattern.model_dump(mode="json"):
-        raise ValueError("试钩记录与原图解不匹配，请恢复同一次下载的记录包")
+    record = upgrade_trial_record_from_bytes(source, record)
     return TrialBundle(source, record, pattern_revision(payload), draft)
 
 
 def create_trial_bundle(result: dict, *, trial_id: str, maker_id: str,
                         cohort: Literal["calibration", "validation"] = "calibration") -> TrialBundle:
-    source = json.dumps(PatternResult.from_result(result).to_backup(), ensure_ascii=False,
+    # 试钩包会发给第三方制作者——剔除照片衍生数据（缩略图 + 主体剪影），
+    # 只携带图解本身。
+    backup = strip_photo_derived(PatternResult.from_result(result).to_backup())
+    source = json.dumps(backup, ensure_ascii=False,
                         sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
     record = TrialRecord.model_validate(create_trial_draft_from_bytes(
         source, trial_id=trial_id, maker_id=maker_id, cohort=cohort))

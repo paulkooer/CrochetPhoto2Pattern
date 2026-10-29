@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..schemas import MAX_PART_ROUNDS, MAX_PATTERN_PARTS, MAX_ROUND_STITCHES
+from ..schemas import MAX_PART_ROUNDS, MAX_PATTERN_PARTS, MAX_ROUND_STITCHES, MAX_TOTAL_ROUNDS
 from ..utils.counts import integer_count as _integer_count
 from .gauge import gauge_from_mapping
 
@@ -74,6 +74,12 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
             f"部件数量 {len(parts)} 超过上限 {MAX_PATTERN_PARTS}，仅检查前 "
             f"{MAX_PATTERN_PARTS} 个")
         parts = parts[:MAX_PATTERN_PARTS]
+    total_rounds = sum(len(p["rounds"]) for p in parts
+                       if isinstance(p, dict) and isinstance(p.get("rounds"), list))
+    if total_rounds > MAX_TOTAL_ROUNDS:
+        issues.append(
+            f"全部部件圈数合计 {total_rounds} 超过总量上限 {MAX_TOTAL_ROUNDS}；"
+            "请减少部件数或单件圈数")
     for index, part in enumerate(parts, 1):
         if not isinstance(part, dict):
             issues.append(f"第 {index} 个部件：必须是对象")
@@ -106,8 +112,10 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                 issues.append(f"{name} 第 {i} 圈：必须是对象")
                 prev_stitches = None
                 continue
-            # Legacy dict patterns may omit row labels; explicit labels must
-            # be positive and unique to keep progress-widget identities valid.
+            # Legacy dict patterns may omit row labels; explicit labels must be
+            # positive and unique to keep progress-widget identities valid.
+            # 不强制递增：插入/重排圈的编辑会产生非递增但唯一的标签，进度按
+            # 位置标识跟踪而非圈号（见 test_edit_impact），应允许其往返保存。
             if "row" in rd:
                 try:
                     row = _integer_count(rd["row"])

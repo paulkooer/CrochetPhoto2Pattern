@@ -226,9 +226,13 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport) -> list[str]:
         last_color = hex_color
         # 魔法环行 + 首圈（首圈全部针目放入环：scNinc）
         if not part.get("magic_ring", False):
+            # F-10：环形/锁针起针（如独立裙筒腰部开口）按魔法环 scNinc 导出会
+            # 把开口圆筒变成闭合圆片——语义不符。标记为不完整，避免 G3 的
+            # “完整 Parade 导出率”把这类部件算作忠实导出。
+            report.complete = False
             warnings.append(
                 f"{name}: 首圈非魔法环（{n_first} 针环起），按 ring+sc{n_first}inc 导出，"
-                "请对照原说明核对引拔/开口处理")
+                "起针语义不符（闭合环 vs 开口），已标记为不完整；请对照原说明核对引拔/开口处理")
         lines.append("ring")
         lines.append(f"sc{n_first}inc")
         report.exported_rounds += 1

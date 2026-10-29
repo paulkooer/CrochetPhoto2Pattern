@@ -10,11 +10,9 @@ on:
       - pyproject.toml
       - uv.lock
       - .github/workflows/security.yml
+  # 对所有 PR 运行：依赖漏洞门禁不能只在改动锁文件的 PR 上触发，
+  # 否则一个绿色 PR 会被误读为“依赖已审计”。审计本身很快（固定清单，--no-deps）。
   pull_request:
-    paths:
-      - pyproject.toml
-      - uv.lock
-      - .github/workflows/security.yml
 
 permissions:
   contents: read
@@ -39,12 +37,29 @@ jobs:
           python-version: "3.12"
           enable-cache: true
 
-      - name: Sync locked core and optional environments
-        run: uv sync --locked --extra dev --extra pdf --extra pose
-
-      - name: Audit installed dependencies
-        # pip-audit 不直接读取 uv.lock；先按锁文件同步，再审计实际环境。
-        # 审计工具固定版本且通过临时 overlay 安装，不改 pyproject/uv.lock。
+      - name: Export locked dependency set
+        # 把 uv.lock 的完整解析结果（含 dev/pdf/pose 全部 extra、所有平台 marker）
+        # 导出为固定版本清单，直接审计锁文件声明的依赖，而不是审计某个运行环境。
         run: >-
-          uv run --locked --extra dev --extra pdf --extra pose --with pip-audit==2.10.1
-          pip-audit --local --progress-spinner off
+          uv export --locked --all-extras --no-hashes --no-emit-project
+          --format requirements.txt -o audit-requirements.txt
+
+      - name: Assert audit coverage
+        # 防回归守卫（见历史事故）：曾经在 `uv run --with` 叠加环境下用
+        # pip-audit 的 `--local` 标志只审计叠加层，审计 0 个包却报“无已知漏洞”。
+        # 这里强制要求导出清单至少包含一个固定包，否则直接失败。
+        run: |
+          pkgs=$(grep -cE '^[^#[:space:]-].*==' audit-requirements.txt)
+          echo "locked packages to audit: $pkgs"
+          if [ "$pkgs" -eq 0 ]; then
+            echo "::error::依赖审计覆盖为空——导出的锁定清单没有任何固定包"
+            exit 1
+          fi
+
+      - name: Audit locked dependencies
+        # --no-deps：清单已是完整解析结果，不再联网解析，只审计其中的固定版本；
+        # 工具版本固定且通过临时 overlay 安装，不改 pyproject/uv.lock。
+        # 发现已知漏洞时 pip-audit 返回非零，任务失败。
+        run: >-
+          uv run --with pip-audit==2.10.1
+          pip-audit --requirement audit-requirements.txt --no-deps --progress-spinner off

@@ -57,7 +57,8 @@ def render_sidebar() -> None:
                      "玩偶头主流形状",
             )
             st.checkbox("头身一体钩（免缝合）", value=False, key="style_onepiece",
-                        help="头收针到颈围后不断线直接钩身体")
+                        help="头收针到颈围后不断线直接钩身体；身体顶端比头宽时无法一体钩，"
+                             "生成会提示改为分件")
             st.select_slider(
                 "裙子做法", options=["ring", "attached"], value="ring",
                 format_func={"ring": "独立裙筒（腰部环起）",

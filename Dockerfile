@@ -27,11 +27,11 @@ RUN /opt/uv-venv/bin/uv sync --locked --no-dev
 # ── 运行阶段：非 root + 健康检查 ────────────────────────────────────────
 FROM python:3.12-slim@sha256:dddfd7e07f9d15aeeca61529320492139d21cac7f0070c00609243e51e4e0016
 
-# opencv-headless 在 slim 基础镜像需要 libglib
-RUN (apt-get update || (sleep 5 && apt-get update)) \
-    && apt-get install -y --no-install-recommends libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 1000 appuser
+# 运行阶段不装任何 apt 包：opencv-python-headless 的 manylinux wheel 自带所需
+# 动态库，且无 GUI 后端、不链接 libglib（锁定版 4.11.0.86 已用 ldd 核对；无
+# libglib 的容器内完整跑通本地视觉流程）。旧的 apt 装 libglib 步骤只增加体积和
+# 对 deb.debian.org 的构建期依赖。CI 的容器冒烟会真正调用 OpenCV，回归即失败。
+RUN useradd --create-home --uid 1000 appuser
 
 WORKDIR /app
 COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
@@ -48,7 +48,12 @@ ENV PATH="/app/.venv/bin:$PATH" \
 USER appuser
 EXPOSE 8501
 # Key 通过环境变量注入（勿把 .env 打进镜像，见 .dockerignore）
-CMD ["streamlit", "run", "app/main.py", "--server.address=0.0.0.0", "--server.port=8501"]
+# client.showErrorDetails=none：生产镜像里未捕获异常只显示通用提示，不向
+# 浏览器暴露异常类型、消息和堆栈（含内部路径）。本地开发不加此标志，保留完整
+# 回溯便于调试；公开部署面向不可信访问者，务必保留此项。
+CMD ["streamlit", "run", "app/main.py", \
+     "--server.address=0.0.0.0", "--server.port=8501", \
+     "--client.showErrorDetails=none"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
     CMD ["python", "-c", \

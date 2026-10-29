@@ -201,7 +201,9 @@ def test_editor_create_complete_and_later_pattern_edit_keep_original_binding():
     assert any("编号" in error.value for error in at.error)
     prefix = _start(at)
     initial = at.session_state["trial_workspace_result"]["archive"]
-    at.checkbox(key=prefix + "complete").check().run()
+    # 表单内勾选不加中途 .run()（streamlit≥1.66 会丢弃未提交的表单值）：
+    # 直接提交，让“标记为完成”随提交生效，才能触发缺少实测小样的校验错误。
+    at.checkbox(key=prefix + "complete").check()
     _click(at, "保存记录并更新下载")
     assert any("实测小样" in error.value for error in at.error)
     assert at.session_state["trial_workspace_result"]["archive"] == initial
@@ -249,7 +251,7 @@ def test_fresh_editor_restores_measurements_and_failed_restore_is_atomic(monkeyp
     assert at.session_state["result"] == original
     at.button(key="trial_close_result").click().run()
     assert "trial_workspace_result" not in at.session_state
-    assert not any(str(key).startswith("trial_fields_result_") for key in at.session_state.filtered_state)
+    assert not any(str(key).startswith("trial_fields_result_") for key in at.session_state.to_dict())
 
 
 def test_two_result_panels_keep_trial_workspaces_separate():

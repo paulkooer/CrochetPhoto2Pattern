@@ -38,7 +38,16 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
     wall = strip_dome(body_sts)                    # 自底向上
     neck = wall[-1] if wall else 24                # 身体顶端（近颈）针数
 
-    # 头部保留至减针链中 ≥ neck 的最后一圈，丢弃更小的收口圈
+    head_max = max(r.stitches for r in head.rounds)
+    if neck > head_max:
+        # F-08：身体顶端（颈围）比头部最大围还宽。模板的颈部取自身体顶端，此时
+        # 头部只能一路加针并入身体，钩出来没有头部球段（旧实现静默如此）；要做
+        # 就得另行设计更窄的颈部与肩部，当前模板无依据。明确拒绝，交给用户改分件。
+        raise ValueError(
+            f"头身一体钩要求身体顶端（颈部）不宽于头部：当前颈部 {neck} 针，头部最大 {head_max} 针。"
+            "身体比头宽时请取消“头身一体钩”改为分件生成，或调小身体直径")
+
+    # 头比颈宽：保留到减针链中首个 ≥ neck 的圈，丢弃更小的收口圈
     head_kept: list[int] = []
     for r in head.rounds:
         head_kept.append(r.stitches)
@@ -84,8 +93,12 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
     last["notes"] = (last.get("notes") or "") + (
         "；断线留10cm，穿末圈每针前半针后拉紧（无痕收口）藏线头")
 
+    # 眼睛定位在头部自身最大围第一次出现的圈——而非整件全局最大围。身体比头
+    # 宽时全局最大在身体段（且 head_kept 已含向颈围加针的桥接圈），按全局最大
+    # 会把眼睛放到身体上（F-08）。取头部原始圈的峰值在 merged 升针侧首现处。
+    head_peak = max(r.stitches for r in head.rounds)
     eye_round = next((i + 1 for i, r in enumerate(rounds_raw)
-                      if r["stitches"] == max(merged_sts)), 2) + 1
+                      if r["stitches"] == head_peak), 2) + 1
     # F16：高度口径与独立身体一致——只计轴向堆叠圈（头部成品到颈 +
     # 筒壁），底部收口圈是径向圆盘不计高。merged 结构 = head_kept +
     # top_down[1:] + 收口（top_down[0]=颈围与 head_kept[-1] 同圈）。

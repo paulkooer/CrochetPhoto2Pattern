@@ -17,6 +17,11 @@ MAX_PART_DIMENSION_CM = 200.0
 MAX_PATTERN_PARTS = 64
 MAX_PART_ROUNDS = 2000
 MAX_ROUND_STITCHES = 100_000
+# 跨部件圈数总量上限（F-07）：单项上限相乘（64×2000=128,000 圈）足以让一个
+# 几百 KiB 的备份把导入/导出/进度/Markdown 推到数十秒、数百 MiB。总量上限
+# 直接限制主成本（每圈 = 一行表格/一个进度项）。远高于任何真实图解
+# （生成器产出约百级；单部件上限 2000 的回归测试总量仍远低于此）。
+MAX_TOTAL_ROUNDS = 16_000
 
 IntegerCount = Annotated[int, BeforeValidator(integer_count)]
 FiniteMeasurement = Annotated[float, BeforeValidator(finite_float)]
@@ -323,3 +328,23 @@ class PatternResult(BaseModel):
         data = {k: getattr(self, k) for k in RESULT_KEYS}
         data["schema_version"] = self.schema_version
         return data
+
+
+def strip_photo_derived(backup: Mapping[str, Any]) -> dict[str, Any]:
+    """剔除照片衍生数据，供导出到会离开本机的载体前调用。
+
+    两类数据来自用户上传的照片，而非图解本身：
+    - 顶层 ``preview``：96px 照片缩略图（仅供本机历史侧栏缩略图）；
+    - ``geometry.mask_review``：人工修正后的主体剪影位图（160×160）。
+    备份文件、分享链接、工程文件与试钩包导出前统一剔除；文档声明这些载体
+    “只携带图解”。mask_review 剔除后不影响重算——它仅作“已人工修正”的
+    存在性标记被读取，剪影本身不参与几何/配色计算。返回浅拷贝，不改原 dict。
+    """
+    cleaned = dict(backup)
+    cleaned.pop("preview", None)
+    geometry = cleaned.get("geometry")
+    if isinstance(geometry, Mapping) and "mask_review" in geometry:
+        geometry = dict(geometry)
+        geometry.pop("mask_review", None)
+        cleaned["geometry"] = geometry
+    return cleaned

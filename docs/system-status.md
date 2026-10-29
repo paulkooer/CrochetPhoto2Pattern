@@ -12,6 +12,23 @@ gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
+2026-10-29 trial identity fixes following review of Opus commit `83d7a50`: restore legacy ZIPs,
+detect mixed-age source overlap and reject diversity created only by reordering parts. Verify
+exact source SHA, original metadata, legacy fingerprints and sidecar binding before migration;
+retain source bytes, observations and partial measurements. Algorithm version 1 conservatively
+canonicalizes gauge and physical round-sequence multiplicity while ignoring labels, order and
+equivalent copy grouping. Always check source overlap; unverified legacy identity remains
+reportable but cannot establish readiness. Add standalone `migrate` with input protection and
+rollback on output replacement failure. Added **25 regressions**, with frozen synthetic fixtures
+from pre-fingerprint and unversioned implementations, UI restoration and CLI gate checks.
+Related checks: **152 passed in 6.43s**. Full suite: **1978 passed, 2 skipped in 101.83s,
+coverage 94.17%** (Python 3.12.13, dev+pdf). Skips are the absent authorized-photo directory
+and optional mediapipe. Ruff, mypy app/tests (171 files) and diff checks pass. Trial/report root
+schemas remain 2/3, with an optional fingerprint version; standalone legacy records can be
+migrated using their exact source. These are local checks; consult the repair PR for remote
+matrix, container and security results. G3/G4 remain unchanged. See the
+[Chinese migration guide](physical-trials.md#升级旧试钩记录).
+
 2026-10-29 progress isolation and bulk operations: disambiguate custom names such as
 `practice_copy2` that previously aliased another part's physical copy, causing duplicate widgets
 and restoration of one completion as two. Inline/paginated views, saving, restoration, edits and
@@ -535,7 +552,7 @@ be rerun before claiming 100% complete export.
 | Coverage | 89.9% | clean core environment; threshold is 80% |
 | Static checks | Passed | `ruff check .` and `git diff --check` |
 | Lock | Passed | `uv lock --check` |
-| Dependency audit | Passed | combined environment has no known finding; GitHub marks the Protobuf high alert fixed |
+| Dependency audit | Pending remote re-check | the audit now exports the lock (`uv export --locked --all-extras`) and checks every pinned package (`pip-audit --no-deps`); the former `pip-audit --local` audited zero packages in the uv overlay yet passed (audit F-01). Pillow 13.0.0, certifi 2026.10.23 and Streamlit 1.66.1 (which drops GitPython) clear the 46 earlier GHSA alerts; CI must confirm on this SHA |
 | Wheel | Passed | metadata, MIT license, three CLIs, prompts, and curated evidence included |
 
 Commit `bb24995` passed the real Python matrix
@@ -550,7 +567,7 @@ and locked dependency audit
 | Gate | Status | Pass condition |
 |---|---|---|
 | G1 Reproducible source | **Historical pass; current tree pending commit/review** | reviewed commit, version, lock, changelog, and remote `main` agree |
-| G2 Supported-version automation | **Historical pass; current tree pending remote checks** | core 3.11–3.14, PDF/pose, and security audit are green |
+| G2 Supported-version automation | **Current changes pending remote re-validation** | core 3.11–3.14 and PDF/pose extras were historically green; the security audit previously passed vacuously (audit F-01). The audit and dependencies are now fixed; CI must run on this SHA before calling G2 green |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` thresholds including 100% Parade export |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

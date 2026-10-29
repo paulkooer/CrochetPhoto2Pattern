@@ -97,10 +97,10 @@ def test_restored_progress_navigates_to_first_unfinished_round_of_second_copy():
     assert not at.exception and at.selectbox(key="progress_page_resume_0").value == 6
     assert not at.checkbox(key="chk_resume_手臂_copy2_7").value
     assert "None" not in at.checkbox(key="chk_resume_手臂_copy2_7").label
-    assert capture_progress(result, "result", at.session_state.filtered_state) == progress
+    assert capture_progress(result, "result", at.session_state.to_dict()) == progress
     at.checkbox(key="chk_resume_手臂_copy2_7").check().run()
     assert any("第 2 个 手臂 · 第 9 圈" in c.value for c in at.caption)
-    assert len(capture_progress(result, "result", at.session_state.filtered_state)) == 308
+    assert len(capture_progress(result, "result", at.session_state.to_dict())) == 308
 
 
 def test_completed_and_reset_progress_have_consistent_resume_controls():
@@ -115,5 +115,5 @@ def test_completed_and_reset_progress_have_consistent_resume_controls():
     at.button(key="clear_resume_手臂").click().run()
     at.button(key="progress_next_resume_0").click().run()
     assert not at.exception and at.selectbox(key="progress_page_resume_0").value == 0
-    assert not capture_progress(result, "result", at.session_state.filtered_state)
+    assert not capture_progress(result, "result", at.session_state.to_dict())
     assert len([c for c in at.checkbox if c.key.startswith("chk_")]) == 50

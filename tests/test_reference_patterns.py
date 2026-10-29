@@ -232,7 +232,10 @@ def test_ideal_sphere_follows_source_sin_profile():
     rounds = _ideal_sphere_rounds(diameter, gauge)
     seq = [r["stitches"] for r in rounds]
     n = len(seq)
-    assert n == int(diameter / gauge.row_h_cm + 0.5)
+    # 几何属性（不复述实现）：行数覆盖极点到极点的经线弧长 πD/2，而非直径 D。
+    # 误差不超过一行高（量化余量）。此前实现误用 n=D/row_h，经线短约 π/2 倍，
+    # 使“理想球”偏扁（F-09）。
+    assert abs(n * gauge.row_h_cm - math.pi * diameter / 2) <= gauge.row_h_cm
 
     peak = seq.index(max(seq))
     assert abs(peak - (n - 1) / 2) <= max(2, n // 6)   # 峰在赤道附近
@@ -241,13 +244,16 @@ def test_ideal_sphere_follows_source_sin_profile():
     for j in range(n // 2):                             # sin 对称（±1 档容差）
         assert abs(seq[j] - seq[n - 1 - j]) <= 6
 
-    # 理论 sin 目标 N = π·D·sin(π·y/D)/s（原文 N = C/s），本输出落在其
-    # 6 等分量化 + 动态钳制的可行域内
+    # 理论 sin 目标 N = π·D·sin(θ)/s（原文 N = C/s），极角 θ 在 (0,π) 上按
+    # 行数均分；本输出落在其 6 等分量化 + 动态钳制的可行域内
     for j, st in enumerate(seq, 1):
-        y = (j - 0.5) * gauge.row_h_cm
-        theta = math.pi * min(y, diameter) / diameter
+        theta = math.pi * (j - 0.5) / n
         raw = math.pi * diameter * math.sin(theta) / gauge.stitch_w_cm
         assert abs(st - raw) <= 6 + 6, (j, st, raw)
+
+    # 相邻圈变化不超过经典短针平面圆 +6 规则（修正行数后不应再出现 +12 跳变）
+    for before, after in zip(seq, seq[1:], strict=False):
+        assert abs(after - before) <= 6, (before, after)
 
     result = validate_pattern({"parts": [{"name": "头部", "rounds": rounds}]})
     assert result["ok"], result["issues"]

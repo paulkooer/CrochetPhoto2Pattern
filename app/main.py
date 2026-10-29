@@ -45,8 +45,9 @@ if "p" in _qp and "result" not in st.session_state:
     if _shared:
         _shared["result_id"] = _uuid.uuid4().hex[:12]
         st.session_state["result"] = _shared
-        st.info("🔗 已通过分享链接载入图解——可点结果页「🗂 存入历史」"
-                "永久保留到本机")
+        st.info("🔗 已通过分享链接载入图解——刷新会丢失，请点结果页「💾 备份完整结果」"
+                "下载到本机保存；「🗂 存入历史」仅在部署方开启单用户历史时可用，"
+                "且存在运行 Streamlit 的主机上（默认关闭）。")
 
 render_sidebar()
 

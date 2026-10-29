@@ -249,12 +249,12 @@ def test_large_progress_has_bounded_widgets_and_survives_page_switch(result):
     at.selectbox(key="progress_page_followup_0").select(1).run()
     assert not at.exception
     assert len([c for c in at.checkbox if c.key.startswith("chk_")]) == 50
-    assert len(capture_progress(result, "result", at.session_state.filtered_state)) == 1
+    assert len(capture_progress(result, "result", at.session_state.to_dict())) == 1
     at.selectbox(key="progress_page_followup_0").select(0).run()
     assert at.checkbox(key=first_key).value
     at.checkbox(key=first_key).uncheck().run()
-    assert not capture_progress(result, "result", at.session_state.filtered_state)
+    assert not capture_progress(result, "result", at.session_state.to_dict())
     at.button(key=f"all_followup_{part['name']}").click().run()
-    assert len(capture_progress(result, "result", at.session_state.filtered_state)) == 40000
+    assert len(capture_progress(result, "result", at.session_state.to_dict())) == 40000
     at.button(key=f"clear_followup_{part['name']}").click().run()
-    assert not capture_progress(result, "result", at.session_state.filtered_state)
+    assert not capture_progress(result, "result", at.session_state.to_dict())

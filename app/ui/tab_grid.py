@@ -1,6 +1,9 @@
 """Tab 3: 2D pixel-grid pattern (tapestry crochet / C2C / cross-stitch)."""
 from __future__ import annotations
 
+import base64
+import json
+
 import streamlit as st
 
 from app.models.gauge import gauge_from_ui
@@ -19,6 +22,7 @@ from app.models.grid_pattern import (
     render_c2c_chart,
     render_legend_html,
     render_legend_markdown,
+    render_preview_png,
     render_svg,
     render_text_chart,
 )
@@ -26,6 +30,11 @@ from app.ui.design_system import html_box
 from app.utils.images import load_uploaded_image_cached
 
 _GRID_HISTORY_LIMIT = 5
+# 超过此格数时不再即时渲染逐格 SVG（约 175 B/格，80,000 格 ≈ 14 MiB、1.3 s，
+# 每次修色都整份重建并推给浏览器）：屏幕改用位图预览，SVG 只在点击下载时生成
+# （F-07）。界面生成的网格宽 ≤80：默认短针比例下 9:16 竖幅照片约 8,600 格，
+# 仍为矢量预览；长条裁剪、正方比例的高竖幅或导入的大网格才改用位图预览。
+_SVG_PREVIEW_MAX_CELLS = 10_000
 
 
 def _bounded_history_append(history: list, payload: dict) -> None:
@@ -36,10 +45,15 @@ def _bounded_history_append(history: list, payload: dict) -> None:
 
 
 def _rendered_grid_view(pattern) -> dict:
-    """Build the cached render bundle plus a lightweight editable grid."""
+    """Build the cached render bundle plus a lightweight editable grid.
+
+    大网格（> _SVG_PREVIEW_MAX_CELLS 格）不存 SVG（``svg`` 为 None），改存位图
+    预览 ``preview_png``；SVG 下载按需生成（见 _svg_download_data）。
+    """
     legend = render_legend_markdown(pattern)
     chart = render_text_chart(pattern)
     c2c = render_c2c_chart(pattern)
+    large = pattern.width * pattern.height > _SVG_PREVIEW_MAX_CELLS
     return {
         "width": pattern.width,
         "height": pattern.height,
@@ -47,7 +61,8 @@ def _rendered_grid_view(pattern) -> dict:
         "n_colors": len(pattern.palette),
         "pattern_payload": grid_pattern_to_payload(pattern),
         "project_json": export_grid_project(pattern),
-        "svg": render_svg(pattern, cell_px=14),
+        "svg": None if large else render_svg(pattern, cell_px=14),
+        "preview_png": render_preview_png(pattern) if large else None,
         "legend": legend,
         "legend_html": render_legend_html(pattern),
         "chart": chart,
@@ -55,6 +70,21 @@ def _rendered_grid_view(pattern) -> dict:
         "markdown": export_grid_markdown(
             pattern, legend=legend, chart=chart, c2c=c2c),
     }
+
+
+def _svg_download_data(view: dict):
+    """小网格直接复用已渲染的 SVG；大网格返回零参可调用对象，点击下载时才渲染。
+
+    Streamlit 在独立线程执行该可调用对象，不得访问会话状态，因此在此处按值
+    快照图案载荷，而不是在回调里读取 st.session_state。"""
+    if view.get("svg"):
+        return view["svg"]
+    snapshot = json.dumps(view["pattern_payload"], ensure_ascii=False, separators=(",", ":"))
+
+    def build() -> str:
+        return render_svg(grid_pattern_from_payload(json.loads(snapshot)), cell_px=14)
+
+    return build
 
 
 def _reset_grid_editor_state() -> None:
@@ -394,8 +424,19 @@ def render_tab_grid() -> None:
             # st.markdown unsafe_allow_html 不净化，内联 SVG 无空行时不经
             # markdown 重排。components.v1.html 已过弃用线；定高与滚动由
             # html_box 写进内容。
-            st.markdown(html_box(view["svg"], 600, scroll=True),
-                        unsafe_allow_html=True)
+            if view.get("svg"):
+                st.markdown(html_box(view["svg"], 600, scroll=True),
+                            unsafe_allow_html=True)
+            elif view.get("preview_png"):
+                # 大网格：位图预览（本地生成的 PNG，data URL 内嵌，非外部来源），
+                # 沿用同一定高滚动框。
+                encoded = base64.b64encode(view["preview_png"]).decode("ascii")
+                st.markdown(html_box(
+                    f'<img src="data:image/png;base64,{encoded}" '
+                    f'alt="网格位图预览" style="image-rendering:pixelated;max-width:100%;">',
+                    600, scroll=True), unsafe_allow_html=True)
+                st.caption(f"大网格（{view['width']}×{view['height']} 格）以位图预览、不显示符号；"
+                           "符号见下方文字符号图，或下载 SVG 获取带符号的矢量图（点击时生成）。")
         with col_v2:
             st.subheader("📋 颜色图例")
             # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown。
@@ -416,7 +457,7 @@ def render_tab_grid() -> None:
         with col_d1:
             st.download_button(
                 "📥 下载 SVG 网格图",
-                view["svg"],
+                _svg_download_data(view),
                 file_name="tapestry_grid.svg",
                 mime="image/svg+xml",
             )
