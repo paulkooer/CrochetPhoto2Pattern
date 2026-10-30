@@ -191,8 +191,9 @@ def test_history_saves_applied_result_not_unapplied_json_draft(result, monkeypat
         reloaded.run()
         reloaded.button(key=f"hist_save_{applied['result_id']}").click().run()
         assert not reloaded.exception and not reloaded.error
-        assert saved[-1]["params"]["parts"] == draft["parts"]
-        assert downloads[-1]["parts"] == draft["parts"]
+        assert applied["params"]["parts"][0]["rounds"][0]["color"] == "蓝色"
+        assert saved[-1]["params"]["parts"] == applied["params"]["parts"]
+        assert downloads[-1]["parts"] == applied["params"]["parts"]
 
 
 @pytest.mark.parametrize("direction", ["commit", "undo", "redo"])

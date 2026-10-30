@@ -129,6 +129,7 @@ class PipelineOrchestrator:
         draft: PhotoDraft,
         *,
         analysis: ImageAnalysis | None = None,
+        parts: list[str] | None = None,
         gauge=None,
         style=None,
         target_height_cm: float = 18,
@@ -140,6 +141,8 @@ class PipelineOrchestrator:
 
         Budget covers active stages only, so time spent by the user reviewing the
         draft does not exhaust it. Local native calls stop at the next checkpoint.
+        ``analysis`` supplies a fully reviewed analysis; ``parts`` only overrides
+        the CLI selection and must not certify subject or proportion review.
         """
         trace = run_trace or deepcopy(draft.trace)
         from .color_design import vertical_color_bands
@@ -147,7 +150,10 @@ class PipelineOrchestrator:
 
         gauge, style = gauge or DEFAULT, style or DEFAULT_STYLE
         with trace.stage("structure"):
-            chosen = ImageAnalysis.model_validate((analysis or draft.analysis).model_dump())
+            chosen_data = (analysis or draft.analysis).model_dump()
+            if parts is not None:
+                chosen_data["parts"] = parts
+            chosen = ImageAnalysis.model_validate(chosen_data)
             if not chosen.parts:
                 raise ValueError("请至少保留一个部件")
             chosen, sizing = scale_analysis_to_target_height(
@@ -155,7 +161,8 @@ class PipelineOrchestrator:
             )
             if progress_cb:
                 progress_cb(40, text="Step 2/3: 部件结构设计中...")
-            structure = StructureDesigner.design_3d_structure(chosen, infer_missing_parts=analysis is None)
+            structure = StructureDesigner.design_3d_structure(
+                chosen, infer_missing_parts=analysis is None and parts is None)
         with trace.stage("colors"):
             color_observation: dict = {}
             bands = vertical_color_bands(draft.image, subject=draft.subject, observation=color_observation)
@@ -183,8 +190,14 @@ class PipelineOrchestrator:
         meta = deepcopy(draft.vision_meta)
         if color_observation:
             meta["color_observation"] = color_observation
+        if parts is not None:
+            meta["parts_source"] = "cli_explicit"
         if analysis is not None:
             meta["reviewed_by_user"] = True
+        elif parts is not None:
+            # Selecting parts does not confirm the subject, head or proportions.
+            meta.pop("reviewed_by_user", None)
+            meta["requires_subject_review"] = True
         return PatternResult(
             generator_version=software_version(),
             analysis=chosen.model_dump(),
@@ -219,6 +232,7 @@ class PipelineOrchestrator:
         target_height_source: str = "default_reference",
         vision_mode: str = "local",
         budget_seconds: float = 180,
+        parts: list[str] | None = None,
     ) -> dict[str, Any]:
         # Keep the original public API and explicit mode validation.
         if vision_mode not in VISION_MODES:
@@ -233,6 +247,7 @@ class PipelineOrchestrator:
         try:
             return self.generate_from_draft(
                 draft,
+                parts=parts,
                 gauge=gauge,
                 style=style,
                 target_height_cm=target_height_cm,

@@ -102,4 +102,5 @@ def test_app_history_save_and_sidebar_load(tmp_db):
     at2.button(key="hist_load_hist-e2e").click().run()
     assert not at2.exception
     assert "result" in at2.session_state
-    assert at2.session_state["result"]["result_id"] == "hist-e2e"
+    assert at2.session_state["result"]["result_id"] != "hist-e2e"
+    assert at2.session_state["result"]["history_id"] == "hist-e2e"

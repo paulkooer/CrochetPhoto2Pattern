@@ -414,8 +414,10 @@ def render_results(result: dict, slot: str) -> None:
 
     # 解析来源透明展示：AI（LLM）/ 本地估算 / Mock 三类（vision_meta）
     vmeta = result.get("vision_meta") or {}
-    if vmeta.get("reviewed_by_user"):
+    if vmeta.get("reviewed_by_user") and not vmeta.get("requires_subject_review"):
         st.caption("✓ 比例与部件已经过人工确认；原始解析来源保留如下。")
+    elif vmeta.get("parts_source") == "cli_explicit":
+        st.caption("部件为 CLI 显式选择；主体类型、头部与比例仍待人工确认。")
     if vmeta.get("source") == "mock":
         st.caption("🎬 Mock 演示数据（体型与部件为固定演示值，"
                    "配色与分段参考照片，仅供体验流程）")
@@ -965,7 +967,9 @@ def render_results(result: dict, slot: str) -> None:
                 saved["gauge"] = saved["params"].get("gauge")
                 _title = (st.session_state.get(f"hist_title_{result_key}")
                           or "").strip() or None
-                history.save_result(saved, title=_title)
+                saved_id = history.save_result(saved, title=_title)
+                if saved_id:
+                    result["history_id"] = saved_id
                 st.success("✅ 已存入历史（左侧栏「我的图解」可载回）")
             except Exception as e:
                 st.error(f"存入历史失败: {md_safe(e)}")

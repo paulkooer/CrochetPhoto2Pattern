@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from enum import StrEnum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
 from app.utils.counts import integer_count
 from app.utils.numbers import finite_float
@@ -114,10 +114,22 @@ class CrochetStitch(BaseModel):
     notes: str | None = None
     # 本圈使用的毛线色（照片配色设计；无图/单色部件为 None）
     color: str | None = None
+    # Auto text is tracked separately so refreshes retain user instructions.
+    auto_color_note: str | None = None
+    region: Literal["base", "wall", "closure"] | None = None
+    # Distance along the construction axis, excluding radial base/closure disks.
+    height_range_cm: list[FiniteMeasurement] | None = Field(default=None, min_length=2, max_length=2)
     # V2：装饰性宽跳变标志（如波浪裙摆"每针放2针"——工艺正确但超出
     # 生成器平滑节奏先验）。宽跳变本身只降级为 note；置位仅抑制该
     # note（生成器对唯一合法场景显式置位以保持 notes 干净）。
     allow_wide_jump: bool = False
+
+    @field_validator("height_range_cm")
+    @classmethod
+    def _ordered_height_range(cls, value):
+        if value is not None and not 0 <= value[0] <= value[1] <= MAX_PART_DIMENSION_CM:
+            raise ValueError("圈的纵向范围必须满足 0 ≤ 起点 ≤ 终点 ≤ 200 cm")
+        return value
 
 class CrochetPart(BaseModel):
     name: str = Field(min_length=1)
@@ -126,13 +138,22 @@ class CrochetPart(BaseModel):
     # 旧备份没有该字段时按 1 兼容；派生针数、材料和时长必须乘此数量。
     quantity: IntegerCount = Field(default=1, ge=1, le=20)
     diameter_cm: PositiveMeasurement | None = None
+    head_diameter_cm: PositiveMeasurement | None = None
     height_cm: PositiveMeasurement | None = None
     # 圈数不再作为存储字段：一律由 len(rounds) 派生，避免两者失同步
     # （历史 JSON 中多余的 "rows" 键会被 pydantic 静默忽略）。
     rounds: list[CrochetStitch] = Field(min_length=1, max_length=MAX_PART_ROUNDS)
     color: str
     notes: str | None = None
+    auto_color_summary: str | None = None
+    opening_row: IntegerCount | None = Field(default=None, gt=0)
     magic_ring: bool = False
+
+    @model_validator(mode="after")
+    def _opening_exists(self):
+        if self.opening_row is not None and self.opening_row not in {r.row for r in self.rounds}:
+            raise ValueError("连接开口必须引用部件中存在的圈号")
+        return self
 
     @field_validator("rounds")
     @classmethod
@@ -262,7 +283,7 @@ class VisionOutput(BaseModel):
 SCHEMA_VERSION = "1"
 
 # 备份/分享/历史 blob 的顶层键集（= 会话内 result dict 的运行时键集）。
-# result_id/title 是会话/存储层字段，不随备份导出；schema_version 由
+# result_id/history_id/title 是会话/存储层字段，不随备份导出；schema_version 由
 # to_backup 注入。字段顺序即历史备份的键序，勿打乱（快照 diff 稳定性）。
 RESULT_KEYS = ("analysis", "structure", "params", "style", "gauge",
                "color_bands", "spans", "spans_measured", "vision_meta",
@@ -294,6 +315,7 @@ class PatternResult(BaseModel):
     diagnostics: dict[str, Any] = Field(default_factory=dict)
     # 会话/存储层字段（不在 RESULT_KEYS 中）
     result_id: str | None = None
+    history_id: str | None = None
     title: str | None = None
     schema_version: str = SCHEMA_VERSION
 
@@ -317,11 +339,11 @@ class PatternResult(BaseModel):
     def to_result_dict(self) -> dict[str, Any]:
         """会话内 result dict（render_results/历史 blob 的运行时形态）。
 
-        result_id/title 未设置时不出键，保证 orchestrator 产物与既有
+        result_id/history_id/title 未设置时不出键，保证 orchestrator 产物与既有
         键集断言完全一致。"""
         data = self.model_dump(exclude={"schema_version"})
         return {k: v for k, v in data.items()
-                if k not in ("result_id", "title") or v is not None}
+                if k not in ("result_id", "history_id", "title") or v is not None}
 
     def to_backup(self) -> dict[str, Any]:
         """备份/分享用的完整键集（RESULT_KEYS + schema_version）。"""

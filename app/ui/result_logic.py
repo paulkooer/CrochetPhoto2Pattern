@@ -170,6 +170,19 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
 def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
     """StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI。"""
     structure = normalize_structure(corrected_structure)
+
+    def construction_data(value):
+        value = deepcopy(value)
+        for part in value["parts"]:
+            for instance in part.get("instances", []):
+                instance.pop("position", None)
+                instance.pop("rotation_deg", None)
+        return value
+
+    if construction_data(structure) == construction_data(normalize_structure(result["structure"])):
+        updated = deepcopy(result)
+        updated["structure"] = structure
+        return updated
     gauge = gauge_from_result(result)
     return _regenerate_geometry(result, structure, gauge)
 

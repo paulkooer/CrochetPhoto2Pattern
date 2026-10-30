@@ -72,7 +72,7 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
             changed |= part["rounds"][i - 1]["stitches"] != original[i - 1]["stitches"]
         # Explicit user wording is retained; unchanged generated instructions must
         # not describe obsolete counts after a numeric edit.
-        if (changed or staggered != was_staggered) and rd.get("notes") == old.get("notes"):
+        if (changed or staggered != was_staggered) and rounds[i].get("notes") == old.get("notes"):
             # Only replace a recognized numeric instruction. Semicolon-separated
             # finishing/assembly actions must survive; unfamiliar prose needs an
             # explicit user edit instead of being silently discarded.

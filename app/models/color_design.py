@@ -16,6 +16,7 @@ Amigurumi 常规比例的先验。结果可在 UI「局部修正」中逐圈调�
 from __future__ import annotations
 
 import logging
+import re
 
 from PIL import Image
 
@@ -235,14 +236,15 @@ def round_color_plan(
     n_rounds: int,
     *,
     bottom_up: bool = False,
+    height_ranges: list[tuple[float, float]] | None = None,
 ) -> tuple[list[str | None], int]:
-    """Choose one yarn per equal-height round by total interval overlap.
+    """Choose one yarn per axial round by total interval overlap.
 
     Minimizes mismatched vertical length for each round, rather than magnifying
     a tiny stripe that happens to cross its midpoint. Equal coverage keeps the
     midpoint color when possible, then the first color in image order. Compute
-    top-down once and reverse for bottom-up work so floating-point ties cannot
-    change the plan. Return the number of observed blocks with no overlapping
+    top-down once and reverse for equal-height bottom-up work; explicit axial
+    ranges instead follow their physical positions. Return blocks with no overlapping
     round assigned their color; this is resolution loss, not a confidence score.
     Blocks are ordered, non-overlapping photo intervals from color_blocks_for_part.
     """
@@ -251,11 +253,22 @@ def round_color_plan(
     start, end = span
     if n_rounds < 1 or not (math.isfinite(start) and math.isfinite(end) and start < end):
         raise ValueError("配色映射需要正圈数和有效部件区间")
+    if height_ranges is None:
+        intervals = [(start + (end - start) * j / n_rounds,
+                      start + (end - start) * (j + 1) / n_rounds) for j in range(n_rounds)]
+    else:
+        if len(height_ranges) != n_rounds or any(
+            not (math.isfinite(a) and math.isfinite(b) and 0 <= a < b) for a, b in height_ranges
+        ):
+            raise ValueError("配色映射需要每圈的有效纵向范围")
+        extent = max(b for _a, b in height_ranges)
+        intervals = [(start + (end - start) * a / extent,
+                      start + (end - start) * b / extent)
+                     for a, b in ([(extent - b, extent - a) for a, b in height_ranges]
+                                  if bottom_up else height_ranges)]
     colors: list[str | None] = []
     represented: set[int] = set()
-    for j in range(n_rounds):
-        lo = start + (end - start) * j / n_rounds
-        hi = start + (end - start) * (j + 1) / n_rounds
+    for lo, hi in intervals:
         overlaps = [(i, name, min(e, hi) - max(s, lo))
                     for i, (s, e, name) in enumerate(blocks) if min(e, hi) > max(s, lo)]
         coverage: dict[str, float] = {}
@@ -272,10 +285,12 @@ def round_color_plan(
         colors.append(selected)
         represented.update(i for i, name, _length in overlaps if name == selected)
     eligible = {i for i, (s, e, _name) in enumerate(blocks) if min(e, end) > max(s, start)}
-    return (list(reversed(colors)) if bottom_up else colors), len(eligible - represented)
+    if bottom_up and height_ranges is None:
+        colors.reverse()
+    return colors, len(eligible - represented)
 
 
-def blocks_summary_text(round_colors: list[str | None]) -> str:
+def blocks_summary_text(round_colors: list[str | None], rows: list[int] | None = None) -> str:
     """逐圈颜色列表 → "R1–R4 浅肤色；R5–R10 深棕色" 摘要。"""
     segs: list[str] = []
     i = 0
@@ -284,6 +299,56 @@ def blocks_summary_text(round_colors: list[str | None]) -> str:
         while j + 1 < len(round_colors) and round_colors[j + 1] == round_colors[i]:
             j += 1
         color = round_colors[i] or "?"
-        segs.append(f"R{i + 1}–R{j + 1} {color}" if j > i else f"R{i + 1} {color}")
+        first, last = (rows[i], rows[j]) if rows is not None else (i + 1, j + 1)
+        segs.append(f"R{first}–R{last} {color}" if j > i else f"R{first} {color}")
         i = j + 1
     return "；".join(segs)
+
+
+# Exact legacy generated phrases only; unrelated maker notes are preserved.
+_COLOR_CHANGE_RE = re.compile(
+    r"；?换线：[^（；\n]+（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）")
+_COLOR_SUMMARY_RE = re.compile(r" 配色（按钩织圈序，自[上下]而[上下]）：[^。]*。")
+
+
+def refresh_color_instructions(part: dict) -> None:
+    """Derive transitions and summaries from current yarns, retaining manual prose.
+
+    Track generated fragments separately while keeping the composed notes readable
+    by older consumers. Legacy backups are migrated using exact known phrases.
+    """
+    rounds = part["rounds"]
+    colors = [rd.get("color") or part.get("color") or "未指定" for rd in rounds]
+    mapped = any(rd.get("color") for rd in rounds)
+    for i, rd in enumerate(rounds):
+        if mapped:
+            # Freeze inherited yarns before recomputing the part's dominant yarn;
+            # repeated refreshes must not recolor previously unspecified rows.
+            rd["color"] = colors[i]
+        note = rd.get("notes") or ""
+        auto = rd.get("auto_color_note")
+        if auto:
+            note = note.replace("；" + auto, "").removeprefix(auto)
+        note = _COLOR_CHANGE_RE.sub("", note)
+        auto = None
+        if mapped and i and colors[i] != colors[i - 1]:
+            auto = (f"换线：{colors[i]}（前一针最后一次挂线改用新色；"
+                    "螺旋圈仍可能出现台阶）")
+            note = f"{note}；{auto}" if note else auto
+        rd["notes"] = note or None
+        rd["auto_color_note"] = auto
+    note = part.get("notes") or ""
+    auto = part.get("auto_color_summary")
+    if auto:
+        note = note.replace(auto, "")
+    note = _COLOR_SUMMARY_RE.sub("", note)
+    auto = None
+    if mapped:
+        part["color"] = max(dict.fromkeys(colors), key=colors.count)
+        if len(set(colors)) > 1:
+            direction = "自下而上" if part["name"] in {"身体", "手臂", "腿部"} else "自上而下"
+            auto = (f" 配色（按钩织圈序，{direction}）："
+                    f"{blocks_summary_text(colors, [rd['row'] for rd in rounds])}。")
+            note += auto
+    part["notes"] = note or None
+    part["auto_color_summary"] = auto

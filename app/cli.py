@@ -40,8 +40,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--head", type=float, default=9.0, help="头部直径 cm（手动模式）")
     parser.add_argument("--height", type=float, default=18.0,
                         help="整体/照片目标成品高度 cm（默认 18）")
-    parser.add_argument("--parts", default="头部,身体,手臂,腿部",
-                        help=f"逗号分隔部件（可选：{'、'.join(PART_NAMES)}）")
+    parser.add_argument("--parts", default=None,
+                        help=f"显式选择生成部件，照片/批量/手动均生效（可选：{'、'.join(PART_NAMES)}）")
     parser.add_argument("--gauge", default="classic",
                         choices=["classic", "dk", "fine", "custom"])
     parser.add_argument("--stitches", type=float, help="custom：10cm 针数")
@@ -63,7 +63,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run(args: argparse.Namespace) -> dict:
     """执行管线并返回 result dict（CLI 与测试共用）。"""
-    parts = [p.strip() for p in args.parts.split(",") if p.strip()]
+    parts = [p.strip() for p in (args.parts if args.parts is not None
+                                else "头部,身体,手臂,腿部").split(",") if p.strip()]
+    if not parts:
+        raise SystemExit("请至少选择一个部件")
     bad = [p for p in parts if p not in PART_NAMES]
     if bad:
         raise SystemExit(f"未知部件: {'、'.join(bad)}（可选：{'、'.join(PART_NAMES)}）")
@@ -75,9 +78,11 @@ def run(args: argparse.Namespace) -> dict:
 
     if args.mock:
         analysis = orch.parser.parse_image_mock()
+        if args.parts is not None:
+            analysis = analysis.model_copy(update={"parts": parts})
         analysis, sizing = scale_analysis_to_target_height(
             analysis, args.height, source="cli_target")
-        structure = StructureDesigner.design_3d_structure(analysis)
+        structure = StructureDesigner.design_3d_structure(analysis, infer_missing_parts=args.parts is None)
         params = CrochetParamsGenerator.generate_params(
             analysis, structure, gauge=gauge, style=style)
         result = PatternResult(
@@ -104,12 +109,13 @@ def run(args: argparse.Namespace) -> dict:
                                         vision_mode="local",
                                         gauge=gauge, style=style,
                                         target_height_cm=args.height,
-                                        target_height_source="cli_target")
+                                        target_height_source="cli_target",
+                                        parts=parts if args.parts is not None else None)
     else:
         analysis = ImageAnalysis(
             body_type="标准", head_diameter_cm=args.head, height_cm=args.height,
             main_features=[], pose="站立", difficulty="easy", parts=parts)
-        structure = StructureDesigner.design_3d_structure(analysis)
+        structure = StructureDesigner.design_3d_structure(analysis, infer_missing_parts=args.parts is None)
         params = CrochetParamsGenerator.generate_params(
             analysis, structure, gauge=gauge, style=style)
         result = PatternResult(
@@ -248,8 +254,12 @@ def main(argv=None) -> int:
             return 2
         raise
     if result.get("vision_meta", {}).get("requires_subject_review") and not args.quiet:
-        print("注意：本地结果的主体类型未确认，部件来自默认模板；请在界面确认头部、部件和数量后使用。",
-              file=sys.stderr)
+        if result["vision_meta"].get("parts_source") == "cli_explicit":
+            print("注意：主体类型、头部与比例未确认；部件为 CLI 显式选择，请在界面完成复核后使用。",
+                  file=sys.stderr)
+        else:
+            print("注意：本地结果的主体类型未确认，部件来自默认模板；请在界面确认头部、部件和数量后使用。",
+                  file=sys.stderr)
     payload = result  # 完整 result（含 vision_meta/gauge/style 等，与备份同构）
     blob = json.dumps(payload, ensure_ascii=False, default=lambda o: (
         o.model_dump() if hasattr(o, "model_dump") else str(o)), indent=2)

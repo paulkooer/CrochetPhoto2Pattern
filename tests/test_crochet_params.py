@@ -797,7 +797,7 @@ def test_assembly_hat_skirt_report_opening_counts():
     params = _params_for(["头部", "身体", "裙子"])
     asm = params["assembly_instructions"]
     skirt = next(p for p in params["parts"] if p["name"] == "裙子")
-    assert f"（{skirt['rounds'][-1]['stitches']} 针开口）" in asm
+    assert f"（{skirt['rounds'][0]['stitches']} 针开口）" in asm
 
 
 def test_refresh_derived_rebuilds_opening_counts_from_edited_parts():

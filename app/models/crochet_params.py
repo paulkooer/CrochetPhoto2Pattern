@@ -4,8 +4,8 @@ from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis
 from .assembly import _openings_by_part, build_assembly
 from .color_design import (
     PART_SPAN,
-    blocks_summary_text,
     color_blocks_for_part,
+    refresh_color_instructions,
     round_color_plan,
 )
 from .gauge import DEFAULT as DEFAULT_GAUGE
@@ -352,6 +352,15 @@ def _cup_rounds(max_stitches: int, depth_rounds: int) -> list[dict[str, Any]]:
     return _increase_rounds(max_stitches) + constant
 
 
+def _mark_axial_regions(rounds: list[dict], base_count: int, gauge: Gauge) -> float:
+    """Share the same longitudinal ranges between sizing and photo color mapping."""
+    for i, rd in enumerate(rounds):
+        rd["region"] = "base" if i < base_count else "wall"
+        rd["height_range_cm"] = [max(0, i - base_count) * gauge.row_h_cm,
+                                 max(0, i - base_count + 1) * gauge.row_h_cm]
+    return round(rounds[-1]["height_range_cm"][1], 1)
+
+
 
 
 def structure_connection_plan(structure: dict[str, Any]) -> dict[str, Any] | None:
@@ -431,6 +440,8 @@ def refresh_derived(params: dict) -> dict:
     用户改完圈数若不重算，图解头部信息与正文会失同步。
     """
     parts = params.get("parts", [])
+    for part in parts:
+        refresh_color_instructions(part)
     total_stitches = sum(
         _round_stitches(rd) * _part_quantity(p)
         for p in parts for rd in _part_rounds(p))
@@ -617,6 +628,7 @@ class CrochetParamsGenerator:
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
                     magic_ring=False,  # 腰部开口起针，非魔法环
+                    opening_row=rounds_raw[0]["row"],
                     notes=skirt_notes,
                 )
 
@@ -635,8 +647,8 @@ class CrochetParamsGenerator:
                 # F36：高度口径与圆柱统一——只计轴向筒壁。帽顶加针段是
                 # 径向圆盘（§8.6 同判：圆柱把起底盘算进高度会把 4.5cm
                 # 标成 9.4cm，帽子同理虚高 ~70%）
-                actual_h = round(wall_rounds * gauge.row_h_cm, 1)
                 crown_rounds = len(rounds_raw) - wall_rounds
+                actual_h = _mark_axial_regions(rounds_raw, crown_rounds, gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="cup",
@@ -678,7 +690,7 @@ class CrochetParamsGenerator:
                 for i, wd in enumerate(wall_dicts):
                     wd["row"] = len(dome) + i + 1
                 rounds_raw = dome + wall_dicts
-                actual_h = round(len(wall) * gauge.row_h_cm, 1)
+                actual_h = _mark_axial_regions(rounds_raw, len(dome), gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="profile",
@@ -704,7 +716,7 @@ class CrochetParamsGenerator:
                 # 标注高度只计"竖直筒壁"圈（直钩+收针）：起底加针段是水平
                 # 圆盘，贡献直径不贡献高度（计入会把 4.5cm 的身体标成 9.4cm）。
                 n_dome = max_st // 6
-                actual_h = round((len(rounds_raw) - n_dome) * gauge.row_h_cm, 1)
+                actual_h = _mark_axial_regions(rounds_raw, n_dome, gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="cylinder",
@@ -728,7 +740,7 @@ class CrochetParamsGenerator:
                 limb_r = max(2, gauge.rounds_for_height(length))
                 rounds_raw = _cylinder_rounds(max_stitches=max_st, body_rounds=limb_r)
                 n_dome = max_st // 6  # 起底圆盘圈不计高度（同身体口径）
-                actual_h = round((len(rounds_raw) - n_dome) * gauge.row_h_cm, 1)
+                actual_h = _mark_axial_regions(rounds_raw, n_dome, gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="cylinder",
@@ -801,11 +813,16 @@ class CrochetParamsGenerator:
             return  # 该部件无占比（先验/实测均无）→ 保持单色
         span = (spans or PART_SPAN).get(part.name) or PART_SPAN.get(
             part.name, (0.0, 1.0))
-        n = len(part.rounds)
+        axial = [rd for rd in part.rounds if rd.region == "wall"]
+        mapped_rounds = axial or part.rounds
+        n = len(mapped_rounds)
         # 钩织方向：身体/四肢自端部起针（R1=脚底/手端/胯部=照片低处），
         # 末圈才缝合到躯干——这些部件的照片色带映射必须自底向上。
         bottom_up = part.name in _BOTTOM_UP_PARTS
-        colors, omitted_blocks = round_color_plan(blocks, span, n, bottom_up=bottom_up)
+        heights = [rd.height_range_cm for rd in mapped_rounds]
+        colors, omitted_blocks = round_color_plan(
+            blocks, span, n, bottom_up=bottom_up,
+            height_ranges=[(h[0], h[1]) for h in heights if h is not None] if all(heights) else None)
         if omitted_blocks:
             part.notes = (part.notes or "") + (
                 f" 配色分辨率：按当前{n}圈取色时，{omitted_blocks}个照片色段未分配到对应圈色；"
@@ -832,26 +849,26 @@ class CrochetParamsGenerator:
                                        -color_distance(rgb_by_name[c], snap_rgb)))
                     colors = [snap_color if c == dominant else c for c in colors]
 
-        prev: str | None = None
-        if len(part.rounds) != len(colors):
+        if len(mapped_rounds) != len(colors):
             raise RuntimeError("round color count does not match generated rounds")
-        for rd, c in zip(part.rounds, colors):  # noqa: B905 - length checked above
+        for rd, c in zip(mapped_rounds, colors):  # noqa: B905 - length checked above
             rd.color = c
-            if prev is not None and c is not None and c != prev:
-                # 普通换色不等于无痕条纹；螺旋圈的接缝仍需单独处理。
-                rd.notes = (rd.notes or "") + (
-                    f"；换线：{c}（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）"
-                )
-            prev = c
-        if len(set(colors)) > 1:
-            direction = "自下而上" if bottom_up else "自上而下"
-            part.notes = (part.notes or "") + (
-                f" 配色（按钩织圈序，{direction}）：{blocks_summary_text(colors)}。"
-            )
+        for rd in part.rounds:
+            if rd.region == "base":
+                rd.color = colors[0]
+            elif rd.region == "closure":
+                rd.color = colors[-1]
         # 主色按圈数统计，平局取钩织顺序中先出现的颜色，避免 set 迭代漂移。
         named = [c for c in colors if c is not None]
         if named:
             part.color = max(dict.fromkeys(named), key=colors.count)
+        composed = part.model_dump()
+        refresh_color_instructions(composed)
+        part.notes = composed["notes"]
+        part.auto_color_summary = composed["auto_color_summary"]
+        for rd, data in zip(part.rounds, composed["rounds"], strict=True):
+            rd.notes = data["notes"]
+            rd.auto_color_note = data["auto_color_note"]
 
     @staticmethod
     def _build_result(analysis: ImageAnalysis, parts: list[CrochetPart],
@@ -877,6 +894,8 @@ class CrochetParamsGenerator:
             for part in part_dicts:
                 if part["name"] == "裙子":
                     part["height_cm"] = round(len(part["rounds"]) * gauge.row_h_cm, 1)
+        for part in part_dicts:
+            refresh_color_instructions(part)
         part_names = {p["name"] for p in part_dicts}
         total_stitches = sum(
             r["stitches"] * _part_quantity(p)
