@@ -8,6 +8,13 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed / Added — 2026-10-30 Browser regression and history title retention
+
+- Preserve saved history names and unsaved name drafts across undo, redo and older preview application; keep tabs isolated and retain explicit clearing.
+- Keep the stored title column and serialized record consistent so cleared names do not reappear on load. Add five AppTest/storage regressions.
+- Add separately locked Playwright tooling and browser CI using synthetic input and an isolated history database to exercise upload, embedded canvas, review, actual downloads, history isolation and project recovery in a fresh context. See the [browser guide](docs/browser-regression.md).
+- Separate current gates from historical status entries. A private single-design reference diagnostic remains in ignored local output and does not establish an authorized-photo or physical-trial baseline; Beta status is unchanged.
+
 ### Fixed — 2026-10-30 Three independent-review boundary follow-ups
 
 - Record explicit CLI part selection as `cli_explicit`, separately from complete human review. Photo and batch choices remain authoritative; UI, terminal and exports preserve outstanding subject, head and proportion checks. Full photo review still records confirmation.
