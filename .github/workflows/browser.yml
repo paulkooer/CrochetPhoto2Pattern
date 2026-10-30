@@ -20,10 +20,7 @@ jobs:
     env:
       UV_PYTHON: "3.12"
       CROCHET_HISTORY_MODE: single_user
-      CROCHET_HISTORY_DB: ${{ runner.temp }}/browser-history.sqlite
-      CROCHET_POSE_MODEL: ${{ runner.temp }}/unconfigured-pose.task
       CROCHET_BROWSER_URL: http://127.0.0.1:18502
-      CROCHET_BROWSER_OUTPUT: ${{ runner.temp }}/browser-evidence
       CROCHET_PLAYWRIGHT_MODULE: ${{ github.workspace }}/scripts/browser/node_modules/playwright
       CROCHET_BROWSER_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
@@ -43,6 +40,10 @@ jobs:
           npm ci --prefix scripts/browser
           scripts/browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Exercise standalone canvas and full local app
+        env:
+          CROCHET_HISTORY_DB: ${{ runner.temp }}/browser-history.sqlite
+          CROCHET_POSE_MODEL: ${{ runner.temp }}/unconfigured-pose.task
+          CROCHET_BROWSER_OUTPUT: ${{ runner.temp }}/browser-evidence
         run: |
           set -e
           node scripts/check_mask_canvas.cjs
