@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-30 Shaping intervals follow actual stitch order
+
+- Check explicit “one increase/decrease every N plain stitches” claims against actual gaps, including the round boundary. Reject unequal gaps with the right average, non-integral averages and W/M operations that change two stitches at once.
+- Preserve correct staggered groups, nested repeats, FLO/BLO and invisible decreases. Inspect the compact operation tree without expanding thousands of repeats. Edits, imports and exports share checks; failed edits/imports preserve current work.
+- Export cache version 9 revalidates old Markdown, Parade and PDF outputs; pattern and project formats are unchanged.
+
 ### Fixed — 2026-10-29 Whole-round prose and formula consistency
 
 - Reject claims such as `6V，均匀减6针` or `6X，隔2针加1针` when the formula contains no corresponding shaping. Check outer increase/decrease repetition counts, direction and every-stitch wording so correct arithmetic cannot hide contradictory technique instructions.
