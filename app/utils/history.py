@@ -134,6 +134,9 @@ def save_result(result: dict[str, Any], title: str | None = None) -> str:
     params = record.params
     if not isinstance(params.get("parts"), list):
         raise ValueError("result 缺少有效的 params.parts")
+    # The authoritative title column and the serialized snapshot must agree,
+    # including an explicit clear; otherwise old blob text reappears on load.
+    record.title = title.strip() if title and title.strip() else None
     # blob 携带 schema_version：后续版本升级历史记录时可识别
     blob = json.dumps({**record.to_result_dict(),
                        "schema_version": record.schema_version},
@@ -145,7 +148,7 @@ def save_result(result: dict[str, Any], title: str | None = None) -> str:
             "(rid, created_at, summary, blob, preview, title) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             (rid, time.time(), _summary(result), blob, preview,
-             title.strip() if title and title.strip() else None))
+             record.title))
     return rid
 
 

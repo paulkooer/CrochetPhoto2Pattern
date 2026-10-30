@@ -1,0 +1,8 @@
+{
+  "name": "crochet-browser-regression",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Optional browser-only regression tooling; not an application dependency",
+  "engines": {"node": ">=20"},
+  "devDependencies": {"playwright": "1.64.1"}
+}

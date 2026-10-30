@@ -12,6 +12,24 @@ gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
+## Latest reproducible validation
+
+2026-10-30 browser/reference diagnostic batch, based on merged `36ce5d6`: **nine full-app
+workflow checks passed** in desktop Chrome 156.0.8078.74, including actual upload, embedded
+canvas, review, JSON/Markdown/PDF downloads, named-history save/undo, tab isolation, restoration
+in a fresh context and invalid-import preservation. Fix a newly observed history-name loss and
+add five name-lifecycle regressions; independent review of this new fix is pending and does not
+inherit the prior PASS. Full suite: **2081 passed, 2 skipped in 67.13s**, Ruff, mypy (176 files)
+and diff checks passing (Python 3.12.13, locked dev+pdf). Skips remain the missing authorized-photo
+directory and optional MediaPipe. A new browser CI workflow must pass on this batch's PR head.
+The locally supplied material is one reference design represented by 83 page images and four
+PDFs, without user-taken finished-item photos or measurements. It was diagnosed privately;
+source material and crops stay outside the public repo and CI and do not count toward G3/G4.
+Priorities from that diagnostic are per-part gauge, explicit connection openings and special
+structure templates before independent physical comparison. See the [browser guide](browser-regression.md).
+
+## Independently accepted merged baseline
+
 2026-10-30 final independent acceptance of software consistency fixes: commit
 `55280fb485d9182f264402c52cbc171c957c4c51` received **PASS** for the original eight
 issues and the two P2 / one P3 follow-ups; these software issues may close. The GPT Pro
@@ -22,9 +40,16 @@ directory and unmet MediaPipe EGL/GLESv2 conditions. The developer's separate ru
 same commit yielded 2076 passed, 2 skipped in 57.25s (Python 3.12.13, MediaPipe not installed).
 Export cache is now **version 10**; backup schema remains version 1. No public remote CI
 results existed for that SHA when the reviewer queried it; merging requires the repair PR's
-current head checks. Real-browser upload/canvas/download/recovery, authorized photos and
-physical trials remain separate work; Beta status and G3/G4 are unchanged.
+current head checks. That acceptance round did not run real-browser tests; subsequent synthetic
+browser coverage is recorded above. Authorized photos, physical trials, other browser platforms
+and real-photo browser scenarios remain separate work; Beta status and G3/G4 are unchanged.
 See the [acceptance handoff](audit-fix-review-20261030.md).
+
+## Historical validation records
+
+The dated entries below preserve their original commits, environments and results.
+Statements about pending commits or CI describe those rounds only. Consult the current
+conclusion, latest validation entry and release-gate table for the merged baseline.
 
 2026-10-30 shaping interval checks: reject unequal actual gaps with a correct average and
 non-integral averages previously left unchecked. Explicit one-step interval claims now inspect
@@ -612,8 +637,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Historical pass; current tree pending commit/review** | reviewed commit, version, lock, changelog, and remote `main` agree |
-| G2 Supported-version automation | **Current changes pending remote re-validation** | core 3.11–3.14 and PDF/pose extras were historically green; the security audit previously passed vacuously (audit F-01). The audit and dependencies are now fixed; CI must run on this SHA before calling G2 green |
+| G1 Reproducible source | **Merged baseline passed: `36ce5d6`** | [PR #21](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/21) merged into `main`; its tree matches checked head `6c03cdd`, and application code matches independently accepted `55280fb`. Later changes require their own commit-bound evidence |
+| G2 Supported-version automation | **All 9 remote checks passed for baseline PR #21** | Checked head `6c03cdd`: Python 3.11–3.14, Docker, PDF, pose, mypy and dependency audit. [Core CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479505), [extras](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479504), [audit](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479596). Later branches cannot reuse this status |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` thresholds including 100% Parade export |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

@@ -70,6 +70,9 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
     updated.pop("history_id", None)
     if current.get("history_id"):
         updated["history_id"] = current["history_id"]
+    updated.pop("title", None)
+    if current.get("title") is not None:
+        updated["title"] = current["title"]
     updated["result_id"] = uuid.uuid4().hex[:12]
     history["current_id"] = updated["result_id"]
     history["comparison"] = {"修改前": metrics(current), "修改后": metrics(updated)}
@@ -79,6 +82,8 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
     old_rid = current.get("result_id") or slot
     prepared_progress[f"project_notes_{updated['result_id']}"] = st.session_state.get(
         f"project_notes_{old_rid}", "")
+    prepared_progress[f"hist_title_{updated['result_id']}"] = st.session_state.get(
+        f"hist_title_{old_rid}", current.get("title") or "")
     # All copying, metrics and serialization must succeed before session mutation.
     purge_result_state(current)
     st.session_state.update(prepared_progress)

@@ -1,0 +1,67 @@
+name: browser
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UV_PYTHON: "3.12"
+      CROCHET_HISTORY_MODE: single_user
+      CROCHET_BROWSER_URL: http://127.0.0.1:18502
+      CROCHET_PLAYWRIGHT_MODULE: ${{ github.workspace }}/scripts/browser/node_modules/playwright
+      CROCHET_BROWSER_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: scripts/browser/package-lock.json
+      - name: Install locked test tools
+        run: |
+          uv sync --locked --extra dev --extra pdf
+          npm ci --prefix scripts/browser
+          scripts/browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exercise standalone canvas and full local app
+        env:
+          CROCHET_HISTORY_DB: ${{ runner.temp }}/browser-history.sqlite
+          CROCHET_POSE_MODEL: ${{ runner.temp }}/unconfigured-pose.task
+          CROCHET_BROWSER_OUTPUT: ${{ runner.temp }}/browser-evidence
+        run: |
+          set -e
+          node scripts/check_mask_canvas.cjs
+          .venv/bin/python -m streamlit run app/main.py --server.address=127.0.0.1 --server.port=18502 --server.headless=true --browser.gatherUsageStats=false > "$RUNNER_TEMP/browser-server.log" 2>&1 &
+          task_server_pid=$!
+          trap 'kill "$task_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl -fsS "$CROCHET_BROWSER_URL/_stcore/health" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS "$CROCHET_BROWSER_URL/_stcore/health"
+          node scripts/check_browser_workflow.cjs
+      - name: Preserve synthetic evidence and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: browser-smoke
+          path: |
+            ${{ runner.temp }}/browser-evidence/
+            ${{ runner.temp }}/browser-server.log
+          retention-days: 7
