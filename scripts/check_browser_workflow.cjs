@@ -43,6 +43,7 @@ async function settle(page) {
 
 async function clickKey(page, scope, name) {
   const holder = key(scope,name);
+  await holder.waitFor({state:'attached'});
   await reveal(holder);
   // Tooltips can contain an aria-hidden copy of their trigger. Click the live button.
   const button = holder.getByRole('button');
@@ -52,15 +53,18 @@ async function clickKey(page, scope, name) {
 
 async function fillKey(page, scope, name, value) {
   const field = key(scope, name).locator('input:not([type="file"]), textarea').first();
+  await field.waitFor({state:'attached'});
   await reveal(field);
   await field.fill(value);
   await field.press('Tab');
   await settle(page);
 }
 
-async function resultId(scope) {
+async function resultId(scope, previousId) {
   const holder = scope.locator('[class*="st-key-hist_save_"]').first();
   await holder.waitFor({state:'attached'});
+  // A rerun may briefly leave the old result on screen after the click returns.
+  if (previousId) await expect(holder).not.toHaveClass(new RegExp(`st-key-hist_save_${previousId}(?:\\s|$)`),{timeout:45000});
   return holder.evaluate(e => [...e.classList].find(c => c.startsWith('st-key-hist_save_'))
                              .slice('st-key-hist_save_'.length));
 }
@@ -205,7 +209,7 @@ async function headProgress(page, scope, rid, checked) {
     await fillKey(page,manual,`project_notes_${manualId}`,notes);
     const material = manual.getByRole('button',{name:'更新材料估算',exact:true,includeHidden:true});
     await reveal(material);await material.click();await settle(page);
-    manualId = await resultId(manual);
+    manualId = await resultId(manual,manualId);
     const storedId = manualId;
     const title = `browser-smoke-${Date.now()}`;
     await fillKey(page,manual,`hist_title_${manualId}`,title);
@@ -214,7 +218,7 @@ async function headProgress(page, scope, rid, checked) {
     await fillKey(page,sidebar,'hist_search',title);
     await expect(key(sidebar,`hist_load_${storedId}`),'Saved title must be searchable before undo.').toHaveCount(1);
     await clickKey(page,manual,`edit_${manualId}_undo`);
-    manualId = await resultId(manual);
+    manualId = await resultId(manual,manualId);
     await clickKey(page,manual,`hist_save_${manualId}`);
     await fillKey(page,sidebar,'hist_search',title);
     await expect(sidebar.locator('[class*="st-key-hist_load_"]')).toHaveCount(1);
@@ -233,7 +237,7 @@ async function headProgress(page, scope, rid, checked) {
 
     await clickKey(page,sidebar,`hist_load_${storedId}`);
     await page.getByRole('tab',{name:'📸 照片分析（本地）',exact:true}).click();
-    photoId = await resultId(photoPanel);
+    photoId = await resultId(photoPanel,photoId);
     assert.notEqual(photoId,manualId);
     await headProgress(page,photoPanel,photoId,true);
     const clearPhoto = key(photoPanel,`sheet_part_${photoId}_0`).getByRole('button',{name:'↩️ 重置进度',exact:true,includeHidden:true});
