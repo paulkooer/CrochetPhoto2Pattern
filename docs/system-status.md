@@ -14,6 +14,21 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-10-30 merge update: [PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22)
+was squash-merged into `main` with maintainer authorization as
+`44a79fc6ba09da4ddf86397761db39894565655e`. Its tree matches checked head
+`4a63745d49721509e20e90d76b26f4feb0b54e8f`, whose **10 remote checks all passed**:
+[core matrix, Docker and types](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069831004),
+[PDF/pose](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069831902),
+[dependency audit](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069832148), and
+[browser regression and synthetic evidence](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069832349).
+Browser CI passed the nine full-app flows and standalone canvas regression in Chromium
+156.0.8078.4, recording both the PR head and actual checked-out merge-test commit, a clean
+tree and no page errors. Post-merge and later-commit CI results are recorded against their own
+SHAs and do not inherit these results. The new history-title fix has no independent acceptance
+report; maintainer authorization to merge does not change that fact or extend the earlier
+independent PASS for `55280fb`.
+
 2026-10-30 browser/reference diagnostic batch, based on merged `36ce5d6`: **nine full-app
 workflow checks passed** in desktop Chrome 156.0.8078.74, including actual upload, embedded
 canvas, review, JSON/Markdown/PDF downloads, named-history save/undo, tab isolation, restoration
@@ -637,8 +652,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Merged baseline passed: `36ce5d6`** | [PR #21](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/21) merged into `main`; its tree matches checked head `6c03cdd`, and application code matches independently accepted `55280fb`. Later changes require their own commit-bound evidence |
-| G2 Supported-version automation | **All 9 remote checks passed for baseline PR #21** | Checked head `6c03cdd`: Python 3.11–3.14, Docker, PDF, pose, mypy and dependency audit. [Core CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479505), [extras](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479504), [audit](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479596). Later branches cannot reuse this status |
+| G1 Reproducible source | **Application/test baseline merged: `44a79fc`** | [PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22) merged into `main`; its tree matches checked head `4a63745`. Local full suite: 2081 passed, 2 skipped. Later changes require their own commit-bound evidence; new fixes do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 10 remote checks passed for PR #22** | Checked head `4a63745`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and the new browser check all pass; exact run links appear above. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` thresholds including 100% Parade export |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |
