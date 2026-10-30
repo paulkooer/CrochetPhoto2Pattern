@@ -14,6 +14,19 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+2026-10-30 合并更新：[PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22)
+已按维护者授权 squash 合入 `main`，合并提交为
+`44a79fc6ba09da4ddf86397761db39894565655e`，合并树与受检头提交
+`4a63745d49721509e20e90d76b26f4feb0b54e8f` 相同。该头提交的 **10 项远端检查全部通过**：
+[核心矩阵、Docker 与类型检查](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069831004)、
+[PDF/pose](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069831902)、
+[依赖审计](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069832148)、
+[浏览器回归及合成证据](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41069832349)。
+浏览器 CI 在 Chromium 156.0.8078.4 上通过 9 条完整应用流程和独立画布回归；报告分别
+记录 PR 头提交与实际检出的合并测试提交，工作树干净，无页面异常。合并后与后续提交
+的 CI 按各自 SHA 另行记录，不沿用本段结果。新增历史名称修复尚无独立验收报告，
+维护者授权合并不改变该事实；此前 `55280fb` 的独立 PASS 范围保持不变。
+
 2026-10-30 浏览器与参考资料诊断批次（基于已合并 `36ce5d6`）：桌面 Chrome
 156.0.8078.74 的 **9 条完整应用流程通过**，涵盖实际上传、嵌入画布、人工确认、
 JSON/Markdown/PDF 下载、命名历史保存撤销、双页面隔离、新上下文恢复及错误导入保护。
@@ -556,8 +569,8 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **已合并基线通过：`36ce5d6`** | [PR #21](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/21) 已合入 `main`；合并树与受检头提交 `6c03cdd` 相同，业务代码与独立验收提交 `55280fb` 相同。后续修改须重新绑定提交及结果 |
-| G2 支持版本自动化 | **基线 PR #21 的 9 项远端检查通过** | 受检头提交 `6c03cdd`：Python 3.11–3.14、Docker、PDF、pose、mypy 和依赖审计均通过；[核心 CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479505)、[可选组件](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479504)、[依赖审计](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41009479596)。后续分支检查不沿用此状态 |
+| G1 可复现源码 | **应用与测试基线已合并：`44a79fc`** | [PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22) 已合入 `main`，合并树与受检头提交 `4a63745` 相同；本地全量 2081 passed、2 skipped。后续修改须重新绑定提交及结果；新增修复不继承 `55280fb` 的独立 PASS |
+| G2 支持版本自动化 | **PR #22 的 10 项远端检查通过** | 受检头提交 `4a63745`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和新增浏览器检查均通过；见上方精确运行链接。合并后及后续提交的检查按各自 SHA 核对 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 全部门槛（含 Parade 100% 完整导出） |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
