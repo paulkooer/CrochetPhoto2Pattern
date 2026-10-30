@@ -66,6 +66,10 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
     from app.ui.result_renderer import purge_result_state
 
     updated = deepcopy(updated)
+    # Persistence belongs to the live workspace, not an undo/preview snapshot.
+    updated.pop("history_id", None)
+    if current.get("history_id"):
+        updated["history_id"] = current["history_id"]
     updated["result_id"] = uuid.uuid4().hex[:12]
     history["current_id"] = updated["result_id"]
     history["comparison"] = {"修改前": metrics(current), "修改后": metrics(updated)}

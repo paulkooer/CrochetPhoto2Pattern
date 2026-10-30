@@ -254,8 +254,12 @@ def main(argv=None) -> int:
             return 2
         raise
     if result.get("vision_meta", {}).get("requires_subject_review") and not args.quiet:
-        print("注意：本地结果的主体类型未确认，部件来自默认模板；请在界面确认头部、部件和数量后使用。",
-              file=sys.stderr)
+        if result["vision_meta"].get("parts_source") == "cli_explicit":
+            print("注意：主体类型、头部与比例未确认；部件为 CLI 显式选择，请在界面完成复核后使用。",
+                  file=sys.stderr)
+        else:
+            print("注意：本地结果的主体类型未确认，部件来自默认模板；请在界面确认头部、部件和数量后使用。",
+                  file=sys.stderr)
     payload = result  # 完整 result（含 vision_meta/gauge/style 等，与备份同构）
     blob = json.dumps(payload, ensure_ascii=False, default=lambda o: (
         o.model_dump() if hasattr(o, "model_dump") else str(o)), indent=2)

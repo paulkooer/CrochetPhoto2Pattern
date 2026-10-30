@@ -31,7 +31,7 @@ MAX_TRIAL_BUNDLE_BYTES = MAX_PATTERN_BYTES + MAX_TRIAL_BYTES + MAX_TRIAL_DRAFT_B
 class TrialBundle:
     source: bytes
     record: TrialRecord
-    source_revision: str
+    source_revision: str  # Normalized session baseline; record.pattern.sha256 binds raw bytes.
     draft: TrialObservationDraft | None = None
 
 
@@ -45,9 +45,9 @@ def _checked_bundle(source: bytes, record: TrialRecord,
     payload = decode_backup_json(source)
     # Apply the same complete-pattern checks as opening a backup, but keep the
     # original bytes: normalizing an import must never silently change its hash.
-    import_backup(payload, "trial-check")
+    normalized = import_backup(payload, "trial-check")
     record = upgrade_trial_record_from_bytes(source, record)
-    return TrialBundle(source, record, pattern_revision(payload), draft)
+    return TrialBundle(source, record, pattern_revision(normalized), draft)
 
 
 def create_trial_bundle(result: dict, *, trial_id: str, maker_id: str,

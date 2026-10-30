@@ -28,7 +28,10 @@ def provenance_lines(result: dict[str, Any] | None = None) -> list[str]:
     ]
 
     if meta.get("requires_subject_review"):
-        lines.append("主体复核：尚未确认主体类型、头部与部件；当前部件来自默认模板，不能视为照片识别结果。")
+        if meta.get("parts_source") == "cli_explicit":
+            lines.append("主体复核：尚未确认主体类型、头部与比例；部件为 CLI 显式选择，不代表完整人工复核。")
+        else:
+            lines.append("主体复核：尚未确认主体类型、头部与部件；当前部件来自默认模板，不能视为照片识别结果。")
     elif meta.get("subject_scope_review"):
         lines.append("主体复核：用户已确认单个可表达主体及部件；并非自动识别准确性的验证。")
     if (result.get("geometry") or {}).get("body_region"):
