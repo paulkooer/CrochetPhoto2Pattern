@@ -76,11 +76,15 @@ def test_zero_padding_does_not_require_converting_an_untrusted_integer():
     assert not instruction_issues(f"加针×{zeros}6（V×6，每针都加）", 12, 6, 0, previous_stitches=6)
 
 
-def test_contradictory_claim_rejected_at_edit_import_and_exports_without_mutation():
+@pytest.mark.parametrize("index,note", [
+    (1, "6V，均匀减6针"),
+    (3, "(4X,V,V)×3，隔2针加1针"),
+])
+def test_contradictory_claim_rejected_at_edit_import_and_exports_without_mutation(index, note):
     result = _mock_result("claim-gates")
     original = deepcopy(result)
     rounds = deepcopy(result["params"]["parts"][0]["rounds"])
-    rounds[1]["notes"] = "6V，均匀减6针"
+    rounds[index]["notes"] = note
     with pytest.raises(ValueError, match="文字"):
         edit_rounds(result, 0, rounds)
     assert result == original
@@ -95,7 +99,11 @@ def test_contradictory_claim_rejected_at_edit_import_and_exports_without_mutatio
     assert any("文字" in warning for warning in report.warnings)
 
 
-def test_pasted_backup_reports_wrong_claim_then_accepts_correction():
+@pytest.mark.parametrize("index,bad,good", [
+    (1, "6V，均匀减6针", "6V，均匀加6针"),
+    (3, "(4X,V,V)×3，隔2针加1针", "(X,V,X)×6，隔2针加1针"),
+])
+def test_pasted_backup_reports_wrong_claim_then_accepts_correction(index, bad, good):
     import json
 
     from tests.test_app_smoke import _APP
@@ -107,7 +115,7 @@ def test_pasted_backup_reports_wrong_claim_then_accepts_correction():
     at.session_state["project_notes_keep-claim-progress"] = "保留现有工程"
     at.run()
     damaged = PatternResult.from_result(existing).to_backup()
-    damaged["params"]["parts"][0]["rounds"][1]["notes"] = "6V，均匀减6针"
+    damaged["params"]["parts"][0]["rounds"][index]["notes"] = bad
     at.radio(key="open_backup_source").set_value("粘贴 JSON").run()
     at.text_area(key="open_backup_text").input(json.dumps(damaged, ensure_ascii=False)).run()
     at.button(key="open_backup_apply").click().run()
@@ -115,8 +123,8 @@ def test_pasted_backup_reports_wrong_claim_then_accepts_correction():
     assert at.session_state["result"] == existing
     assert at.checkbox(key="chk_keep-claim-progress_头部_0").value
     assert at.text_area(key="project_notes_keep-claim-progress").value == "保留现有工程"
-    damaged["params"]["parts"][0]["rounds"][1]["notes"] = "6V，均匀加6针"
+    damaged["params"]["parts"][0]["rounds"][index]["notes"] = good
     at.text_area(key="open_backup_text").input(json.dumps(damaged, ensure_ascii=False)).run()
     at.button(key="open_backup_apply").click().run()
     assert not at.exception and not at.error
-    assert at.session_state["result"]["params"]["parts"][0]["rounds"][1]["notes"] == "6V，均匀加6针"
+    assert at.session_state["result"]["params"]["parts"][0]["rounds"][index]["notes"] == good

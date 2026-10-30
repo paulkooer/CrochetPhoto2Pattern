@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 from .stitch_notation import (
     NotationError,
-    StitchCounts,
     StitchExpression,
     UnsupportedLoopError,
     mentions_invisible_decrease,
@@ -51,15 +51,66 @@ def _count_label(digits: str) -> str:
     return number if len(number) <= 18 else f"{number[:18]}…（{len(number)}位）"
 
 
-def _interval_issues(clause: str, counts: StitchCounts) -> list[str]:
+@dataclass(frozen=True)
+class _Spacing:
+    leading: int
+    trailing: int
+    changes: int
+
+
+def _matches_interval(expression: StitchExpression, digits: str, direction: str) -> bool:
+    """Check cyclic plain-stitch gaps in O(tree nodes), without expanding repeats.
+
+    A span remembers only its plain prefix/suffix and shaping count. Joining
+    spans checks their boundary; repeating a span checks that boundary once.
+    The final boundary joins the round's tail to its start, allowing a split
+    gap such as ``(X,V,X)×6`` for an interval of two plain stitches.
+    """
+    gap = _decimal(digits)
+    changes = {"V"} if direction == "加" else {"A", "inv-sc2tog"}
+
+    def summarize(node: StitchExpression) -> _Spacing | None:
+        if node.stitch is not None:
+            symbol = node.stitch.removesuffix("-FLO").removesuffix("-BLO")
+            if symbol == "X":
+                return _Spacing(node.repeats, node.repeats, 0)
+            if symbol not in changes:
+                return None  # Mixed shaping or W/M is not a single +1/-1 step.
+            span = _Spacing(0, 0, 1)
+        else:
+            span = _Spacing(0, 0, 0)
+            for child in node.children:
+                following = summarize(child)
+                if following is None:
+                    return None
+                if (span.changes and following.changes
+                        and str(span.trailing + following.leading) != gap):
+                    return None
+                span = _Spacing(
+                    span.leading if span.changes else span.leading + following.leading,
+                    following.trailing if following.changes else span.trailing + following.trailing,
+                    span.changes + following.changes,
+                )
+        if not span.changes:
+            return _Spacing(span.leading * node.repeats, span.trailing * node.repeats, 0)
+        if node.repeats > 1 and str(span.trailing + span.leading) != gap:
+            return None
+        return _Spacing(span.leading, span.trailing, span.changes * node.repeats)
+
+    result = summarize(expression)
+    return (result is not None and result.changes > 0
+            and str(result.trailing + result.leading) == gap)
+
+
+def _interval_issues(clause: str, expression: StitchExpression) -> list[str]:
     """F-14：核对“隔N针加/减1针”「均匀加/减N针」文字里的数字与操作式一致。
 
     生成器口径（见 crochet_params._inc_note_by_before/_dec_note）：
-    ``(aX,V)×6`` ↔ 隔 a 针加 1 针，a = consumed/increase − 1；
-    ``(aX,A)×6`` ↔ 隔 a 针减 1 针，a = consumed/decrease − 2；
-    「均匀加/减 N 针」的 N = 加/减针数。此前只核对逗号前的操作式，文字里的
-    这些数字不参与校验（``(2X,V)×6，隔5针加1针`` 这种自相矛盾可通过）。"""
+    ``(aX,V)×6`` ↔ 隔 a 针加 1 针，``(aX,A)×6`` ↔ 隔 a 针减 1 针。
+    间隔按实际短针序列核对，包含圈首尾衔接，不能仅用平均针数推断。
+    「均匀加/减 N 针」只核对 N = 加/减针数，不证明物理分布均匀。"""
     out: list[str] = []
+    counts = expression.counts
     interval = _INTERVAL.search(clause)
     if interval is not None:
         digits, direction = interval.groups()
@@ -67,10 +118,9 @@ def _interval_issues(clause: str, counts: StitchCounts) -> list[str]:
         label = f"隔{_count_label(digits)}针{direction}1针"
         if actual == 0:
             out.append(f"文字“{label}”与操作式不符（操作式没有{direction}针）")
-        elif counts.consumed % actual == 0:
-            expected = counts.consumed // actual - (1 if direction == "加" else 2)
-            if _decimal(digits) != str(expected):
-                out.append(f"文字“{label}”与操作式不符（应为隔{expected}针）")
+        elif not _matches_interval(expression, digits, direction):
+            out.append(f"文字“{label}”与操作式的逐针顺序不符"
+                       f"（含圈首尾衔接，每次{direction}1针之间须有指定数量的短针）")
     even = _EVEN.search(clause)
     if even is not None:
         direction, digits = even.groups()
@@ -193,7 +243,7 @@ def instruction_issues(
                     f"针法说明加 {counts.increase} 针、减 {counts.decrease} 针，"
                     f"与数值加 {increase} 针、减 {decrease} 针不一致"
                 )
-            issues.extend(_interval_issues(clause, counts))
+            issues.extend(_interval_issues(clause, expression))
     if mentions_loop_technique(text):
         try:
             round_expression(text)

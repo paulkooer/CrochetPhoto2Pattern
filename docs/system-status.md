@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-29. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-30. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -11,6 +11,24 @@ CrochetPhoto2Pattern is a **0.2.0-beta.2 engineering candidate**. Stitch arithme
 gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
+
+2026-10-30 shaping interval checks: reject unequal actual gaps with a correct average and
+non-integral averages previously left unchecked. Explicit one-step interval claims now inspect
+the compact operation tree, including the round boundary, while accepting staggered groups,
+nested repeats, FLO/BLO and invisible decreases. W/M cannot claim a one-stitch change.
+A 100,000-stitch case needs no repeat expansion. Export cache **version 9** revalidates old outputs.
+Added **34 regressions**, including an independent expanded-sequence property oracle, large
+rounds, edit/import/export gates, cache invalidation and UI failure preservation with correction/retry.
+Full suite: **2043 passed, 2 skipped in 105.65s, coverage 94.22%** (Python 3.12.13, isolated
+locked dev+pdf environment). Skips are the absent authorized-photo directory and optional mediapipe.
+Repository-wide Ruff, mypy app/tests (173 files) and diff checks pass. No dependency or project-format
+changes; no new real-browser, authorized-photo or physical-trial evidence, so G3/G4 remain unchanged.
+Consult this repair PR's checks for remote results. See the
+[Chinese validation guide](project-format.md#导入校验与编辑保留).
+
+2026-10-29 GitHub main synchronization: [PR #18](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/18)
+merged into `main` as `4a19d70`; post-merge CI, extras and dependency-security checks passed.
+Statements below about uncommitted/unpushed work remain historical records of their respective rounds.
 
 2026-10-29 whole-round prose checks: reject shaping claims when the formula contains no
 corresponding increases/decreases, and cross-check outer repetition counts, direction and
