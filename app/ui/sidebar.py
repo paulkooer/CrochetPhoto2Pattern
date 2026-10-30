@@ -1,6 +1,8 @@
 """Sidebar: gauge, shaping and local history."""
 from __future__ import annotations
 
+import uuid
+
 import streamlit as st
 
 
@@ -99,7 +101,7 @@ def render_sidebar() -> None:
                                   "border-radius:3px;'>🧶</div>",
                                   unsafe_allow_html=True)
                 _display = it.get("title") or it["summary"]
-                c_h1.caption(f"{history.format_time(it['created_at'])}\n\n{_display}")
+                c_h1.caption(f"{history.format_time(it['created_at'])}\n\n{md_safe(_display)}")
                 if c_h2.button("载入", key=f"hist_load_{it['rid']}"):
                     data = history.load_result(it["rid"])
                     if data is None:
@@ -113,13 +115,13 @@ def render_sidebar() -> None:
                         try:
                             from app.ui.result_logic import import_backup
 
-                            data = import_backup(data, it["rid"])
+                            data = import_backup(data, uuid.uuid4().hex[:12])
+                            data["history_id"] = it["rid"]
                         except Exception as e:
                             st.error(f"该记录已损坏，无法载入（可点「删」清除）: {md_safe(e)}")
                         else:
                             if "result" in st.session_state:
                                 purge_result_state(st.session_state["result"])
-                            data.setdefault("result_id", it["rid"])
                             st.session_state["result"] = data
                             st.rerun()
                 if c_h3.button("删", key=f"hist_del_{it['rid']}"):

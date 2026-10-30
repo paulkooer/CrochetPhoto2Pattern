@@ -7,6 +7,18 @@
           "title": "Allow Wide Jump",
           "type": "boolean"
         },
+        "auto_color_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auto Color Note"
+        },
         "color": {
           "anyOf": [
             {
@@ -25,6 +37,23 @@
           "title": "Decrease",
           "type": "integer"
         },
+        "height_range_cm": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height Range Cm"
+        },
         "increase": {
           "default": 0,
           "minimum": 0,
@@ -42,6 +71,23 @@
           ],
           "default": null,
           "title": "Notes"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "enum": [
+                "base",
+                "wall",
+                "closure"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
         },
         "row": {
           "exclusiveMinimum": 0,
@@ -63,6 +109,18 @@
     }
   },
   "properties": {
+    "auto_color_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Auto Color Summary"
+    },
     "color": {
       "title": "Color",
       "type": "string"
@@ -80,6 +138,20 @@
       ],
       "default": null,
       "title": "Diameter Cm"
+    },
+    "head_diameter_cm": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 200.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Head Diameter Cm"
     },
     "height_cm": {
       "anyOf": [
@@ -116,6 +188,19 @@
       ],
       "default": null,
       "title": "Notes"
+    },
+    "opening_row": {
+      "anyOf": [
+        {
+          "gt": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Opening Row"
     },
     "quantity": {
       "default": 1,

@@ -16,7 +16,7 @@ _CLOSING_RE = re.compile(r"(?<![不勿未没别])收口")
 
 
 def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
-    """各部件的开口针数（末圈针数）——完全收口的部件不计入。
+    """Resolve the declared joining round; legacy skirts join at their first row.
 
     专业图解装配段的通行惯例：缝合前先报开口针数（"sew the remaining
     12 sts to the body"）。球体头部以"无痕收口"完全闭合，无开口；
@@ -27,7 +27,11 @@ def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
         rounds = _part_rounds(p)
         if not rounds:
             continue
-        last = rounds[-1]
+        opening_row = p.get("opening_row")
+        if opening_row is not None:
+            last = next(rd for rd in rounds if rd["row"] == opening_row)
+        else:
+            last = rounds[0] if _part_name(p) == "裙子" else rounds[-1]
         # "收口"=闭合无开口；但"不收口/勿收口"是明确的开口声明
         #（真实图解如中文社区头套"开口保留…不收口"），不得误判
         if _CLOSING_RE.search(str(last.get("notes") or "")):

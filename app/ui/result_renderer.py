@@ -965,7 +965,9 @@ def render_results(result: dict, slot: str) -> None:
                 saved["gauge"] = saved["params"].get("gauge")
                 _title = (st.session_state.get(f"hist_title_{result_key}")
                           or "").strip() or None
-                history.save_result(saved, title=_title)
+                saved_id = history.save_result(saved, title=_title)
+                if saved_id:
+                    result["history_id"] = saved_id
                 st.success("✅ 已存入历史（左侧栏「我的图解」可载回）")
             except Exception as e:
                 st.error(f"存入历史失败: {md_safe(e)}")

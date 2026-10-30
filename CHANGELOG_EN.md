@@ -8,6 +8,15 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-10-30 Pattern, instruction and saved-state consistency
+
+- Derive yarn changes, adjacent-round transitions and color summaries from current round colors, preserving maker notes and migrating recognized legacy generated text on import.
+- Join a skirt at its first round, including ruffled hems, and store its opening reference. Record radial bases and axial wall ranges so height and photo color mapping use the same wall; bases inherit the end color.
+- Allocate a fresh display ID on history load and retain a separate history ID for updates. Photo/manual controls remain independent; escape both sidebar titles and generated summaries.
+- Honor explicit CLI `--parts` in photo, batch, mock and manual modes while retaining defaults when omitted. Preserve the head diameter in merged head/body patterns for materials and backup recovery.
+- Preserve edited stitches when only position or rotation changes. Dimensions, counts and joins still use generation checks. Derived color summaries alone no longer clear an entire part's progress.
+- Add optional fields with backward-compatible reading, keeping backup schema version 1; update JSON Schemas and export cache version 10. These software checks do not establish photo accuracy or physical trial success.
+
 ### Fixed — 2026-10-30 Shaping intervals follow actual stitch order
 
 - Check explicit “one increase/decrease every N plain stitches” claims against actual gaps, including the round boundary. Reject unequal gaps with the right average, non-integral averages and W/M operations that change two stitches at once.

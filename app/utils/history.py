@@ -117,14 +117,14 @@ def _summary(result: dict[str, Any]) -> str:
 
 
 def save_result(result: dict[str, Any], title: str | None = None) -> str:
-    """保存完整结果（含 result_id），返回 rid。重复 rid 覆盖。
+    """保存完整结果，返回持久记录 ID；显示 ID 与历史 ID 分开。
 
     title（U26）：用户可命名的标题（None 时侧栏回退摘要）。
     V5：入库前最小结构校验——缺 analysis/params.parts 的数据会让
     侧栏/载入路径渲染崩溃，在入口拦截。校验与序列化统一走
     PatternResult 契约（缺必带键 → ValueError）。
     """
-    rid = result.get("result_id")
+    rid = result.get("history_id") or result.get("result_id")
     if not rid:
         raise ValueError("result 缺少 result_id")
     try:

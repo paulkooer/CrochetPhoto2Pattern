@@ -84,15 +84,25 @@ def progress_limits(current: dict, updated: dict) -> dict[str, int]:
     limits = dict.fromkeys(new, 0)
     if gauge_from_result(current) != gauge_from_result(updated):
         return limits
+
+    def part_instructions(part):
+        metadata = {k: v for k, v in part.items()
+                    if k not in ("quantity", "rounds", "color", "auto_color_summary")}
+        summary = part.get("auto_color_summary") or ""
+        metadata["notes"] = (part.get("notes") or "").replace(summary, "")
+        return metadata
+
+    def round_instructions(rd, part):
+        instruction = {k: v for k, v in rd.items() if k != "auto_color_note"}
+        instruction["color"] = rd.get("color") or part.get("color")
+        return instruction
+
     for name, part in new.items():
         before = old.get(name)
-        if before is None or (
-            {k: v for k, v in before.items() if k not in ("quantity", "rounds")}
-            != {k: v for k, v in part.items() if k not in ("quantity", "rounds")}
-        ):
+        if before is None or part_instructions(before) != part_instructions(part):
             continue
         for left, right in zip(before["rounds"], part["rounds"], strict=False):
-            if left != right:
+            if round_instructions(left, before) != round_instructions(right, part):
                 break
             limits[name] += 1
 

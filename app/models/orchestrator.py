@@ -219,6 +219,7 @@ class PipelineOrchestrator:
         target_height_source: str = "default_reference",
         vision_mode: str = "local",
         budget_seconds: float = 180,
+        parts: list[str] | None = None,
     ) -> dict[str, Any]:
         # Keep the original public API and explicit mode validation.
         if vision_mode not in VISION_MODES:
@@ -233,6 +234,7 @@ class PipelineOrchestrator:
         try:
             return self.generate_from_draft(
                 draft,
+                analysis=draft.analysis.model_copy(update={"parts": parts}) if parts is not None else None,
                 gauge=gauge,
                 style=style,
                 target_height_cm=target_height_cm,

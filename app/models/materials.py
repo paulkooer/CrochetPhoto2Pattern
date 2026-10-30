@@ -116,7 +116,8 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         # 专业图解都按玩偶大小配眼）；无头径数据的旧结果兜底 8mm
         head = next((p for p in parts
                      if _part_name(p) in {"头部", _ONE_PIECE_NAME}), None)
-        diameter = head.get("diameter_cm") if isinstance(head, dict) else None
+        diameter = ((head.get("head_diameter_cm") or head.get("diameter_cm"))
+                    if isinstance(head, dict) else None)
         try:
             diameter = float(diameter) if diameter is not None else None
         except (TypeError, ValueError):
