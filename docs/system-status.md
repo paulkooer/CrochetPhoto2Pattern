@@ -12,6 +12,20 @@ gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
+2026-10-30 final independent acceptance of software consistency fixes: commit
+`55280fb485d9182f264402c52cbc171c957c4c51` received **PASS** for the original eight
+issues and the two P2 / one P3 follow-ups; these software issues may close. The GPT Pro
+report supplied by the maintainer records Python 3.12.14 with locked dev+pdf dependencies:
+**2076 passed, 2 skipped in 89.35s**, Ruff, mypy (175 source files under repository settings)
+and diff checks passing, with a clean review tree. Skips were the absent authorized-photo
+directory and unmet MediaPipe EGL/GLESv2 conditions. The developer's separate run on the
+same commit yielded 2076 passed, 2 skipped in 57.25s (Python 3.12.13, MediaPipe not installed).
+Export cache is now **version 10**; backup schema remains version 1. No public remote CI
+results existed for that SHA when the reviewer queried it; merging requires the repair PR's
+current head checks. Real-browser upload/canvas/download/recovery, authorized photos and
+physical trials remain separate work; Beta status and G3/G4 are unchanged.
+See the [acceptance handoff](audit-fix-review-20261030.md).
+
 2026-10-30 shaping interval checks: reject unequal actual gaps with a correct average and
 non-integral averages previously left unchecked. Explicit one-step interval claims now inspect
 the compact operation tree, including the round boundary, while accepting staggered groups,
