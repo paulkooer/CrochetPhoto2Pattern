@@ -161,10 +161,12 @@ def render_pattern_editor(result: dict, slot: str) -> None:
 
     rid = result.get("result_id") or slot
     render_history(slot, result)
+    from app.ui.head_opening import render_head_opening
     from app.ui.leg_join import render_leg_join
     from app.ui.skirt_editor import render_skirt_editor
     from app.ui.stitch_connections import render_stitch_connections
 
+    render_head_opening(result, slot)
     render_skirt_editor(result, slot)
     render_leg_join(f"{slot}_{rid}", result)
     render_stitch_connections(result, slot)

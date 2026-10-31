@@ -1,7 +1,7 @@
 from typing import Any
 
 from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis
-from .assembly import _openings_by_part, build_assembly
+from .assembly import _openings_by_part, build_assembly, opening_rows_by_part
 from .color_design import (
     PART_SPAN,
     color_blocks_for_part,
@@ -16,6 +16,7 @@ from .gauge import (
     gauge_from_mapping,
     next_shaping_stitch_count,
 )
+from .head_opening import HEAD_OPENING_KEY, head_opening_target, leave_head_open
 from .materials import YarnSpec, _materials, _safety_eye_mm, yarn_requirements
 from .parts import _SKIN_PARTS, _part_name, _part_quantity, _part_rounds, _round_stitches
 from .profile_shaping import profile_to_rounds, rounds_to_notes
@@ -440,6 +441,8 @@ def refresh_derived(params: dict) -> dict:
     用户改完圈数若不重算，图解头部信息与正文会失同步。
     """
     parts = params.get("parts", [])
+    if params.get(HEAD_OPENING_KEY) is not None:
+        params[HEAD_OPENING_KEY] = head_opening_target(params[HEAD_OPENING_KEY])
     for part in parts:
         refresh_color_instructions(part)
     total_stitches = sum(
@@ -466,7 +469,7 @@ def refresh_derived(params: dict) -> dict:
     params["assembly_instructions"] = build_assembly(
         set(quantities), params.get("skirt_style", "ring"), quantities,
         params.get("assembly_plan"), openings=_openings_by_part(parts),
-        stitch_attachments=params.get("stitch_attachments"))
+        stitch_attachments=params.get("stitch_attachments"), opening_rows=opening_rows_by_part(parts))
     return params
 
 
@@ -485,6 +488,7 @@ class CrochetParamsGenerator:
         gauge: Gauge = DEFAULT_GAUGE,
         style: ShapingStyle | None = None,
         spans: dict[str, Any] | None = None,
+        head_opening_stitches: int | None = None,
     ) -> dict[str, Any]:
         """Generate crochet parameters using structure data for dimensions.
 
@@ -499,6 +503,10 @@ class CrochetParamsGenerator:
         spans（S1）：姿态关键点实测部件占比；None 回退 PART_SPAN 先验。
         """
         style = style or DEFAULT_STYLE
+        if head_opening_stitches is not None:
+            head_opening_stitches = head_opening_target(head_opening_stitches)
+            if style.one_piece:
+                raise ValueError("头部留口仅适用于独立头部，不能与头身一体同时使用")
         if "parts" in structure:
             from .geometry import normalize_structure
             structure = normalize_structure(structure)
@@ -513,6 +521,8 @@ class CrochetParamsGenerator:
         # parts (the generation gate then reports an empty pattern).
         part_order = ([p["name"] for p in structure["parts"]]
                       if "parts" in structure else analysis.parts)
+        if head_opening_stitches is not None and "头部" not in part_order:
+            raise ValueError("头部留口需要图解包含独立头部")
         for part_name in part_order:
             sp = struct_parts.get(part_name, {})
             is_head = part_name == "头部"
@@ -534,9 +544,11 @@ class CrochetParamsGenerator:
                     max_st = max(r["stitches"] for r in rounds_raw)
                 else:
                     rounds_raw = _sphere_rounds(max_stitches=max_st)
+                if is_head and head_opening_stitches is not None:
+                    rounds_raw = leave_head_open(rounds_raw, head_opening_stitches, gauge.max_shaping_change)
                 if is_head:
                     color = sp.get("color", "skin")
-                    eye_round = eye_extra or max(2, len(rounds_raw) * 2 // 3)
+                    eye_round = min(len(rounds_raw), eye_extra or max(2, len(rounds_raw) * 2 // 3))
                     eye_gap = max(4, max_st // 6)
                     # 安全眼直径与材料清单同口径（_safety_eye_mm 按头径分档），
                     # 文案不得写死——否则与清单冲突
@@ -553,6 +565,9 @@ class CrochetParamsGenerator:
                         f"两眼间隔约 {eye_gap} 针，可依眼径与脸型调整）。"
                         "建议先钩小样测试张力。"
                     )
+                    if head_opening_stitches is not None:
+                        notes += (f"颈部留口：第 {rounds_raw[-1]['row']} 圈保留 {head_opening_stitches} 针，"
+                                  "不收口；开口大小与缝合分配需试钩核对。")
                 else:
                     color = sp.get("color", "body")
                     notes = f"小球形部件（直径 {diameter}cm），完成后缝合到主体。"
@@ -563,6 +578,8 @@ class CrochetParamsGenerator:
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=color,
                     magic_ring=True,
+                    opening_row=(rounds_raw[-1]["row"]
+                                 if is_head and head_opening_stitches is not None else None),
                     notes=notes,
                 )
 
@@ -705,6 +722,10 @@ class CrochetParamsGenerator:
                         f"逐针缝合固定、封住开口。"
                     ),
                 )
+                if head_opening_stitches is not None:
+                    part.notes = (f"照片驱动轮廓身体（筒壁高约 {actual_h}cm，逐圈针数随照片"
+                                  "剖面变化；底部另含圆盘）。末圈保持颈部开口：填充后与头部"
+                                  "颈口缝合，实际圈号、针数与分配核对见装配说明。")
 
             elif part_name == "身体":
                 height = sp.get("height_cm", 9.0)
@@ -793,8 +814,14 @@ class CrochetParamsGenerator:
             crochet_parts = merge_head_body(
                 crochet_parts, gauge, sections=sections)
 
-        return CrochetParamsGenerator._build_result(
+        result = CrochetParamsGenerator._build_result(
             analysis, crochet_parts, gauge, style, structure, body_rows=sections.get("body"))
+        if head_opening_stitches is not None:
+            result[HEAD_OPENING_KEY] = head_opening_stitches
+            validation = validate_pattern(result)
+            if not validation["ok"]:
+                raise PatternGenerationError("生成的留口头部未通过自检: " + "；".join(validation["issues"]))
+        return result
 
 
     @staticmethod
@@ -904,7 +931,8 @@ class CrochetParamsGenerator:
         quantities = {p["name"]: _part_quantity(p) for p in part_dicts}
         assembly = build_assembly(
             part_names, style.skirt_style, quantities, assembly_plan,
-            openings=_openings_by_part(part_dicts), stitch_attachments=stitch_attachments)
+            openings=_openings_by_part(part_dicts), stitch_attachments=stitch_attachments,
+            opening_rows=opening_rows_by_part(part_dicts))
 
         # F13 生成门禁：生成器自己产出的图解必须通过自检，代数矛盾
         # 在此处拦截（而不是等到结果页才显示警告）

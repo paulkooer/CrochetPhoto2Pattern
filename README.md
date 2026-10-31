@@ -82,6 +82,10 @@ Unknown part names remain available for review. Remove mistaken labels or select
   configurable allowance (10% by default), and the same yarn specification applies to all colors.
 - Stage timings, fallback reasons, and a runtime budget. Historical imported results retain their original usage metadata.
 - Strictly validated advanced structure editing with local regeneration.
+- Separate-head neck openings: preview an exact stitch target such as 16, with executable
+  final decreases, actual joining-round references, matching assembly/exports and project
+  recovery. Applies to separate heads; resizing retains the target and rejects incompatible
+  smaller heads. See the [opening guide](docs/project-format.md#独立头部留口).
 - Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
 - Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows. Failed generation,
   restoration or editing preserves the current grid and undo/redo history; downloads match

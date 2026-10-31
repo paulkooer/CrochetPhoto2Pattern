@@ -14,6 +14,22 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-10-31 separate-head neck openings, continuing unmerged PR #24: generate an exact target
+such as 16, retaining the crown and ending the decrease section with executable X/A operations
+and an actual final joining row. Regressions cover closing again, authored legacy openings,
+size/structure/gauge changes, trial recovery and contradictory saved metadata. Assembly and
+Markdown/PDF use actual joining rows/counts and flag different counts for manual alignment.
+Export cache is **11**. Full suite: **2156 passed, 2 skipped in 64.66s**, repository-wide Ruff,
+mypy (180 files) and diff checks pass (Python 3.12.13, locked dev+pdf). Skips remain the absent
+authorized-photo directory and optional MediaPipe. Ten local Chrome synthetic full-app flows
+pass, including opening preview/apply, project download, fresh-context restoration and closing
+again. These are developer checks; the final fixed version and remote browser, matrix, container
+and audit results must match PR #24's current head, not the old `ebe18b8` checks or prior
+independent PASS. Review now covers both edit preservation and separate-head openings. One-piece
+work is excluded and oversized neck targets are rejected. No source-pattern round-count
+replication or physical-result claim; per-part gauge and special accessories remain separate
+work, and Beta/G3/G4 are unchanged. See the [opening guide](project-format.md#独立头部留口).
+
 2026-10-31 resizing/edit preservation, based on `main` commit `0933d85`: retain authored
 rounds, colors and notes when old/new generated constructions and actual loop-attachment
 records agree. A head-diameter edit keeps the arm's authored ninth round. One-piece work,

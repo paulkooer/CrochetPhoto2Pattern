@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-10-31 Separate-head neck openings
+
+- Preview an exact neck stitch target, apply it and restore the closed template for ladder, ideal and egg heads. Non-six-multiple targets such as 16 use executable X/A transitions and the actual final joining row. Reject one-piece construction and targets exceeding the head circumference.
+- Persist optional `params.head_opening_stitches` through resizing, structure/gauge changes and backup/project/trial recovery. Assembly lists actual head/body joining rows and counts, with a manual alignment notice for different counts. Edit, import and printable-export gates reject contradictory targets, rows or closing instructions.
+- Show declared openings in Markdown/PDF; increment export cache to 11 while retaining backup schema 1. The head is regenerated, other manual work follows existing preservation rules, and preview, undo/redo and progress isolation remain available. No physical dimensions, round-count replication, support or finished-result claim.
+
 ### Changed — 2026-10-31 Retain unrelated manual work during resizing
 
 - Compare old and new generated constructions during size/structure edits, retaining manual rounds, colors and notes in unaffected parts. Materials, assembly, Markdown/PDF and backups use the combined actual content.

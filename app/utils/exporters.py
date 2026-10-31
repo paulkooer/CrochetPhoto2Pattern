@@ -186,6 +186,12 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
             lines.append(f"- **直径**：{pd['diameter_cm']} cm")
         if pd.get("height_cm"):
             lines.append(f"- **高度/长度**：{pd['height_cm']} cm")
+        if pd.get("opening_row") is not None:
+            from app.models.assembly import joining_round
+
+            opening = joining_round(pd)
+            if opening is not None:
+                lines.append(f"- **连接开口**：第 {opening['row']} 圈 · {opening['stitches']} 针")
         if pd.get("magic_ring"):
             lines.append("- ✨ 魔法环起针")
         if pd.get("notes"):

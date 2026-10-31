@@ -210,6 +210,18 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                         "确认为有意工艺（如倍增圈）即可照钩")
             prev_stitches = st if st > 0 else None
 
+        if part.get("opening_row") is not None:
+            try:
+                opening = _integer_count(part["opening_row"])
+                if opening not in seen_rows:
+                    raise ValueError("圈号不存在")
+            except ValueError:
+                issues.append(f"{name}：连接开口必须引用部件中存在的整数圈号")
+
+    if not issues:
+        from .head_opening import head_opening_issues
+
+        issues.extend(head_opening_issues(params))
     if not issues:
         from .stitch_attachments import attachment_issues
 

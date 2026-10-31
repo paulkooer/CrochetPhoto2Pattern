@@ -11,7 +11,7 @@ T = TypeVar("T", str, dict)
 MAX_EXPORT_CACHE_BYTES = 2 << 20
 # Increment when export semantics or cached report fields change, including
 # source-tree hot reloads where the installed package version stays unchanged.
-EXPORT_CACHE_VERSION = 10
+EXPORT_CACHE_VERSION = 11
 
 
 def cached_export(cache: dict, name: str, source: dict, build: Callable[[], T]) -> T:
