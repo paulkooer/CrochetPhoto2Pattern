@@ -14,6 +14,33 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+2026-10-31 按维护者授权完成合并：
+
+- [PR #24](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/24)（保留无关手改与独立头部留口）
+  已 squash 合入 `main`，提交为 `8c4f348ac1f5c101fd4c1272304b237a87747cac`。
+  文件树与受检头提交 `a64490c9d5777c714a6c02e265197d836ec81228` 相同，其 **10 项远端检查通过**
+  （[核心矩阵/Docker/类型](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41169677678)、
+  [浏览器](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41169677673)）。
+- [PR #25](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/25)（帽子与独立裙筒密度）随后
+  对齐已合并的 `main`，文件内容未变，重新检查后 squash 合入，提交为
+  `03a5dafa5d3a7f867c836faea33624a4f5cd81fb`。文件树与最终受检头提交
+  `b2df9a36cc434858413e593ba34aedd7b9b98eb2` 相同，该新 SHA 的 **10 项检查再次全部通过**：
+  [Python 3.11–3.14、Docker 与类型检查](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637518)、
+  [PDF/pose](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637466)、
+  [依赖审计](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637443)、
+  [浏览器回归](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637440)。
+
+合并代码与本地受检密度批次的文件树一致：全量 **2184 passed、2 skipped**，全仓 Ruff、
+mypy（182 文件）通过；本地和最终头提交的浏览器 CI 均通过 **11 条合成流程**。
+跳过仍为授权照片目录及可选 MediaPipe 缺失。导出缓存为 **12**，根备份仍为版本 1。
+新建试钩仍要求各部件有效密度等于默认值，不同密度请用钩织工程保存。
+上述为开发/CI 验证，新增功能的独立复核待完成；维护者授权合并不扩大 `55280fb`
+此前独立 PASS 的范围。后续文档提交及合并后 CI 须按自己的 SHA 核对，Beta 与 G3/G4 不变。
+
+### 较早的验证快照
+
+以下记录保留各次运行当时的分支状态；其中“待合并”说明以上方实际合并记录为准。
+
 2026-10-31 部件独立密度（基于 PR #24 头提交 `a64490c9d5777c714a6c02e265197d836ec81228`）：
 帽子和独立裙筒可保留各自小样，其他部件沿用默认密度，挑针接裙沿用身体密度。
 几何、色带位置、塑形提示、用线、预览和导出共用所选密度；同色用线按部件计算再汇总。
@@ -610,8 +637,8 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **应用与测试基线已合并：`44a79fc`** | [PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22) 已合入 `main`，合并树与受检头提交 `4a63745` 相同；本地全量 2081 passed、2 skipped。后续修改须重新绑定提交及结果；新增修复不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **PR #22 的 10 项远端检查通过** | 受检头提交 `4a63745`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和新增浏览器检查均通过；见上方精确运行链接。合并后及后续提交的检查按各自 SHA 核对 |
+| G1 可复现源码 | **功能基线已合并：`03a5daf`** | PR #24、#25 已合入 `main`，最终文件树与受检头提交 `b2df9a3` 及本地密度批次一致（2184 passed、2 skipped）。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
+| G2 支持版本自动化 | **PR #25 最终头提交的 10 项远端检查通过** | 受检头提交 `b2df9a3`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和 11 条浏览器流程均通过；见上方精确运行链接。合并后及后续提交的检查按各自 SHA 核对 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 全部门槛（含 Parade 100% 完整导出） |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
