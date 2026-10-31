@@ -19,8 +19,9 @@ def render_trial_review(bundle: TrialBundle, result: dict, slot: str) -> None:
     swatch = bundle.record.swatch
     same_source = pattern_revision(result) == bundle.source_revision
     same_gauge = gauge_from_result(result) == Gauge(swatch.stitches_per_10cm, swatch.rows_per_10cm)
-    st.caption("按实测密度重算会保留目标尺寸、结构和固定腰位，沿用当前线材规格，重新生成针数与圈数；"
-               "逐圈手改会被生成结果替换，已完成进度需重新核对。先预览，再应用，可撤销。"
+    st.caption("按实测密度重算会保留目标尺寸、结构和固定腰位，沿用当前线材规格，"
+               "重算沿用默认密度的部件；单独设置密度的部件保持其设置。"
+               "受影响部件的逐圈手改会被生成结果替换，已完成进度需重新核对。先预览，再应用，可撤销。"
                "预览显示在下方「局部修正」区域，原试钩记录及下载保持不变。")
     if not swatch.measured:
         st.caption("请先保存实测小样并确认「已实际测量小样」。")

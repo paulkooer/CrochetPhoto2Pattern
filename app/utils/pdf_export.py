@@ -75,11 +75,15 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
             f"目标高 {esc(analysis.get('height_cm', '—'))}cm · "
             f"难度 {esc(difficulty_label(str(analysis.get('difficulty', '—'))))}", small))
     # U24（升级）：密度随图解导出 + 兜底声明
-    from app.models.gauge import gauge_from_mapping
+    from app.models.gauge import gauge_from_mapping, has_independent_gauge, part_gauge_text
 
     g = gauge_from_mapping(params.get("gauge"))
     st_g, rw_g = g.stitches_per_10cm, g.rows_per_10cm
-    if params.get("gauge"):
+    if has_independent_gauge(params):
+        story.append(Paragraph(
+            f"默认密度：10cm × {st_g:g} 针 × {rw_g:g} 行；独立部件见各部件密度。"
+            "请按对应小样核对实际尺寸。", small))
+    elif params.get("gauge"):
         story.append(Paragraph(
             f"密度（小样）：10cm × {st_g:g} 针 × {rw_g:g} 行——请先试钩核对。"
             f"若你的小样密度不同，请改密度后重新生成", small))
@@ -89,8 +93,9 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
             small))
     from app.models.validator import shaping_policy_for_pattern
     shaping = shaping_policy_for_pattern(params)
+    shaping_label = "默认密度" if has_independent_gauge(params) else "当前密度"
     story.append(Paragraph(
-        f"塑形：当前密度的连续几何变化率约 "
+        f"塑形：{shaping_label}的连续几何变化率约 "
         f"{shaping['continuous_delta']:.2f} 针/圈，按六等分针法向上量化为每圈 "
         f"±{shaping['max_stitch_change']} 针；较平缓轮廓仍可使用 6 针步长",
         small))
@@ -159,6 +164,8 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
                 dims.append(f"连接开口：第 {opening['row']} 圈 · {opening['stitches']} 针")
         if dims:
             story.append(Paragraph(" · ".join(dims), small))
+        if caption := part_gauge_text(pd, g):
+            story.append(Paragraph(esc(caption), small))
         if pd.get("notes"):
             story.append(Paragraph(esc(pd["notes"]), small))
         if rounds:

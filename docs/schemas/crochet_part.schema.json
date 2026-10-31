@@ -106,6 +106,29 @@
       ],
       "title": "CrochetStitch",
       "type": "object"
+    },
+    "PartGauge": {
+      "additionalProperties": false,
+      "properties": {
+        "rows_per_10cm": {
+          "maximum": 50.0,
+          "minimum": 8.0,
+          "title": "Rows Per 10Cm",
+          "type": "number"
+        },
+        "stitches_per_10cm": {
+          "maximum": 40.0,
+          "minimum": 6.0,
+          "title": "Stitches Per 10Cm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "stitches_per_10cm",
+        "rows_per_10cm"
+      ],
+      "title": "PartGauge",
+      "type": "object"
     }
   },
   "properties": {
@@ -138,6 +161,17 @@
       ],
       "default": null,
       "title": "Diameter Cm"
+    },
+    "gauge": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PartGauge"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "head_diameter_cm": {
       "anyOf": [

@@ -99,11 +99,15 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         lines.append("")
     # U24（升级）：密度是复现图解的第一要素（所有针数由它推导），
     # 必须随图解导出——缺失时给兜底声明并提示重新生成
-    from app.models.gauge import gauge_from_mapping
+    from app.models.gauge import gauge_from_mapping, has_independent_gauge, part_gauge_text
 
     g = gauge_from_mapping(params.get("gauge"))
     st_g, rw_g = g.stitches_per_10cm, g.rows_per_10cm
-    if params.get("gauge"):
+    if has_independent_gauge(params):
+        lines.append(f"> 默认密度：10cm × {st_g:g} 针 × {rw_g:g} 行；独立部件见各部件密度。"
+                     "请按对应小样核对实际尺寸。")
+        lines.append("")
+    elif params.get("gauge"):
         lines.append(f"> 密度（小样）：10cm × {st_g:g} 针 × {rw_g:g} 行——"
                      f"请先试钩核对，所有 cm 标注由它推导。"
                      f"若你的小样密度不同，请在侧栏改密度后重新生成")
@@ -113,8 +117,9 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
         lines.append("")
     from app.models.validator import shaping_policy_for_pattern
     shaping = shaping_policy_for_pattern(params)
+    shaping_label = "默认密度" if has_independent_gauge(params) else "当前密度"
     lines.append(
-        f"> 塑形：当前密度的连续几何变化率约 "
+        f"> 塑形：{shaping_label}的连续几何变化率约 "
         f"{shaping['continuous_delta']:.2f} 针/圈，按六等分针法向上量化为每圈 "
         f"±{shaping['max_stitch_change']} 针；较平缓轮廓仍可使用 6 针步长")
     lines.append("")
@@ -182,6 +187,8 @@ def export_markdown(params: dict, analysis: dict | None = None, *, result: dict 
             lines.append(f"- **制作数量**：{quantity} 个相同部件")
         lines.append(f"- **形状**：{_md_cell(pd.get('type', '—'))}")
         lines.append(f"- **颜色**：{_md_cell(pd.get('color', '—'))}")
+        if caption := part_gauge_text(pd, g):
+            lines.append(f"- **部件密度**：{caption}")
         if pd.get("diameter_cm"):
             lines.append(f"- **直径**：{pd['diameter_cm']} cm")
         if pd.get("height_cm"):

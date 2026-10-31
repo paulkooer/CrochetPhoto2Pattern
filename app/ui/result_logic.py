@@ -14,7 +14,13 @@ from typing import Any
 
 from app import software_version
 from app.models.crochet_params import CrochetParamsGenerator, PatternGenerationError, refresh_derived
-from app.models.gauge import Gauge, ShapingStyle, gauge_from_result
+from app.models.gauge import (
+    INDEPENDENT_GAUGE_PARTS,
+    Gauge,
+    ShapingStyle,
+    gauge_for_part,
+    gauge_from_result,
+)
 from app.models.geometry import PROPORTIONS_HEAD_BODY_PREFIX, normalize_structure
 from app.models.head_opening import HEAD_OPENING_KEY, has_declared_head_opening, head_opening_target
 from app.models.sizing import sizing_meta_for_analysis
@@ -79,6 +85,13 @@ def _resize_structure(result: dict, analysis: ImageAnalysis) -> dict:
 
 def _result_style(result: dict) -> ShapingStyle:
     return ShapingStyle(**{**STYLE_DEFAULTS, **(result.get("style") or {})})
+
+
+def saved_part_gauges(result: dict, structure: dict | None = None) -> dict[str, Gauge]:
+    names = {p["name"] for p in (structure or result["structure"])["parts"]}
+    default = gauge_from_result(result)
+    return {p["name"]:gauge_for_part(p, default) for p in result["params"]["parts"]
+            if p.get("gauge") is not None and p["name"] in names}
 
 
 def rebuild_params(corrected: dict, *, check_notes: bool = True) -> dict:
@@ -148,7 +161,8 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
         color_bands=result.get("color_bands"),
         body_profile=result_profile(result),
         gauge=gauge, style=_result_style(result),
-        spans=result.get("spans"), head_opening_stitches=result["params"].get(HEAD_OPENING_KEY))
+        spans=result.get("spans"), head_opening_stitches=result["params"].get(HEAD_OPENING_KEY),
+        part_gauges=saved_part_gauges(result, structure))
     _preserve_yarn_spec(result, params)
     old_sizing = result.get("sizing") or {}
     sizing = sizing_meta_for_analysis(
@@ -212,15 +226,52 @@ def regenerate_with_head_opening(result: dict, stitches: int | None) -> dict:
                                 gauge_from_result(result), target, reset_head=True)
 
 
+def regenerate_with_part_gauge(result: dict, name: str, gauge: Gauge | None) -> dict:
+    """Change an independent garment's swatch while retaining other authored work."""
+    from app.models.validator import require_valid_pattern
+
+    require_valid_pattern(result["params"])
+    if name not in INDEPENDENT_GAUGE_PARTS:
+        raise ValueError("独立密度目前仅支持帽子和独立裙筒")
+    current = next((p for p in result["params"]["parts"] if p["name"] == name), None)
+    if current is None:
+        raise ValueError("所选部件不在当前图解中")
+    if gauge is not None and not isinstance(gauge, Gauge):
+        raise ValueError("请提供有效的小样密度")
+    if name == "裙子" and result["params"].get("skirt_style") == "attached" and gauge is not None:
+        raise ValueError("挑针接裙沿用身体密度，独立裙筒才可单独设置")
+    default = gauge_from_result(result)
+    selected = gauge or default
+    if selected == gauge_for_part(current, default):
+        updated = deepcopy(result)
+        chosen = next(p for p in updated["params"]["parts"] if p["name"] == name)
+        if gauge is None:
+            chosen.pop("gauge", None)
+        else:
+            chosen["gauge"] = asdict(gauge)
+        updated["params"] = rebuild_params(updated["params"])
+        return updated
+    structure = normalize_structure(result["structure"])
+    overrides = saved_part_gauges(result, structure)
+    if gauge is None:
+        overrides.pop(name, None)
+    else:
+        overrides[name] = gauge
+    return _regenerate_geometry(result, structure, default, result["params"].get(HEAD_OPENING_KEY),
+                                part_gauges=overrides)
+
+
 def _regenerate_geometry(result: dict, structure: dict, gauge: Gauge,
-                         head_opening_stitches: int | None, *, reset_head: bool = False) -> dict:
+                         head_opening_stitches: int | None, *, reset_head: bool = False,
+                         part_gauges: dict[str, Gauge] | None = None) -> dict:
     analysis = ImageAnalysis(**result["analysis"])
     params = CrochetParamsGenerator.generate_params(
         analysis, structure,
         color_bands=result.get("color_bands"),
         body_profile=result_profile(result),
         gauge=gauge, style=_result_style(result),
-        spans=result.get("spans"), head_opening_stitches=head_opening_stitches)
+        spans=result.get("spans"), head_opening_stitches=head_opening_stitches,
+        part_gauges=saved_part_gauges(result, structure) if part_gauges is None else part_gauges)
     _preserve_yarn_spec(result, params)
     updated = PatternResult.from_result({
         **result,
@@ -243,14 +294,13 @@ def _finish_geometry_edit(current: dict, generated: dict, *, reset_head: bool = 
     from app.models.skirt_edit import preserve_skirt_waist
 
     generated = preserve_skirt_waist(current, generated)
-    if gauge_from_result(current) != gauge_from_result(generated):
-        return generated  # A new swatch applies to every part.
     try:
         baseline_params = CrochetParamsGenerator.generate_params(
             ImageAnalysis(**current["analysis"]), current["structure"],
             color_bands=current.get("color_bands"), body_profile=result_profile(current),
             gauge=gauge_from_result(current), style=_result_style(current),
-            spans=current.get("spans"), head_opening_stitches=current["params"].get(HEAD_OPENING_KEY))
+            spans=current.get("spans"), head_opening_stitches=current["params"].get(HEAD_OPENING_KEY),
+            part_gauges=saved_part_gauges(current))
         baseline = preserve_skirt_waist(current, {**current, "params": baseline_params})
     except (ValueError, PatternGenerationError):
         # Legacy/custom work may have valid authored stitches but no reproducible
@@ -268,6 +318,8 @@ def _finish_geometry_edit(current: dict, generated: dict, *, reset_head: bool = 
         deepcopy(authored[p["name"]])
         if (not (reset_head and p["name"] == "头部")
             and p["name"] in authored and p == before.get(p["name"])
+            and gauge_for_part(authored[p["name"]], gauge_from_result(current))
+            == gauge_for_part(p, gauge_from_result(generated))
             and loop_context(current["params"], p["name"]) == loop_context(params, p["name"])) else p
         for p in params["parts"]
     ]

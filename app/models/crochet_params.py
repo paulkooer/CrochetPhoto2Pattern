@@ -1,6 +1,8 @@
+from collections.abc import Mapping
+from dataclasses import asdict
 from typing import Any
 
-from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis
+from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis, PartGauge
 from .assembly import _openings_by_part, build_assembly, opening_rows_by_part
 from .color_design import (
     PART_SPAN,
@@ -11,8 +13,10 @@ from .color_design import (
 from .gauge import DEFAULT as DEFAULT_GAUGE
 from .gauge import (
     DEFAULT_STYLE,
+    INDEPENDENT_GAUGE_PARTS,
     Gauge,
     ShapingStyle,
+    explicit_part_gauge,
     gauge_from_mapping,
     next_shaping_stitch_count,
 )
@@ -489,6 +493,7 @@ class CrochetParamsGenerator:
         style: ShapingStyle | None = None,
         spans: dict[str, Any] | None = None,
         head_opening_stitches: int | None = None,
+        part_gauges: Mapping[str, Gauge] | None = None,
     ) -> dict[str, Any]:
         """Generate crochet parameters using structure data for dimensions.
 
@@ -523,7 +528,19 @@ class CrochetParamsGenerator:
                       if "parts" in structure else analysis.parts)
         if head_opening_stitches is not None and "头部" not in part_order:
             raise ValueError("头部留口需要图解包含独立头部")
+        overrides: dict[str, Gauge] = {}
+        if part_gauges is not None:
+            if not isinstance(part_gauges, Mapping):
+                raise ValueError("独立密度必须按部件名提供")
+            for name, raw in part_gauges.items():
+                if name not in INDEPENDENT_GAUGE_PARTS or name not in part_order:
+                    raise ValueError("独立密度仅支持当前图解中的帽子和独立裙筒")
+                selected = raw if isinstance(raw, Gauge) else explicit_part_gauge(raw)
+                if name == "裙子" and style.skirt_style == "attached" and selected != gauge:
+                    raise ValueError("挑针接裙须沿用身体密度，请使用独立裙筒或恢复默认密度")
+                overrides[name] = selected
         for part_name in part_order:
+            part_gauge = overrides.get(part_name, gauge)
             sp = struct_parts.get(part_name, {})
             is_head = part_name == "头部"
             shape = sp.get("shape", "sphere" if is_head else "cylinder")
@@ -534,18 +551,19 @@ class CrochetParamsGenerator:
                     head_d if is_head else round(head_d * 0.4, 1)
                 )
                 diameter = sp.get("diameter_cm", fallback_d)
-                max_st = _stitches_for_diameter(diameter, gauge)
+                max_st = _stitches_for_diameter(diameter, part_gauge)
                 eye_extra = None
                 if is_head and style.sphere_mode in ("ideal", "egg"):
                     # 理想球/蛋形（M2.6/M2.7）：sinθ 分布 + 几何化眼睛定位
                     rounds_raw = _ideal_sphere_rounds(
-                        diameter, gauge, egg=(style.sphere_mode == "egg"))
+                        diameter, part_gauge, egg=(style.sphere_mode == "egg"))
                     eye_extra = rounds_raw[0].pop("eye_round", None)
                     max_st = max(r["stitches"] for r in rounds_raw)
                 else:
                     rounds_raw = _sphere_rounds(max_stitches=max_st)
                 if is_head and head_opening_stitches is not None:
-                    rounds_raw = leave_head_open(rounds_raw, head_opening_stitches, gauge.max_shaping_change)
+                    rounds_raw = leave_head_open(rounds_raw, head_opening_stitches,
+                                                part_gauge.max_shaping_change)
                 if is_head:
                     color = sp.get("color", "skin")
                     eye_round = min(len(rounds_raw), eye_extra or max(2, len(rounds_raw) * 2 // 3))
@@ -588,12 +606,12 @@ class CrochetParamsGenerator:
                 # 构造方向：腰部环形开口起针 → 逐圈+6 展开到裙摆 → 直钩。
                 length = sp.get("height_cm") or sp.get("length_cm") or 5.0
                 body_d = struct_parts.get("身体", {}).get("diameter_cm") or head_d * BODY_HEAD_RATIO
-                waist_st = _stitches_for_diameter(body_d, gauge)
+                waist_st = _stitches_for_diameter(body_d, part_gauge)
                 hem_st = _stitches_for_diameter(
-                    sp.get("diameter_cm") or body_d * SKIRT_BODY_RATIO, gauge)
+                    sp.get("diameter_cm") or body_d * SKIRT_BODY_RATIO, part_gauge)
                 shaping = bridge_rounds(waist_st, hem_st)
                 flare = len(shaping)
-                total_target = max(flare + 2, gauge.rounds_for_height(length))
+                total_target = max(flare + 2, part_gauge.rounds_for_height(length))
                 straight = total_target - flare
                 rounds_raw = [{
                     "row": 1,
@@ -626,7 +644,7 @@ class CrochetParamsGenerator:
                         "allow_wide_jump": True,
                         "notes": f"波浪裙摆：每针放2针（V×{hem_st}）",
                     })
-                actual_h = round(len(rounds_raw) * gauge.row_h_cm, 1)
+                actual_h = round(len(rounds_raw) * part_gauge.row_h_cm, 1)
                 skirt_notes = (
                     f"开口裙筒（腰 {waist_st} 针开口起针 → 裙摆 {hem_st} 针），"
                     f"实际高约 {actual_h}cm。"
@@ -641,7 +659,7 @@ class CrochetParamsGenerator:
                     name=part_name,
                     type="cup",
                     height_cm=actual_h,
-                    diameter_cm=round(hem_st * gauge.stitch_w_cm / 3.14159, 1),
+                    diameter_cm=round(hem_st * part_gauge.stitch_w_cm / 3.14159, 1),
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
                     magic_ring=False,  # 腰部开口起针，非魔法环
@@ -652,12 +670,12 @@ class CrochetParamsGenerator:
             elif part_name == "帽子" or shape == "cup":
                 # 开口帽形：加针到帽围后直钩至帽深，不收口
                 diameter = sp.get("diameter_cm", round(head_d * HAT_HEAD_RATIO, 1))
-                max_st = _stitches_for_diameter(diameter, gauge)
+                max_st = _stitches_for_diameter(diameter, part_gauge)
                 # F18：帽顶（加针段，径向成顶）与侧壁（轴向覆盖深度）分开
                 # 计算——旧口径"总目标 − 加针段"在 dk/fine 下侧壁只剩 1 圈
                 # （0.6–0.7cm，无法佩戴）。侧壁深度 = 直径×0.6 的轴向高度，
                 # 下限 3 圈保证可佩戴。
-                wall_rounds = max(3, gauge.rounds_for_height(
+                wall_rounds = max(3, part_gauge.rounds_for_height(
                     sp.get("height_cm") or sp.get("length_cm") or diameter * HAT_DEPTH_RATIO))
                 rounds_raw = _cup_rounds(max_stitches=max_st,
                                          depth_rounds=wall_rounds)
@@ -665,7 +683,7 @@ class CrochetParamsGenerator:
                 # 径向圆盘（§8.6 同判：圆柱把起底盘算进高度会把 4.5cm
                 # 标成 9.4cm，帽子同理虚高 ~70%）
                 crown_rounds = len(rounds_raw) - wall_rounds
-                actual_h = _mark_axial_regions(rounds_raw, crown_rounds, gauge)
+                actual_h = _mark_axial_regions(rounds_raw, crown_rounds, part_gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="cup",
@@ -686,11 +704,11 @@ class CrochetParamsGenerator:
                 # 随照片宽度变化（梨形/收腰不再是等粗圆柱）。
                 height = sp.get("height_cm", 9.0)
                 ref_st = _stitches_for_diameter(
-                    sp.get("diameter_cm") or head_d * BODY_HEAD_RATIO, gauge)
+                    sp.get("diameter_cm") or head_d * BODY_HEAD_RATIO, part_gauge)
                 body_span = (spans or PART_SPAN).get(
                     "身体", PART_SPAN["身体"])
                 wall = profile_to_rounds(
-                    body_profile, body_span, height, gauge, ref_st,
+                    body_profile, body_span, height, part_gauge, ref_st,
                     direction="bottom_up",
                 )
                 dome = _increase_rounds(wall[0])   # 底部圆盘：魔法环→首圈针数
@@ -707,7 +725,7 @@ class CrochetParamsGenerator:
                 for i, wd in enumerate(wall_dicts):
                     wd["row"] = len(dome) + i + 1
                 rounds_raw = dome + wall_dicts
-                actual_h = _mark_axial_regions(rounds_raw, len(dome), gauge)
+                actual_h = _mark_axial_regions(rounds_raw, len(dome), part_gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="profile",
@@ -731,13 +749,13 @@ class CrochetParamsGenerator:
                 height = sp.get("height_cm", 9.0)
                 # 身体针数随头径缩放（旧硬编码 24 针在头 20cm 时严重比例失调）
                 max_st = _stitches_for_diameter(
-                    sp.get("diameter_cm") or head_d * BODY_HEAD_RATIO, gauge)
-                body_r = max(4, gauge.rounds_for_height(height))
+                    sp.get("diameter_cm") or head_d * BODY_HEAD_RATIO, part_gauge)
+                body_r = max(4, part_gauge.rounds_for_height(height))
                 rounds_raw = _cylinder_rounds(max_stitches=max_st, body_rounds=body_r)
                 # 标注高度只计"竖直筒壁"圈（直钩+收针）：起底加针段是水平
                 # 圆盘，贡献直径不贡献高度（计入会把 4.5cm 的身体标成 9.4cm）。
                 n_dome = max_st // 6
-                actual_h = _mark_axial_regions(rounds_raw, n_dome, gauge)
+                actual_h = _mark_axial_regions(rounds_raw, n_dome, part_gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="cylinder",
@@ -747,7 +765,7 @@ class CrochetParamsGenerator:
                     magic_ring=True,  # F-13：圆盘起底以魔法环起针
                     notes=(
                         f"圆柱身体（筒壁高约 {actual_h}cm，另含底部圆盘直径 "
-                        f"{round(max_st * gauge.stitch_w_cm / 3.14159, 1)}cm）。"
+                        f"{round(max_st * part_gauge.stitch_w_cm / 3.14159, 1)}cm）。"
                         "收针前填充棉花。"
                     ),
                 )
@@ -757,11 +775,11 @@ class CrochetParamsGenerator:
                 # diameter (旧硬编码 12 针不随尺寸缩放)。
                 length = sp.get("length_cm") or sp.get("height_cm") or 5.0
                 max_st = _stitches_for_diameter(
-                    sp.get("diameter_cm") or head_d * LIMB_HEAD_RATIO, gauge)
-                limb_r = max(2, gauge.rounds_for_height(length))
+                    sp.get("diameter_cm") or head_d * LIMB_HEAD_RATIO, part_gauge)
+                limb_r = max(2, part_gauge.rounds_for_height(length))
                 rounds_raw = _cylinder_rounds(max_stitches=max_st, body_rounds=limb_r)
                 n_dome = max_st // 6  # 起底圆盘圈不计高度（同身体口径）
-                actual_h = _mark_axial_regions(rounds_raw, n_dome, gauge)
+                actual_h = _mark_axial_regions(rounds_raw, n_dome, part_gauge)
                 part = CrochetPart(
                     name=part_name,
                     type="cylinder",
@@ -804,6 +822,8 @@ class CrochetParamsGenerator:
             # for symmetric pairs.  Clamp also keeps hand-authored legacy
             # structures from creating unbounded derived totals.
             part.quantity = _part_quantity({"quantity": sp.get("count", 1)})
+            if part_name in overrides:
+                part.gauge = PartGauge(**asdict(part_gauge))
             crochet_parts.append(part)
 
         sections: dict[str, tuple[int, int]] = {}

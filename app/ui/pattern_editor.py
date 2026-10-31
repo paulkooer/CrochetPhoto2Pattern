@@ -163,10 +163,12 @@ def render_pattern_editor(result: dict, slot: str) -> None:
     render_history(slot, result)
     from app.ui.head_opening import render_head_opening
     from app.ui.leg_join import render_leg_join
+    from app.ui.part_gauge import render_part_gauge
     from app.ui.skirt_editor import render_skirt_editor
     from app.ui.stitch_connections import render_stitch_connections
 
     render_head_opening(result, slot)
+    render_part_gauge(result, slot)
     render_skirt_editor(result, slot)
     render_leg_join(f"{slot}_{rid}", result)
     render_stitch_connections(result, slot)
@@ -338,7 +340,13 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                     st.error(f"逐圈修改失败：{md_safe(exc)}")
     with st.expander("🧶 按实际毛线与试片估算用量", expanded=False):
         spec = result["params"].get("yarn_spec") or {}
-        st.caption("以下线标与试片适用于所有颜色。试片请用相同毛线与针法，称重不含线尾。")
+        from app.models.gauge import has_independent_gauge
+
+        if has_independent_gauge(result["params"]):
+            st.caption("线标适用于所有颜色；试片克重仅用于默认密度部件，独立密度部件按各自密度经验估算。"
+                       "试片请用相同毛线与针法，称重不含线尾。")
+        else:
+            st.caption("以下线标与试片适用于所有颜色。试片请用相同毛线与针法，称重不含线尾。")
         with st.form(f"edit_{rid}_yarnform"):
             weight = st.number_input(
                 "每团克重（g）",

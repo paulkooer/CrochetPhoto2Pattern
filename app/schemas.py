@@ -3,8 +3,24 @@ from collections.abc import Mapping
 from enum import StrEnum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
+from app.models.gauge import (
+    INDEPENDENT_GAUGE_PARTS,
+    MAX_GAUGE_ROWS,
+    MAX_GAUGE_STITCHES,
+    MIN_GAUGE_ROWS,
+    MIN_GAUGE_STITCHES,
+)
 from app.utils.counts import integer_count
 from app.utils.numbers import finite_float
 
@@ -131,6 +147,13 @@ class CrochetStitch(BaseModel):
             raise ValueError("圈的纵向范围必须满足 0 ≤ 起点 ≤ 终点 ≤ 200 cm")
         return value
 
+class PartGauge(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    stitches_per_10cm: FiniteMeasurement = Field(ge=MIN_GAUGE_STITCHES, le=MAX_GAUGE_STITCHES)
+    rows_per_10cm: FiniteMeasurement = Field(ge=MIN_GAUGE_ROWS, le=MAX_GAUGE_ROWS)
+
+
 class CrochetPart(BaseModel):
     name: str = Field(min_length=1)
     type: str  # sphere, cylinder, cone, etc.
@@ -148,11 +171,21 @@ class CrochetPart(BaseModel):
     auto_color_summary: str | None = None
     opening_row: IntegerCount | None = Field(default=None, gt=0)
     magic_ring: bool = False
+    gauge: PartGauge | None = None
+
+    @model_serializer(mode="wrap")
+    def _serialize_optional_gauge(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data = handler(self)
+        if self.gauge is None:
+            data.pop("gauge", None)  # Keep old uniform-pattern revisions unchanged.
+        return data
 
     @model_validator(mode="after")
     def _opening_exists(self):
         if self.opening_row is not None and self.opening_row not in {r.row for r in self.rounds}:
             raise ValueError("连接开口必须引用部件中存在的圈号")
+        if self.gauge is not None and self.name not in INDEPENDENT_GAUGE_PARTS:
+            raise ValueError("独立密度目前仅支持帽子和独立裙筒")
         return self
 
     @field_validator("rounds")

@@ -390,6 +390,10 @@ def _design_fingerprint(params: dict[str, Any]) -> str:
     This count-based identity does not establish complete physical equivalence.
     """
     gauge = TrialGauge.model_validate(params.get("gauge") or {})
+    from app.models.gauge import INDEPENDENT_TRIAL_MESSAGE, has_independent_gauge
+
+    if has_independent_gauge(params):
+        raise TrialDataError(INDEPENDENT_TRIAL_MESSAGE)
     sequences: Counter[str] = Counter()
     for part in params.get("parts") or []:
         rounds = [[integer_count(rd["stitches"]), integer_count(rd.get("increase", 0)),
@@ -445,6 +449,8 @@ def create_trial_draft_from_bytes(
                 rows_per_10cm=source.gauge.rows_per_10cm,
             ),
         )
+    except TrialDataError:
+        raise
     except Exception as exc:
         raise TrialDataError(f"pattern is missing required trial metadata: {exc}") from exc
     return draft.model_dump(mode="json")

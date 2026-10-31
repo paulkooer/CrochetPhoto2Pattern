@@ -88,7 +88,7 @@ class Gauge:
         return max(6, int(raw_groups + 0.5) * 6)
 
     def rounds_for_height(self, height_cm: float) -> int:
-        """高度 → 圈数（行高是纱线属性，不随部件变——统一口径）。"""
+        """高度 → 圈数，使用当前小样的行高。"""
         return max(1, int(height_cm / self.row_h_cm + 0.5))
 
     @property
@@ -206,6 +206,40 @@ PRESETS: dict[str, Gauge] = {
 }
 
 DEFAULT = PRESETS["classic"]
+INDEPENDENT_GAUGE_PARTS = frozenset({"帽子", "裙子"})
+INDEPENDENT_TRIAL_MESSAGE = (
+    "当前试钩记录只支持所有部件沿用默认密度；独立密度图解请先保存钩织工程，"
+    "待支持分部件小样记录后再建立试钩。"
+)
+
+
+def explicit_part_gauge(raw: Mapping[str, Any]) -> Gauge:
+    """New overrides are strict; legacy default-gauge fallback remains separate."""
+    if not isinstance(raw, Mapping) or set(raw) != {"stitches_per_10cm", "rows_per_10cm"}:
+        raise ValueError("独立密度须同时提供 10cm 针数和行数，不能包含其他字段")
+    return Gauge(raw["stitches_per_10cm"], raw["rows_per_10cm"])
+
+
+def gauge_for_part(part: Mapping[str, Any], default: Gauge) -> Gauge:
+    raw = part.get("gauge")
+    if raw is None:
+        return default
+    if part.get("name") not in INDEPENDENT_GAUGE_PARTS:
+        raise ValueError("独立密度目前仅支持帽子和独立裙筒")
+    return explicit_part_gauge(raw)
+
+
+def has_independent_gauge(params: Mapping[str, Any]) -> bool:
+    default = gauge_from_mapping(params.get("gauge"))
+    return any(gauge_for_part(part, default) != default for part in params.get("parts", []))
+
+
+def part_gauge_text(part: Mapping[str, Any], default: Gauge) -> str:
+    if part.get("gauge") is None:
+        return ""
+    selected = gauge_for_part(part, default)
+    return (f"独立密度：10cm × {selected.stitches_per_10cm:g} 针 × {selected.rows_per_10cm:g} 行；"
+            f"本部件塑形节奏上限 ±{selected.max_shaping_change} 针/圈")
 
 
 def gauge_from_mapping(raw: Mapping[str, Any] | None) -> Gauge:

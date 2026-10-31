@@ -24,7 +24,7 @@ from typing import Any
 
 from ..schemas import MAX_PART_ROUNDS, MAX_PATTERN_PARTS, MAX_ROUND_STITCHES, MAX_TOTAL_ROUNDS
 from ..utils.counts import integer_count as _integer_count
-from .gauge import gauge_from_mapping
+from .gauge import gauge_for_part, gauge_from_mapping
 
 
 def require_valid_pattern(params: dict[str, Any], *, check_notes: bool = True) -> None:
@@ -85,6 +85,15 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
             issues.append(f"第 {index} 个部件：必须是对象")
             continue
         name = part.get("name", "?")
+        try:
+            selected_gauge = gauge_for_part(part, gauge_from_mapping(params.get("gauge")))
+            part_max_change = selected_gauge.max_shaping_change
+            if (name == "裙子" and params.get("skirt_style") == "attached"
+                    and selected_gauge != gauge_from_mapping(params.get("gauge"))):
+                raise ValueError("挑针接裙须沿用身体密度")
+        except ValueError as exc:
+            issues.append(f"{name}：{exc}")
+            part_max_change = max_change
         if isinstance(name, str) and name != "?":
             if name in seen_names:
                 issues.append(f"{name}: 部件名称不能重复")
@@ -202,11 +211,11 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
                 # 超限降级为 notes；allow_wide_jump 只是抑制这条 note 的
                 # 标志（置位与否 ok 均为真）——生成器仍对波浪裙摆等
                 # 装饰工艺显式置位以保持 notes 干净。
-                if abs(st - prev_stitches) > max_change and not rd.get(
+                if abs(st - prev_stitches) > part_max_change and not rd.get(
                         "allow_wide_jump", False):
                     notes.append(
                         f"{name} 第 {i} 圈：相邻圈跳变 {prev_stitches}→{st} "
-                        f"超过本生成器的平滑塑形节奏 ±{max_change}——"
+                        f"超过本生成器的平滑塑形节奏 ±{part_max_change}——"
                         "确认为有意工艺（如倍增圈）即可照钩")
             prev_stitches = st if st > 0 else None
 

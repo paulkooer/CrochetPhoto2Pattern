@@ -78,7 +78,8 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Form-based part size/quantity/position/attachment editing and a per-round stitch table,
   plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
 - One per-color yarn purchase list with a separate subtotal; optional ball labels and
-  weighed swatches refine grams, metres, and whole-ball counts. Estimates include a
+  weighed swatches refine grams, metres, and whole-ball counts for parts at the default gauge.
+  Differing garment gauges retain heuristic estimates. Estimates include a
   configurable allowance (10% by default), and the same yarn specification applies to all colors.
 - Stage timings, fallback reasons, and a runtime budget. Historical imported results retain their original usage metadata.
 - Strictly validated advanced structure editing with local regeneration.
@@ -87,6 +88,9 @@ Unknown part names remain available for review. Remove mistaken labels or select
   recovery. Applies to separate heads; resizing retains the target and rejects incompatible
   smaller heads. See the [opening guide](docs/project-format.md#独立头部留口).
 - Resizing preserves edited structures; explicit diameters, cup depths, and colors affect generation. Edited pattern gauge is shared by materials, exports, previews, and regeneration.
+- Hats and separate skirt tubes can use their own swatches. Preview each change before
+  applying; dimensions, materials, exports and saved projects use the same per-part gauge.
+  Attached skirts retain body gauge. See the [garment guide](docs/project-format.md#帽子与独立裙筒密度).
 - Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows. Failed generation,
   restoration or editing preserves the current grid and undo/redo history; downloads match
   the displayed result. See the [Chinese grid-project guide](docs/project-format.md#平面网格工程与修色历史).
@@ -187,8 +191,8 @@ independently. Bulk completion and reset affect only the selected part and prese
 For paginated patterns, **前往下一未完成圈** jumps to the selected part's first unchecked
 round, including later physical copies, without changing progress. For multiple layers of
 reserved-loop joins, editing a foundation clears all dependent progress regardless of record order.
-Round edits retain completed work before the first changed round; part-wide or gauge changes
-remain conservative. Use each edit control's **预览…修改影响** button to review affected parts,
+Round edits retain completed work before the first changed round; part-wide or effective-gauge
+changes conservatively clear that part's progress and dependent work. Use each edit control's **预览…修改影响** button to review affected parts,
 starting rounds and retained/cleared counts, then apply or cancel the preview. Preview again
 after changing inputs; applying a preview uses the latest progress.
 
@@ -238,7 +242,8 @@ Each export has a separate 60-second cooperative budget; export timings stay in 
 while photo-stage diagnostics travel with backups. Failed edits keep the current result.
 Size and structure edits retain manual rounds, colors and notes for parts whose old and new
 generated constructions agree. Changed constructions, including one-piece and skirt-join
-dependencies, are recalculated; a changed gauge recalculates every part. If a legacy template
+dependencies, are recalculated. A default-gauge change recalculates parts using that default;
+independently set garment gauges remain fixed, with unchanged constructions retaining manual work. If a legacy template
 cannot be reproduced, regeneration replaces all parts. Preview the impact before applying;
 undo can restore the previous version. See the [editing details](docs/project-format.md#尺寸编辑与手改保留).
 
@@ -314,8 +319,15 @@ is retained. History is session-only, limited to eight snapshots and 2 MiB combi
 The panel compares saved measurements with the source pattern. After saving a measured swatch,
 use **预览按实测密度重算** to review new stitch counts and progress impact at unchanged target
 dimensions. Regeneration retains pinned waist placement, supports undo, and leaves trial evidence
-unchanged. It replaces manual round edits and clears progress for review when density changes.
+unchanged. Affected parts replace manual round edits and clear progress for review when their
+effective gauge changes; separately set garment gauges retain their settings.
 Full-project timing is not treated as comparable to the original round-crochet baseline.
+
+Trial records currently support one shared swatch. Patterns with garment gauges differing
+from the default must use crochet projects to save their work; new trial creation is disabled
+in the UI and rejected by the CLI. An explicit garment gauge equal to the default is allowed.
+Weighed yarn swatches apply only to parts at the default gauge; differing garment gauges use
+the existing heuristic, while the same ball label still applies to all colors.
 
 Create a trial record tied to the exact pattern SHA-256, record actual gauge, dimensions,
 yarn, and active time, then generate conservative calibration candidates:

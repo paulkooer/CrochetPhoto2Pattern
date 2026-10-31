@@ -15,7 +15,7 @@ MAX_HISTORY_BYTES = 8 << 20
 
 
 def metrics(result: dict) -> dict:
-    from app.models.gauge import gauge_from_result
+    from app.models.gauge import gauge_from_result, part_gauge_text
     from app.models.stitch_attachments import WAIST_POSITION_KEY
 
     params = result["params"]
@@ -35,6 +35,8 @@ def metrics(result: dict) -> dict:
         "目标高度（cm）": result["analysis"].get("height_cm"),
         "10 cm 针数": gauge.stitches_per_10cm,
         "10 cm 行数": gauge.rows_per_10cm,
+        "部件独立密度": "；".join(f"{p['name']}：{part_gauge_text(p, gauge)}" for p in params["parts"]
+                                   if p.get("gauge") is not None) or "沿用默认",
         "部件尺寸（cm）": "；".join(dimensions),
         "接裙腰位策略": (f"固定候选圈序位置 {params[WAIST_POSITION_KEY]:.1%}"
                          if WAIST_POSITION_KEY in params else "自动定位"),
@@ -154,7 +156,7 @@ def render_edit_preview(slot: str, current: dict) -> None:
         if changes:
             st.table(changes)
         st.caption("此预览记录点击时的修改方案；继续改动输入或勾选后请重新预览。应用时使用最新进度。"
-                   "只保留首次变化之前的圈次；密度、部件整体信息或依赖接合变化时重新核对。"
+                   "只保留首次变化之前的圈次；各部件有效密度、整体信息或依赖接合变化时重新核对。"
                    "勾选记录不代表实物无需返工。")
         # Commit before the full render, so old progress fragments cannot leave
         # stale widgets behind when the new pattern changes their layout.
@@ -194,7 +196,7 @@ def render_history(slot: str, result: dict) -> None:
     right.button("↷ 重做修改", key=f"edit_{rid}_redo", disabled=not history["redo"],
                  on_click=_restore_before_render, args=(slot, "redo"))
     st.caption("保留本会话最近的修改（最多 12 份、合计 8 MB）；重新导入或生成会开启新的记录。")
-    st.caption("材料估算修改保留进度；逐圈修改保留首次变化前的圈次，密度或部件整体变化重新核对整件。"
+    st.caption("材料估算修改保留进度；逐圈修改保留首次变化前的圈次，有效密度或整体变化的部件重新核对。"
                "依赖接合件同时重新核对；撤销可恢复。")
     progress_notice = st.empty()
     if history.get("cleared_progress"):
