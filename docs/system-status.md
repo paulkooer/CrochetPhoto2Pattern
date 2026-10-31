@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-30. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-31. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -13,6 +13,22 @@ real-photo baseline and an independent physical-trial baseline are still missing
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
 ## Latest reproducible validation
+
+2026-10-31 resizing/edit preservation, based on `main` commit `0933d85`: retain authored
+rounds, colors and notes when old/new generated constructions and actual loop-attachment
+records agree. A head-diameter edit keeps the arm's authored ninth round. One-piece work,
+inferred sizes and skirt joins participate in the comparison; unpinning rebuilds actual
+reservations, while pinned placement continues to map. Changed global gauge or an unreproducible
+legacy template retains full regeneration. Revalidate combined parts and refresh materials,
+assembly and exports; no reduced template computation or physical-fit claim. Added **19 regressions**
+including progress on both arms, preview/apply, undo/redo, project restoration and actual PDF
+table input. Related join checks: **73 passed in 4.48s**. Full suite: **2100 passed, 2 skipped
+in 61.59s**, repository-wide Ruff, mypy (177 files) and diff checks passing (Python 3.12.13,
+locked dev+pdf). Skips remain the absent authorized-photo directory and optional MediaPipe.
+These are developer checks; independent review is pending and remote results must match the
+new PR head. Prior independent PASS/CI results do not cover this change. Per-part gauge,
+connection-opening generation and special accessories remain separate work; G3/G4 are unchanged.
+See the [editing details](project-format.md#尺寸编辑与手改保留).
 
 2026-10-30 merge update: [PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22)
 was squash-merged into `main` with maintainer authorization as

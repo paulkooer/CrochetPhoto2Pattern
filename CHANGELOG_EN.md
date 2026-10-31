@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-10-31 Retain unrelated manual work during resizing
+
+- Compare old and new generated constructions during size/structure edits, retaining manual rounds, colors and notes in unaffected parts. Materials, assembly, Markdown/PDF and backups use the combined actual content.
+- Include one-piece construction, inferred dimensions and reserved skirt loops; reapply pinned waist placement. Changed global gauge or an unreproducible legacy template retains full regeneration. Revalidate the combined pattern before replacing current work.
+- Exercise preview, apply, undo/redo and project restoration with progress on both arms. This preserves editing work without changing swatch/trial identities or file formats or claiming physical fit.
+
 ### Fixed / Added — 2026-10-30 Browser regression and history title retention
 
 - Preserve saved history names and unsaved name drafts across undo, redo and older preview application; keep tabs isolated and retain explicit clearing.

@@ -232,7 +232,11 @@ reviewing. It is checked between stages but
 cannot interrupt native image processing or guarantee a hard wall-clock cutoff.
 Each export has a separate 60-second cooperative budget; export timings stay in the session,
 while photo-stage diagnostics travel with backups. Failed edits keep the current result.
-Structure regeneration replaces manual round edits; undo can restore the previous version.
+Size and structure edits retain manual rounds, colors and notes for parts whose old and new
+generated constructions agree. Changed constructions, including one-piece and skirt-join
+dependencies, are recalculated; a changed gauge recalculates every part. If a legacy template
+cannot be reproduced, regeneration replaces all parts. Preview the impact before applying;
+undo can restore the previous version. See the [editing details](docs/project-format.md#尺寸编辑与手改保留).
 
 ### Headless CLI
 

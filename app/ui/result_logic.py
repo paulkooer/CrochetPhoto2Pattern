@@ -13,7 +13,7 @@ from dataclasses import asdict
 from typing import Any
 
 from app import software_version
-from app.models.crochet_params import CrochetParamsGenerator, refresh_derived
+from app.models.crochet_params import CrochetParamsGenerator, PatternGenerationError, refresh_derived
 from app.models.gauge import Gauge, ShapingStyle, gauge_from_result
 from app.models.geometry import PROPORTIONS_HEAD_BODY_PREFIX, normalize_structure
 from app.models.sizing import sizing_meta_for_analysis
@@ -133,7 +133,7 @@ def validate_backup(data: dict) -> tuple[dict, dict]:
 def regenerate_with_size(result: dict, new_head: float, new_height: float) -> dict:
     """快速调整尺寸：改头径/身高 → 结构+参数层重算（不重新调用 AI）。
 
-    生成时的 style/gauge/色带随 result 透传，重生成与首次行为一致；
+    style/gauge/色带随 result 透传；对照新旧模板保留构造未变部件的手改。
     纯本地计算，无 API 成本。
     """
     analysis = ImageAnalysis(**{
@@ -162,9 +162,7 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
         "gauge": asdict(gauge),
         "sizing": sizing,
     }).to_result_dict()
-    from app.models.skirt_edit import preserve_skirt_waist
-
-    return preserve_skirt_waist(result, updated)
+    return _finish_geometry_edit(result, updated)
 
 
 def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
@@ -212,9 +210,51 @@ def _regenerate_geometry(result: dict, structure: dict, gauge: Gauge) -> dict:
         "params": params,
         "gauge": asdict(gauge),
     }).to_result_dict()
+    return _finish_geometry_edit(result, updated)
+
+
+def _finish_geometry_edit(current: dict, generated: dict) -> dict:
+    """Keep authored parts whose old and new generated constructions agree.
+
+    Comparing templates rather than dimensions alone includes inferred sizes,
+    one-piece merges, colors and reserved skirt loops. The user's actual parts
+    remain authoritative for unaffected constructions. This preserves editing
+    work; it does not avoid template generation or predict physical fit.
+    """
     from app.models.skirt_edit import preserve_skirt_waist
 
-    return preserve_skirt_waist(result, updated)
+    generated = preserve_skirt_waist(current, generated)
+    if gauge_from_result(current) != gauge_from_result(generated):
+        return generated  # A new swatch applies to every part.
+    try:
+        baseline_params = CrochetParamsGenerator.generate_params(
+            ImageAnalysis(**current["analysis"]), current["structure"],
+            color_bands=current.get("color_bands"), body_profile=result_profile(current),
+            gauge=gauge_from_result(current), style=_result_style(current),
+            spans=current.get("spans"))
+        baseline = preserve_skirt_waist(current, {**current, "params": baseline_params})
+    except (ValueError, PatternGenerationError):
+        # Legacy/custom work may have valid authored stitches but no reproducible
+        # template. Retain the established full-regeneration behavior in that case.
+        return generated
+    before = {p["name"]: p for p in baseline["params"]["parts"]}
+    authored = {p["name"]: p for p in current["params"]["parts"]}
+    params = deepcopy(generated["params"])
+
+    def loop_context(value, name):
+        return [connection for connection in (value.get("stitch_attachments") or {}).get("connections", [])
+                if name in (connection["source_part"], connection["target_part"])]
+
+    params["parts"] = [
+        deepcopy(authored[p["name"]])
+        if (p["name"] in authored and p == before.get(p["name"])
+            and loop_context(current["params"], p["name"]) == loop_context(params, p["name"])) else p
+        for p in params["parts"]
+    ]
+    # Recheck joins against the combined parts and derive all totals/materials/
+    # opening instructions from the content that will actually be installed.
+    params = rebuild_params(params)
+    return {**generated, "params": params}
 
 
 def import_backup(data: dict, result_id: str) -> dict:

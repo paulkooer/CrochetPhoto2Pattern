@@ -169,7 +169,8 @@ def render_pattern_editor(result: dict, slot: str) -> None:
     render_leg_join(f"{slot}_{rid}", result)
     render_stitch_connections(result, slot)
     with st.expander("🧩 可视化编辑部件", expanded=False):
-        st.caption("调整尺寸与数量会重新计算逐圈针法；之前手改的逐圈针数会被替换，可撤销恢复。")
+        st.caption("尺寸、数量或连接变化会重算受影响部件；可确认构造未变的其他部件保留手改针法、配色和备注。"
+                   "建议先预览影响；无法确认保留范围时按整份图解重算，可撤销恢复。")
         parts = result["structure"].get("parts", [])
         if parts:
             index = st.selectbox(
