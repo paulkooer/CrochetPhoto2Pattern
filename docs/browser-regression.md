@@ -3,7 +3,7 @@
 [文档索引 / Documentation index](README.md)
 
 This optional Playwright suite opens the actual Streamlit app in Chromium. It uses
-synthetic input and a separate single-user history database. It verifies UI interaction,
+synthetic SVG/PNG, a CLI-generated manual garment pattern, and a separate single-user history database. It verifies UI interaction,
 downloaded bytes and project restoration; it does not validate photo recognition or
 physical crochet results. CI runs it separately from Python tests and AppTest.
 
@@ -58,10 +58,13 @@ node scripts/check_browser_workflow.cjs
 | 独立浏览器上下文恢复 | 重新上传工程、恢复勾选与备注，重导出核对参数、进度与备注 |
 | 无效文件导入 | 显示导入失败，并保留当前图解、进度与备注 |
 | 独立头部留口 | 预览尚未应用时备份保持闭合；应用 16 针开口、保存工程、新上下文恢复后设置仍为 16；再次关闭后导出恢复闭合模板 |
+| 帽子独立密度 | 默认 30×32、帽子 26×28；预览不替换当前结果，应用后其他部件圈序不变、头部进度保留、帽子进度清除；实际下载含部件密度，新上下文恢复设置和进度，单小样试钩入口禁用 |
 
 独立画布脚本另检查连续拖动笔画。页面断言会等待实际控件更新，避免把 WebSocket
 刷新尚未结束当成保存错误。Python 的 `test_history_title_lifecycle.py` 进一步覆盖
 旧预览应用、撤销/重做、未保存名称草稿、显式清空名称，以及数据库列和序列化内容一致。
+完整应用脚本共 11 条流程；独立密度用例的输入由当前锁定环境中的 `app.cli` 生成，
+不读取私人参考资料，不代表照片识别或实体试钩。密度输入按数值含义核对，兼容控件的小数显示格式。
 
 ## 证据和边界
 

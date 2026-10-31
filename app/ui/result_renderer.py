@@ -13,7 +13,7 @@ from copy import deepcopy
 import streamlit as st
 
 from app.models.colors import YARN_COLORS
-from app.models.gauge import gauge_from_result
+from app.models.gauge import gauge_for_part, gauge_from_result, has_independent_gauge, part_gauge_text
 from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STITCH_LEGEND_ZH
 from app.schemas import PART_NAMES, PatternResult, difficulty_label, strip_photo_derived
 from app.ui import result_logic
@@ -105,7 +105,7 @@ def _silhouette_verifications(result: dict) -> list[tuple[str, str]]:
          render_silhouette_svg(
              strip_dome([r.get("stitches", 0) for r in part.get("rounds", [])
                          if isinstance(r, dict)]),
-             gauge, photo, spans.get("身体")))
+             gauge_for_part(part, gauge), photo, spans.get("身体")))
         for part in profile_parts
     ]
 
@@ -259,6 +259,8 @@ def _render_part_progress(
     with st.expander(label_exp):
         st.write(f"**形状**: {md_safe(part_data['type'])} | "
                  f"**颜色**: {md_safe(part_data['color'])}")
+        if caption := part_gauge_text(part_data, gauge_from_result(result)):
+            st.caption(caption)
         if quantity > 1:
             st.info(f"此圈序需制作 {quantity} 份相同部件；总针数、材料和工时已按 {quantity} 份计算。")
         # T8：环形圈数图（球/一体件的顶视图；勾选列表上方的直观总览）
@@ -271,7 +273,7 @@ def _render_part_progress(
                     )
                     from app.ui.design_system import html_box
 
-                    _sw_cm = gauge_from_result(result).stitch_w_cm
+                    _sw_cm = gauge_for_part(part_data, gauge_from_result(result)).stitch_w_cm
                     # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>；
                     # st.markdown unsafe_allow_html 不净化（内联 SVG 无空行
                     # 时不经 markdown 重排）
@@ -602,8 +604,9 @@ def render_results(result: dict, slot: str) -> None:
                    + "\n".join(md_safe(issue) for issue in _v["issues"]))
     if _v.get("notes"):
         st.caption("ℹ️ " + "；".join(md_safe(n) for n in _v["notes"]))
+    shaping_label = "默认密度" if _v["ok"] and has_independent_gauge(params) else "当前密度"
     st.caption(
-        f"塑形口径：当前密度的连续几何变化率约 "
+        f"塑形口径：{shaping_label}的连续几何变化率约 "
         f"{_v['shaping_continuous_delta']:.2f} 针/圈，按六等分针法向上量化为 "
         f"±{_v['max_stitch_change']} 针；较平缓轮廓仍可使用 6 针步长。")
 

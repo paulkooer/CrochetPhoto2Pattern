@@ -100,7 +100,7 @@ async function headProgress(page, scope, rid, checked) {
     harness_sha256:createHash('sha256').update(await fs.readFile(__filename)).digest('hex'),
     working_tree_clean:!execFileSync('git',['status','--porcelain'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     github_head_commit:process.env.CROCHET_BROWSER_HEAD_SHA || null,
-    base_url:baseURL, input:'synthetic SVG rendered to PNG', checks:[], page_errors:[],
+    base_url:baseURL, input:'synthetic SVG/PNG and CLI-generated manual garment pattern', checks:[], page_errors:[],
     blocked_external_requests:[], physical_validation:false,
   };
   const browser = await chromium.launch({
@@ -329,6 +329,68 @@ async function headProgress(page, scope, rid, checked) {
     assert.equal(closedHead.rounds.at(-1).stitches,6);
     assert(closedHead.rounds.at(-1).notes.includes('无痕收口'));
     record('preview exact 16-stitch head opening, restore project in new context, then close again');
+
+    const garmentInput = path.join(output,'garment-input.json');
+    execFileSync(path.join(__dirname,'../.venv/bin/python'),[
+      '-m','app.cli','--parts','头部,身体,手臂,帽子,裙子','--head','5.7','--height','36',
+      '--gauge','custom','--stitches','30','--rows','32','--out',garmentInput,'--quiet',
+    ],{cwd:path.join(__dirname,'..')});
+    const garmentSource = JSON.parse(await fs.readFile(garmentInput));
+    const garmentContext = await context();
+    const garmentPage = lastPage = await garmentContext.newPage();
+    await garmentPage.goto(baseURL);
+    const garmentSidebar = garmentPage.locator('[data-testid="stSidebar"]');
+    await key(garmentSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(garmentInput);
+    await clickKey(garmentPage,garmentSidebar,'open_backup_apply');
+    const garmentPanel = garmentPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const garmentId = await resultId(garmentPanel);
+    await headProgress(garmentPage,garmentPanel,garmentId,true);
+    const hatIndex = garmentSource.params.parts.findIndex(p=>p.name==='帽子');
+    const hatCheck = key(garmentPanel,`sheet_part_${garmentId}_${hatIndex}`).locator('input[type="checkbox"]').first();
+    await reveal(hatCheck);
+    await hatCheck.locator('xpath=ancestor::label').click();
+    await settle(garmentPage);
+    const garmentPrefix = `edit_${garmentId}_partgauge0`;
+    const independent = key(garmentPanel,`${garmentPrefix}_enabled`).locator('input');
+    await reveal(independent);
+    await independent.locator('xpath=ancestor::label').click();
+    await settle(garmentPage);
+    await fillKey(garmentPage,garmentPanel,`${garmentPrefix}_stitches`,'26');
+    await fillKey(garmentPage,garmentPanel,`${garmentPrefix}_rows`,'28');
+    await clickKey(garmentPage,garmentPanel,`${garmentPrefix}_preview`);
+    assert.equal(await resultId(garmentPanel),garmentId);
+    await clickKey(garmentPage,garmentPanel,`edit_${garmentId}_preview_apply`);
+    const mixedId = await resultId(garmentPanel,garmentId);
+    const mixed = JSON.parse(await download(garmentPage,key(garmentPanel,`dl_backup_${mixedId}`).getByRole('button'),path.join(output,'garment-mixed.json')));
+    const hat = mixed.params.parts.find(p=>p.name==='帽子');
+    assert.deepEqual(mixed.params.gauge,{stitches_per_10cm:30,rows_per_10cm:32});
+    assert.deepEqual(hat.gauge,{stitches_per_10cm:26,rows_per_10cm:28});
+    assert.equal(Math.max(...hat.rounds.map(r=>r.stitches)),54);
+    for(const original of garmentSource.params.parts.filter(p=>p.name!=='帽子')) {
+      assert.deepEqual(mixed.params.parts.find(p=>p.name===original.name).rounds,original.rounds);
+    }
+    await expect(headCheck(garmentPanel,mixedId)).toBeChecked();
+    await expect(key(garmentPanel,`sheet_part_${mixedId}_${hatIndex}`).locator('input[type="checkbox"]').first()).not.toBeChecked();
+    await expect(garmentPanel.getByRole('button',{name:'以当前图解新建试钩',exact:true,includeHidden:true})).toBeDisabled();
+    await clickKey(garmentPage,garmentPanel,`project_save_${mixedId}`);
+    const mixedProjectFile = path.join(output,'garment-project.json');
+    await download(garmentPage,garmentPage.getByRole('dialog').getByRole('button',{name:'下载工程 JSON',exact:true}),mixedProjectFile);
+    const mixedContext = await context();
+    const mixedPage = lastPage = await mixedContext.newPage();
+    await mixedPage.goto(baseURL);
+    const mixedSidebar = mixedPage.locator('[data-testid="stSidebar"]');
+    await key(mixedSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(mixedProjectFile);
+    await clickKey(mixedPage,mixedSidebar,'open_backup_apply');
+    const mixedPanel = mixedPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const recoveredId = await resultId(mixedPanel);
+    const recoveredGauge = key(mixedPanel,`edit_${recoveredId}_partgauge0_enabled`).locator('input');
+    await reveal(recoveredGauge);
+    await expect(recoveredGauge).toBeChecked();
+    await expect(key(mixedPanel,`edit_${recoveredId}_partgauge0_stitches`).locator('input')).toHaveValue(/^26(?:\.0+)?$/);
+    await expect(key(mixedPanel,`edit_${recoveredId}_partgauge0_rows`).locator('input')).toHaveValue(/^28(?:\.0+)?$/);
+    await expect(headCheck(mixedPanel,recoveredId)).toBeChecked();
+    await mixedPage.screenshot({path:path.join(output,'garment-gauge-restored.png'),fullPage:true});
+    record('independent 26x28 hat with 30x32 body, unchanged work, trial gate and fresh project recovery');
     assert.deepEqual(report.page_errors,[]);
     report.status = 'pass';
     console.log(`PASS all ${report.checks.length} browser workflow checks; output ${output}`);

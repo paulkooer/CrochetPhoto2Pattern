@@ -17,7 +17,7 @@ import math
 from typing import Any
 
 from app import theme
-from app.models.gauge import gauge_from_result
+from app.models.gauge import gauge_for_part, gauge_from_result
 
 # 单色部件的占位色（skin/body 不是毛线色名）→ 中性示意色
 _PLACEHOLDER_HEX = {"skin": "#e8bfa8", "body": "#9aa7b8"}
@@ -51,19 +51,21 @@ def build_payload(result: dict) -> dict[str, Any] | None:
     analysis = result.get("analysis") or {}
     height = float(analysis.get("height_cm") or 18.0)
     gauge = gauge_from_result(result)
-    stitch_w = gauge.stitch_w_cm
-    row_h = gauge.row_h_cm
 
     hex_by_name = _hex_by_name(result)
     rounds_by_name: dict[str, list] = {}
+    gauges_by_name = {}
     for pp in (result.get("params") or {}).get("parts", []):
         pd = pp if isinstance(pp, dict) else (
             pp.model_dump() if hasattr(pp, "model_dump") else {})
         rounds_by_name[str(pd.get("name"))] = pd.get("rounds") or []
+        gauges_by_name[str(pd.get("name"))] = gauge_for_part(pd, gauge)
 
     items: list[dict[str, Any]] = []
     for part in sparts:
         name = str(part.get("name", "?"))
+        selected = gauges_by_name.get(name, gauge)
+        stitch_w, row_h = selected.stitch_w_cm, selected.row_h_cm
         shape = part.get("shape")
         entry: dict[str, Any] = {
             "name": name,

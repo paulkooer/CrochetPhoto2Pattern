@@ -14,6 +14,27 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-10-31 independent garment gauges, based on PR #24 head
+`a64490c9d5777c714a6c02e265197d836ec81228`: hats and separate skirt tubes can retain their
+own swatches while other parts use the default. Attached skirts retain body gauge. Geometry,
+color regions, shaping advice, materials, previews and exports use the selected gauge; same-color
+yarn totals weight each part separately. Measured default-swatch weight does not cover differing
+garment gauges. Explicitly pinning/unpinning equal values retains authored rounds and progress;
+later default changes retain fixed garment values. New single-swatch trial records reject differing
+gauges; use crochet projects for this work. Uniform trial identities and original evidence bytes
+remain unchanged, including synthetic files generated with actual `a64490c` source.
+
+Full suite: **2184 passed, 2 skipped in 74.18s**; repository-wide Ruff, mypy (182 files) and
+diff checks pass (Python 3.12.13, locked dev+pdf). The two skips remain the absent authorized-photo
+directory and optional MediaPipe. All **11 local Chrome full-app flows pass**, including actual
+26×28 hat / 30×32 body downloads, retained head progress, trial gating and fresh-context project
+recovery. Export cache is **12**, root backup schema remains 1; new per-part fields require a
+supporting version for editing. This batch is a separate follow-up branch depending on unmerged
+PR #24. These are developer checks; independent review is pending and remote CI must match this
+batch's fixed head. Earlier PASS/CI results do not cover the new feature. Special accessories and
+physical comparisons remain future work; Beta/G3/G4 are unchanged. See the
+[garment guide](project-format.md#帽子与独立裙筒密度) and [browser guide](browser-regression.md).
+
 2026-10-31 separate-head neck openings, continuing unmerged PR #24: generate an exact target
 such as 16, retaining the crown and ending the decrease section with executable X/A operations
 and an actual final joining row. Regressions cover closing again, authored legacy openings,

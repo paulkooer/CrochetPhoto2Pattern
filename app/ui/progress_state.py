@@ -77,17 +77,15 @@ def progress_limits(current: dict, updated: dict) -> dict[str, int]:
     Compare full instructions (including colors and finishing notes), not just
     counts. Unknown part-wide changes conservatively invalidate the whole part.
     """
-    from app.models.gauge import gauge_from_result
+    from app.models.gauge import gauge_for_part, gauge_from_result
 
     old = {p["name"]: p for p in current["params"]["parts"]}
     new = {p["name"]: p for p in updated["params"]["parts"]}
     limits = dict.fromkeys(new, 0)
-    if gauge_from_result(current) != gauge_from_result(updated):
-        return limits
 
     def part_instructions(part):
         metadata = {k: v for k, v in part.items()
-                    if k not in ("quantity", "rounds", "color", "auto_color_summary")}
+                    if k not in ("quantity", "rounds", "color", "auto_color_summary", "gauge")}
         summary = part.get("auto_color_summary") or ""
         metadata["notes"] = (part.get("notes") or "").replace(summary, "")
         return metadata
@@ -100,6 +98,9 @@ def progress_limits(current: dict, updated: dict) -> dict[str, int]:
     for name, part in new.items():
         before = old.get(name)
         if before is None or part_instructions(before) != part_instructions(part):
+            continue
+        if (gauge_for_part(before, gauge_from_result(current))
+                != gauge_for_part(part, gauge_from_result(updated))):
             continue
         for left, right in zip(before["rounds"], part["rounds"], strict=False):
             if round_instructions(left, before) != round_instructions(right, part):

@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from .colors import brand_code
 from .gauge import DEFAULT as DEFAULT_GAUGE
-from .gauge import Gauge
+from .gauge import Gauge, gauge_for_part, has_independent_gauge
 from .parts import (
     _ONE_PIECE_NAME,
     _SKIN_PARTS,
@@ -64,24 +64,35 @@ def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
                       yarn_spec: dict | None = None) -> tuple[list[dict], dict]:
     """Count every stitch exactly once; the summary is not another purchase item."""
     spec = YarnSpec.model_validate(yarn_spec) if yarn_spec is not None else None
-    per_stitch = gauge.grams_per_stitch
-    if spec and spec.swatch_weight_g is not None:
-        assert spec.swatch_stitches is not None and spec.swatch_rows is not None
-        per_stitch = spec.swatch_weight_g / (spec.swatch_stitches * spec.swatch_rows)
-    meters_per_g = spec.ball_length_m / spec.ball_weight_g if spec else gauge.meters_per_100g / 100
     waste = spec.waste_percent / 100 if spec else 0.1
-    color_stitches: dict[str, int] = {}
+    usage: dict[str, dict[tuple[float, float], int]] = {}
+    bases: set[str] = set()
+    independent = False
     for part in parts:
+        selected = gauge_for_part(part, gauge)
+        independent |= selected != gauge
+        per_stitch = selected.grams_per_stitch
+        measured = spec is not None and spec.swatch_weight_g is not None and selected == gauge
+        if measured:
+            assert spec is not None and spec.swatch_stitches is not None and spec.swatch_rows is not None
+            assert spec.swatch_weight_g is not None
+            per_stitch = spec.swatch_weight_g / (spec.swatch_stitches * spec.swatch_rows)
+        bases.add("measured_swatch" if measured else "heuristic")
+        meters_per_g = spec.ball_length_m / spec.ball_weight_g if spec else selected.meters_per_100g / 100
         for rd in _part_rounds(part):
             color = rd.get("color") or part.get("color")
             if not color or color in ("skin", "body"):
                 skin = color == "skin" or (not color and _part_name(part) in _SKIN_PARTS)
                 color = "肤色（待选色）" if skin else "主体色（待选色）"
-            color_stitches[color] = color_stitches.get(color, 0) + _round_stitches(rd) * _part_quantity(part)
+            rates = usage.setdefault(color, {})
+            rate = (per_stitch, meters_per_g)
+            rates[rate] = rates.get(rate, 0) + _round_stitches(rd) * _part_quantity(part)
     rows: list[dict[str, Any]] = []
-    for color, stitches in sorted(color_stitches.items(), key=lambda pair: -pair[1]):
-        grams = stitches * per_stitch * (1 + waste)
-        meters = grams * meters_per_g
+    for color, rates in sorted(usage.items(), key=lambda pair: -sum(pair[1].values())):
+        stitches = sum(rates.values())
+        # Group equal rates before multiplying, preserving uniform-pattern rounding.
+        grams = sum(count * rate[0] * (1 + waste) for rate, count in rates.items())
+        meters = sum(count * rate[0] * (1 + waste) * rate[1] for rate, count in rates.items())
         code = brand_code(color)
         item = f"毛线 · {color}" + (f"（{code}）" if code else "")
         balls = math.ceil(grams / spec.ball_weight_g) if spec else None
@@ -91,13 +102,17 @@ def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
         rows.append({"item": item, "quantity": quantity, "color": color,
                      "stitches": stitches, "grams": round(grams, 2),
                      "meters": round(meters, 2), "balls": balls})
-    summary = {"total_stitches": sum(color_stitches.values()),
+    basis = ("mixed_swatch_and_heuristic" if len(bases) > 1 else next(iter(bases),
+             "measured_swatch" if spec and spec.swatch_weight_g else "heuristic"))
+    summary = {"total_stitches": sum(sum(rates.values()) for rates in usage.values()),
                "grams": round(sum(row["grams"] for row in rows), 2),
                "meters": round(sum(row["meters"] for row in rows), 2),
                "balls": sum(row["balls"] for row in rows) if spec else None,
                "waste_percent": round(waste * 100, 2),
-               "basis": "measured_swatch" if spec and spec.swatch_weight_g else "heuristic",
-               "note": "小计已含下列逐色毛线，请勿重复购买；试片与线标适用于所有颜色"}
+               "basis": basis,
+               "note": ("小计已含下列逐色毛线，请勿重复购买；默认密度试片不覆盖独立密度部件，"
+                        "独立部件按各自密度经验估算，线标仍适用于所有颜色" if independent else
+                        "小计已含下列逐色毛线，请勿重复购买；试片与线标适用于所有颜色")}
     return rows, summary
 
 
@@ -156,10 +171,18 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         })
     # CYC 分档是"密度→档位"参考（见 Gauge.cyc_label）：前者是玩偶紧钩
     # 惯例的钩针建议，后者是同密度的 CYC 标准钩针区间——并列展示而非混淆。
-    materials.append({
-        "item": f"{gauge.hook_yarn_label}（{gauge.cyc_label}）",
-        "quantity": "1 把", "count": 1, "unit": "把", "scope": "reusable",
-    })
+    if has_independent_gauge({"parts":parts, "gauge":gauge.__dict__}):
+        labels = dict.fromkeys(
+            f"{selected.hook_yarn_label}（{selected.cyc_label}）"
+            for selected in (gauge_for_part(p, gauge) for p in parts))
+        for label in labels:
+            materials.append({"item":label, "quantity":"按各部件小样核对实际针号；相同参考规格勿重复购买",
+                              "count":1, "unit":"把", "scope":"reusable"})
+    else:
+        materials.append({
+            "item": f"{gauge.hook_yarn_label}（{gauge.cyc_label}）",
+            "quantity": "1 把", "count": 1, "unit": "把", "scope": "reusable",
+        })
     materials.append({"item": "缝合针", "quantity": "1 根",
                       "count": 1, "unit": "根", "scope": "reusable"})
     return materials
@@ -169,7 +192,11 @@ def material_summary_text(params: dict) -> str:
     summary = params.get("material_summary")
     if not isinstance(summary, dict) or not summary:
         return ""
-    basis = "实测试片" if summary.get("basis") == "measured_swatch" else "经验估算，未经校准"
+    basis = {"measured_swatch":"实测试片",
+             "mixed_swatch_and_heuristic":"默认密度用实测试片，独立密度用经验估算"}.get(
+        str(summary.get("basis") or ""), "经验估算，未经校准")
+    note = ("默认密度试片不覆盖独立密度部件；线标适用于所有颜色。"
+            if has_independent_gauge(params) else "线标与试片适用于所有颜色。")
     return (f"毛线小计：{summary.get('grams')}g / {summary.get('meters')}m；"
             f"含 {summary.get('waste_percent')}% 预留，依据：{basis}。"
-            "小计已含下列逐色毛线，请勿重复购买；线标与试片适用于所有颜色。")
+            "小计已含下列逐色毛线，请勿重复购买；" + note)

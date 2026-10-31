@@ -167,6 +167,14 @@ def render_trial_editor(result: dict, slot: str) -> None:
                 st.rerun()
         workspace = st.session_state.get(key)
         if workspace is None:
+            from app.models.gauge import INDEPENDENT_TRIAL_MESSAGE, has_independent_gauge
+
+            try:
+                independent = has_independent_gauge(result["params"])
+            except ValueError:
+                independent = True
+            if independent:
+                st.caption(INDEPENDENT_TRIAL_MESSAGE)
             with st.form(f"trial_new_{slot}"):
                 trial_id = st.text_input("试钩编号", value=st.session_state.get(
                     f"trial_id_{slot}", "trial-" + uuid.uuid4().hex[:8]),
@@ -177,7 +185,7 @@ def render_trial_editor(result: dict, slot: str) -> None:
                     "记录用途", ("calibration", "validation"), key=f"trial_cohort_{slot}",
                     format_func=lambda v: "校准样本" if v == "calibration" else "独立验证样本")
                 st.caption("独立验证须使用未参与校准的图解。编号使用字母、数字、点、下划线或短横线。")
-                create = st.form_submit_button("以当前图解新建试钩")
+                create = st.form_submit_button("以当前图解新建试钩", disabled=independent)
             if create:
                 try:
                     if any(not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", value.strip())
