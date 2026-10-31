@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-30. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-10-31. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -13,6 +13,38 @@ real-photo baseline and an independent physical-trial baseline are still missing
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
 ## Latest reproducible validation
+
+2026-10-31 separate-head neck openings, continuing unmerged PR #24: generate an exact target
+such as 16, retaining the crown and ending the decrease section with executable X/A operations
+and an actual final joining row. Regressions cover closing again, authored legacy openings,
+size/structure/gauge changes, trial recovery and contradictory saved metadata. Assembly and
+Markdown/PDF use actual joining rows/counts and flag different counts for manual alignment.
+Export cache is **11**. Full suite: **2156 passed, 2 skipped in 64.66s**, repository-wide Ruff,
+mypy (180 files) and diff checks pass (Python 3.12.13, locked dev+pdf). Skips remain the absent
+authorized-photo directory and optional MediaPipe. Ten local Chrome synthetic full-app flows
+pass, including opening preview/apply, project download, fresh-context restoration and closing
+again. These are developer checks; the final fixed version and remote browser, matrix, container
+and audit results must match PR #24's current head, not the old `ebe18b8` checks or prior
+independent PASS. Review now covers both edit preservation and separate-head openings. One-piece
+work is excluded and oversized neck targets are rejected. No source-pattern round-count
+replication or physical-result claim; per-part gauge and special accessories remain separate
+work, and Beta/G3/G4 are unchanged. See the [opening guide](project-format.md#独立头部留口).
+
+2026-10-31 resizing/edit preservation, based on `main` commit `0933d85`: retain authored
+rounds, colors and notes when old/new generated constructions and actual loop-attachment
+records agree. A head-diameter edit keeps the arm's authored ninth round. One-piece work,
+inferred sizes and skirt joins participate in the comparison; unpinning rebuilds actual
+reservations, while pinned placement continues to map. Changed global gauge or an unreproducible
+legacy template retains full regeneration. Revalidate combined parts and refresh materials,
+assembly and exports; no reduced template computation or physical-fit claim. Added **19 regressions**
+including progress on both arms, preview/apply, undo/redo, project restoration and actual PDF
+table input. Related join checks: **73 passed in 4.48s**. Full suite: **2100 passed, 2 skipped
+in 61.59s**, repository-wide Ruff, mypy (177 files) and diff checks passing (Python 3.12.13,
+locked dev+pdf). Skips remain the absent authorized-photo directory and optional MediaPipe.
+These are developer checks; independent review is pending and remote results must match the
+new PR head. Prior independent PASS/CI results do not cover this change. Per-part gauge,
+connection-opening generation and special accessories remain separate work; G3/G4 are unchanged.
+See the [editing details](project-format.md#尺寸编辑与手改保留).
 
 2026-10-30 merge update: [PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22)
 was squash-merged into `main` with maintainer authorization as

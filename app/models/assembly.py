@@ -15,6 +15,23 @@ from .parts import _ONE_PIECE_NAME, _part_name, _part_rounds, _round_stitches
 _CLOSING_RE = re.compile(r"(?<![不勿未没别])收口")
 
 
+def joining_round(part: dict) -> dict | None:
+    """Resolve one actual joining row, sharing the legacy fallback rules."""
+    rounds = _part_rounds(part)
+    if not rounds:
+        return None
+    selected = part.get("opening_row")
+    row = (next(rd for rd in rounds if rd["row"] == selected) if selected is not None
+           else rounds[0] if _part_name(part) == "裙子" else rounds[-1])
+    return None if _CLOSING_RE.search(str(row.get("notes") or "")) else row
+
+
+def opening_rows_by_part(parts: list[dict]) -> dict[str, int]:
+    return {_part_name(p): row["row"] for p in parts
+            if (row := joining_round(p)) is not None and "row" in row
+            and (_part_name(p) != "头部" or p.get("opening_row") is not None)}
+
+
 def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
     """Resolve the declared joining round; legacy skirts join at their first row.
 
@@ -24,40 +41,48 @@ def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
     """
     openings: dict[str, int] = {}
     for p in parts:
-        rounds = _part_rounds(p)
-        if not rounds:
-            continue
-        opening_row = p.get("opening_row")
-        if opening_row is not None:
-            last = next(rd for rd in rounds if rd["row"] == opening_row)
-        else:
-            last = rounds[0] if _part_name(p) == "裙子" else rounds[-1]
-        # "收口"=闭合无开口；但"不收口/勿收口"是明确的开口声明
-        #（真实图解如中文社区头套"开口保留…不收口"），不得误判
-        if _CLOSING_RE.search(str(last.get("notes") or "")):
-            continue
-        openings[_part_name(p)] = _round_stitches(last)
+        if (row := joining_round(p)) is not None:
+            openings[_part_name(p)] = _round_stitches(row)
     return openings
 
 
 def assembly_for_pattern(params: dict) -> str:
     """Render declared loop references from current data, not stale saved prose."""
-    if "stitch_attachments" not in params:
+    if "stitch_attachments" not in params and params.get("head_opening_stitches") is None:
         return params.get("assembly_instructions") or ""
     parts = params.get("parts", [])
     quantities = {_part_name(p): int(p.get("quantity", 1)) for p in parts}
     return build_assembly(set(quantities), params.get("skirt_style", "ring"), quantities,
-                          params.get("assembly_plan"), _openings_by_part(parts), params["stitch_attachments"])
+                          params.get("assembly_plan"), _openings_by_part(parts),
+                          params.get("stitch_attachments"),
+                          opening_rows=opening_rows_by_part(parts))
 
 
 def build_assembly(part_names, skirt_style: str = "ring",
                    quantities: dict[str, int] | None = None,
                    assembly_plan: dict[str, Any] | None = None,
                    openings: dict[str, int] | None = None,
-                   stitch_attachments: dict | None = None) -> str:
+                   stitch_attachments: dict | None = None, *,
+                   opening_rows: dict[str, int] | None = None) -> str:
     """Build assembly text from the v2 graph, with a legacy name fallback."""
     quantities = quantities or {}
     openings = openings or {}
+    opening_rows = opening_rows or {}
+
+    def head_connection() -> str:
+        head_n = openings.get("头部")
+        if head_n is None or "头部" not in opening_rows:
+            return ("用隐形缝合法将头部接合到身体顶部；"
+                    "头颈缝合处塞棉紧实，防止头部前倾"
+                    "（AmiguRoom 俄语熊评论区试钩共识）")
+        head_row = f"第 {opening_rows['头部']} 圈" if "头部" in opening_rows else "末圈"
+        body_row = f"第 {opening_rows['身体']} 圈" if "身体" in opening_rows else "末圈"
+        body_n = openings.get("身体")
+        target = f"身体顶部{body_row}开口（{body_n} 针）" if body_n else "身体顶部（开口待核对）"
+        note = f"将头部{head_row}颈口（{head_n} 针）与{target}缝合；"
+        if body_n is not None and head_n != body_n:
+            note += "两侧针数不同，请人工核对对齐位置与缝合分配；"
+        return note + "填充后逐段固定，头颈支撑与成品比例需试钩确认"
 
     def skirt_connection() -> str:
         from .stitch_attachments import LoopAttachmentPlan, attachment_steps
@@ -107,9 +132,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
     # rather than pretending to infer missing connection nodes during import.
     if assembly_plan is None:
         if "头部" in part_names and "身体" in part_names and not one_piece:
-            steps.append("用隐形缝合法将头部接合到身体顶部；"
-                         "头颈缝合处塞棉紧实，防止头部前倾"
-                         "（AmiguRoom 俄语熊评论区试钩共识）")
+            steps.append(head_connection())
         if "手臂" in part_names:
             steps.append(placement(
                 "手臂", f"手臂对称缝合到身体两侧上方{opening_note('手臂')}",
@@ -208,9 +231,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
                      and len(instances_by_source[source]) == quantity
                      and all(item.get("self_anchor") == default[2] for item in connections))
         if canonical and source == "头部" and target == "身体":
-            steps.append("用隐形缝合法将头部接合到身体顶部；"
-                         "头颈缝合处塞棉紧实，防止头部前倾"
-                         "（AmiguRoom 俄语熊评论区试钩共识）")
+            steps.append(head_connection())
         elif canonical and source == "手臂" and target in ("身体", _ONE_PIECE_NAME):
             steps.append(placement(
                 "手臂", f"手臂对称缝合到{target_label}两侧上方{opening_note('手臂')}",

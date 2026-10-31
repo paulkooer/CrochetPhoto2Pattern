@@ -151,6 +151,12 @@ def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
             dims.append(f"直径 {esc(pd['diameter_cm'])}cm")
         if pd.get("height_cm"):
             dims.append(f"高 {esc(pd['height_cm'])}cm")
+        if pd.get("opening_row") is not None:
+            from app.models.assembly import joining_round
+
+            opening = joining_round(pd)
+            if opening is not None:
+                dims.append(f"连接开口：第 {opening['row']} 圈 · {opening['stitches']} 针")
         if dims:
             story.append(Paragraph(" · ".join(dims), small))
         if pd.get("notes"):
