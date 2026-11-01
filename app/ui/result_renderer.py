@@ -715,6 +715,8 @@ def render_results(result: dict, slot: str) -> None:
                               if p.get("name") == "头部" and p.get("diameter_cm")), None)
         _current_head = float(_current_head or analysis.get("head_diameter_cm") or 9.0)
         _current_height = float(analysis.get("height_cm") or 18.0)
+        if _current_head != float(analysis.get("head_diameter_cm") or _current_head):
+            st.caption("当前结构头径与原分析不同；提交会同步头径，可能重算依赖尺寸的部件，建议先预览。")
         _sz_c1, _sz_c2 = st.columns(2)
         with _sz_c1:
             _new_head = st.slider(
@@ -737,8 +739,8 @@ def render_results(result: dict, slot: str) -> None:
                     preview_edit(slot, result, _new_result)
                 else:
                     _installed = commit_edit(slot, result, _new_result)
-                    _new_rid = _installed["result_id"]
-                    st.session_state[f"sz_{_new_rid}_ok"] = True
+                    if _installed is not result:
+                        st.session_state[f"sz_{_installed['result_id']}_ok"] = True
                     st.rerun()
             except Exception as e:
                 st.error(f"尺寸重生成失败: {md_safe(e)}")
@@ -767,8 +769,8 @@ def render_results(result: dict, slot: str) -> None:
                     preview_edit(slot, result, _updated)
                 else:
                     _installed = commit_edit(slot, result, _updated)
-                    new_result_id = _installed["result_id"]
-                    st.session_state[f"struct_{new_result_id}_ok"] = True
+                    if _installed is not result:
+                        st.session_state[f"struct_{_installed['result_id']}_ok"] = True
                     st.rerun()
             except Exception as e:
                 st.error(f"结构校验或重生成失败: {md_safe(e)}")
@@ -826,7 +828,8 @@ def render_results(result: dict, slot: str) -> None:
                     preview_edit(slot, result, candidate)
                 else:
                     installed = commit_edit(slot, result, candidate)
-                    st.session_state[f"regen_{installed['result_id']}_ok"] = True
+                    if installed is not result:
+                        st.session_state[f"regen_{installed['result_id']}_ok"] = True
                     st.rerun()
             except Exception as e:
                 st.error(f"解析/应用失败: {md_safe(e)}")

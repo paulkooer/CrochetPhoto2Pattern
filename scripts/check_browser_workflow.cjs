@@ -273,8 +273,10 @@ async function headProgress(page, scope, rid, checked) {
     record('fresh browser context restores project, then re-exports identical work');
 
     await uploader.setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{broken')});
+    await expect(freshSidebar.getByText('broken.json',{exact:true})).toBeVisible({timeout:45000});
+    await settle(fresh);
     await clickKey(fresh,freshSidebar,'open_backup_apply');
-    await expect(freshSidebar).toContainText('导入失败');
+    await expect(freshSidebar).toContainText('导入失败',{timeout:45000});
     assert.equal(await resultId(restored),restoredId);
     await expect(restoredNotes).toHaveValue(notes);
     await expect(headCheck(restored,restoredId)).toBeChecked();
@@ -491,6 +493,18 @@ async function headProgress(page, scope, rid, checked) {
     await expect(samplePanel.getByText('设置与当前图解相同，已保留撤销、重做及完成进度。',{exact:true})).toBeVisible();
     assert.equal(await resultId(samplePanel),materialUndoId);
     await expect(key(samplePanel,`edit_${materialUndoId}_redo`).getByRole('button')).toBeEnabled();
+    // Force a fresh rerun so the next identical notice acknowledges the size action.
+    await fillKey(samplePage,samplePanel,`project_notes_${materialUndoId}`,'Review labels and unchanged sizes');
+    const unchangedNotice = samplePanel.getByText('设置与当前图解相同，已保留撤销、重做及完成进度。',{exact:true});
+    await expect(unchangedNotice).toHaveCount(0);
+    await clickKey(samplePage,samplePanel,`sz_go_${materialUndoId}`);
+    await expect(unchangedNotice).toBeVisible();
+    assert.equal(await resultId(samplePanel),materialUndoId);
+    await expect(key(samplePanel,`edit_${materialUndoId}_redo`).getByRole('button')).toBeEnabled();
+    await expect(samplePanel.getByText('✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！',{exact:true})).toHaveCount(0);
+    const sizeUnchanged = JSON.parse(await download(samplePage,key(samplePanel,`dl_backup_${materialUndoId}`).getByRole('button'),path.join(output,'unchanged-size.json')));
+    assert.deepEqual(sizeUnchanged.sizing,recoveredSample.sizing);
+    assert.deepEqual(sizeUnchanged.params,recoveredSample.params);
     await clickKey(samplePage,samplePanel,`edit_${materialUndoId}_redo`);
     const materialRedoId = await resultId(samplePanel,materialUndoId);
     const materialRedone = JSON.parse(await download(samplePage,key(samplePanel,`dl_backup_${materialRedoId}`).getByRole('button'),path.join(output,'material-redone.json')));
@@ -498,9 +512,9 @@ async function headProgress(page, scope, rid, checked) {
     await expect(key(samplePanel,`sheet_part_${materialRedoId}_${hatIndex}`).locator('input[type="checkbox"]').first()).toBeChecked();
     const keptNotes = key(samplePanel,`project_notes_${materialRedoId}`).locator('textarea');
     await reveal(keptNotes);
-    await expect(keptNotes).toHaveValue('Review labels before buying yarn');
+    await expect(keptNotes).toHaveValue('Review labels and unchanged sizes');
     await samplePage.screenshot({path:path.join(output,'material-preview-redo.png'),fullPage:true});
-    record('material preview/cancel/apply and unchanged save after undo retain redo, notes, progress and swatch origin');
+    record('material preview/cancel/apply and unchanged material/size after undo retain redo, provenance, notes and progress');
     assert.deepEqual(report.page_errors,[]);
     report.status = 'pass';
     console.log(`PASS all ${report.checks.length} browser workflow checks; output ${output}`);

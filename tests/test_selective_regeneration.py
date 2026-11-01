@@ -81,6 +81,43 @@ def test_unchanged_size_keeps_all_parts_and_completed_work():
     assert retained_progress(current, updated, "result", progress) == progress
 
 
+@pytest.mark.parametrize("source", ["manual_dimensions", "user_photo_target"])
+def test_unchanged_size_retains_original_provenance_and_entire_pattern(source):
+    from app.models.sizing import sizing_meta_for_analysis
+    from app.utils.project import pattern_revision
+
+    current = authored()
+    current["sizing"] = sizing_meta_for_analysis(
+        ImageAnalysis(**current["analysis"]), source,
+        photo_head_to_height_ratio=0.73 if source == "user_photo_target" else None,
+        ratio_clamped=source == "user_photo_target")
+    snapshot = deepcopy(current)
+    updated = regenerate_with_size(current, 9, 18)
+    assert current == snapshot == updated
+    assert updated is not current
+    assert pattern_revision(updated) == pattern_revision(current)
+
+
+def test_size_operation_still_synchronizes_independently_edited_head():
+    current = authored()
+    structure = deepcopy(current["structure"])
+    next(part for part in structure["parts"] if part["name"] == "头部")["diameter_cm"] = 12.0
+    edited = regenerate_with_structure(current, structure)
+    assert edited["analysis"]["head_diameter_cm"] == 9.0
+    updated = regenerate_with_size(edited, 12, 18)
+    assert updated["analysis"]["head_diameter_cm"] == 12.0
+    assert updated["sizing"]["source"] == "user_resize"
+    require_valid_pattern(updated["params"])
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = edited
+    at.run()
+    assert any("当前结构头径与原分析不同" in item.value for item in at.caption)
+    at.button(key=f"sz_go_{edited['result_id']}").click().run()
+    assert not at.exception
+    assert at.session_state["result"]["analysis"]["head_diameter_cm"] == 12.0
+    assert any("已按新尺寸重新生成" in item.value for item in at.success)
+
+
 def test_gauge_change_still_rebuilds_all_authored_parts():
     current = authored()
     updated = regenerate_with_gauge(current, 20, 24)

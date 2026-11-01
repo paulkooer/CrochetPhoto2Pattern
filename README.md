@@ -77,7 +77,8 @@ Unknown part names remain available for review. Remove mistaken labels or select
   Part names still need review; hidden or cropped-out anatomy cannot be recovered.
 - Form-based part size/quantity/position/attachment editing and a per-round stitch table,
   plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
-  Canonically unchanged submissions retain the current result and redo history.
+  Canonically unchanged submissions retain the current result and redo history. Reapplying
+  the same dimensions also retains sizing provenance when structure and analysis agree.
 - One per-color yarn purchase list with a separate subtotal; optional ball labels and
   weighed swatches refine grams, metres, and whole-ball counts for parts matching the
   swatch's recorded gauge. Other gauges retain heuristic estimates. Estimates include a

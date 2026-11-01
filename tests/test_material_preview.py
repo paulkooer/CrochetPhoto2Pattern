@@ -42,7 +42,8 @@ def undo_to_base(at):
     assert not at.exception and not at.button(key=f"edit_{rid(at)}_redo").disabled
 
 
-@pytest.mark.parametrize("entry",["material","material-preview","rounds","head-preview","part-gauge"])
+@pytest.mark.parametrize("entry",["material","material-preview","rounds","head-preview","part-gauge",
+                                  "size","size-preview","structure-json","params-json"])
 def test_unchanged_edits_keep_id_redo_latest_progress_notes_and_storage_binding(entry):
     at=start()
     undo_to_base(at)
@@ -60,6 +61,14 @@ def test_unchanged_edits_keep_id_redo_latest_progress_notes_and_storage_binding(
         at.button(key=f"edit_{before_id}_preview_apply").click().run()
     elif entry=="rounds":
         at.button(key=f"edit_{before_id}_roundapply").click().run()
+    elif entry=="size":
+        at.button(key=f"sz_go_{before_id}").click().run()
+    elif entry=="size-preview":
+        at.button(key=f"edit_{before_id}_size_preview").click().run()
+        at.button(key=f"edit_{before_id}_preview_apply").click().run()
+    elif entry in ("structure-json","params-json"):
+        key=f"struct_go_{before_id}" if entry=="structure-json" else f"regen_{before_id}"
+        at.button(key=key).click().run()
     else:
         key="head_open_preview" if entry=="head-preview" else "partgauge0_preview"
         at.button(key=f"edit_{before_id}_{key}").click().run()
@@ -72,11 +81,45 @@ def test_unchanged_edits_keep_id_redo_latest_progress_notes_and_storage_binding(
     assert at.text_input(key=f"hist_title_{before_id}").value=="尚未保存的名称"
     assert "edit_"+before_id+"_pending_preview" not in at.session_state
     assert any("设置与当前图解相同" in info.value for info in at.info)
+    assert not any("已按新尺寸重新生成" in item.value or "已按修正后的部件结构重新生成" in item.value
+                   or "已根据修正更新图解" in item.value for item in at.success)
     assert not at.button(key=f"edit_{before_id}_redo").disabled
     at.button(key=f"edit_{before_id}_redo").click().run()
     assert not at.exception
     assert at.session_state["result"]["params"]["yarn_spec"]["ball_weight_g"]==60
     assert at.session_state["result"]["history_id"]=="stored-pattern"
+
+
+@pytest.mark.parametrize("entry", ["size", "structure-json", "params-json"])
+def test_actual_changes_still_regenerate_and_report_success(entry):
+    at=start()
+    undo_to_base(at)
+    before_id=rid(at)
+    if entry=="size":
+        at.slider(key=f"sz_height_{before_id}").set_value(40.0)
+        at.button(key=f"sz_go_{before_id}").click().run()
+        assert at.session_state["result"]["analysis"]["height_cm"]==40
+        assert at.session_state["result"]["sizing"]["source"]=="user_resize"
+        expected="已按新尺寸重新生成"
+    elif entry=="structure-json":
+        key=f"struct_edit_{before_id}"
+        structure=json.loads(at.text_area(key=key).value)
+        structure["parts"][0]["instances"][0]["position"]["x"]=0.2
+        at.text_area(key=key).input(json.dumps(structure,ensure_ascii=False)).run()
+        at.button(key=f"struct_go_{before_id}").click().run()
+        assert at.session_state["result"]["structure"]["parts"][0]["instances"][0]["position"]["x"]==0.2
+        expected="已按修正后的部件结构重新生成"
+    else:
+        key=f"json_edit_{before_id}"
+        params=json.loads(at.text_area(key=key).value)
+        params["parts"][0]["rounds"][0]["notes"]+="；核对张力"
+        at.text_area(key=key).input(json.dumps(params,ensure_ascii=False)).run()
+        at.button(key=f"regen_{before_id}").click().run()
+        assert "核对张力" in at.session_state["result"]["params"]["parts"][0]["rounds"][0]["notes"]
+        expected="已根据修正更新图解"
+    assert not at.exception and rid(at)!=before_id
+    assert at.button(key=f"edit_{rid(at)}_redo").disabled
+    assert any(expected in item.value for item in at.success)
 
 
 def test_preview_cancel_apply_undo_redo_and_project_show_complete_material_changes():
