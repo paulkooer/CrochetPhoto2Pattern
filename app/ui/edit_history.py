@@ -16,11 +16,21 @@ MAX_HISTORY_BYTES = 8 << 20
 
 def metrics(result: dict) -> dict:
     from app.models.gauge import gauge_from_result, part_gauge_text
+    from app.models.materials import YarnSpec
     from app.models.stitch_attachments import WAIST_POSITION_KEY
 
     params = result["params"]
     gauge = gauge_from_result(result)
     yarn = params.get("material_summary") or {}
+    raw_spec = params.get("yarn_spec")
+    spec = YarnSpec.model_validate(raw_spec).model_dump() if raw_spec is not None else {}
+    swatch = "未使用称重试片"
+    if spec.get("swatch_weight_g") is not None:
+        origin = spec.get("swatch_gauge")
+        density = (f"10cm × {origin['stitches_per_10cm']:g} 针 × {origin['rows_per_10cm']:g} 行"
+                   if origin else "密度待确认")
+        swatch = (f"{spec['swatch_weight_g']:g}g / {spec['swatch_stitches']} 针 × "
+                  f"{spec['swatch_rows']} 行；{density}")
     dimensions = []
     for part in result["structure"].get("parts", []):
         sizes = "、".join(
@@ -32,6 +42,12 @@ def metrics(result: dict) -> dict:
     return {
         "总针数": params.get("total_stitches", 0),
         "估算毛线（g）": yarn.get("grams"),
+        "估算毛线（m）": yarn.get("meters"),
+        "购线团数": yarn.get("balls") if yarn.get("balls") is not None else "未提供线标",
+        "预留比例（%）": yarn.get("waste_percent"),
+        "线标（每团）": (f"{spec['ball_weight_g']:g}g / {spec['ball_length_m']:g}m"
+                         if spec else "未提供线标"),
+        "称重试片": swatch,
         "目标高度（cm）": result["analysis"].get("height_cm"),
         "10 cm 针数": gauge.stitches_per_10cm,
         "10 cm 行数": gauge.rows_per_10cm,
@@ -95,6 +111,13 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
 
 
 def commit_edit(slot: str, current: dict, updated: dict) -> dict:
+    from app.utils.project import pattern_revision
+
+    if pattern_revision(current) == pattern_revision(updated):
+        rid = current.get("result_id") or slot
+        st.session_state.pop(f"edit_{rid}_pending_preview", None)
+        st.session_state[f"edit_{rid}_notice"] = "设置与当前图解相同，已保留撤销、重做及完成进度。"
+        return current
     history = deepcopy(get_history(slot, current, create=False))
     progress = capture_progress(current, slot, st.session_state)
     history["undo"].append({"result": deepcopy(current), "progress": progress})
@@ -190,6 +213,8 @@ def render_history(slot: str, result: dict) -> None:
     history = get_history(slot, result)
     render_edit_preview(slot, result)
     rid = result.get("result_id") or slot
+    if notice := st.session_state.pop(f"edit_{rid}_notice", None):
+        st.info(notice)
     left, right = st.columns(2)
     left.button("↶ 撤销修改", key=f"edit_{rid}_undo", disabled=not history["undo"],
                 on_click=_restore_before_render, args=(slot, "undo"))

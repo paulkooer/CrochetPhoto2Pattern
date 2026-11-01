@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed / Added — 2026-11-01 Unchanged submissions and material previews
+
+- Preserve the display ID, undo/redo snapshots, progress, notes and storage binding when the complete canonical pattern revision is unchanged. Resubmitting unchanged settings after undo no longer creates a new result and discards redo. Real instruction, color, gauge or provenance changes still create edits even when aggregate metrics match.
+- Add preview/cancel/apply to yarn estimates, comparing grams, metres, ball counts, allowance, labels and weighed-swatch origin. Apply retains latest progress and notes; legacy samples still require origin confirmation, and original trial bytes and record binding remain unchanged.
+- Add 11 AppTest/regression cases and a thirteenth synthetic browser flow. Use a real instruction change in existing failure-injection tests to retain preparation atomicity coverage. No new dependency, format or export-cache change.
+
 ### Fixed / Changed — 2026-11-01 Batch file protection and image-decode memory
 
 - Resolve and validate all batch inputs/destinations together before generation. Reject cross-job symlink, hardlink, format and cyclic aliases to protect source images and prevent silent shared-output writes; retain per-job preflight, staging and rollback.

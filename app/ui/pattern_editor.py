@@ -399,8 +399,10 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                 float(spec.get("waste_percent", 10)),
                 key=f"edit_{rid}_waste",
             )
-            submitted = st.form_submit_button("更新材料估算")
-        if submitted:
+            preview_column, apply_column = st.columns(2)
+            previewed = preview_column.form_submit_button("预览材料估算修改")
+            submitted = apply_column.form_submit_button("更新材料估算")
+        if submitted or previewed:
             try:
                 payload: dict = {"ball_weight_g": weight, "ball_length_m": length, "waste_percent": waste}
                 if measured:
@@ -408,7 +410,11 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                         raise ValueError("请先核对并确认旧试片的测量密度；原称重数据和图解已保留")
                     payload.update(swatch_weight_g=swatch_weight, swatch_stitches=stitches, swatch_rows=rows)
                     payload["swatch_gauge"] = asdict(Gauge(swatch_st, swatch_rw))
-                _apply(slot, result, edit_yarn(result, payload))
+                candidate = edit_yarn(result, payload)
+                if previewed:
+                    preview_edit(slot, result, candidate)
+                else:
+                    _apply(slot, result, candidate)
             except Exception as exc:
                 st.error(f"材料估算失败：{md_safe(exc)}")
         if spec and st.button("恢复默认用量估算", key=f"edit_{rid}_yarnreset"):
