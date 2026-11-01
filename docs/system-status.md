@@ -14,6 +14,27 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-01 batch file protection and decoder memory, based on merged `main` at `1b02926`:
+synthetic CLI probes confirmed that a cross-job output symlink could replace another input PNG
+with JSON, and two outputs could share one target while reporting success. Whole-batch preflight
+now rejects these aliases before any worker starts, including hardlinks, cross-format aliases and
+cycles; canonical destinations are retained in job plans. Per-job checks and rollback remain.
+Add `--workers 1–4`, default 1 instead of the previous fixed 4; explicit 4 retains the former
+concurrency level. Normal per-image failures still allow the other jobs to run.
+
+All three loaders now apply EXIF in place and detach only after downsampling, retaining input
+guards and pixel behavior. In a local, fresh-process 39.69MP synthetic RGBA PNG comparison,
+byte-path peak RSS changed **596.8→445.1 MiB** (about 25.4%); file-path peak stayed about
+447.4 MiB. Output size and pixel SHA-256 matched. This is one macOS/Python 3.12.13 case, with
+no OOM reproduction or low-memory-container test. A [measurement guide](image-memory.md) and
+`scripts/measure_image_loading.py` provide reproduction without private source images.
+
+Added **36 regressions**; full suite: **2277 passed, 2 skipped in 69.10s**, repository-wide
+Ruff, mypy (186 files), diff checks and all **12 local Chrome synthetic full-app flows pass**.
+Locked dev+pdf; skips remain missing authorized photos and optional MediaPipe. No new dependency,
+pattern/project/trial format or export-cache version. These are developer checks; independent
+review is pending and remote CI must match this batch's fixed head. Beta/G3/G4 are unchanged.
+
 2026-11-01 swatch provenance and strict CLI input fixes, based on merged `main` at `4ae91ca`:
 weighed yarn samples retain their recorded density; parts use measured weight only when that
 density matches, independently of subsequent default changes. The fixed 30×32 hat retains its

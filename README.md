@@ -254,6 +254,7 @@ uv run crochet2pattern --image photo.jpg --gauge dk --out pattern.json --md patt
 uv run crochet2pattern --head 9 --height 18 --parts 头部,身体 --sphere-mode egg --out p.json
 uv run crochet2pattern --mock --out demo.json
 uv run crochet2pattern --batch-dir photos/ --out-dir patterns/
+uv run crochet2pattern --batch-dir photos/ --out-dir patterns/ --workers 4
 ```
 
 Canonical part values in the current schema are Chinese (`头部`, `身体`, and so on), so
@@ -262,6 +263,13 @@ arithmetic or the active gauge's shaping limit exits with code `2`.
 `--gauge custom` requires both `--stitches` (6–40 per 10cm) and `--rows` (8–50 per 10cm),
 with finite values. Invalid custom density exits with code `2` before generation or output
 changes, including batch-directory creation; it does not clamp or use another preset.
+
+Batch mode checks every planned destination against all input images and other outputs,
+including path aliases, before starting workers. Conflicts reject the batch with code `1`;
+normal per-image processing failures still allow the other images to run. `--workers` accepts
+1–4 and defaults to **1**, changed from the previous fixed four workers to limit overlapping
+decodes. Explicit `--workers 4` restores that concurrency level. See the
+[decode-memory measurements](docs/image-memory.md) for the measured scope and reproduction.
 
 ### Optional extras
 
