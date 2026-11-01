@@ -61,6 +61,13 @@ def validate_pattern(params: dict[str, Any], *, check_notes: bool = True) -> dic
     """
     issues: list[str] = []
     notes: list[str] = []
+    if params.get("yarn_spec") is not None:
+        from .materials import YarnSpec
+
+        try:
+            YarnSpec.model_validate(params["yarn_spec"])
+        except ValueError as exc:
+            issues.append(f"线材与试片：{exc}")
     checked = 0
     shaping_policy = shaping_policy_for_pattern(params)
     max_change = int(shaping_policy["max_stitch_change"])

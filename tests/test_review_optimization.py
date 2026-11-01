@@ -162,6 +162,7 @@ def test_measured_yarn_and_ball_rounding():
         "swatch_weight_g": 10,
         "swatch_stitches": 10,
         "swatch_rows": 10,
+        "swatch_gauge": {"stitches_per_10cm":13, "rows_per_10cm":16},
         "waste_percent": 10,
     }
     rows, summary = yarn_requirements(parts, DEFAULT, spec)

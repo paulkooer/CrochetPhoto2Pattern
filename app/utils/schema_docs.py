@@ -14,6 +14,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.models.geometry import StructureGeometry
+from app.models.materials import YarnSpec
 from app.models.stitch_attachments import LoopAttachmentPlan
 from app.models.trial_draft import TrialDraftState
 from app.schemas import CrochetPart, ImageAnalysis, PatternResult
@@ -31,6 +32,7 @@ SCHEMA_MODELS: dict[str, ModelType] = {
     "loop_attachment_plan": LoopAttachmentPlan,
     "project_state": ProjectState,
     "trial_draft_state": TrialDraftState,
+    "yarn_spec": YarnSpec,
 }
 
 

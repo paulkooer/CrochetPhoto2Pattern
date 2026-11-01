@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "PartGauge": {
+      "additionalProperties": false,
+      "properties": {
+        "rows_per_10cm": {
+          "maximum": 50.0,
+          "minimum": 8.0,
+          "title": "Rows Per 10Cm",
+          "type": "number"
+        },
+        "stitches_per_10cm": {
+          "maximum": 40.0,
+          "minimum": 6.0,
+          "title": "Stitches Per 10Cm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "stitches_per_10cm",
+        "rows_per_10cm"
+      ],
+      "title": "PartGauge",
+      "type": "object"
+    }
+  },
+  "description": "One yarn specification shared by all colours; swatch must use that yarn.",
+  "properties": {
+    "ball_length_m": {
+      "exclusiveMinimum": 0,
+      "maximum": 10000,
+      "title": "Ball Length M",
+      "type": "number"
+    },
+    "ball_weight_g": {
+      "exclusiveMinimum": 0,
+      "maximum": 2000,
+      "title": "Ball Weight G",
+      "type": "number"
+    },
+    "swatch_gauge": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PartGauge"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "swatch_rows": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Swatch Rows"
+    },
+    "swatch_stitches": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Swatch Stitches"
+    },
+    "swatch_weight_g": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 2000,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Swatch Weight G"
+    },
+    "waste_percent": {
+      "default": 10,
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Waste Percent",
+      "type": "number"
+    }
+  },
+  "required": [
+    "ball_weight_g",
+    "ball_length_m"
+  ],
+  "title": "YarnSpec",
+  "type": "object"
+}

@@ -113,7 +113,7 @@ def test_same_color_usage_weights_default_measured_and_independent_heuristic_sti
     assert summary["meters"] == round(grams * 2.5, 2)
     assert summary["balls"] == math.ceil(grams / 50)
     assert summary["basis"] == "mixed_swatch_and_heuristic"
-    assert "独立密度用经验估算" in material_summary_text(updated["params"])
+    assert "匹配试片密度用实测" in material_summary_text(updated["params"])
     yarn = [m for m in updated["params"]["materials"] if "color" in m]
     assert len(yarn) == 1 and yarn[0]["stitches"] == all_stitches
 

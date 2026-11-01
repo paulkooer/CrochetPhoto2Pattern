@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-10-31. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-11-01. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -13,6 +13,27 @@ real-photo baseline and an independent physical-trial baseline are still missing
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
 ## Latest reproducible validation
+
+2026-11-01 swatch provenance and strict CLI input fixes, based on merged `main` at `4ae91ca`:
+weighed yarn samples retain their recorded density; parts use measured weight only when that
+density matches, independently of subsequent default changes. The fixed 30×32 hat retains its
+61.05g measured estimate when trial preview changes the default to 26×28; an unchanged 26×28
+hat also keeps its heuristic estimate rather than acquiring an unrelated 30×32 sample. Legacy
+unbound weighing data is retained with a confirmation notice and heuristic estimates until
+reviewed. Original project revision checks, progress/notes and raw trial-source bytes/SHA survive
+recovery; synthetic compatibility fixtures were generated using actual `4ae91ca` source.
+CLI custom density now rejects missing, non-finite or unsupported values with code 2 before
+generation, batch mkdir or file replacement. Existing UI/legacy gauge adapters are unchanged.
+
+Full suite: **2241 passed, 2 skipped in 68.19s**, repository-wide Ruff, mypy (184 files), Node
+syntax and diff checks pass (Python 3.12.13, locked dev+pdf). Added **56 regressions** plus
+version-12 cache invalidation. The two skips remain the absent authorized-photo directory and
+optional MediaPipe. All **12 local Chrome synthetic full-app flows pass**, including actual
+weighed-swatch entry, saved-trial density preview/apply, retained hat/progress and fresh-context
+project recovery. Export cache is **13**; root backup/trial formats remain unchanged, with a new
+[YarnSpec Schema](schemas/yarn_spec.schema.json). These are developer checks; independent review
+is pending and remote CI must match this patch's fixed head. No new physical or authorized-photo
+evidence; Beta/G3/G4 are unchanged. See the [swatch guide](project-format.md#实测试片克重与来源密度).
 
 2026-10-31 maintainer-authorized integration is complete:
 

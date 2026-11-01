@@ -7,7 +7,9 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, SerializerFunctionWrapHandler, model_serializer, model_validator
+
+from app.schemas import PartGauge
 
 from .colors import brand_code
 from .gauge import DEFAULT as DEFAULT_GAUGE
@@ -50,14 +52,35 @@ class YarnSpec(BaseModel):
     swatch_weight_g: float | None = Field(default=None, gt=0, le=2000, allow_inf_nan=False)
     swatch_stitches: int | None = Field(default=None, ge=1, le=1000, strict=True)
     swatch_rows: int | None = Field(default=None, ge=1, le=1000, strict=True)
+    swatch_gauge: PartGauge | None = None
     waste_percent: float = Field(default=10, ge=0, le=100, allow_inf_nan=False)
+
+    @model_serializer(mode="wrap")
+    def _serialize_swatch_gauge(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data = handler(self)
+        if self.swatch_gauge is None:
+            data.pop("swatch_gauge", None)  # Do not add a guessed origin to legacy records.
+        return data
 
     @model_validator(mode="after")
     def complete_swatch(self):
         fields = (self.swatch_weight_g, self.swatch_stitches, self.swatch_rows)
         if any(x is not None for x in fields) and not all(x is not None for x in fields):
             raise ValueError("试片必须同时提供克重、每行针数和行数")
+        if self.swatch_gauge is not None and self.swatch_weight_g is None:
+            raise ValueError("试片密度需要同时提供完整的称重数据")
         return self
+
+
+def _swatch_note(spec: YarnSpec | None, independent: bool) -> str:
+    if spec is not None and spec.swatch_weight_g is not None:
+        if spec.swatch_gauge is None:
+            return "旧试片未记录测量密度，称重数据已保留；核对确认前使用经验估算，线标适用于所有颜色"
+        measured = spec.swatch_gauge
+        return (f"试片密度：10cm × {measured.stitches_per_10cm:g} 针 × {measured.rows_per_10cm:g} 行；"
+                "仅相同密度部件使用该实测克重，其余密度使用经验估算；线标适用于所有颜色")
+    return ("默认密度试片不覆盖独立密度部件，独立部件按各自密度经验估算，线标仍适用于所有颜色"
+            if independent else "试片与线标适用于所有颜色")
 
 
 def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
@@ -68,11 +91,13 @@ def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
     usage: dict[str, dict[tuple[float, float], int]] = {}
     bases: set[str] = set()
     independent = False
+    swatch_gauge = (Gauge(**spec.swatch_gauge.model_dump())
+                    if spec is not None and spec.swatch_gauge is not None else None)
     for part in parts:
         selected = gauge_for_part(part, gauge)
         independent |= selected != gauge
         per_stitch = selected.grams_per_stitch
-        measured = spec is not None and spec.swatch_weight_g is not None and selected == gauge
+        measured = spec is not None and spec.swatch_weight_g is not None and selected == swatch_gauge
         if measured:
             assert spec is not None and spec.swatch_stitches is not None and spec.swatch_rows is not None
             assert spec.swatch_weight_g is not None
@@ -102,17 +127,14 @@ def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
         rows.append({"item": item, "quantity": quantity, "color": color,
                      "stitches": stitches, "grams": round(grams, 2),
                      "meters": round(meters, 2), "balls": balls})
-    basis = ("mixed_swatch_and_heuristic" if len(bases) > 1 else next(iter(bases),
-             "measured_swatch" if spec and spec.swatch_weight_g else "heuristic"))
+    basis = "mixed_swatch_and_heuristic" if len(bases) > 1 else next(iter(bases), "heuristic")
     summary = {"total_stitches": sum(sum(rates.values()) for rates in usage.values()),
                "grams": round(sum(row["grams"] for row in rows), 2),
                "meters": round(sum(row["meters"] for row in rows), 2),
                "balls": sum(row["balls"] for row in rows) if spec else None,
                "waste_percent": round(waste * 100, 2),
                "basis": basis,
-               "note": ("小计已含下列逐色毛线，请勿重复购买；默认密度试片不覆盖独立密度部件，"
-                        "独立部件按各自密度经验估算，线标仍适用于所有颜色" if independent else
-                        "小计已含下列逐色毛线，请勿重复购买；试片与线标适用于所有颜色")}
+               "note": "小计已含下列逐色毛线，请勿重复购买；" + _swatch_note(spec, independent)}
     return rows, summary
 
 
@@ -193,9 +215,12 @@ def material_summary_text(params: dict) -> str:
     if not isinstance(summary, dict) or not summary:
         return ""
     basis = {"measured_swatch":"实测试片",
-             "mixed_swatch_and_heuristic":"默认密度用实测试片，独立密度用经验估算"}.get(
+             "mixed_swatch_and_heuristic":"匹配试片密度用实测，其余密度用经验估算"}.get(
         str(summary.get("basis") or ""), "经验估算，未经校准")
-    note = ("默认密度试片不覆盖独立密度部件；线标适用于所有颜色。"
+    spec = YarnSpec.model_validate(params["yarn_spec"]) if params.get("yarn_spec") is not None else None
+    note = (_swatch_note(spec, has_independent_gauge(params)) + "。"
+            if spec is not None and spec.swatch_weight_g is not None else
+            "默认密度试片不覆盖独立密度部件；线标适用于所有颜色。"
             if has_independent_gauge(params) else "线标与试片适用于所有颜色。")
     return (f"毛线小计：{summary.get('grams')}g / {summary.get('meters')}m；"
             f"含 {summary.get('waste_percent')}% 预留，依据：{basis}。"
