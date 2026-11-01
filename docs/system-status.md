@@ -14,6 +14,38 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-10-31 maintainer-authorized integration is complete:
+
+- [PR #24](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/24), manual-edit preservation
+  and separate-head neck openings, was squash-merged as
+  `8c4f348ac1f5c101fd4c1272304b237a87747cac`. Its tree matches checked head
+  `a64490c9d5777c714a6c02e265197d836ec81228`, whose **10 remote checks passed**
+  ([core matrix/Docker/types](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41169677678),
+  [browser](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41169677673)).
+- [PR #25](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/25), independent hat and
+  skirt-tube gauges, was then rebased onto merged `main` without file changes and squash-merged as
+  `03a5dafa5d3a7f867c836faea33624a4f5cd81fb`. Its tree matches final checked head
+  `b2df9a36cc434858413e593ba34aedd7b9b98eb2`. All **10 checks for that head passed again**:
+  [Python 3.11–3.14, Docker and types](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637518),
+  [PDF/pose](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637466),
+  [dependency audit](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637443), and
+  [browser regression](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/41211637440).
+
+The merged code has the same file tree as the locally tested garment batch: **2184 passed,
+2 skipped**, repository-wide Ruff and mypy (182 files); all **11 synthetic browser flows**
+passed locally and in the final-head browser CI. The skips remain the absent authorized-photo
+directory and optional MediaPipe. Export cache is **12**, root backup schema remains 1.
+New trial records still require every part to resolve to the default gauge; differing garment
+gauges can be saved as crochet projects. These changes have developer/CI verification, with
+independent review still pending; maintainer authorization does not extend the earlier
+independent PASS for `55280fb`. Later documentation and post-merge CI results must be checked
+against their own SHAs. Beta status and G3/G4 remain unchanged.
+
+### Earlier validation snapshots
+
+The following entries describe the branches at the time of each run; the merged state above
+supersedes their pending-integration notes.
+
 2026-10-31 independent garment gauges, based on PR #24 head
 `a64490c9d5777c714a6c02e265197d836ec81228`: hats and separate skirt tubes can retain their
 own swatches while other parts use the default. Attached skirts retain body gauge. Geometry,
@@ -705,8 +737,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Application/test baseline merged: `44a79fc`** | [PR #22](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/22) merged into `main`; its tree matches checked head `4a63745`. Local full suite: 2081 passed, 2 skipped. Later changes require their own commit-bound evidence; new fixes do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 10 remote checks passed for PR #22** | Checked head `4a63745`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and the new browser check all pass; exact run links appear above. Verify post-merge and later-commit results against their own SHAs |
+| G1 Reproducible source | **Feature baseline merged: `03a5daf`** | PRs #24 and #25 merged into `main`; the final tree matches checked head `b2df9a3` and the locally tested garment batch (2184 passed, 2 skipped). Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 10 remote checks passed for final PR #25 head** | Checked head `b2df9a3`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and all 11 browser flows pass; exact run links appear above. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` thresholds including 100% Parade export |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |
