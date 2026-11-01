@@ -52,6 +52,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--skirt-style", default="ring", choices=["ring", "attached"])
     parser.add_argument("--ruffle", action="store_true", help="波浪裙摆")
     parser.add_argument("--out-dir", help="批量模式输出目录（默认与图片同目录）")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="批量并发数 1–4（默认 1，降低图片解码峰值；4 接近原并发行为）")
     parser.add_argument("--out", help="输出 JSON 路径（默认打印到 stdout）")
     parser.add_argument("--md", help="额外输出 Markdown 图解路径")
     parser.add_argument("--parade", help="额外输出 CrochetPARADE DSL 路径"
@@ -153,17 +155,29 @@ def _gauge_from_args(args: argparse.Namespace) -> Gauge:
     return PRESETS[args.gauge]
 
 
+def _workers_from_args(args: argparse.Namespace) -> int:
+    workers = getattr(args, "workers", 1)
+    if type(workers) is not int or not 1 <= workers <= 4:
+        raise ValueError("--workers 必须是 1–4 的整数")
+    return workers
+
+
 def run_batch(args) -> int:
     """U27：目录批量模式——每个图片独立生成 JSON+MD，失败不中断。
 
-    U27 补全：ThreadPoolExecutor 并发（GrabCut/cv2 内部释放 GIL，能真
-    并行）。每个图片用**独立 orchestrator**——parser 的 last_usage /
+    ThreadPoolExecutor 可选 1–4 路，默认 1 限制并行解码峰值；GrabCut/cv2
+    内部释放 GIL。每个图片用**独立 orchestrator**——parser 的 last_usage /
     last_local_meta 是实例状态，并发复用会串档（审查者预警的第一个坑）。
     """
     from concurrent.futures import ThreadPoolExecutor
     from pathlib import Path as _P
     from unicodedata import normalize
 
+    try:
+        workers = _workers_from_args(args)
+    except ValueError as exc:
+        print(f"并发参数无效: {exc}", file=sys.stderr)
+        return 2
     in_dir = _P(args.batch_dir)
     out_dir = _P(args.out_dir) if args.out_dir else in_dir
     try:
@@ -207,7 +221,13 @@ def run_batch(args) -> int:
         output_stems[img] = stem
         allocated.add(name_key(stem))
 
-    def _one(img):
+    # Resolve all destinations together: per-image preflight cannot see another
+    # image's input or output aliases. Keep these canonical paths in each job.
+    from app.utils.output_files import output_paths, validate_output_set
+
+    jobs: list[tuple[Path, argparse.Namespace]] = []
+    destinations: list[Path] = []
+    for img in images:
         stem = output_stems[img]
         ns = argparse.Namespace(**{**vars(args), "image": str(img),
                                    "out": str(out_dir / f"{stem}.json"),
@@ -218,14 +238,31 @@ def run_batch(args) -> int:
                                               if args.parade else None),
                                    "batch_dir": None})
         try:
+            paths = output_paths(ns)
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"批量输出准备失败: {exc}", file=sys.stderr)
+            return 1
+        destinations.extend(paths.values())
+        for kind, path in paths.items():
+            setattr(ns, kind, str(path))
+        jobs.append((img, ns))
+    try:
+        validate_output_set(destinations, images)
+    except (OSError, ValueError, RuntimeError) as exc:
+        print(f"批量输出准备失败: {exc}", file=sys.stderr)
+        return 1
+
+    def _one(job):
+        img, ns = job
+        try:
             rc = main(ns)
             return img.name, rc, None
         except (Exception, SystemExit) as e:
             return img.name, 1, e
 
     ok = 0
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        for name, rc, err in pool.map(_one, images):
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for name, rc, err in pool.map(_one, jobs):
             if rc == 0:
                 ok += 1
                 print(f"✅ {name}", file=sys.stderr)
@@ -244,6 +281,11 @@ def main(argv=None) -> int:
         _gauge_from_args(args)
     except ValueError as exc:
         print(f"密度参数无效: {exc}", file=sys.stderr)
+        return 2
+    try:
+        _workers_from_args(args)
+    except ValueError as exc:
+        print(f"并发参数无效: {exc}", file=sys.stderr)
         return 2
     if args.batch_dir:
         if args.pdf:

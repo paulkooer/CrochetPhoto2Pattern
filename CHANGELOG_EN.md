@@ -8,6 +8,13 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed / Changed — 2026-11-01 Batch file protection and image-decode memory
+
+- Resolve and validate all batch inputs/destinations together before generation. Reject cross-job symlink, hardlink, format and cyclic aliases to protect source images and prevent silent shared-output writes; retain per-job preflight, staging and rollback.
+- Add `--workers 1–4`, defaulting to 1 instead of the previous fixed four to limit overlapping decodes. Explicit 4 restores that concurrency level. Invalid limits return 2; planning conflicts return 1, while ordinary per-image failures still allow other work to continue.
+- Share image preparation across three loaders, applying EXIF on the decoder and detaching pixels after scaling. Cover orientations, transparency, exact pixels and closed-input ownership without changing image guards, pattern formats or export cache.
+- Provide a reproducible single-process measurement tool: a local synthetic 39.69MP RGBA PNG used about 596.8→445.1 MiB on the byte path and 447.4 MiB on the file path, with matching pixel SHA. This is not a general or low-memory-container guarantee.
+
 ### Fixed — 2026-11-01 Weighed-swatch provenance and CLI gauge validation
 
 - Record optional `params.yarn_spec.swatch_gauge` and match each part against that fixed origin. Default-gauge changes no longer move the measured basis for unchanged parts. Show origin and mixed estimates in materials/Markdown/PDF; ball-label edits retain the existing swatch density.

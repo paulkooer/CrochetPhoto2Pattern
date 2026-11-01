@@ -177,12 +177,18 @@ uv run crochet2pattern --image photo.jpg --gauge dk --out pattern.json --md patt
 uv run crochet2pattern --head 9 --height 18 --parts 头部,身体 --sphere-mode egg --out p.json
 uv run crochet2pattern --mock --out demo.json                       # 固定演示数据
 uv run crochet2pattern --batch-dir photos/ --out-dir patterns/      # 目录批量生成
+uv run crochet2pattern --batch-dir photos/ --out-dir patterns/ --workers 4
 ```
 
 照片模式始终使用本地算法，旧版 Key 不会触发云端调用。所有输出经过图解自检门禁（代数矛盾
 或超过当前密度塑形上限时返回码 2）。
 `--gauge custom` 必须同时提供有限的 `--stitches`（10cm 6–40 针）和 `--rows`（10cm 8–50 行）。
 无效值返回码 2，在生成、创建批量输出目录和写文件前停止，不再钳制或回退到其他密度。
+
+批量启动前统一检查所有输出目标与全部输入、其他输出之间的路径别名；规划冲突时返回 1，
+不启动任何生成任务。普通单张图片处理失败仍允许其他任务继续。`--workers` 支持 1–4，
+默认 **1**；从原固定 4 改为串行，以控制并行解码开销。显式设置 4 可恢复原并发数量。
+详见[图片解码内存对照与复现](docs/image-memory.md)。
 
 ### Docker（可选）
 

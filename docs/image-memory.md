@@ -1,0 +1,45 @@
+# 图片解码与批量并发
+
+上传控件、文件 CLI 和不可变字节快照共用解码准备流程：解码前核对格式及尺寸，JPEG
+先申请缩放解码，在原解码对象上应用 EXIF 方向，缩到最长边 2048，再分离返回像素。
+RGBA/调色板透明度继续合成白底。返回图像独立于已关闭的原解码器和输入流。
+
+这减少了无方向变换时的整图副本；PNG 仍须先解码，透明缩放也有临时缓冲，不能把
+2048px 输出上限当作输入解码内存上限。
+
+2026-11-01 本地对照：macOS、Python 3.12.13、锁定依赖；同一张合成 6300×6300
+RGBA PNG（39.69MP，在合法输入范围内），每次独立进程运行。以下是进程峰值 RSS，
+包含解释器和导入开销；原版本为 `1b02926`。两版输出尺寸与完整像素 SHA-256 一致。
+
+| 入口 | 原版本 | 优化版 |
+| --- | ---: | ---: |
+| 磁盘文件 | 447.4 MiB | 447.4 MiB |
+| 字节快照 | 596.8 MiB | 445.1 MiB |
+
+字节路径在此案例减少约 25.4%；磁盘路径的单张峰值没有明显降低。此结果不是任意图片、
+平台、容器或完整生成管线的峰值保证；本轮未复现 OOM，也没有执行低内存容器压力测试。
+
+批量 CLI 现可指定 `--workers 1–4`，默认 1。默认值从原固定 4 改为串行，以减少并行
+解码叠加；可显式选择 4 恢复原并发数量。吞吐量取决于图片、CPU 与内存，应按环境测量。
+
+启动前会统一核对全部目标，拒绝输出别名指向任何输入、两个任务写同一目标，以及跨格式
+或硬链接冲突。规划错误会在任何任务生成或替换文件前返回 1；正常单图处理错误仍继续
+其他任务。预检不能保证外部进程随后不改动文件系统；每个任务保留写入前检查及原有
+暂存/回滚流程，文件组也不具备断电时的整体原子性。图解、工程、试钩格式及缓存版本不变。
+
+## 复现单进程对照
+
+使用锁定环境；旧源码放入临时目录，保持当前工作树不变。
+
+```sh
+task_decode_lab=$(mktemp -d)
+mkdir -p "$task_decode_lab/old"
+git archive 1b02926945c9f8cd19d9a7dc70f8213d293b6f64 app | tar -x -C "$task_decode_lab/old"
+.venv/bin/python -c 'import sys; from PIL import Image; Image.new("RGBA", (6300,6300), (30,120,80,128)).save(sys.argv[1])' "$task_decode_lab/large.png"
+.venv/bin/python scripts/measure_image_loading.py "$task_decode_lab/large.png" --mode bytes --source-root "$task_decode_lab/old"
+.venv/bin/python scripts/measure_image_loading.py "$task_decode_lab/large.png" --mode bytes
+```
+
+将 `--mode bytes` 改为 `--mode file` 可比较磁盘入口。工具输出平台、Python 版本、
+实际加载器源码 SHA、峰值 RSS 和像素 SHA；不上传图片或自动修改任何应用文件。
+结果应以同环境、同输入的重复测量为依据；该微基准不测试低内存容器或批量并发。

@@ -32,13 +32,7 @@ def load_image_bytes(data: bytes) -> Image.Image | None:
         with BytesIO(data) as source, warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             with Image.open(source, formats=ALLOWED_UPLOAD_FORMATS) as original:
-                _validate_upload_dimensions(original)
-                image = ImageOps.exif_transpose(_apply_jpeg_draft(original))
-                image = _downsample(image)
-                if _has_transparency(image):
-                    image = _flatten_alpha(image)
-                image.load()
-                return image
+                return _prepare_image(original)
     except Exception as exc:
         logger.warning("Failed to decode image snapshot: %s", exc)
         return None
@@ -102,6 +96,19 @@ def _has_transparency(image: Image.Image) -> bool:
     return image.mode == "P" and "transparency" in image.info
 
 
+def _prepare_image(image: Image.Image) -> Image.Image:
+    """Detach only after scaling, avoiding an unconditional full-size copy."""
+    _validate_upload_dimensions(image)
+    image = _apply_jpeg_draft(image)
+    ImageOps.exif_transpose(image, in_place=True)
+    image = _downsample(image)
+    # The caller owns/closes the decoder. Alpha composition returns a new image;
+    # other modes need a detached copy, now bounded to MAX_DECODED_SIDE.
+    result = _flatten_alpha(image) if _has_transparency(image) else image.copy()
+    result.load()
+    return result
+
+
 def load_image_file(path) -> Image.Image | None:
     """从磁盘路径加载图片（CLI/无头模式用）。
 
@@ -118,15 +125,8 @@ def load_image_file(path) -> Image.Image | None:
             raise ValueError(f"图片超过 {MAX_UPLOAD_MB}MB 上限")
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            image: Image.Image = Image.open(path, formats=ALLOWED_UPLOAD_FORMATS)
-        _validate_upload_dimensions(image)
-        image = _apply_jpeg_draft(image)
-        image = ImageOps.exif_transpose(image)
-        image = _downsample(image)
-        if _has_transparency(image):
-            image = _flatten_alpha(image)
-        image.load()
-        return image
+            with Image.open(path, formats=ALLOWED_UPLOAD_FORMATS) as image:
+                return _prepare_image(image)
     except Exception as e:
         logger.warning("Failed to load image file %s: %s", path, e)
         return None
@@ -153,15 +153,8 @@ def load_uploaded_image(uploaded_file) -> Image.Image | None:
         # 分配内存。先将其警告升级为异常，再执行更严格的产品像素上限。
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            image: Image.Image = Image.open(uploaded_file, formats=ALLOWED_UPLOAD_FORMATS)
-        _validate_upload_dimensions(image)
-        image = _apply_jpeg_draft(image)
-        image = ImageOps.exif_transpose(image)
-        image = _downsample(image)
-        if _has_transparency(image):
-            image = _flatten_alpha(image)
-        image.load()  # 强制立即解码，损坏/截断文件在此暴露而非流水线中途
-        return image
+            with Image.open(uploaded_file, formats=ALLOWED_UPLOAD_FORMATS) as image:
+                return _prepare_image(image)
     except Exception as e:
         logger.warning("Failed to open uploaded image: %s", e)
         st.error(f"无法读取图片文件（可能已损坏或格式不符）: {e}")

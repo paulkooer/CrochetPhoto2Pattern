@@ -3,8 +3,37 @@ from __future__ import annotations
 
 import os
 import tempfile
+from collections.abc import Iterable
 from pathlib import Path
 from unicodedata import normalize
+
+
+def validate_output_set(destinations: Iterable[Path], sources: Iterable[Path]) -> None:
+    """Reject aliases across the entire batch before any worker can write."""
+    names: set[str] = set()
+    inodes: set[tuple[int, int]] = set()
+
+    def identity(path: Path):
+        resolved = path.resolve()
+        name = normalize("NFC", str(resolved)).casefold()
+        try:
+            stat = resolved.stat()
+        except FileNotFoundError:
+            return name, None
+        return name, (stat.st_dev, stat.st_ino)
+
+    for source in sources:
+        name, inode = identity(source)
+        names.add(name)
+        if inode is not None:
+            inodes.add(inode)
+    for destination in destinations:
+        name, inode = identity(destination)
+        if name in names or (inode is not None and inode in inodes):
+            raise ValueError(f"批量输入/输出路径冲突: {destination}")
+        names.add(name)
+        if inode is not None:
+            inodes.add(inode)
 
 
 def output_paths(args) -> dict[str, Path]:
