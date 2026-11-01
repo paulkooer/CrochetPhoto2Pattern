@@ -215,7 +215,12 @@ def test_edit_preparation_failure_preserves_session(result, monkeypatch, directi
     monkeypatch.setattr(edit_history, failure, fail)
     with pytest.raises(ValueError, match="injected"):
         if direction == "commit":
-            edit_history.commit_edit("result", result, deepcopy(result))
+            candidate = deepcopy(result)
+            # A real instruction change must still prepare atomically; an
+            # identical submission now intentionally skips snapshot creation.
+            first_round = candidate["params"]["parts"][0]["rounds"][0]
+            first_round["notes"] = (first_round.get("notes") or "") + "；试钩后核对张力"
+            edit_history.commit_edit("result", result, candidate)
         else:
             edit_history.restore_edit("result", result, direction)
     assert state == before

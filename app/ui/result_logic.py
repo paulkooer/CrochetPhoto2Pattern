@@ -150,10 +150,21 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
     style/gauge/色带随 result 透传；对照新旧模板保留构造未变部件的手改。
     纯本地计算，无 API 成本。
     """
+    previous = ImageAnalysis(**result["analysis"])
     analysis = ImageAnalysis(**{
         **result["analysis"],
         "head_diameter_cm": new_head, "height_cm": new_height,
     })
+    current_structure = normalize_structure(result["structure"])
+    current_head = next((part["diameter_cm"] for part in current_structure["parts"]
+                         if part["name"] == "头部" and part.get("diameter_cm")),
+                        previous.head_diameter_cm)
+    # Re-entering the current dimensions must not silently rewrite provenance
+    # or regenerate hand-edited work. An independently edited head is different:
+    # synchronizing it with the analysis can affect parts whose sizes are inferred.
+    if (current_structure["parts"] and analysis == previous
+            and current_head == previous.head_diameter_cm):
+        return deepcopy(result)
     structure = _resize_structure(result, analysis)
     gauge = gauge_from_result(result)
     params = CrochetParamsGenerator.generate_params(

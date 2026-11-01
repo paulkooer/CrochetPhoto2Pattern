@@ -14,6 +14,33 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-01 unchanged edits and material previews, based on merged `main` at `b084da1`
+([PR #28](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/28); weighed-swatch fixes from
+[PR #27](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/27) are also included):
+a full renderer AppTest reproduced loss of redo and a new display ID after undo followed by
+resubmitting unchanged materials or dimensions. Complete canonical pattern revisions now
+identify unchanged submissions, retaining current work and history. An unchanged resize with
+matching structure and analysis retains its original sizing provenance without regenerating.
+If a separately edited head differs from the analysis, the UI explains that submitting will
+synchronize it and can recompute dependent parts. Unchanged structure, size and JSON submissions
+no longer show a contradictory success message. Actual instructions, colors, counts, gauge,
+labels and provenance still count as changes, even with equal aggregate metrics.
+
+The yarn form can preview/cancel/apply grams, metres, ball counts, allowance, labels and weighed
+sample origin. Application retains latest progress and notes; legacy-origin confirmation and
+original trial evidence checks remain. Add **21 regressions** and change existing preparation
+failure injections to use a real instruction edit, retaining their atomicity assertions.
+
+Full suite: **2298 passed, 2 skipped in 80.69s**; repository-wide Ruff, mypy (187 files),
+Node syntax, schema/documentation and diff checks pass (Python 3.12.13, locked dev+pdf).
+All **13 local Chrome synthetic full-app flows pass**, including actual preview-time downloads,
+cancel, apply, undo, unchanged material and size submissions, and redo with preserved sizing
+provenance, progress, notes and sample origin. The invalid-import check waits for the uploaded
+file to appear before submitting.
+The skips remain missing authorized photos and optional MediaPipe. No new dependency, format or
+cache change (export cache remains **13**). These are developer checks; independent review is
+pending and remote CI must match this batch's fixed head. Beta/G3/G4 are unchanged.
+
 2026-11-01 batch file protection and decoder memory, based on merged `main` at `1b02926`:
 synthetic CLI probes confirmed that a cross-job output symlink could replace another input PNG
 with JSON, and two outputs could share one target while reporting success. Whole-batch preflight

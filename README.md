@@ -77,10 +77,14 @@ Unknown part names remain available for review. Remove mistaken labels or select
   Part names still need review; hidden or cropped-out anatomy cannot be recovered.
 - Form-based part size/quantity/position/attachment editing and a per-round stitch table,
   plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
+  Canonically unchanged submissions retain the current result and redo history. Reapplying
+  the same dimensions also retains sizing provenance when structure and analysis agree.
 - One per-color yarn purchase list with a separate subtotal; optional ball labels and
   weighed swatches refine grams, metres, and whole-ball counts for parts matching the
   swatch's recorded gauge. Other gauges retain heuristic estimates. Estimates include a
   configurable allowance (10% by default), and the same yarn specification applies to all colors.
+  Preview changes to grams, metres, ball counts, allowance, labels and swatch origin before
+  applying, or cancel while retaining current work, progress and notes.
 - Stage timings, fallback reasons, and a runtime budget. Historical imported results retain their original usage metadata.
 - Strictly validated advanced structure editing with local regeneration.
 - Separate-head neck openings: preview an exact stitch target such as 16, with executable
