@@ -16,7 +16,7 @@ from pathlib import Path
 
 from app import software_version
 from app.models.crochet_params import CrochetParamsGenerator
-from app.models.gauge import ShapingStyle, gauge_from_ui
+from app.models.gauge import PRESETS, Gauge, ShapingStyle
 from app.models.geometry import mock_geometry, no_photo_geometry
 from app.models.orchestrator import PipelineOrchestrator
 from app.models.sizing import scale_analysis_to_target_height, sizing_meta_for_analysis
@@ -71,7 +71,7 @@ def run(args: argparse.Namespace) -> dict:
     if bad:
         raise SystemExit(f"未知部件: {'、'.join(bad)}（可选：{'、'.join(PART_NAMES)}）")
 
-    gauge = gauge_from_ui(args.gauge, args.stitches, args.rows)
+    gauge = _gauge_from_args(args)
     style = ShapingStyle(sphere_mode=args.sphere_mode, one_piece=args.one_piece,
                          skirt_style=args.skirt_style, ruffle_hem=args.ruffle)
     orch = PipelineOrchestrator()
@@ -140,6 +140,17 @@ def run(args: argparse.Namespace) -> dict:
 
 class PatternGenerationErrorSafe(RuntimeError):
     pass
+
+
+def _gauge_from_args(args: argparse.Namespace) -> Gauge:
+    """Explicit CLI inputs must not use the legacy UI fallback or clamping."""
+    if args.gauge == "custom":
+        if args.stitches is None or args.rows is None:
+            raise ValueError("--gauge custom 必须同时提供 --stitches 和 --rows")
+        return Gauge(args.stitches, args.rows)
+    if args.gauge not in PRESETS:
+        raise ValueError(f"未知密度预设：{args.gauge}")
+    return PRESETS[args.gauge]
 
 
 def run_batch(args) -> int:
@@ -229,6 +240,11 @@ def main(argv=None) -> int:
     # argv 可为参数列表或已构造的 Namespace（run_batch 内部复用）
     args = (argv if isinstance(argv, argparse.Namespace)
             else build_parser().parse_args(argv))
+    try:
+        _gauge_from_args(args)
+    except ValueError as exc:
+        print(f"密度参数无效: {exc}", file=sys.stderr)
+        return 2
     if args.batch_dir:
         if args.pdf:
             print("--pdf 在批量模式下按每图 <stem>.pdf 导出", file=sys.stderr)

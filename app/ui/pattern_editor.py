@@ -5,10 +5,12 @@ from __future__ import annotations
 import re
 import uuid
 from copy import deepcopy
+from dataclasses import asdict
 
 import streamlit as st
 
 from app.models.crochet_params import refresh_derived
+from app.models.gauge import gauge_from_result
 from app.models.geometry import normalize_structure
 from app.models.materials import YarnSpec
 from app.ui.edit_history import commit_edit, preview_edit, render_history
@@ -123,7 +125,12 @@ def edit_yarn(result: dict, spec: dict | None) -> dict:
     if spec is None:
         updated["params"].pop("yarn_spec", None)
     else:
-        updated["params"]["yarn_spec"] = YarnSpec.model_validate(spec).model_dump()
+        validated = YarnSpec.model_validate(spec)
+        payload = validated.model_dump()
+        # An explicit recording action knows the swatch's origin; imports do not.
+        if validated.swatch_weight_g is not None and validated.swatch_gauge is None:
+            payload["swatch_gauge"] = asdict(gauge_from_result(result))
+        updated["params"]["yarn_spec"] = payload
     refresh_derived(updated["params"])
     return updated
 
@@ -340,13 +347,14 @@ def render_pattern_editor(result: dict, slot: str) -> None:
                     st.error(f"逐圈修改失败：{md_safe(exc)}")
     with st.expander("🧶 按实际毛线与试片估算用量", expanded=False):
         spec = result["params"].get("yarn_spec") or {}
-        from app.models.gauge import has_independent_gauge
+        from app.models.gauge import Gauge
 
-        if has_independent_gauge(result["params"]):
-            st.caption("线标适用于所有颜色；试片克重仅用于默认密度部件，独立密度部件按各自密度经验估算。"
-                       "试片请用相同毛线与针法，称重不含线尾。")
-        else:
-            st.caption("以下线标与试片适用于所有颜色。试片请用相同毛线与针法，称重不含线尾。")
+        origin = Gauge(**spec["swatch_gauge"]) if spec.get("swatch_gauge") else gauge_from_result(result)
+        legacy = bool(spec.get("swatch_weight_g") and not spec.get("swatch_gauge"))
+        st.caption("线标适用于所有颜色；实测克重只用于与试片密度相同的部件，其余密度使用经验估算。"
+                   "试片请用相同毛线与针法，称重不含线尾；记录下方这块试片的实际密度。")
+        if legacy:
+            st.warning("旧试片未记录测量密度，称重数据已保留；请核对密度并确认后再使用实测用量。")
         with st.form(f"edit_{rid}_yarnform"):
             weight = st.number_input(
                 "每团克重（g）",
@@ -378,6 +386,12 @@ def render_pattern_editor(result: dict, slot: str) -> None:
             rows = st.number_input(
                 "试片行数", 1, 1000, int(spec.get("swatch_rows") or 20), key=f"edit_{rid}_swatchrows"
             )
+            swatch_st = st.number_input("试片 10cm 针数", 6.0, 40.0,
+                origin.stitches_per_10cm, .5, key=f"edit_{rid}_swatchgauge_stitches")
+            swatch_rw = st.number_input("试片 10cm 行数", 8.0, 50.0,
+                origin.rows_per_10cm, .5, key=f"edit_{rid}_swatchgauge_rows")
+            confirmed = (st.checkbox("已核对旧试片的测量密度", key=f"edit_{rid}_swatch_confirm")
+                         if legacy else True)
             waste = st.number_input(
                 "预留线尾／损耗（%）",
                 0.0,
@@ -388,9 +402,12 @@ def render_pattern_editor(result: dict, slot: str) -> None:
             submitted = st.form_submit_button("更新材料估算")
         if submitted:
             try:
-                payload = {"ball_weight_g": weight, "ball_length_m": length, "waste_percent": waste}
+                payload: dict = {"ball_weight_g": weight, "ball_length_m": length, "waste_percent": waste}
                 if measured:
+                    if not confirmed:
+                        raise ValueError("请先核对并确认旧试片的测量密度；原称重数据和图解已保留")
                     payload.update(swatch_weight_g=swatch_weight, swatch_stitches=stitches, swatch_rows=rows)
+                    payload["swatch_gauge"] = asdict(Gauge(swatch_st, swatch_rw))
                 _apply(slot, result, edit_yarn(result, payload))
             except Exception as exc:
                 st.error(f"材料估算失败：{md_safe(exc)}")

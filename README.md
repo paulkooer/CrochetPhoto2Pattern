@@ -78,8 +78,8 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Form-based part size/quantity/position/attachment editing and a per-round stitch table,
   plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
 - One per-color yarn purchase list with a separate subtotal; optional ball labels and
-  weighed swatches refine grams, metres, and whole-ball counts for parts at the default gauge.
-  Differing garment gauges retain heuristic estimates. Estimates include a
+  weighed swatches refine grams, metres, and whole-ball counts for parts matching the
+  swatch's recorded gauge. Other gauges retain heuristic estimates. Estimates include a
   configurable allowance (10% by default), and the same yarn specification applies to all colors.
 - Stage timings, fallback reasons, and a runtime budget. Historical imported results retain their original usage metadata.
 - Strictly validated advanced structure editing with local regeneration.
@@ -259,6 +259,9 @@ uv run crochet2pattern --batch-dir photos/ --out-dir patterns/
 Canonical part values in the current schema are Chinese (`头部`, `身体`, and so on), so
 the manual CLI example intentionally retains them. Photo mode always uses local vision, regardless of provider environment variables. A pattern that violates stitch
 arithmetic or the active gauge's shaping limit exits with code `2`.
+`--gauge custom` requires both `--stitches` (6–40 per 10cm) and `--rows` (8–50 per 10cm),
+with finite values. Invalid custom density exits with code `2` before generation or output
+changes, including batch-directory creation; it does not clamp or use another preset.
 
 ### Optional extras
 
@@ -326,8 +329,11 @@ Full-project timing is not treated as comparable to the original round-crochet b
 Trial records currently support one shared swatch. Patterns with garment gauges differing
 from the default must use crochet projects to save their work; new trial creation is disabled
 in the UI and rejected by the CLI. An explicit garment gauge equal to the default is allowed.
-Weighed yarn swatches apply only to parts at the default gauge; differing garment gauges use
-the existing heuristic, while the same ball label still applies to all colors.
+Weighed yarn swatches keep their recorded gauge when the default changes; only matching parts
+use that weight, while other parts use the existing heuristic. The same ball label still applies
+to all colors. Old weighed swatches without a recorded gauge retain their raw data and use
+heuristic estimates until their density is explicitly confirmed. See the
+[weighed-swatch guide](docs/project-format.md#实测试片克重与来源密度).
 
 Create a trial record tied to the exact pattern SHA-256, record actual gauge, dimensions,
 yarn, and active time, then generate conservative calibration candidates:

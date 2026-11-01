@@ -40,7 +40,7 @@ def render_part_gauge(result: dict, slot: str) -> None:
         rows = st.number_input("本部件 10cm 行数", 8.0, 50.0, selected.rows_per_10cm, .5,
                                disabled=not enabled, key=prefix + "_rows")
         st.caption("取消勾选可恢复沿用默认密度。有效密度不变时保留现有手改针法；"
-                   "实际变化会重算本部件，请预览圈序和进度。默认试片克重仅用于有效密度等于默认值的部件，"
+                   "实际变化会重算本部件，请预览圈序和进度。实测克重只用于与已记录试片密度相同的部件，"
                    "其他密度的用量仍按经验估算。")
         if st.button("预览部件密度修改", key=prefix + "_preview"):
             from app.ui.result_renderer import md_safe
