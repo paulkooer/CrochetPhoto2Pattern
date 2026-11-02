@@ -14,8 +14,15 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
-2026-11-02 layering cleanup and progress record, on branches `refactor/domain-layering` and
-`refactor/project-session` based on PR #32 (local pre-commit checks): headless logic moves to
+2026-11-02 merges, as directed by the maintainer:
+[PR #31](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/31) was squash-merged into `main` as
+`c0b6919`; its tree matches checked head `1a33b5f`, where all **10 remote checks passed**.
+[PR #32](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/32) passed all **10 checks** on head
+`bd6f98d` after merging `main` (tree identical to the previously checked `8a9a3e2`) and was squash-merged
+as `de0a65a`. No independent review; Beta and G3/G4 are unchanged.
+
+2026-11-02 layering cleanup and progress record, on branches `refactor/services-layering` and
+`refactor/progress-record` based on merged `main` `de0a65a` (local pre-commit checks): headless logic moves to
 `app/services`, and the CLI, evaluation and project modules no longer load Streamlit (guarded by
 a layering test); packaging discovers only `app*`. Physical progress becomes one per-tab record
 keyed by semantic identity; checkboxes are views, and edits or restores no longer migrate widget
@@ -865,8 +872,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Feature baseline merged: `03a5daf`** | PRs #24 and #25 merged into `main`; the final tree matches checked head `b2df9a3` and the locally tested garment batch (2184 passed, 2 skipped). Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 10 remote checks passed for final PR #25 head** | Checked head `b2df9a3`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and all 11 browser flows pass; exact run links appear above. Verify post-merge and later-commit results against their own SHAs |
+| G1 Reproducible source | **Feature baseline merged: `de0a65a`** | PRs #31 and #32 were squash-merged into `main`; their trees match checked heads `1a33b5f` and `bd6f98d`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 10 remote checks passed for final PR #32 head** | Checked head `bd6f98d`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and all 14 browser flows pass. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

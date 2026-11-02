@@ -14,8 +14,13 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
-2026-11-02 分层整理与进度记录（基于 PR #32 的分支 `refactor/domain-layering`、`refactor/project-session`；提交前
-本地验证）：纯逻辑迁至 `app/services`，CLI、评测与工程模块不再加载 Streamlit（新增分层守卫测试）；打包改为
+2026-11-02 合并：按维护者指示，[PR #31](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/31) 以 squash 合入
+`main`（`c0b6919`），合并树与受检头提交 `1a33b5f` 相同，其 **10 项远端检查全部通过**；
+[PR #32](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/32) 合并 `main` 后的头提交 `bd6f98d`（文件树与此前受检的
+`8a9a3e2` 相同）**10 项检查全部通过**后 squash 合入（`de0a65a`）。无独立复核；Beta 与 G3/G4 不变。
+
+2026-11-02 分层整理与进度记录（基于已合并 `main` `de0a65a` 的分支 `refactor/services-layering`、
+`refactor/progress-record`；提交前本地验证）：纯逻辑迁至 `app/services`，CLI、评测与工程模块不再加载 Streamlit（新增分层守卫测试）；打包改为
 显式只发现 `app*`。实体进度改为每个标签页一份按语义身份保存的记录，复选框只做视图，编辑与恢复不再迁移控件键。
 全量 **2459 passed、2 skipped，85.94s**；全仓 Ruff、mypy（200 文件）通过；本地 Chrome 的 **14 条合成流程**
 及遮罩画布回归通过，勾选一次的服务端重跑约 58 ms（此前约 56 ms）。用户可见行为与工程格式不变；未做远端
@@ -738,8 +743,8 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **功能基线已合并：`03a5daf`** | PR #24、#25 已合入 `main`，最终文件树与受检头提交 `b2df9a3` 及本地密度批次一致（2184 passed、2 skipped）。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **PR #25 最终头提交的 10 项远端检查通过** | 受检头提交 `b2df9a3`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和 11 条浏览器流程均通过；见上方精确运行链接。合并后及后续提交的检查按各自 SHA 核对 |
+| G1 可复现源码 | **功能基线已合并：`de0a65a`** | PR #31、#32 已 squash 合入 `main`，合并树分别与受检头提交 `1a33b5f`、`bd6f98d` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
+| G2 支持版本自动化 | **PR #32 最终头提交的 10 项远端检查通过** | 受检头提交 `bd6f98d`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和 14 条浏览器流程均通过。合并后及后续提交的检查按各自 SHA 核对 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛（含可钩率 100%，以及除声明不支持的构造外 Parade 100% 完整导出）。默认本地流程只交付固定模板部件，部件宏 F1 高于模板基线这一条仍需新的识别能力 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
