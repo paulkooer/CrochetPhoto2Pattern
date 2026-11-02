@@ -27,14 +27,14 @@
   "description": "One yarn specification shared by all colours; swatch must use that yarn.",
   "properties": {
     "ball_length_m": {
-      "exclusiveMinimum": 0,
       "maximum": 10000,
+      "minimum": 1e-06,
       "title": "Ball Length M",
       "type": "number"
     },
     "ball_weight_g": {
-      "exclusiveMinimum": 0,
       "maximum": 2000,
+      "minimum": 1e-06,
       "title": "Ball Weight G",
       "type": "number"
     },
@@ -80,8 +80,8 @@
     "swatch_weight_g": {
       "anyOf": [
         {
-          "exclusiveMinimum": 0,
           "maximum": 2000,
+          "minimum": 1e-06,
           "type": "number"
         },
         {

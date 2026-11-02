@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-11-01. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-11-02. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -13,6 +13,32 @@ real-photo baseline and an independent physical-trial baseline are still missing
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
 ## Latest reproducible validation
+
+2026-11-02 physical-copy progress and import order, based on the preceding local changes:
+avoid shared copy identities and prevent an edited graph ID from transferring completion to
+another piece. Ambiguous legacy completions require explicit recovery of the other progress
+and notes, followed by physical rechecking. Only projects with a collision gain a progress
+identity marker, which older readers reject. Fix fresh-process import cycles in the schema and
+project modules. See the [progress review and synthetic comparison](progress-identity-review-20261102.md).
+
+Full suite: **2346 passed, 2 skipped in 97.09s**; repository-wide Ruff, mypy (191 files), schema
+and diff checks pass. An offline wheel built with local Python 3.12.13 includes the new module
+and imports both entry points in a fresh process. Local Chrome 156.0.8078.74 passes **14 synthetic
+flows**, including explicit legacy recovery, a real download and fresh-context progress
+isolation; the worktree was uncommitted at validation. Skips remain the authorized-photo directory and optional
+MediaPipe. No remote CI, independent review or physical trial was run; Beta and G3/G4 are unchanged.
+
+2026-11-02 material and output batch, based on merged `d619179`: reject extreme and boolean yarn
+measurements, stream CLI destination backups, restore permissions and modification time on
+ordinary rollback, and report single-output symlink cycles. Generation and refresh share one
+per-color aggregation. Rollback does not guarantee owner, ACL, extended attributes or group
+atomicity during power loss. Affected legacy projects need correction in the prior version;
+export cache is **14**. See the [review and synthetic benchmark](optimization-review-20261102.md).
+
+Full suite: **2320 passed, 2 skipped in 83.75s**; repository-wide Ruff, mypy (188 files), schema
+and diff checks pass (local Python 3.12.13). Skips are the authorized-photo directory and optional
+MediaPipe. That batch did not run a real browser, remote CI, independent review or physical
+trials. These are local developer checks; Beta and G3/G4 remain unchanged.
 
 2026-11-01 unchanged edits and material previews, based on merged `main` at `b084da1`
 ([PR #28](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/28); weighed-swatch fixes from

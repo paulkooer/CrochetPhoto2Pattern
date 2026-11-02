@@ -18,10 +18,14 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from ..gauge_constraints import (
+    INDEPENDENT_GAUGE_PARTS,
+    MAX_GAUGE_ROWS,
+    MAX_GAUGE_STITCHES,
+    MIN_GAUGE_ROWS,
+    MIN_GAUGE_STITCHES,
+)
 from ..utils.numbers import finite_float
-
-MIN_GAUGE_STITCHES, MAX_GAUGE_STITCHES = 6.0, 40.0
-MIN_GAUGE_ROWS, MAX_GAUGE_ROWS = 8.0, 50.0
 
 BASE_GRAMS_PER_STITCH = 0.08
 BASE_STITCH_AREA_CM2 = 0.785 * 0.625
@@ -206,7 +210,6 @@ PRESETS: dict[str, Gauge] = {
 }
 
 DEFAULT = PRESETS["classic"]
-INDEPENDENT_GAUGE_PARTS = frozenset({"帽子", "裙子"})
 INDEPENDENT_TRIAL_MESSAGE = (
     "当前试钩记录只支持所有部件沿用默认密度；独立密度图解请先保存钩织工程，"
     "待支持分部件小样记录后再建立试钩。"

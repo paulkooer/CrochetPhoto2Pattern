@@ -7,9 +7,17 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from pydantic import BaseModel, Field, SerializerFunctionWrapHandler, model_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 from app.schemas import PartGauge
+from app.utils.numbers import finite_float
 
 from .colors import brand_code
 from .gauge import DEFAULT as DEFAULT_GAUGE
@@ -45,15 +53,30 @@ def _safety_eye_mm(head_diameter_cm: float | None) -> int:
     return 14
 
 
+# Far below measurable yarn quantities, but keeps the derived rates finite and
+# nonzero across the supported stitch-count and swatch-size limits.
+MIN_YARN_MEASUREMENT = 1e-6
+
+
 class YarnSpec(BaseModel):
     """One yarn specification shared by all colours; swatch must use that yarn."""
-    ball_weight_g: float = Field(gt=0, le=2000, allow_inf_nan=False)
-    ball_length_m: float = Field(gt=0, le=10000, allow_inf_nan=False)
-    swatch_weight_g: float | None = Field(default=None, gt=0, le=2000, allow_inf_nan=False)
+    ball_weight_g: float = Field(ge=MIN_YARN_MEASUREMENT, le=2000, allow_inf_nan=False)
+    ball_length_m: float = Field(ge=MIN_YARN_MEASUREMENT, le=10000, allow_inf_nan=False)
+    swatch_weight_g: float | None = Field(default=None, ge=MIN_YARN_MEASUREMENT, le=2000, allow_inf_nan=False)
     swatch_stitches: int | None = Field(default=None, ge=1, le=1000, strict=True)
     swatch_rows: int | None = Field(default=None, ge=1, le=1000, strict=True)
     swatch_gauge: PartGauge | None = None
     waste_percent: float = Field(default=10, ge=0, le=100, allow_inf_nan=False)
+
+    @field_validator("ball_weight_g", "ball_length_m", "swatch_weight_g", "waste_percent", mode="before")
+    @classmethod
+    def finite_measurements(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        try:
+            return finite_float(value)
+        except ValueError:
+            raise ValueError("线材数值必须是有限数值，不能是布尔值") from None
 
     @model_serializer(mode="wrap")
     def _serialize_swatch_gauge(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
@@ -138,10 +161,10 @@ def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
     return rows, summary
 
 
-def _materials(parts: list[dict[str, Any]], part_names: set,
-                gauge: Gauge = DEFAULT_GAUGE, yarn_spec: dict | None = None) -> list[dict[str, Any]]:
+def _materials_and_summary(parts: list[dict[str, Any]], gauge: Gauge = DEFAULT_GAUGE,
+                           yarn_spec: dict | None = None) -> tuple[list[dict[str, Any]], dict]:
     """One purchasable yarn list, followed by accessories. No duplicate group totals."""
-    materials, _ = yarn_requirements(parts, gauge, yarn_spec)
+    materials, summary = yarn_requirements(parts, gauge, yarn_spec)
     # 一体件会把"头部/身体"合并改名"头身（一体）"；显式识别这三个
     # 语义名称，避免"头套"等附件因子串命中而误获安全眼或配重珠。
     head_count = sum(_part_quantity(p) for p in parts
@@ -207,7 +230,13 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
         })
     materials.append({"item": "缝合针", "quantity": "1 根",
                       "count": 1, "unit": "根", "scope": "reusable"})
-    return materials
+    return materials, summary
+
+
+def _materials(parts: list[dict[str, Any]], part_names: set,
+               gauge: Gauge = DEFAULT_GAUGE, yarn_spec: dict | None = None) -> list[dict[str, Any]]:
+    """Compatibility wrapper for callers that only need the material list."""
+    return _materials_and_summary(parts, gauge, yarn_spec)[0]
 
 
 def material_summary_text(params: dict) -> str:

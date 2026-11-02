@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+import shutil
+import stat
 import tempfile
 from collections.abc import Iterable
 from pathlib import Path
@@ -44,8 +46,17 @@ def output_paths(args) -> dict[str, Path]:
         if not value:
             continue
         path = Path(value).resolve()
-        if not path.parent.is_dir() or (path.exists() and not path.is_file()):
+        if not path.parent.is_dir():
             raise ValueError(f"输出路径不可用: {path}")
+        # exists() may hide symlink loops on newer Python versions. Only a
+        # genuinely missing destination is eligible for creation.
+        try:
+            info = path.stat()
+        except FileNotFoundError:
+            pass
+        else:
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError(f"输出路径不可用: {path}")
         for other in [*paths.values(), *([source] if source else [])]:
             same_name = normalize("NFC", str(path)).casefold() == normalize("NFC", str(other)).casefold()
             if same_name or (path.exists() and other.exists() and path.samefile(other)):
@@ -61,7 +72,7 @@ def write_outputs(outputs: dict[Path, bytes]) -> None:
     still interrupt a group; filesystem APIs do not offer multi-file atomicity.
     """
     staged: dict[Path, Path] = {}
-    backups: dict[Path, Path] = {}
+    backups: dict[Path, tuple[Path, os.stat_result]] = {}
     replaced: list[Path] = []
     temporary: list[Path] = []
 
@@ -74,11 +85,25 @@ def write_outputs(outputs: dict[Path, bytes]) -> None:
             os.fsync(handle.fileno())
         return name
 
+    def stage_backup(path: Path) -> tuple[Path, os.stat_result]:
+        # A previous output can be arbitrarily large. Copy in fixed-size chunks
+        # and preserve the original mode/times if this backup must be restored.
+        with path.open("rb") as source, tempfile.NamedTemporaryFile(
+            dir=path.parent, prefix=".crochet-", delete=False
+        ) as handle:
+            name = Path(handle.name)
+            temporary.append(name)
+            info = os.fstat(source.fileno())
+            shutil.copyfileobj(source, handle, length=1 << 20)
+            handle.flush()
+            os.fsync(handle.fileno())
+        return name, info
+
     try:
         for path, data in outputs.items():
             staged[path] = stage(path, data)
             if path.exists():
-                backups[path] = stage(path, path.read_bytes())
+                backups[path] = stage_backup(path)
         try:
             for path, pending in staged.items():
                 os.replace(pending, path)
@@ -87,13 +112,26 @@ def write_outputs(outputs: dict[Path, bytes]) -> None:
             recovery_errors = []
             for path in reversed(replaced):
                 if path in backups:
-                    backup = backups[path]
+                    backup, info = backups[path]
                     # Keep recovery bytes if rollback itself fails.
                     temporary.remove(backup)
+                    metadata_errors = []
+                    try:
+                        os.chmod(backup, stat.S_IMODE(info.st_mode))
+                    except OSError as exc:
+                        metadata_errors.append(f"权限: {exc}")
+                    try:
+                        os.utime(backup, ns=(info.st_atime_ns, info.st_mtime_ns))
+                    except OSError as exc:
+                        metadata_errors.append(f"时间: {exc}")
                     try:
                         os.replace(backup, path)
                     except OSError as exc:
                         recovery_errors.append(f"原文件备份保留于 {backup}: {exc}")
+                    else:
+                        if metadata_errors:
+                            recovery_errors.append(
+                                f"{path} 内容已恢复，但元数据未完全恢复: {'；'.join(metadata_errors)}")
                 else:
                     try:
                         path.unlink()

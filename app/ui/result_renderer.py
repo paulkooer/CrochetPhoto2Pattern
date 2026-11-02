@@ -32,7 +32,7 @@ _WIDGET_KEY_PREFIXES = (
     # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
     "share_token_", "edit_", "export_trace_", "export_cache_",
     "progress_", "progress_page_", "progress_part_",
-    "project_notes_", "project_save_",
+    "project_notes_", "project_save_", "project_recovery_notice_",
     "leg_join_result_", "leg_join_manual_result_",
 )
 
@@ -338,6 +338,8 @@ def render_results(result: dict, slot: str) -> None:
         "你可以查看结构、逐圈勾选进度、局部修正并下载备份。</p>",
         unsafe_allow_html=True,
     )
+    if notice := st.session_state.get(f"project_recovery_notice_{result_key}"):
+        st.warning(notice)
 
     # Section 1: Analysis
     section_heading(1, "人物与比例")
