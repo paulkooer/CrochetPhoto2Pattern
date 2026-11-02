@@ -66,10 +66,10 @@ render_results(st.session_state.result, "result")
         assert instruction in captions
 
 
-@pytest.mark.parametrize("old_version", [None, 3, 5, 6, 13])
+@pytest.mark.parametrize("old_version", [3, 5, 6, 13])
 def test_pdf_from_previous_guidance_is_removed_and_regenerated(old_version, monkeypatch):
+    from app.services.workspace import new_workspace, workspace
     from app.ui.export_cache import EXPORT_CACHE_VERSION
-    from app.ui.result_renderer import purge_result_state
 
     built = []
 
@@ -84,24 +84,20 @@ from app.ui.result_renderer import render_results
 render_results(st.session_state.result, "result")
 ''', default_timeout=30)
     at.session_state["result"] = _result()
-    at.session_state["pdf_printed-guidance"] = b"%PDF-old-guidance"
-    if old_version is not None:
-        at.session_state["pdf_format_printed-guidance"] = old_version
+    at.session_state["workspace_result"] = {
+        **new_workspace(_result(), "result"), "pdf": {"format": old_version, "bytes": b"%PDF-old-guidance"}}
     at.run()
     assert not at.exception
-    assert "pdf_printed-guidance" not in at.session_state
+    assert at.session_state["workspace_result"]["pdf"] is None
     assert not any(button.label == "📄 下载 PDF" for button in at.get("download_button"))
     assert not built
     at.button(key="pdf_gen_printed-guidance").click().run()
     assert not at.exception and len(built) == 1
-    assert at.session_state["pdf_format_printed-guidance"] == EXPORT_CACHE_VERSION
-    assert at.session_state["pdf_printed-guidance"] == b"%PDF-updated-guidance"
+    assert at.session_state["workspace_result"]["pdf"] == {
+        "format": EXPORT_CACHE_VERSION, "bytes": b"%PDF-updated-guidance"}
     at.run()
     assert len(built) == 1
     assert any(button.label == "📄 下载 PDF" for button in at.get("download_button"))
-    # Edits/imports clean up both PDF bytes and their format marker.
+    # Edits/imports install a workspace for the new result, without the old PDF.
     state = dict(at.session_state.to_dict())
-    monkeypatch.setattr("app.ui.result_renderer.st.session_state", state)
-    purge_result_state(_result())
-    assert "pdf_printed-guidance" not in state
-    assert "pdf_format_printed-guidance" not in state
+    assert workspace({**_result(), "result_id": "edited"}, "result", state)["pdf"] is None

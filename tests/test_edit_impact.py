@@ -135,4 +135,4 @@ def test_cancel_preview_keeps_the_pattern_progress_and_notes():
     assert not at.exception and at.session_state["result"] == result
     assert at.checkbox(key="chk_project_手臂_0").value
     assert at.text_area(key="project_notes_project").value == "保留此备注"
-    assert "edit_project_pending_preview" not in at.session_state
+    assert at.session_state["workspace_result"]["pending_preview"] is None

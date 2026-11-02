@@ -108,12 +108,11 @@ def test_cache_bounded_in_utf8_bytes_and_returned_objects_are_isolated(monkeypat
     assert value == "中文" * 20 and "large" not in cache
 
 
-def test_result_replacement_purges_only_its_export_cache(monkeypatch):
-    from types import SimpleNamespace
+def test_result_replacement_starts_an_empty_export_cache():
+    from app.services.workspace import workspace
 
-    from app.ui import result_renderer
-
-    state = {"export_cache_current": {"markdown": "old"}, "export_cache_other": {"markdown": "other"}}
-    monkeypatch.setattr(result_renderer, "st", SimpleNamespace(session_state=state))
-    result_renderer.purge_result_state({"result_id": "current"})
-    assert state == {"export_cache_other": {"markdown": "other"}}
+    state: dict = {}
+    workspace({"result_id": "current"}, "result", state)["export_cache"]["markdown"] = "old"
+    workspace({"result_id": "other"}, "manual_result", state)["export_cache"]["markdown"] = "other"
+    assert workspace({"result_id": "replacement"}, "result", state)["export_cache"] == {}
+    assert workspace({"result_id": "other"}, "manual_result", state)["export_cache"] == {"markdown": "other"}

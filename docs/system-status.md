@@ -19,7 +19,22 @@ project must not claim validated dimensions, material usage, time, or finished-i
 `c0b6919`; its tree matches checked head `1a33b5f`, where all **10 remote checks passed**.
 [PR #32](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/32) passed all **10 checks** on head
 `bd6f98d` after merging `main` (tree identical to the previously checked `8a9a3e2`) and was squash-merged
-as `de0a65a`. No independent review; Beta and G3/G4 are unchanged.
+as `de0a65a`.
+[PR #33](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/33) passed all **10 checks** on head `dd8e14c` and was
+squash-merged as `e0eb707` (merged tree identical to `dd8e14c`).
+[PR #34](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/34) was synced with the new `main` as head `d60fcca` (tree
+identical to the previously checked `0e44108`); browser-smoke first failed at the project-JSON download (browser closed),
+passed on a rerun of that job alone, and after all **10 checks** passed it was squash-merged as `98de584`.
+No independent review; Beta and G3/G4 are unchanged.
+
+2026-11-02 per-tab workspace object, on branch `refactor/tab-workspace` based on `main` `98de584` (local
+pre-commit checks): export caches, PDF, share link, messages, pending edit preview, notes, history title and
+recovery notice move into one workspace per tab, bound to the result ID and rebuilt when the result changes;
+edits carry only the notes, title and recovery notice. `_WIDGET_KEY_PREFIXES` is removed, and replacing a result
+clears widget keys whose `_`-separated segment equals the result ID. Full suite: **2467 passed, 2 skipped in
+87.69s**; repository-wide Ruff and mypy (203 files) pass; local Chrome passes **14 synthetic flows** and the
+mask-canvas check. User-visible behavior and project formats are unchanged. No remote CI, independent review,
+authorized-photo evaluation or physical trial; Beta and G3/G4 are unchanged.
 
 2026-11-02 layering cleanup and progress record, on branches `refactor/services-layering` and
 `refactor/progress-record` based on merged `main` `de0a65a` (local pre-commit checks): headless logic moves to

@@ -141,7 +141,7 @@ render_results(st.session_state.result, "result")
     at.run()
     assert not at.exception
     assert any("局部色块需要复核" in w.value for w in at.warning)
-    cache = at.session_state["export_cache_color-ui"]
+    cache = at.session_state["workspace_result"]["export_cache"]
     assert "局部配色待复核" in cache["markdown"]["value"]
     # Metadata is in the export fingerprint; replacing it cannot reuse stale text.
     changed = deepcopy(result)
@@ -150,4 +150,4 @@ render_results(st.session_state.result, "result")
     at.run()
     assert not at.exception
     assert not any("局部色块需要复核" in w.value for w in at.warning)
-    assert "局部配色待复核" not in at.session_state["export_cache_color-ui"]["markdown"]["value"]
+    assert "局部配色待复核" not in at.session_state["workspace_result"]["export_cache"]["markdown"]["value"]

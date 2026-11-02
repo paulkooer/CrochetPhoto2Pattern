@@ -19,9 +19,12 @@ def _download_project(payload: str, completed: int, revision: str) -> None:
 
 
 def render_project_save(result: dict, slot: str) -> None:
+    from app.ui.workspace import live_workspace, notes_key, seed_widget
+
     rid = result.get("result_id") or slot
+    seed_widget(notes_key(rid), live_workspace(result, slot)["notes"])
     with st.expander("🧺 我的钩织工程", expanded=False):
-        notes = st.text_area("个人备注（随工程保存）", key=f"project_notes_{rid}",
+        notes = st.text_area("个人备注（随工程保存）", key=notes_key(rid),
                              max_chars=MAX_PROJECT_NOTES, height=100,
                              help="可记录针号、线材、暂停位置或返工情况。分享链接和图解备份不包含这些备注。")
         st.caption("工程文件保留每份部件的进度、备注和图解版本；关闭页面前请保存到自己的设备。"

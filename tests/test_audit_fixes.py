@@ -182,16 +182,12 @@ def test_ring_labels_unique_coordinates(n_rounds):
     assert len(ys) < n_rounds  # 只标变化圈，信息密度受控
 
 
-def test_purge_covers_pdf_gen_and_sz_prefixes():
-    """F20：purge 前缀覆盖 pdf_gen_ 与 sz_* 全族。"""
-    from app.ui.result_renderer import _WIDGET_KEY_PREFIXES
-    assert any(p == "pdf_gen_" for p in _WIDGET_KEY_PREFIXES)
-    assert any(p == "sz_" for p in _WIDGET_KEY_PREFIXES)
-    assert any(p == "dl_parade_" for p in _WIDGET_KEY_PREFIXES)
+def test_purge_covers_every_widget_key_naming_the_result():
+    """F20：purge 不依赖前缀登记——pdf_gen_、sz_* 全族以及新增控件都随 rid 清理。"""
     result = {"result_id": "purge-x"}
-    state = {"pdf_gen_purge-x": 1, "pdf_purge-x": 2, "sz_head_purge-x": 3,
-             "sz_purge-x_ok": True, "chk_purge-x_头部_0": True,
-             "dl_parade_purge-x": 4, "unrelated": 9}
+    state = {"pdf_gen_purge-x": 1, "dl_pdf_purge-x": 2, "sz_head_purge-x": 3,
+             "sz_go_purge-x": True, "chk_purge-x_头部_0": True,
+             "dl_parade_purge-x": 4, "some_future_widget_purge-x_7": 5, "unrelated": 9}
     # 模拟 session_state 清理（purge 操作 st.session_state）
     import app.ui.result_renderer as rr
     class FakeState(dict):
@@ -204,11 +200,7 @@ def test_purge_covers_pdf_gen_and_sz_prefixes():
         rr.purge_result_state(result)
     finally:
         monkey.undo()
-    assert "pdf_gen_purge-x" not in fs and "pdf_purge-x" not in fs
-    assert "sz_head_purge-x" not in fs and "sz_purge-x_ok" not in fs
-    assert "chk_purge-x_头部_0" not in fs   # 同 rid 的勾选本就该清
-    assert "dl_parade_purge-x" not in fs    # Parade 下载键同样随 rid 清理
-    assert fs["unrelated"] == 9
+    assert fs == {"unrelated": 9}
 
 
 # ── U5：门禁矩阵扩展——配色带 × 照片剖面 × 实测 span 组合面 ────────────────
