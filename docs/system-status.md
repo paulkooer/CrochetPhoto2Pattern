@@ -18,7 +18,8 @@ project must not claim validated dimensions, material usage, time, or finished-i
 `fix/crochetability-gate` (local pre-commit checks; remote CI belongs to the PR head commit):
 first generation refuses heads or bodies whose widest round has fewer than 18 stitches, and
 photo review/manual input preview counts with the smallest fix. Evaluation adds the crochetability rate and reports declared Parade constructions
-such as ring starts separately. Full suite: **2366 passed, 2 skipped in 84.87s**; repository-wide
+such as ring starts separately; see the [blocked-state screenshot](images/crochetability-preview-synthetic.png).
+Full suite: **2366 passed, 2 skipped in 84.87s**; repository-wide
 Ruff and mypy (194 files) pass. Local Chrome passes **14 synthetic flows** and the mask-canvas
 check. No remote CI, independent review, authorized-photo evaluation or physical trial; Beta and
 G3/G4 are unchanged.

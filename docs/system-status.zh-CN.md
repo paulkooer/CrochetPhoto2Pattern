@@ -17,7 +17,8 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 2026-11-02 可钩性门禁与评测策略 v3（基于 `7c4395f` 的分支 `fix/crochetability-gate`；以下为提交前
 本地验证，远端 CI 以 PR 当前头提交为准）：
 首次生成拒绝最宽一圈少于 18 针的头部或身体，确认页与手动页先预览针数并给出最小调整；
-评测新增可钩率，Parade 门槛单列环形起针等声明不支持的构造。全量 **2366 passed、2 skipped，
+评测新增可钩率，Parade 门槛单列环形起针等声明不支持的构造；阻断界面见
+[合成截图](images/crochetability-preview-synthetic.png)。全量 **2366 passed、2 skipped，
 84.87s**；全仓 Ruff、mypy（194 文件）通过。本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。
 未做远端 CI、独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
 
