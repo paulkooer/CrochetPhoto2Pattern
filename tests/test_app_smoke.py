@@ -126,9 +126,9 @@ def test_manual_regenerate_applies_edited_json():
     }
     edited["parts"][0]["rounds"] = edited["parts"][0]["rounds"][:3]
     edited["gauge"] = {"stitches_per_10cm": "20", "rows_per_10cm": "16"}
-    at.session_state[f"pdf_{rid}"] = b"%PDF-cached-old-pattern"
-    at.session_state[f"pdf_format_{rid}"] = EXPORT_CACHE_VERSION
-    at.session_state[f"share_token_{rid}"] = "cached-old-pattern"
+    workspace = at.session_state["workspace_manual_result"]
+    workspace["pdf"] = {"format": EXPORT_CACHE_VERSION, "bytes": b"%PDF-cached-old-pattern"}
+    workspace["share"] = {"token": "cached-old-pattern"}
 
     import json as _json
     at.text_area(key=f"json_edit_{rid}").set_value(
@@ -143,9 +143,9 @@ def test_manual_regenerate_applies_edited_json():
     updated = at.session_state["manual_result"]
     assert updated["gauge"] == updated["params"]["gauge"] == {
         "stitches_per_10cm": 20.0, "rows_per_10cm": 16.0}
-    assert f"pdf_{rid}" not in at.session_state
-    assert f"pdf_format_{rid}" not in at.session_state
-    assert f"share_token_{rid}" not in at.session_state
+    workspace = at.session_state["workspace_manual_result"]
+    assert workspace["result_id"] == updated["result_id"] != rid
+    assert workspace["pdf"] is None and workspace["share"] is None
     # 过期的 rows=999 不得复活：rows 不再是存储字段（由 len(rounds) 派生）
     assert "rows" not in head
     # A5 回归：成功提示通过 session 标志在 rerun 后真实可见
@@ -174,11 +174,13 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
         edited["parts"][0]["diameter_cm"] = float("inf")
     else:
         edited["parts"][0]["rounds"] = []
+    from app.services.workspace import new_workspace
+
     at = AppTest.from_file(_APP, default_timeout=30)
     at.session_state["result"] = deepcopy(original)
-    at.session_state["pdf_reject-edit"] = b"existing-pdf"
-    at.session_state["pdf_format_reject-edit"] = EXPORT_CACHE_VERSION
-    at.session_state["share_token_reject-edit"] = "existing-share"
+    cached = {"pdf": {"format": EXPORT_CACHE_VERSION, "bytes": b"existing-pdf"},
+              "share": {"token": "existing-share"}}
+    at.session_state["workspace_result"] = {**new_workspace(original, "result"), **cached}
     at.run()
     if route == "edit":
         at.text_area(key="json_edit_reject-edit").set_value(json.dumps(edited)).run()
@@ -192,9 +194,8 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
     assert not at.exception
     assert any(error in str(item.value) for item in at.error)
     assert at.session_state["result"] == original
-    assert at.session_state["pdf_reject-edit"] == b"existing-pdf"
-    assert at.session_state["pdf_format_reject-edit"] == EXPORT_CACHE_VERSION
-    assert at.session_state["share_token_reject-edit"] == "existing-share"
+    workspace = at.session_state["workspace_result"]
+    assert {key: workspace[key] for key in cached} == cached
 
 
 def test_grid_view_renders_from_stored_strings():

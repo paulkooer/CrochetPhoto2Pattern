@@ -8,6 +8,13 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-02 Per-tab workspace object
+
+- Each tab keeps one workspace record (`workspace_{slot}`) bound to the current result ID. It holds the result state that is not a widget value: export cache and timings, PDF, share link, success/info messages, pending edit preview, personal notes, history-title draft and legacy-recovery notice. Reading it for a different result ID starts a fresh one, so a new generation, import or history load invalidates the old exports and previews without per-key cleanup.
+- Edits and undo/redo carry only the notes, history title and recovery notice to the new result instead of copying widget keys between result IDs. The notes and title inputs start from the workspace, and reads take the input's latest value, so the text survives even if Streamlit discards the input's state.
+- Remove the `_WIDGET_KEY_PREFIXES` registry. Replacing a result clears every session key that has the old result ID as one `_`-separated segment, so new widgets need no registration; result IDs are random tokens and cannot match per-tab records. User-visible behavior and project/backup formats are unchanged.
+- Tests follow the new contract: cases that seeded or asserted legacy keys such as `pdf_*`, `share_token_*`, `export_cache_*`, `edit_*_pending_preview` and `project_recovery_notice_*` now read and write the workspace. New workspace unit tests cover result replacement, carry-over on edit, recovery after lost input state, and keeping every tab's records during cleanup.
+
 ### Changed — 2026-11-02 Progress record as the single source of truth
 
 - Each tab keeps one physical-progress record keyed by semantic identity (part, copy, row) as the single source of truth. Round checkboxes initialize from it and write back through callbacks; "mark all/reset" update the record and any visible checkbox. Inline and paged progress share the same record instead of a separate paged copy.

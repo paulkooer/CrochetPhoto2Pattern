@@ -15,6 +15,7 @@ from app.services.progress_state import (
     progress_impact,
     retained_progress,
 )
+from app.services.workspace import carried_workspace, workspace, workspace_key
 
 MAX_SNAPSHOTS = 12
 MAX_HISTORY_BYTES = 8 << 20
@@ -88,6 +89,7 @@ def get_history(slot: str, result: dict, *, create: bool = True) -> dict:
 
 def _install(slot: str, current: dict, updated: dict, history: dict, progress: dict) -> dict:
     from app.ui.result_renderer import purge_result_state
+    from app.ui.workspace import live_workspace
 
     updated = deepcopy(updated)
     # Persistence belongs to the live workspace, not an undo/preview snapshot.
@@ -101,18 +103,13 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
     history["current_id"] = updated["result_id"]
     history["comparison"] = {"修改前": metrics(current), "修改后": metrics(updated)}
     trim_history(history)
-    prepared_progress: dict = {}
-    install_progress(updated, slot, progress, prepared_progress)
-    old_rid = current.get("result_id") or slot
-    prepared_progress[f"project_notes_{updated['result_id']}"] = st.session_state.get(
-        f"project_notes_{old_rid}", "")
-    prepared_progress[f"hist_title_{updated['result_id']}"] = st.session_state.get(
-        f"hist_title_{old_rid}", current.get("title") or "")
-    if notice := st.session_state.get(f"project_recovery_notice_{old_rid}"):
-        prepared_progress[f"project_recovery_notice_{updated['result_id']}"] = notice
+    prepared: dict = {}
+    install_progress(updated, slot, progress, prepared)
+    prepared[workspace_key(slot)] = carried_workspace(
+        live_workspace(current, slot, create=False), updated, slot)
     # All copying, metrics and serialization must succeed before session mutation.
     purge_result_state(current)
-    st.session_state.update(prepared_progress)
+    st.session_state.update(prepared)
     st.session_state[slot] = updated
     st.session_state[f"edit_history_{slot}"] = history
     return updated
@@ -122,9 +119,9 @@ def commit_edit(slot: str, current: dict, updated: dict) -> dict:
     from app.utils.project import pattern_revision
 
     if pattern_revision(current) == pattern_revision(updated):
-        rid = current.get("result_id") or slot
-        st.session_state.pop(f"edit_{rid}_pending_preview", None)
-        st.session_state[f"edit_{rid}_notice"] = "设置与当前图解相同，已保留撤销、重做及完成进度。"
+        ws = workspace(current, slot, st.session_state)
+        ws["pending_preview"] = None
+        ws["notice"] = "设置与当前图解相同，已保留撤销、重做及完成进度。"
         return current
     history = deepcopy(get_history(slot, current, create=False))
     progress = capture_progress(current, slot, st.session_state)
@@ -168,23 +165,23 @@ def preview_edit(slot: str, current: dict, candidate: dict) -> None:
             or pattern_revision(live) != pattern_revision(current)):
         st.warning("当前图解已变化，请关闭预览后重新生成修改方案。")
         return
-    key = f"edit_{current.get('result_id') or slot}_pending_preview"
-    st.session_state[key] = {"source": deepcopy(current), "candidate": deepcopy(candidate)}
+    workspace(current, slot, st.session_state)["pending_preview"] = {
+        "source": deepcopy(current), "candidate": deepcopy(candidate)}
     st.rerun()
 
 
 def render_edit_preview(slot: str, current: dict) -> None:
     from app.utils.project import pattern_revision
 
-    key = f"edit_{current.get('result_id') or slot}_pending_preview"
-    with st.container(border=key in st.session_state):
-        pending = st.session_state.get(key)
+    ws = workspace(current, slot, st.session_state)
+    with st.container(border=ws["pending_preview"] is not None):
+        pending = ws["pending_preview"]
         if pending is None:
             return
         st.markdown("**修改影响预览 · 尚未应用**")
         if pattern_revision(current) != pattern_revision(pending["source"]):
             st.warning("当前图解已变化，请重新预览修改。")
-            st.session_state.pop(key, None)
+            ws["pending_preview"] = None
             return
         candidate = pending["candidate"]
         progress = capture_progress(current, slot, st.session_state)
@@ -206,21 +203,25 @@ def render_edit_preview(slot: str, current: dict) -> None:
         # stale widgets behind when the new pattern changes their layout.
         apply, cancel = st.columns(2)
         apply.button("应用这次修改", key=f"edit_{current.get('result_id') or slot}_preview_apply",
-                     on_click=_apply_preview, args=(slot, key))
+                     on_click=_apply_preview, args=(slot,))
         cancel.button("取消预览", key=f"edit_{current.get('result_id') or slot}_preview_cancel",
-                      on_click=_cancel_preview, args=(key,))
+                      on_click=_cancel_preview, args=(slot,))
 
 
-def _cancel_preview(key: str) -> None:
-    st.session_state.pop(key, None)
+def _cancel_preview(slot: str) -> None:
+    if (live := st.session_state.get(slot)) is not None:
+        workspace(live, slot, st.session_state)["pending_preview"] = None
 
 
-def _apply_preview(slot: str, key: str) -> None:
+def _apply_preview(slot: str) -> None:
     from app.utils.project import pattern_revision
 
-    pending = st.session_state.get(key)
     live = st.session_state.get(slot)
-    if (pending is not None and live is not None
+    if live is None:
+        return
+    # The workspace belongs to the live result, so a preview made for another result is gone.
+    pending = workspace(live, slot, st.session_state)["pending_preview"]
+    if (pending is not None
             and live.get("result_id") == pending["source"].get("result_id")
             and pattern_revision(live) == pattern_revision(pending["source"])):
         commit_edit(slot, live, pending["candidate"])
@@ -234,7 +235,9 @@ def render_history(slot: str, result: dict) -> None:
     history = get_history(slot, result)
     render_edit_preview(slot, result)
     rid = result.get("result_id") or slot
-    if notice := st.session_state.pop(f"edit_{rid}_notice", None):
+    ws = workspace(result, slot, st.session_state)
+    if notice := ws["notice"]:
+        ws["notice"] = None
         st.info(notice)
     left, right = st.columns(2)
     left.button("↶ 撤销修改", key=f"edit_{rid}_undo", disabled=not history["undo"],

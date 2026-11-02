@@ -195,11 +195,13 @@ def test_edit_reorder_and_undo_preserve_semantic_progress_and_notes(monkeypatch)
     candidate["params"]["parts"].reverse()
     updated = edit_history.commit_edit("result", result, candidate)
     assert capture_progress(updated, "result", state) == chosen
-    assert state[f"project_notes_{updated['result_id']}"] == "记录我的进度"
+    assert state["workspace_result"]["result_id"] == updated["result_id"]
+    assert state["workspace_result"]["notes"] == "记录我的进度"
     restored = edit_history.restore_edit("result", updated, "undo")
     assert capture_progress(restored, "result", state) == chosen
     assert restored["params"]["parts"] == result["params"]["parts"]
-    assert state[f"project_notes_{restored['result_id']}"] == "记录我的进度"
+    assert state["workspace_result"]["result_id"] == restored["result_id"]
+    assert state["workspace_result"]["notes"] == "记录我的进度"
 
 
 def test_paged_progress_and_project_save_share_the_complete_key_mapping(monkeypatch):

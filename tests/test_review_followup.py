@@ -199,10 +199,11 @@ def test_history_saves_applied_result_not_unapplied_json_draft(result, monkeypat
 @pytest.mark.parametrize("direction", ["commit", "undo", "redo"])
 @pytest.mark.parametrize("failure", ["metrics", "trim_history", "install_progress"])
 def test_edit_preparation_failure_preserves_session(result, monkeypatch, direction, failure):
+    from app.services.workspace import new_workspace
     from app.ui import edit_history
 
     state = {"result": result, "chk_followup_头部_0": True,
-             "export_cache_followup": {"sentinel": "cached"}}
+             "workspace_result": {**new_workspace(result, "result"), "export_cache": {"sentinel": "cached"}}}
     history = {"current_id": "followup", "undo": [{"result": deepcopy(result)}],
                "redo": [{"result": deepcopy(result)}], "comparison": None}
     state["edit_history_result"] = history

@@ -18,23 +18,10 @@ from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STIT
 from app.schemas import PART_NAMES, PatternResult, difficulty_label, strip_photo_derived
 from app.services import result_logic
 from app.services.result_logic import rebuild_params, result_profile
+from app.services.workspace import workspace
 from app.ui.design_system import section_heading
 from app.utils.exporters import export_markdown
 from app.utils.share import _BACKUP_KEYS
-
-# 以 result_id 为命名空间的 widget key 前缀（chk_/all_/clear_ 后跟 `rid_…`，
-# 其余后跟 `rid` 本体）。旧结果被替换时用 purge_result_state 清理。
-_WIDGET_KEY_PREFIXES = (
-    "chk_", "all_", "clear_", "json_edit_", "regen_", "dl_json_", "dl_md_",
-    "dl_backup_", "dl_parade_", "import_", "importbtn_", "import_source_", "import_file_", "sz_head_",
-    "sz_height_", "sz_go_", "pdf_", "pdf_format_", "dl_pdf_", "hist_save_", "pdf_gen_",
-    "sz_", "share_", "hist_title_", "struct_edit_", "struct_go_", "struct_",
-    # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
-    "share_token_", "edit_", "export_trace_", "export_cache_",
-    "progress_page_", "progress_part_",
-    "project_notes_", "project_save_", "project_recovery_notice_",
-    "leg_join_result_", "leg_join_manual_result_",
-)
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
 
@@ -135,16 +122,17 @@ def purge_result_state(result: dict) -> None:
     """Drop widget state namespaced to a result that is about to be replaced.
 
     result_id 每次生成都不同，若不清理，逐圈 checkbox 等几十个 key 会在
-    session_state 中随使用次数无限累积。
+    session_state 中随使用次数无限累积。控件键把 result_id 作为以 ``_`` 分隔的
+    一整段（``chk_<rid>_…``、``sz_head_<rid>``），而 result_id 是随机令牌，所以
+    含这一段的键都属于该结果，新控件无需登记前缀。不是控件值的状态在标签页
+    工作区里，随结果一起替换。
     """
     rid = result.get("result_id")
     if not rid:
         return
-    namespaces = {p + rid for p in _WIDGET_KEY_PREFIXES}
-    descendants = tuple(namespace + "_" for namespace in namespaces)
     for key in list(st.session_state.keys()):
-        # Match the complete ID, keeping another result whose ID begins with rid.
-        if str(key) in namespaces or str(key).startswith(descendants):
+        # A whole segment: another result whose ID begins with rid keeps its state.
+        if rid in str(key).split("_"):
             del st.session_state[key]
 
 
@@ -352,7 +340,7 @@ def render_results(result: dict, slot: str) -> None:
         "你可以查看结构、逐圈勾选进度、局部修正并下载备份。</p>",
         unsafe_allow_html=True,
     )
-    if notice := st.session_state.get(f"project_recovery_notice_{result_key}"):
+    if notice := workspace(result, slot, st.session_state)["recovery_notice"]:
         st.warning(notice)
 
     # Section 1: Analysis
@@ -712,18 +700,20 @@ def render_results(result: dict, slot: str) -> None:
     # Section 5: Edit & Re-generate
     section_heading(5, "局部修正")
     # A5: st.success 后立即 st.rerun() 的话消息会被 rerun 丢弃（用户看不见），
-    # 改为 session 标志，下一次 rerun 渲染时弹出。
-    _ok_flag = f"regen_{result_key}_ok"
-    _sz_ok_flag = f"sz_{result_key}_ok"
-    _struct_ok_flag = f"struct_{result_key}_ok"
-    if st.session_state.pop(_ok_flag, False):
-        st.success("✅ 已根据修正更新图解，向上查看结果！")
-    if st.session_state.pop(_sz_ok_flag, False):
-        st.success("✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！")
-    if st.session_state.pop(_struct_ok_flag, False):
-        st.success("✅ 已按修正后的部件结构重新生成图解与装配说明！")
+    # 改为记在新结果的工作区，下一次 rerun 渲染时弹出。
+    ws = workspace(result, slot, st.session_state)
+    if success := ws["success"]:
+        ws["success"] = None
+        st.success(success)
     from app.ui.edit_history import commit_edit, preview_edit
     from app.ui.pattern_editor import render_pattern_editor
+
+    def apply_edit(updated: dict, success: str) -> None:
+        installed = commit_edit(slot, result, updated)
+        if installed is not result:
+            workspace(installed, slot, st.session_state)["success"] = success
+        st.rerun()
+
     render_pattern_editor(result, slot)
     st.caption("也可使用下方尺寸滑块或高级 JSON 编辑。")
 
@@ -759,10 +749,7 @@ def render_results(result: dict, slot: str) -> None:
                 if preview_size:
                     preview_edit(slot, result, _new_result)
                 else:
-                    _installed = commit_edit(slot, result, _new_result)
-                    if _installed is not result:
-                        st.session_state[f"sz_{_installed['result_id']}_ok"] = True
-                    st.rerun()
+                    apply_edit(_new_result, "✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！")
             except Exception as e:
                 st.error(f"尺寸重生成失败: {md_safe(e)}")
 
@@ -789,10 +776,7 @@ def render_results(result: dict, slot: str) -> None:
                 if preview_structure:
                     preview_edit(slot, result, _updated)
                 else:
-                    _installed = commit_edit(slot, result, _updated)
-                    if _installed is not result:
-                        st.session_state[f"struct_{_installed['result_id']}_ok"] = True
-                    st.rerun()
+                    apply_edit(_updated, "✅ 已按修正后的部件结构重新生成图解与装配说明！")
             except Exception as e:
                 st.error(f"结构校验或重生成失败: {md_safe(e)}")
 
@@ -813,8 +797,8 @@ def render_results(result: dict, slot: str) -> None:
 
     from app.models.runtime import timed_export
     from app.ui.export_cache import EXPORT_CACHE_VERSION, cached_export, parade_payload
-    export_record = st.session_state.setdefault(f"export_trace_{result_key}", {})
-    export_cache = st.session_state.setdefault(f"export_cache_{result_key}", {})
+    export_record = ws["export_trace"]
+    export_cache = ws["export_cache"]
     # Bind portable text to all inputs its exporter consumes, including source
     # labels. Widget edits and unrelated diagnostics do not invalidate it.
     from app import software_version
@@ -848,10 +832,7 @@ def render_results(result: dict, slot: str) -> None:
                 if preview_json:
                     preview_edit(slot, result, candidate)
                 else:
-                    installed = commit_edit(slot, result, candidate)
-                    if installed is not result:
-                        st.session_state[f"regen_{installed['result_id']}_ok"] = True
-                    st.rerun()
+                    apply_edit(candidate, "✅ 已根据修正更新图解，向上查看结果！")
             except Exception as e:
                 st.error(f"解析/应用失败: {md_safe(e)}")
     with col_btn2:
@@ -931,47 +912,43 @@ def render_results(result: dict, slot: str) -> None:
         )
     with col_bk2:
         # A live session must regenerate PDFs after printable guidance changes.
-        # Legacy byte-only entries have no format marker and are invalidated too.
-        pdf_key = f"pdf_{result_key}"
-        pdf_format_key = f"pdf_format_{result_key}"
-        if st.session_state.get(pdf_format_key) != EXPORT_CACHE_VERSION:
-            st.session_state.pop(pdf_key, None)
-            st.session_state.pop(pdf_format_key, None)
+        if ws["pdf"] is not None and ws["pdf"]["format"] != EXPORT_CACHE_VERSION:
+            ws["pdf"] = None
         # PDF（S4）：点"生成"才构建（避免每次 rerun 都渲染 PDF），
-        # 字节缓存进 session 后出现下载按钮
+        # 字节缓存进工作区后出现下载按钮
         if st.button("🖨 生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
             try:
                 from app.utils.pdf_export import export_pdf
-                st.session_state[pdf_key] = timed_export(
-                    export_record, "pdf", lambda: export_pdf(params, analysis, result=result))
-                st.session_state[pdf_format_key] = EXPORT_CACHE_VERSION
+                ws["pdf"] = {"format": EXPORT_CACHE_VERSION, "bytes": timed_export(
+                    export_record, "pdf", lambda: export_pdf(params, analysis, result=result))}
             except ImportError:
                 st.caption("PDF 导出需安装 reportlab："
                            "pip install crochet-photo2pattern[pdf]")
             except Exception as e:
                 st.error(f"PDF 生成失败: {md_safe(e)}")
-        _pdf_bytes = st.session_state.get(pdf_key)
+        _pdf_bytes = ws["pdf"]["bytes"] if ws["pdf"] is not None else None
         if _pdf_bytes and _v["ok"]:
             st.download_button("📄 下载 PDF", _pdf_bytes,
                                file_name="amigurumi_pattern.pdf",
                                mime="application/pdf",
                                key=f"dl_pdf_{result_key}")
     with col_bk3:
+        from app.ui.workspace import live_workspace, seed_widget, title_key
+
+        seed_widget(title_key(result_key), live_workspace(result, slot)["title"])
         st.text_input("历史命名（可选）",
-                      value=result.get("title") or "",
-                      key=f"hist_title_{result_key}",
+                      key=title_key(result_key),
                       placeholder="给这份图解起个名字", label_visibility="collapsed")
         # F23：分享入口。token 计算含全量 JSON + zlib，按需生成并缓存进
-        # session——不再每次 rerun 都压缩；编辑图解后需重新生成。
+        # 工作区——不再每次 rerun 都压缩；编辑图解后需重新生成。
         from app.utils.share import encode_result
-        _share_state = f"share_token_{result_key}"
         if st.button("🔗 生成分享链接", key=f"share_{result_key}"):
-            st.session_state[_share_state] = encode_result({
+            ws["share"] = {"token": encode_result({
                 **{k: result.get(k) for k in _BACKUP_KEYS
                    if k not in ("params", "preview")},
-                "params": serializable_params})
-        _share_token = st.session_state.get(_share_state)
-        if _share_state in st.session_state and _share_token is None:
+                "params": serializable_params})}
+        _share_token = ws["share"]["token"] if ws["share"] is not None else None
+        if ws["share"] is not None and _share_token is None:
             st.info("图解超过分享链接大小上限，请使用「备份完整结果」文件分享。")
         elif _share_token is None:
             st.caption("🔗 点「生成分享链接」得到可分享的 URL 参数；"
@@ -992,8 +969,7 @@ def render_results(result: dict, slot: str) -> None:
                 saved = dict(result)
                 saved["params"] = rebuild_params(serializable_params)
                 saved["gauge"] = saved["params"].get("gauge")
-                _title = (st.session_state.get(f"hist_title_{result_key}")
-                          or "").strip() or None
+                _title = (live_workspace(result, slot)["title"] or "").strip() or None
                 saved_id = history.save_result(saved, title=_title)
                 if saved_id:
                     result["history_id"] = saved_id

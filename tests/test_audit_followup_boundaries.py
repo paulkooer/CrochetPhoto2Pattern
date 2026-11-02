@@ -173,7 +173,8 @@ def test_full_app_opens_legacy_trial_and_enables_measured_gauge(monkeypatch):
     at.button(key="trial_gauge_preview_result").click().run()
     assert not at.exception and not at.error
     assert at.session_state["result"] == original
-    pending = at.session_state[f"edit_{rid}_pending_preview"]
+    pending = at.session_state["workspace_result"]["pending_preview"]
+    assert pending["source"]["result_id"] == rid
     assert pending["candidate"]["gauge"] == {"stitches_per_10cm": 18, "rows_per_10cm": 24}
     bundle = at.session_state["trial_workspace_result"]["bundle"]
     assert hashlib.sha256(bundle.source).hexdigest() == SOURCE_SHA
@@ -201,7 +202,7 @@ def test_first_history_save_binding_survives_older_content_snapshots(path, tmp_p
     else:
         at.slider(key=f"edit_{rid}_part0_i0_x").set_value(0.1)
         _form_button(at, "预览部件修改影响", rid).click().run()
-        assert f"edit_{rid}_pending_preview" in at.session_state
+        assert at.session_state["workspace_manual_result"]["pending_preview"] is not None
     at.button(key=f"hist_save_{rid}").click().run()
     history_id = at.session_state["manual_result"]["history_id"]
     assert len(history.list_results()) == 1

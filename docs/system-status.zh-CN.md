@@ -17,7 +17,18 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 2026-11-02 合并：按维护者指示，[PR #31](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/31) 以 squash 合入
 `main`（`c0b6919`），合并树与受检头提交 `1a33b5f` 相同，其 **10 项远端检查全部通过**；
 [PR #32](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/32) 合并 `main` 后的头提交 `bd6f98d`（文件树与此前受检的
-`8a9a3e2` 相同）**10 项检查全部通过**后 squash 合入（`de0a65a`）。无独立复核；Beta 与 G3/G4 不变。
+`8a9a3e2` 相同）**10 项检查全部通过**后 squash 合入（`de0a65a`）。
+[PR #33](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/33) 在头提交 `dd8e14c` **10 项检查通过**后 squash 合入（`e0eb707`，合并树与 `dd8e14c` 相同）；
+[PR #34](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/34) 合并新 `main` 后的头提交 `d60fcca`（文件树与此前受检的 `0e44108` 相同）
+browser-smoke 首次在工程 JSON 下载处失败（浏览器被关闭），仅重跑该任务后通过，**10 项检查全部通过**后 squash 合入（`98de584`）。
+无独立复核；Beta 与 G3/G4 不变。
+
+2026-11-02 标签页工作区对象（基于 `main` `98de584` 的分支 `refactor/tab-workspace`；提交前本地验证）：
+导出缓存、PDF、分享链接、提示消息、待应用的修改预览、备注、历史命名和恢复提示集中到每个标签页一份、
+绑定结果 ID 的工作区，换结果即重建；编辑只携带备注、命名和恢复提示。删除 `_WIDGET_KEY_PREFIXES`，替换结果时按
+结果 ID 整段匹配清理控件键。全量 **2467 passed、2 skipped，87.69s**；全仓 Ruff、mypy（203 文件）通过；
+本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。用户可见行为与工程格式不变；未做远端 CI、独立复核、
+授权照片评测或实体试钩；Beta 与 G3/G4 不变。
 
 2026-11-02 分层整理与进度记录（基于已合并 `main` `de0a65a` 的分支 `refactor/services-layering`、
 `refactor/progress-record`；提交前本地验证）：纯逻辑迁至 `app/services`，CLI、评测与工程模块不再加载 Streamlit（新增分层守卫测试）；打包改为

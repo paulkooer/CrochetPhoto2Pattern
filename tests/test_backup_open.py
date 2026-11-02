@@ -100,11 +100,13 @@ def test_fresh_app_can_restore_backup_with_history_disabled(monkeypatch):
 
 
 def test_failed_import_preserves_current_work_then_valid_import_replaces_only_target():
+    from app.services.workspace import new_workspace
+
     old, other = _mock_result("old"), _mock_result("other")
     at = AppTest.from_string(_IMPORTER, default_timeout=30)
     at.session_state["result"] = deepcopy(old)
     at.session_state["manual_result"] = deepcopy(other)
-    at.session_state["export_cache_old"] = {"saved": True}
+    at.session_state["workspace_result"] = {**new_workspace(old, "result"), "export_cache": {"saved": True}}
     at.session_state["chk_other_round1"] = True
     at.session_state["import_source_old"] = "粘贴 JSON"
     at.session_state["import_file_old"] = "old upload"
@@ -116,12 +118,15 @@ def test_failed_import_preserves_current_work_then_valid_import_replaces_only_ta
     at.button(key="open_backup_apply").click().run()
     assert not at.exception and any("导入失败" in error.value for error in at.error)
     assert at.session_state["result"] == old
-    assert at.session_state["export_cache_old"] == {"saved": True}
+    assert at.session_state["workspace_result"]["export_cache"] == {"saved": True}
     at.text_area(key="open_backup_text").set_value(json.dumps(_backup())).run()
     at.button(key="open_backup_apply").click().run()
     assert not at.exception and at.session_state["result"]["result_id"] != "old"
     assert at.session_state["manual_result"] == other and at.session_state["chk_other_round1"]
-    for key in ("export_cache_old", "import_source_old", "import_file_old"):
+    workspace = at.session_state["workspace_result"]
+    assert workspace["result_id"] == at.session_state["result"]["result_id"]
+    assert workspace["export_cache"] == {}
+    for key in ("import_source_old", "import_file_old"):
         assert key not in at.session_state
 
 

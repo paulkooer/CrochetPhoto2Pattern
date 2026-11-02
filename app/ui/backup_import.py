@@ -67,6 +67,7 @@ def render_backup_import(slot: str = "result", *, result_key: str | None = None)
 
             try:
                 from app.services.progress_state import install_progress
+                from app.services.workspace import new_workspace, workspace_key
                 from app.utils.project import read_project_state
 
                 data = decode_backup_json(payload, max_bytes=limit)
@@ -74,11 +75,13 @@ def render_backup_import(slot: str = "result", *, result_key: str | None = None)
                 progress, notes = read_project_state(data, imported, clear_legacy_ambiguity=recover)
                 prepared: dict = {}
                 install_progress(imported, slot, progress, prepared)
-                prepared[f"project_notes_{imported['result_id']}"] = notes
+                recovery_notice = None
                 if recover and pending:
-                    prepared[f"project_recovery_notice_{imported['result_id']}"] = (
+                    recovery_notice = (
                         f"从旧工程恢复时，{pending['count']} 个完成圈次无法区分属于哪份实体，"
                         "已暂不标记；请按实物核对后重新勾选，再保存工程。")
+                prepared[workspace_key(slot)] = new_workspace(
+                    imported, slot, notes=notes, recovery_notice=recovery_notice)
             except AmbiguousProjectProgressError as exc:
                 st.session_state[pending_key] = {"fingerprint": _payload_fingerprint(payload),
                                                  "count": exc.count}

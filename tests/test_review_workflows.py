@@ -70,13 +70,14 @@ def test_import_rejects_bad_metadata_without_mutation(result, field, value):
 def test_invalid_edit_retains_current_result_and_cached_exports(result):
     import json
 
+    from app.services.workspace import new_workspace
     from app.ui.export_cache import EXPORT_CACHE_VERSION
 
     at = AppTest.from_string(_RENDER, default_timeout=30)
     at.session_state["audit_result"] = result
-    at.session_state["pdf_review-result"] = b"cached-pdf"
-    at.session_state["pdf_format_review-result"] = EXPORT_CACHE_VERSION
-    at.session_state["share_token_review-result"] = "cached-token"
+    cached = {"pdf": {"format": EXPORT_CACHE_VERSION, "bytes": b"cached-pdf"},
+              "share": {"token": "cached-token"}}
+    at.session_state["workspace_audit_result"] = {**new_workspace(result, "audit_result"), **cached}
     at.run()
     invalid = deepcopy(result["params"])
     invalid["parts"][0]["rounds"][1]["stitches"] = 13
@@ -84,9 +85,8 @@ def test_invalid_edit_retains_current_result_and_cached_exports(result):
     at.button(key="regen_review-result").click().run()
     assert not at.exception
     assert at.session_state["audit_result"] == result
-    assert at.session_state["pdf_review-result"] == b"cached-pdf"
-    assert at.session_state["pdf_format_review-result"] == EXPORT_CACHE_VERSION
-    assert at.session_state["share_token_review-result"] == "cached-token"
+    workspace = at.session_state["workspace_audit_result"]
+    assert {key: workspace[key] for key in cached} == cached
     assert any("自检失败" in error.value for error in at.error)
     with pytest.raises(ValueError, match="自检失败"):
         rebuild_params(invalid)

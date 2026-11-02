@@ -161,7 +161,7 @@ def test_preview_apply_undo_and_redo_preserve_trial_and_restore_progress():
     at.number_input(key=prefix + "stitches_per_10cm").set_value(22).run()
     at.button(key="trial_gauge_preview_result").click().run()
     assert not at.exception
-    pending = at.session_state["edit_trial-source_pending_preview"]
+    pending = at.session_state["workspace_result"]["pending_preview"]
     assert pending["candidate"]["gauge"]["stitches_per_10cm"] == 18
     assert at.session_state["result"] == original
     assert at.checkbox(key="chk_trial-source_头部_0").value

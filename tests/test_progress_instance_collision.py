@@ -200,11 +200,12 @@ def test_ui_requires_explicit_recovery_and_preserves_other_progress_and_notes():
     assert not at.exception
     restored = at.session_state["result"]
     rid = restored["result_id"]
-    assert at.session_state[f"project_notes_{rid}"] == "原始合成备注"
+    assert at.session_state["workspace_result"]["result_id"] == rid
+    assert at.session_state["workspace_result"]["notes"] == "原始合成备注"
     shown = checked_keys(restored, at.session_state)
     assert f"chk_{rid}_帽子_0" in shown
     assert f"chk_{rid}_头部_0" not in shown and f"chk_{rid}_头部_copy2_0" not in shown
-    assert at.session_state[f"project_recovery_notice_{rid}"]
+    assert at.session_state["workspace_result"]["recovery_notice"]
 
 
 def test_recovery_confirmation_does_not_transfer_to_a_different_payload():

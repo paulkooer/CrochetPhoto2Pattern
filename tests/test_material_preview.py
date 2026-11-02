@@ -79,7 +79,7 @@ def test_unchanged_edits_keep_id_redo_latest_progress_notes_and_storage_binding(
     assert capture_progress(before,"result",at.session_state)==progress
     assert at.text_area(key=f"project_notes_{before_id}").value=="撤销后继续的进度"
     assert at.text_input(key=f"hist_title_{before_id}").value=="尚未保存的名称"
-    assert "edit_"+before_id+"_pending_preview" not in at.session_state
+    assert at.session_state["workspace_result"]["pending_preview"] is None
     assert any("设置与当前图解相同" in info.value for info in at.info)
     assert not any("已按新尺寸重新生成" in item.value or "已按修正后的部件结构重新生成" in item.value
                    or "已根据修正更新图解" in item.value for item in at.success)
@@ -183,7 +183,7 @@ def test_label_changes_with_same_estimate_are_real_edits_and_clear_redo():
     at.number_input(key=f"edit_{before_id}_weight").set_value(60)
     at.number_input(key=f"edit_{before_id}_length").set_value(150)
     submit(at,"预览材料估算修改")
-    candidate=at.session_state[f"edit_{before_id}_pending_preview"]["candidate"]
+    candidate=at.session_state["workspace_result"]["pending_preview"]["candidate"]
     assert candidate["params"]["material_summary"]["grams"]==before["params"]["material_summary"]["grams"]
     at.button(key=f"edit_{before_id}_preview_apply").click().run()
     assert rid(at)!=before_id and at.button(key=f"edit_{rid(at)}_redo").disabled
@@ -214,7 +214,7 @@ def test_legacy_swatch_preview_requires_confirmation_and_cancel_does_not_bind_it
     at.run()
     submit(at,"预览材料估算修改")
     assert at.session_state["result"]==current
-    assert "edit_legacy_pending_preview" not in at.session_state
+    assert at.session_state["workspace_result"]["pending_preview"] is None
     assert any("核对并确认" in e.value for e in at.error)
     at.checkbox(key="edit_legacy_swatch_confirm").check()
     submit(at,"预览材料估算修改")
