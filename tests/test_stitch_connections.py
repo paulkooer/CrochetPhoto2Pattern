@@ -13,6 +13,7 @@ from app.models.stitch_connections import MAX_CONNECTION_WINDOW, round_connectio
 from app.models.stitch_notation import StitchExpression
 from app.schemas import MAX_ROUND_STITCHES
 from app.utils.project import pattern_revision
+from tests.progress_helpers import checked_keys, seed_progress
 from tests.test_app_smoke import _mock_result
 
 _IO = {"X": (1, 1), "V": (1, 2), "A": (2, 1), "W": (1, 3), "M": (3, 1)}
@@ -172,7 +173,7 @@ def test_inspector_downloads_match_page_and_preserve_result_and_progress(monkeyp
     monkeypatch.setattr(st, "download_button", capture)
     at = AppTest.from_string(_UI, default_timeout=30)
     at.session_state["result"] = result
-    at.session_state["chk_connections-ui_头部_0"] = True
+    seed_progress(at.session_state, result, {"chk_connections-ui_自制连接练习_copy2_1"})
     at.session_state["project_notes_connections-ui"] = "保留我的备注"
     at.run()
     prefix = "edit_connections-ui_connections_"
@@ -189,7 +190,7 @@ def test_inspector_downloads_match_page_and_preserve_result_and_progress(monkeyp
     assert downloads["下载本页连接图 SVG"] == connection_svg(round_connections(result["params"]["parts"][0],
                                                                               1, start=24))
     assert at.session_state["result"] == original
-    assert at.session_state["chk_connections-ui_头部_0"]
+    assert checked_keys(result, at.session_state) == {"chk_connections-ui_自制连接练习_copy2_1"}
     assert at.session_state["project_notes_connections-ui"] == "保留我的备注"
 
     at.selectbox(key=prefix + "part0_row").set_value(0).run()

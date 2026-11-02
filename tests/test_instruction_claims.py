@@ -11,6 +11,7 @@ from app.services.result_logic import import_backup
 from app.ui.pattern_editor import edit_rounds
 from app.utils.exporters import export_markdown
 from app.utils.parade_export import export_parade_report
+from tests.progress_helpers import seed_progress
 from tests.test_app_smoke import _mock_result
 
 
@@ -111,7 +112,7 @@ def test_pasted_backup_reports_wrong_claim_then_accepts_correction(index, bad, g
     existing = _mock_result("keep-claim-progress")
     at = AppTest.from_file(_APP, default_timeout=30)
     at.session_state["result"] = existing
-    at.session_state["chk_keep-claim-progress_头部_0"] = True
+    seed_progress(at.session_state, existing, {"chk_keep-claim-progress_头部_0"})
     at.session_state["project_notes_keep-claim-progress"] = "保留现有工程"
     at.run()
     damaged = PatternResult.from_result(existing).to_backup()

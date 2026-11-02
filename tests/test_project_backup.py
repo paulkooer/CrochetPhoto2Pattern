@@ -15,6 +15,7 @@ from app.services.progress_state import (
 )
 from app.services.result_logic import import_backup
 from app.utils.project import MAX_PROJECT_NOTES, pattern_revision, project_backup, read_project_state
+from tests.progress_helpers import checked_keys, progress_from_keys, seed_progress
 from tests.test_app_smoke import _APP, _mock_result
 
 RENDER = '''
@@ -49,8 +50,7 @@ def test_project_roundtrip_keeps_copy_identity_and_notes_without_sharing_them():
     state = {}
     install_progress(restored, "result", saved, state)
     assert capture_progress(restored, "result", state) == progress
-    assert state["chk_new-session_手臂_0"] and state["chk_new-session_手臂_copy2_1"]
-    assert "chk_new-session_手臂_copy2_0" not in state
+    assert checked_keys(restored, state) == {"chk_new-session_手臂_0", "chk_new-session_手臂_copy2_1"}
     assert notes == "4号针；右臂下一圈换线"
     assert "project_state" not in PatternResult.from_result(project).to_backup()
     token = encode_result(project)
@@ -146,7 +146,7 @@ def test_modified_project_file_is_rejected_atomically():
     at = AppTest.from_string("from app.ui.backup_import import render_backup_import\nrender_backup_import()")
     at.session_state["result"] = deepcopy(original)
     at.session_state["project_notes_project"] = "原备注"
-    at.session_state["chk_project_手臂_0"] = True
+    seed_progress(at.session_state, original, {"chk_project_手臂_0"})
     at.run()
     at.radio(key="open_backup_source").set_value("粘贴 JSON").run()
     at.text_area(key="open_backup_text").input(json.dumps(data)).run()
@@ -154,7 +154,7 @@ def test_modified_project_file_is_rejected_atomically():
     assert not at.exception and any("版本不一致" in error.value for error in at.error)
     assert at.session_state["result"] == original
     assert at.session_state["project_notes_project"] == "原备注"
-    assert at.session_state["chk_project_手臂_0"]
+    assert checked_keys(original, at.session_state) == {"chk_project_手臂_0"}
 
 
 def test_edit_clears_affected_progress_and_undo_restores_it_with_notes():
@@ -183,8 +183,7 @@ def test_body_change_invalidates_dependent_skirt_progress():
     from tests.test_stitch_attachments import _result as attached_result
 
     result = attached_result()
-    state = {key: True for _, key, _ in progress_entries(result, "result")}
-    progress = capture_progress(result, "result", state)
+    progress = progress_from_keys(result, {key for _, key, _ in progress_entries(result, "result")})
     changed = deepcopy(result)
     body = next(p for p in changed["params"]["parts"] if p["name"] == "身体")
     body["rounds"][0]["color"] = "红色"
@@ -198,14 +197,13 @@ def test_paged_progress_survives_project_roundtrip_without_visible_widgets():
     arms = next(p for p in result["params"]["parts"] if p["name"] == "手臂")
     arms["rounds"] = [{"row": i + 1, "stitches": 6, "increase": 0, "decrease": 0,
                        "notes": "魔法环起6针（X×6）" if i == 0 else "6X"} for i in range(520)]
-    state = {"chk_project_手臂_519": True, "chk_project_手臂_copy2_513": True}
-    progress = capture_progress(result, "result", state)
+    progress = progress_from_keys(result, {"chk_project_手臂_519", "chk_project_手臂_copy2_513"})
     data = project_backup(result, progress, "分页的末尾也要恢复")
     restored = import_backup(data, "paged")
     progress, notes = read_project_state(data, restored)
     destination = {}
     install_progress(restored, "result", progress, destination)
-    assert len(destination["progress_paged"]) == 2
+    assert checked_keys(restored, destination) == {"chk_paged_手臂_519", "chk_paged_手臂_copy2_513"}
     assert capture_progress(restored, "result", destination) == progress
     assert notes == "分页的末尾也要恢复"
 

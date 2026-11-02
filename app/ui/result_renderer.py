@@ -31,7 +31,7 @@ _WIDGET_KEY_PREFIXES = (
     "sz_", "share_", "hist_title_", "struct_edit_", "struct_go_", "struct_",
     # share_token_ 不是 widget key，但替换结果时同样应随 rid 清理
     "share_token_", "edit_", "export_trace_", "export_cache_",
-    "progress_", "progress_page_", "progress_part_",
+    "progress_page_", "progress_part_",
     "project_notes_", "project_save_", "project_recovery_notice_",
     "leg_join_result_", "leg_join_manual_result_",
 )
@@ -148,37 +148,62 @@ def purge_result_state(result: dict) -> None:
             del st.session_state[key]
 
 
+def _live_record(result: dict, slot: str) -> dict[str, bool]:
+    """The tab's completed rounds for ``result``; a record left by another result restarts empty."""
+    from app.services.progress_state import progress_record_key, store_completed_rounds
+
+    record = st.session_state.get(progress_record_key(slot))
+    if isinstance(record, dict) and record.get("result_id") == (result.get("result_id") or slot):
+        return record["completed"]
+    return store_completed_rounds(result, slot, {}, st.session_state)
+
+
+def _toggle_round(result: dict, slot: str, identity: str, key: str) -> None:
+    completed = _live_record(result, slot)
+    if st.session_state.get(key):
+        completed[identity] = True
+    else:
+        completed.pop(identity, None)
+
+
+def _set_rounds(result: dict, slot: str, entries: list[tuple[str, str]], value: bool) -> None:
+    """Bulk update the record and any checkbox already showing these rounds."""
+    completed = _live_record(result, slot)
+    for identity, key in entries:
+        if value:
+            completed[identity] = True
+        else:
+            completed.pop(identity, None)
+        if key in st.session_state:
+            st.session_state[key] = value
+
+
+def _round_checkbox(label: str, result: dict, slot: str, identity: str, key: str,
+                    completed: dict[str, bool]) -> None:
+    # The record is the source of truth; a checkbox is created from it and writes back.
+    if key not in st.session_state:
+        st.session_state[key] = bool(completed.get(identity))
+    st.checkbox(label, key=key, on_change=_toggle_round, args=(result, slot, identity, key))
+
+
 @st.fragment
 def _render_paged_progress(result: dict, slot: str) -> None:
-    """Bound widget creation; progress survives Streamlit's hidden-widget cleanup."""
-    from app.services.progress_state import PROGRESS_PAGE_SIZE, progress_entries, progress_store_key
+    """Bound widget creation; the record keeps progress for rounds on hidden pages."""
+    from app.services.progress_state import PROGRESS_PAGE_SIZE, progress_entries
 
     rid = result.get("result_id") or slot
     parts = result["params"]["parts"]
-    store_key = progress_store_key(result, slot)
-    durable = st.session_state.setdefault(store_key, {})
+    completed = _live_record(result, slot)
     st.caption("圈次较多，按部件分页显示；切换页面会保留进度。全部完成/重置仅作用于所选部件。")
     index = st.selectbox("进度部件", range(len(parts)),
                          format_func=lambda i: parts[i]["name"], key=f"progress_part_{rid}")
     part = parts[index]
-    entries = list(progress_entries(result, slot, part_index=index))
-    for _, key, _ in entries:
-        if key in st.session_state:
-            if st.session_state[key]:
-                durable[key] = True
-            else:
-                durable.pop(key, None)
+    entries = [(identity, key) for identity, key, _ in progress_entries(result, slot, part_index=index)]
 
     def set_completed(value: bool) -> None:
-        for _, key, _ in entries:
-            if value:
-                durable[key] = True
-            else:
-                durable.pop(key, None)
-            if key in st.session_state:
-                st.session_state[key] = value
+        _set_rounds(result, slot, entries, value)
 
-    done = sum(bool(durable.get(key)) for _, key, _ in entries)
+    done = sum(bool(completed.get(identity)) for identity, _ in entries)
     st.progress(done / len(entries) if entries else 0,
                 text=f"{md_safe(part['name'])}：已完成 {done}/{len(entries)} 圈次")
     left, right = st.columns(2)
@@ -187,7 +212,7 @@ def _render_paged_progress(result: dict, slot: str) -> None:
     right.button("✅ 全部完成", key=f"all_{rid}_{part['name']}",
                  on_click=set_completed, args=(True,))
     pages = max(1, (len(entries) + PROGRESS_PAGE_SIZE - 1) // PROGRESS_PAGE_SIZE)
-    next_offset = next((i for i, (_, key, _) in enumerate(entries) if not durable.get(key)), None)
+    next_offset = next((i for i, (identity, _) in enumerate(entries) if not completed.get(identity)), None)
     if next_offset is not None:
         next_copy, next_row = divmod(next_offset, len(part["rounds"]))
         st.caption(f"下一未完成圈：第 {next_copy + 1} 个 {md_safe(part['name'])} · "
@@ -203,22 +228,13 @@ def _render_paged_progress(result: dict, slot: str) -> None:
               disabled=next_offset is None, on_click=go_to_next)
     page = st.selectbox("进度页", range(pages), format_func=lambda n: f"{n + 1} / {pages}",
                         key=f"progress_page_{rid}_{index}")
-
-    def save(key: str) -> None:
-        if st.session_state[key]:
-            st.session_state[store_key][key] = True
-        else:
-            st.session_state[store_key].pop(key, None)
-
     for offset in range(page * PROGRESS_PAGE_SIZE, min((page + 1) * PROGRESS_PAGE_SIZE, len(entries))):
-        _, key, _ = entries[offset]
+        identity, key = entries[offset]
         copy, row = divmod(offset, len(part["rounds"]))
         rd = part["rounds"][row]
-        if key not in st.session_state:
-            st.session_state[key] = bool(durable.get(key))
-        st.checkbox(f"第 {copy + 1} 个 · 第 {rd['row']} 圈 · {rd['stitches']} 针　"
-                    f"{md_safe(rd.get('color') or '')}　{md_safe(rd.get('notes') or '')}",
-                    key=key, on_change=save, args=(key,))
+        _round_checkbox(f"第 {copy + 1} 个 · 第 {rd['row']} 圈 · {rd['stitches']} 针　"
+                        f"{md_safe(rd.get('color') or '')}　{md_safe(rd.get('notes') or '')}",
+                        result, slot, identity, key, completed)
 
 
 @st.fragment
@@ -226,27 +242,26 @@ def _render_part_progress(
     part: dict,
     part_data: dict,
     part_key: str,
-    chk_keys_by_copy: list[list[str]],
-    chk_keys: list[str],
+    entries_by_copy: list[list[tuple[str, str]]],
     rounds_list: list[dict],
     quantity: int,
     n_rounds: int,
     result: dict,
-    params: dict,
+    slot: str,
 ) -> None:
     """单个部件的进度区（fragment）。
 
-    勾选和批量更新只重跑本区块。按钮回调先修改精确的圈次集合，
-    避免中途整页刷新触发 Streamlit 清理后续部件的控件状态。
+    勾选和批量更新只重跑本区块。进度记录是唯一真源：勾选回调和批量按钮先更新
+    记录，再同步已经显示的复选框。
     """
-    def set_completed(value: bool) -> None:
-        for key in chk_keys:
-            st.session_state[key] = value
+    entries = [entry for copy_entries in entries_by_copy for entry in copy_entries]
 
-    # Checkbox widget state is the single source of truth for progress.
-    # It is updated by Streamlit before the rerun, so the counts below
-    # already include the click that triggered this run (no one-step lag).
-    n_done = sum(bool(st.session_state.get(k)) for k in chk_keys)
+    def set_completed(value: bool) -> None:
+        _set_rounds(result, slot, entries, value)
+
+    # Callbacks run before the rerun, so counts include the click that triggered it.
+    completed = _live_record(result, slot)
+    n_done = sum(bool(completed.get(identity)) for identity, _ in entries)
     physical_rounds = n_rounds * quantity
     pct = int(n_done / physical_rounds * 100) if physical_rounds else 0
     quantity_label = f" × {quantity} 个" if quantity > 1 else ""
@@ -301,11 +316,10 @@ def _render_part_progress(
         with col_all:
             st.button("✅ 全部完成", key=f"all_{part_key}",
                       on_click=set_completed, args=(True,))
-        for copy, copy_keys in enumerate(chk_keys_by_copy, 1):
+        for copy, copy_entries in enumerate(entries_by_copy, 1):
             if quantity > 1:
                 st.markdown(f"**第 {copy} 个 {md_safe(part_data['name'])}**")
-            for i, r in enumerate(rounds_list):
-                rd = r
+            for i, (rd, (identity, key)) in enumerate(zip(rounds_list, copy_entries, strict=True)):
                 inc_str = f"+{rd['increase']}" if rd.get("increase") else ""
                 dec_str = f"-{rd['decrease']}" if rd.get("decrease") else ""
                 change = f"（{inc_str}{dec_str}）" if (inc_str or dec_str) else ""
@@ -316,7 +330,7 @@ def _render_part_progress(
                 lbl = (f"**第 {rd.get('row', i + 1)} 圈**　"
                        f"{rd.get('stitches', '?')} 针"
                        f"{change}{color_str}{notes_str}")
-                st.checkbox(lbl, key=copy_keys[i])
+                _round_checkbox(lbl, result, slot, identity, key, completed)
 
 
 def render_results(result: dict, slot: str) -> None:
@@ -649,14 +663,13 @@ def render_results(result: dict, slot: str) -> None:
 
     # 按完整图解为每份实体分配勾选编号；历史坏结果中的重名部件仍用
     # 序号区分批量按钮。正常未冲突的编号保持稳定。
-    from app.services.progress_state import MAX_INLINE_ROUNDS, physical_rounds, progress_copy_prefixes
+    from app.services.progress_state import MAX_INLINE_ROUNDS, physical_rounds, progress_entries
     if physical_rounds(result) > MAX_INLINE_ROUNDS:
         _render_paged_progress(result, slot)
     else:
-        all_copy_prefixes = progress_copy_prefixes(result, slot)
-        valid_keys = {f"{prefix}{index}"
-                      for part, prefixes in zip(params.get("parts", []), all_copy_prefixes, strict=True)
-                      for prefix in prefixes for index in range(len(part.get("rounds", [])))}
+        # Widget keys come from the full-pattern mapping shared with paging, project
+        # save and restore, so similar custom names never alias another copy's keys.
+        valid_keys = {key for _, key, _ in progress_entries(result, slot)}
         for key in list(st.session_state):
             if str(key).startswith(f"chk_{result_key}_") and key not in valid_keys:
                 del st.session_state[key]
@@ -670,23 +683,15 @@ def render_results(result: dict, slot: str) -> None:
             rounds_list = part_data.get("rounds", [])
             n_rounds = len(rounds_list)
             quantity = max(1, int(part_data.get("quantity", 1)))
-            # Share the full-pattern mapping with paging, project save and restore.
-            # Similar custom names must not alias another physical copy's keys.
-            copy_prefixes = all_copy_prefixes[part_index]
-            # Checkbox widget state is the single source of truth for progress.
-            # It is updated by Streamlit before the rerun, so the counts below
-            # already include the click that triggered this run (no one-step lag).
-            chk_keys_by_copy = [
-                [f"{prefix}{i}" for i in range(n_rounds)]
-                for prefix in copy_prefixes
-            ]
-            chk_keys = [key for keys in chk_keys_by_copy for key in keys]
+            entries = [(identity, key)
+                       for identity, key, _ in progress_entries(result, slot, part_index=part_index)]
+            entries_by_copy = [entries[i:i + n_rounds] for i in range(0, len(entries), n_rounds or 1)]
             # 带 key 的容器获得 CSS 类 st-key-sheet_part_…；design_system 据此把
             # 这一部件的圈序渲染成"图解纸"（宋体行，勾选后记号扣高亮）
             with st.container(key=f"sheet_part_{result_key}_{part_index}"):
                 _render_part_progress(
-                    part, part_data, part_key, chk_keys_by_copy, chk_keys,
-                    rounds_list, quantity, n_rounds, result, params)
+                    part, part_data, part_key, entries_by_copy,
+                    rounds_list, quantity, n_rounds, result, slot)
 
     from app.ui.project_save import render_project_save
 

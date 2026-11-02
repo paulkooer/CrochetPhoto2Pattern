@@ -16,6 +16,7 @@ from app.services.progress_state import (
 )
 from app.services.result_logic import import_backup, rebuild_params
 from app.utils.project import project_backup, read_project_state
+from tests.progress_helpers import checked_keys, seed_progress
 from tests.test_app_smoke import _APP, _mock_result
 
 _UI = '''
@@ -62,7 +63,7 @@ def test_restoring_one_completion_does_not_mark_another_parts_copy_complete():
     state = {}
     install_progress(restored, "result", progress, state)
     assert capture_progress(restored, "result", state) == {selected: True}
-    assert sum(value is True for key, value in state.items() if key.startswith("chk_")) == 1
+    assert len(checked_keys(restored, state)) == 1
     assert notes == "保留实体位置"
 
 
@@ -149,7 +150,7 @@ def test_inline_cleanup_retains_valid_other_part_keys_and_removes_only_stale_rou
     valid = "chk_key-isolation_练习_copy2_0"
     stale = ["chk_key-isolation_练习_99", "chk_key-isolation_练习_copy2_99",
              "chk_key-isolation_练习_copy3_0"]
-    at.session_state[valid] = True
+    seed_progress(at.session_state, result, {valid})
     at.session_state["chk_unrelated_练习_0"] = True
     for key in stale:
         at.session_state[key] = True

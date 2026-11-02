@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-02 Progress record as the single source of truth
+
+- Each tab keeps one physical-progress record keyed by semantic identity (part, copy, row) as the single source of truth. Round checkboxes initialize from it and write back through callbacks; "mark all/reset" update the record and any visible checkbox. Inline and paged progress share the same record instead of a separate paged copy.
+- Edits, undo/redo, project restore and imports replace the record instead of migrating completion to widget keys of the new result ID; Streamlit discards the old result's checkbox state. User-visible behavior, project file format and retention rules are unchanged.
+- Tests follow the new contract: cases that built progress from widget-key dictionaries or asserted widget keys after restore now check the rounds shown as completed through the renderer's own mapping, and widget-key seeding writes the record instead.
+
 ### Changed — 2026-11-02 Layering cleanup
 
 - Move regeneration/import logic and physical-progress logic from `app/ui` to a new `app/services` package (`result_logic`, `progress_state`). Streamlit upload helpers move to `app/ui/uploads.py`, and `app/utils/images.py` no longer imports Streamlit. The CLI, evaluation, trial tools and project module no longer load Streamlit or the UI package: `import app.cli` drops from about 885 modules and 370 ms to about 397 modules and 270 ms (local measurement).
