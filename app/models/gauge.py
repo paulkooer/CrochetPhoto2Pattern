@@ -208,6 +208,10 @@ PRESETS: dict[str, Gauge] = {
     "dk":      Gauge(17.0, 14.0),   # DK 中粗（≈3mm）：w 0.59 × h 0.71（w/h 0.82）
     "fine":    Gauge(20.0, 16.0),   # 紧密玩偶（2.5mm+中细）：w 0.50 × h 0.63（w/h 0.79）
 }
+# 侧栏与生成建议共用的预设显示名
+PRESET_LABELS: dict[str, str] = {
+    "classic": "经典图解(粗线)", "dk": "DK 中粗", "fine": "紧密玩偶(2.5mm)",
+}
 
 DEFAULT = PRESETS["classic"]
 INDEPENDENT_TRIAL_MESSAGE = (

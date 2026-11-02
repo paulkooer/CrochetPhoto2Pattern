@@ -58,6 +58,11 @@ Unknown part names remain available for review. Remove mistaken labels or select
   anchors, and explicit inference provenance. Heuristics are uncalibrated; no confidence
   percentage is claimed. This is not full 3D reconstruction.
 - Gauge-aware, round-by-round stitch generation with executable six-section shaping.
+- Crochetability floors: first generation is refused when the widest head or body round has
+  fewer than 18 stitches, with a warning below 24. Photo review and manual input preview
+  per-part counts before generation and suggest the smallest single change of target height,
+  head ratio or gauge; edits and imports of existing work only warn. Thresholds follow the
+  repository's reference patterns and do not validate finished size.
 - **CrochetPARADE export:** translate the pattern into the
   [CrochetPARADE](https://crochetparade.org) DSL (result page / `--parade`) for
   independent 3D rendering and stitch-tension analysis — a second-tier
@@ -263,7 +268,8 @@ uv run crochet2pattern --batch-dir photos/ --out-dir patterns/ --workers 4
 
 Canonical part values in the current schema are Chinese (`头部`, `身体`, and so on), so
 the manual CLI example intentionally retains them. Photo mode always uses local vision, regardless of provider environment variables. A pattern that violates stitch
-arithmetic or the active gauge's shaping limit exits with code `2`.
+arithmetic or the active gauge's shaping limit exits with code `2`. So does a head or body
+whose widest round has fewer than 18 stitches; the message names the option to change.
 `--gauge custom` requires both `--stitches` (6–40 per 10cm) and `--rows` (8–50 per 10cm),
 with finite values. Invalid custom density exits with code `2` before generation or output
 changes, including batch-directory creation; it does not clamp or use another preset.

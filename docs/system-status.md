@@ -14,6 +14,15 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-02 crochetability gate and evaluation policy 3, based on `7c4395f` on branch
+`fix/crochetability-gate` (local pre-commit checks; remote CI belongs to the PR head commit):
+first generation refuses heads or bodies whose widest round has fewer than 18 stitches, and
+photo review/manual input preview counts with the smallest fix. Evaluation adds the crochetability rate and reports declared Parade constructions
+such as ring starts separately. Full suite: **2366 passed, 2 skipped in 84.87s**; repository-wide
+Ruff and mypy (194 files) pass. Local Chrome passes **14 synthetic flows** and the mask-canvas
+check. No remote CI, independent review, authorized-photo evaluation or physical trial; Beta and
+G3/G4 are unchanged.
+
 2026-11-02 physical-copy progress and import order, based on the preceding local changes:
 avoid shared copy identities and prevent an edited graph ID from transferring completion to
 another piece. Ambiguous legacy completions require explicit recovery of the other progress
@@ -834,7 +843,7 @@ and locked dependency audit
 |---|---|---|
 | G1 Reproducible source | **Feature baseline merged: `03a5daf`** | PRs #24 and #25 merged into `main`; the final tree matches checked head `b2df9a3` and the locally tested garment batch (2184 passed, 2 skipped). Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
 | G2 Supported-version automation | **All 10 remote checks passed for final PR #25 head** | Checked head `b2df9a3`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and all 11 browser flows pass; exact run links appear above. Verify post-merge and later-commit results against their own SHAs |
-| G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` thresholds including 100% Parade export |
+| G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |
 | G6 Product claims | **Beta-compliant** | UI/docs/exports retain single-photo, template, estimate, and trial boundaries |

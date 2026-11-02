@@ -34,7 +34,8 @@ def test_invalid_custom_gauge_rejected_before_work_or_file_write(tmp_path,monkey
 @pytest.mark.parametrize("stitches,rows",[(6,8),(40,50),(26,28)])
 def test_supported_custom_values_reach_the_generated_pattern_without_clamping(tmp_path,stitches,rows):
     output = tmp_path/"pattern.json"
-    assert cli.main(["--parts","头部,身体","--head","5.7","--height","18",
+    # 10 cm 头在最粗的 6 针/10cm 下仍有 18 针，不触发可钩性门禁
+    assert cli.main(["--parts","头部,身体","--head","10","--height","18",
         "--gauge","custom","--stitches",str(stitches),"--rows",str(rows),
         "--out",str(output),"--quiet"]) == 0
     assert json.loads(output.read_text())["params"]["gauge"] == {

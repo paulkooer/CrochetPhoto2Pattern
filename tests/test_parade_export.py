@@ -122,3 +122,36 @@ def test_empty_trailing_part_does_not_create_dangling_start():
 def test_invalid_first_round_is_not_exported(count):
     with pytest.raises(ValueError, match="未能导出"):
         export_parade_dsl({"params": {"parts": [{"rounds": [{"stitches": count}]}]}})
+
+
+@pytest.mark.parametrize("skirt_style,construction", [("ring", "ring_start"),
+                                                      ("attached", "reserved_loop_join")])
+def test_declared_unsupported_constructions_are_separated_from_failures(skirt_style, construction):
+    from app.models.crochet_params import CrochetParamsGenerator
+    from app.models.gauge import ShapingStyle
+    from app.models.structure_designer import StructureDesigner
+    from app.schemas import ImageAnalysis
+    from app.utils.parade_export import export_parade_report
+
+    analysis = ImageAnalysis(body_type="标准", head_diameter_cm=9, height_cm=18, main_features=[],
+                             pose="站立", difficulty="easy", parts=["头部", "身体", "裙子"])
+    structure = StructureDesigner.design_3d_structure(analysis, infer_missing_parts=False)
+    params = CrochetParamsGenerator.generate_params(
+        analysis, structure, style=ShapingStyle(skirt_style=skirt_style))
+    report = export_parade_report({"params": params})
+    assert report.complete is False
+    assert report.unsupported_constructions == [{"part": "裙子", "construction": construction}]
+    assert report.failures == []
+    assert any("裙子" in warning for warning in report.warnings)
+
+
+def test_untranslatable_round_is_a_failure_not_a_declared_construction():
+    from app.utils.parade_export import export_parade_report
+
+    r = _result()
+    head = next(p for p in r["params"]["parts"] if p["name"] == "头部")
+    head["rounds"][8]["increase"] = 5
+    head["rounds"][8]["stitches"] = 41
+    report = export_parade_report(r)
+    assert report.complete is False and report.unsupported_constructions == []
+    assert len(report.failures) == 1 and "超出可译子集" in report.failures[0]

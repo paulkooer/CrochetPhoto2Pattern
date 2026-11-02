@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from app.models.crochet_params import _change_note, refresh_derived
 from app.models.instruction_checks import round_expression
-from app.models.parts import _ONE_PIECE_NAME
+from app.models.parts import _ONE_PIECE_NAME, ONE_PIECE_NECK_MARKER
 from app.models.profile_shaping import strip_dome
 from app.models.stitch_attachments import (
     WAIST_POSITION_KEY,
@@ -37,7 +37,7 @@ def waist_rows(params: dict) -> list[dict]:
     rows = body["rounds"]
     start = len(rows) - len(strip_dome([r["stitches"] for r in rows]))
     if body["name"] == _ONE_PIECE_NAME:
-        neck = [i for i, r in enumerate(rows) if "此处为颈部" in (r.get("notes") or "")]
+        neck = [i for i, r in enumerate(rows) if ONE_PIECE_NECK_MARKER in (r.get("notes") or "")]
         if len(neck) != 1:
             raise ValueError("头身一体缺少唯一颈部标记，无法安全选择身体段腰位")
         start = neck[0]

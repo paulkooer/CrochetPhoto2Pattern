@@ -7,7 +7,8 @@ import uuid
 import streamlit as st
 
 from app import software_version
-from app.models.crochet_params import CrochetParamsGenerator
+from app.models.crochet_params import CrochetParamsGenerator, PatternGenerationError
+from app.models.crochetability import crochetability_advice, require_crochetable
 from app.models.gauge import gauge_from_ui
 from app.models.geometry import no_photo_geometry
 from app.models.sizing import sizing_meta_for_analysis
@@ -22,6 +23,8 @@ from app.schemas import (
 from app.ui.result_renderer import md_safe, purge_result_state, render_results
 
 logger = logging.getLogger(__name__)
+
+MAX_MANUAL_HEAD_CM = 20.0
 
 
 def _style_from_session():
@@ -43,18 +46,46 @@ def _gauge_values():
             st.session_state.get("gauge_st_input"), st.session_state.get("gauge_rw_input"))
 
 
+def _manual_design(analysis: ImageAnalysis, gauge, style) -> tuple[dict, dict]:
+    """Structure and params for manual dimensions; the preview uses the same path."""
+    structure = StructureDesigner.design_3d_structure(analysis)
+    return structure, CrochetParamsGenerator.generate_params(analysis, structure, gauge=gauge, style=style)
+
+
+def _render_manual_preview(analysis: ImageAnalysis) -> bool:
+    """Per-part counts before generation; True keeps the generate button disabled."""
+    from app.ui.stitch_preview import preset_option, render_stitch_preview
+
+    gauge, style = gauge_from_ui(*_gauge_values()), _style_from_session()
+
+    def build(head, _ratio, selected_gauge):
+        return _manual_design(analysis.model_copy(update={"head_diameter_cm": head}),
+                              selected_gauge, style)[1]
+
+    try:
+        params = build(analysis.head_diameter_cm, None, gauge)
+    except (ValueError, PatternGenerationError) as exc:
+        st.warning(f"暂不能生成：{md_safe(exc)}")
+        return True
+
+    def suggest(level):
+        advice = crochetability_advice(build, gauge=gauge, level=level,
+                                       size=analysis.head_diameter_cm, size_max=MAX_MANUAL_HEAD_CM)
+        options = [f"把头部直径提高到 {advice.size:g} cm"] if advice.size is not None else []
+        return options + preset_option(advice)
+
+    return render_stitch_preview(params, suggest)
+
+
 def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
     """Run structure + param stages given an already-parsed ImageAnalysis.
 
     手动输入无需 Vision 解析，因此直接用后两个阶段类，不构造
     PipelineOrchestrator（那会连带初始化 ImageParser ）。
     """
-    structure = StructureDesigner.design_3d_structure(analysis)
     style = _style_from_session()
-    params = CrochetParamsGenerator.generate_params(
-        analysis, structure,
-        gauge=gauge_from_ui(*_gauge_values()),
-        style=style)
+    structure, params = _manual_design(analysis, gauge_from_ui(*_gauge_values()), style)
+    require_crochetable(params)
     # 键集走 PatternResult 单一契约（与照片路径同构；无照片 → 无色带）
     return PatternResult(
         generator_version=software_version(),
@@ -83,7 +114,7 @@ def render_tab_manual() -> None:
     col_m1, col_m2 = st.columns(2)
     with col_m1:
         m_body_type = st.selectbox("体型", ["标准", "瘦", "胖"], key="m_body_type")
-        m_head_d = st.slider("头部直径 (cm)", 4.0, 20.0, 9.0, 0.5, key="m_head_d")
+        m_head_d = st.slider("头部直径 (cm)", 4.0, MAX_MANUAL_HEAD_CM, 9.0, 0.5, key="m_head_d")
         m_height = st.slider("整体高度 (cm)", 10.0, 60.0, 18.0, 0.5, key="m_height")
         difficulty_options: tuple[Difficulty, ...] = ("easy", "medium", "hard")
         m_difficulty = st.select_slider(
@@ -105,22 +136,27 @@ def render_tab_manual() -> None:
             key="m_features",
         )
 
+    analysis = None
+    blocked = False
+    if m_parts:
+        features = [f.strip() for f in m_features.split(",") if f.strip()]
+        analysis = ImageAnalysis(
+            body_type=m_body_type,
+            head_diameter_cm=m_head_d,
+            height_cm=m_height,
+            main_features=features or ["卡通风格"],
+            pose=m_pose,
+            difficulty=m_difficulty,
+            parts=m_parts,
+        )
+        blocked = _render_manual_preview(analysis)
+
     if st.button("🚀 生成钩织图解", type="primary",
-                 width="stretch", key="btn_manual"):
-        if not m_parts:
+                 width="stretch", key="btn_manual", disabled=blocked):
+        if analysis is None:
             st.warning("请至少选择一个部件。")
         else:
             try:
-                features = [f.strip() for f in m_features.split(",") if f.strip()]
-                analysis = ImageAnalysis(
-                    body_type=m_body_type,
-                    head_diameter_cm=m_head_d,
-                    height_cm=m_height,
-                    main_features=features or ["卡通风格"],
-                    pose=m_pose,
-                    difficulty=m_difficulty,
-                    parts=m_parts,
-                )
                 with st.spinner("生成图解中…"):
                     result = _run_pipeline_from_analysis(analysis)
                 # 替换旧结果前清掉它命名空间下的 widget 状态，防累积

@@ -72,24 +72,32 @@ Required scene groups: `full-body`; `half-body` or `close-up`; `seated` or `occl
 Hashes cannot detect cropped/transcoded near-duplicates, and tags require human review.
 
 Strict thresholds are the higher of manifest values and these floors: 30 cases, 0.5 case
-part recall, 0.6 macro F1, 0.8 case pass/flare/color accuracy, and 1.0 pattern validity and
-complete Parade export rates. `release_readiness.automated_passed` reports automated
+part recall, 0.6 macro F1, 0.8 case pass/flare/color accuracy, and 1.0 pattern validity,
+crochetability and Parade export rates. `release_readiness.automated_passed` reports automated
 readiness separately from `summary.passed` quality metrics.
 
-> **Known limitation (audit F-10)**: parts started from a ring or foundation chain (a
-> separate skirt tube's waist) cannot yet be exported faithfully to Parade. Exporting them
-> as a magic-ring `scNinc` would close the open tube into a flat disc, so these parts report
-> `complete=False`. Because the release dataset must include skirt cases (flare accuracy) and
-> the complete-Parade-export floor is fixed at 1.0, **a dataset with skirts cannot pass that
-> floor automatically yet**. G3 can pass with skirts only after a faithful chain-ring start
-> lands in the Parade exporter, or after that floor is explicitly lowered or waived for
-> ring-start parts. Earlier versions counted these parts as complete and overstated G3 readiness.
+> **Ring starts (audit F-10, reported separately since policy 3)**: parts started from a
+> ring or foundation chain (a separate skirt tube's waist) cannot yet be exported faithfully
+> to Parade. Exporting them as a magic-ring `scNinc` would close the open tube into a flat
+> disc, so they still report `complete=False`. The release dataset must include skirt cases,
+> so policy 2's strict 1.0 complete-export floor was logically unreachable. Policy 3 records
+> ring starts and cross-part reserved-loop joins as constructions the exporter declares
+> unsupported (`parade_export.unsupported_constructions`); the floor requires everything else
+> to translate completely, and `parade_complete_rate` still reports the strict rate. Once a
+> faithful chain-ring start lands, these parts should export completely again.
+>
+> The default local runner always delivers the fixed head/body/arms/legs template and never
+> delivers a skirt automatically. The macro-F1-above-template floor and flare-positive recall
+> therefore keep G3 blocked until photo analysis recognizes parts beyond the template. That is
+> the intended visual-benefit bar, not a calculation error.
 
 `release_approved` remains false: photo authenticity, labels, rights evidence and physical
 trials require review.
 
-As of 2026-10-11, report schema 3 (input manifest remains 2) uses release policy 2.
-Part precision/recall/F1 score final `params.parts`. Every case must agree across
+As of 2026-11-02, report schema 4 uses release policy 3 (input manifest remains 2; the new
+crochetability threshold is optional). It adds the crochetability rate and reports declared
+Parade constructions separately; rerun older reports. The rules below date from policy 2.
+Since 2026-10-11, part precision/recall/F1 score final `params.parts`. Every case must agree across
 analysis, structure and delivered part names, with matching structure/delivery quantities;
 quantities follow the shared integer contract (1–20, no booleans or fractional values).
 Only a delivered head/body with `type=onepiece` is expanded for comparison; the name alone is insufficient. Strict checks additionally require
@@ -132,8 +140,16 @@ uv run pytest -q tests/test_eval_real.py
 - `flare_accuracy`: calculated only for cases with flare ground truth.
 - `color_top3_accuracy`: calculated only for cases with dominant-color ground truth.
 - `pattern_valid_rate`: rate passing stitch arithmetic and shaping gates; release default is 100%.
-- `parade_export_rate`: rate exporting completely and passing the CrochetPARADE DSL syntax
-  check; release default is 100%. It now contributes to per-case and overall `passed`.
+- `crochetable_rate`: rate whose head and body (including a one-piece head section) have at
+  least 18 stitches in the widest round. `min_crochetable_rate` defaults to, and is fixed for
+  release at, 100%. Each case lists blocking, warning and note findings in `crochetability`.
+  The default runner does not apply the generation gate, so degenerate results keep their other
+  metrics instead of becoming pipeline errors.
+- `parade_export_rate`: rate exporting everything except declared unsupported constructions
+  and passing the CrochetPARADE DSL syntax check; release default is 100%. It contributes to
+  per-case and overall `passed`.
+- `parade_complete_rate`: strict complete-export rate, counting declared constructions as
+  incomplete; reported for comparison only.
 - `parade_syntax_rate`: rate passing this project's emitter-level syntax check. A truncated
   prefix may pass, so this cannot replace complete export rate. Each case's `parade_export`
   includes completeness, exported/requested rounds, fully exported/requested physical

@@ -137,6 +137,8 @@ def run(args: argparse.Namespace) -> dict:
     v = validate_pattern(result["params"])
     if not v["ok"]:
         raise PatternGenerationErrorSafe(v["issues"])
+    from app.models.crochetability import require_crochetable
+    require_crochetable(result["params"])
     return result
 
 
@@ -307,6 +309,13 @@ def main(argv=None) -> int:
         return 2
     except Exception as e:
         from app.models.crochet_params import PatternGenerationError
+        from app.models.crochetability import PatternCrochetabilityError
+        if isinstance(e, PatternCrochetabilityError):
+            # 照片与演示数据按 --height 缩放头部；手动模式的头径就是 --head
+            knob = "--height" if args.image or args.mock else "--head"
+            review = "，或在界面确认头身比例后再生成" if args.image else ""
+            print(f"{e}。可增大 {knob}、改用更细的密度（--gauge dk / fine）{review}。", file=sys.stderr)
+            return 2
         if isinstance(e, PatternGenerationError):
             print(f"图解自检失败: {e}", file=sys.stderr)
             return 2
@@ -318,6 +327,10 @@ def main(argv=None) -> int:
         else:
             print("注意：本地结果的主体类型未确认，部件来自默认模板；请在界面确认头部、部件和数量后使用。",
                   file=sys.stderr)
+    if not args.quiet:
+        from app.models.crochetability import crochetability_findings
+        for finding in crochetability_findings(result["params"]):
+            print(("注意：" if finding.level == "warn" else "提示：") + finding.message, file=sys.stderr)
     payload = result  # 完整 result（含 vision_meta/gauge/style 等，与备份同构）
     blob = json.dumps(payload, ensure_ascii=False, default=lambda o: (
         o.model_dump() if hasattr(o, "model_dump") else str(o)), indent=2)
