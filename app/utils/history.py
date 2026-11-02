@@ -21,7 +21,8 @@ from contextlib import closing, contextmanager, suppress
 from pathlib import Path
 from typing import Any
 
-from ..schemas import SCHEMA_VERSION, PatternResult
+from ..schemas import PatternResult
+from ..services.migrations import UnsupportedFormatError, upgrade_result
 
 # LIKE 转义子句用固定常量而非字符串拼接生成（安全但不易审计——外部
 # 审查建议）；转义符与 _like_escape 内的 "!" 必须一致。
@@ -220,13 +221,12 @@ def load_result(rid: str) -> dict[str, Any] | None:
     # 的内容时直接丢弃，不让 UI 渲染未验证数据（不影响图解本体）
     if data.get("preview") is not None:
         data["preview"] = _safe_preview(data.get("preview"))
-    # 未来 schema 版本的历史记录不猜测兼容性；旧记录（无版本键）照常载入
-    version = data.get("schema_version")
-    if version is not None and version != SCHEMA_VERSION:
+    # 更新或未知版本的历史记录不猜测兼容性；旧记录（无版本键）按迁移链升级
+    try:
+        data = upgrade_result(data)
+    except UnsupportedFormatError as e:
         import logging
-        logging.getLogger(__name__).warning(
-            "历史记录 %s 的 schema 版本 %s 高于当前 %s，拒绝载入",
-            rid, version, SCHEMA_VERSION)
+        logging.getLogger(__name__).warning("历史记录 %s 拒绝载入: %s", rid, e)
         return None
     if row[1]:
         data["title"] = row[1]

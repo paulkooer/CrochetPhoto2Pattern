@@ -344,11 +344,14 @@ def import_backup(data: dict, result_id: str) -> dict:
     """备份 JSON → 可渲染的会话 result dict（导入/历史载入共用入口）。
 
     F24/G1：非重建键按契约从备份数据回填——旧版 setdefault(k, None)
-    把 style/gauge 等全写 None。键集由 PatternResult 定义（旧格式缺键
-    → None 兜底）；analysis/structure/params 先经校验/重建。
+    把 style/gauge 等全写 None。先按迁移链升级到当前格式（更新版本的格式
+    直接拒绝）；键集由 PatternResult 定义（缺键 → 默认值兜底）；
+    analysis/structure/params 先经校验/重建。
     """
     from app.models.result_metadata import validate_result_metadata
+    from app.services.migrations import upgrade_result
 
+    data = upgrade_result(data)
     data = PatternResult.from_result(data).to_backup() | {
         "title": data.get("title"),
     }
