@@ -297,7 +297,7 @@ def main(argv=None) -> int:
 
     try:
         paths = output_paths(args)
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         print(f"输出准备失败: {exc}", file=sys.stderr)
         return 1
     try:

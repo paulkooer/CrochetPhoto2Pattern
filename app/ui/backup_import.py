@@ -1,12 +1,21 @@
 """Open a saved result before generation, or replace a result in its own tab."""
 from __future__ import annotations
 
+import hashlib
 import uuid
 
 import streamlit as st
 
 from app.ui.result_logic import import_backup
 from app.utils.backup import MAX_BACKUP_BYTES, MAX_PASTED_BACKUP_BYTES, decode_backup_json
+
+
+def _payload_fingerprint(payload: str | bytes) -> str | None:
+    try:
+        raw = payload.encode("utf-8") if isinstance(payload, str) else payload
+    except UnicodeError:
+        return None
+    return hashlib.sha256(raw).hexdigest()
 
 
 def render_backup_import(slot: str = "result", *, result_key: str | None = None) -> None:
@@ -16,6 +25,8 @@ def render_backup_import(slot: str = "result", *, result_key: str | None = None)
     file_key = "open_backup_file" if home else f"import_file_{result_key}"
     text_key = "open_backup_text" if home else f"import_{result_key}"
     button_key = "open_backup_apply" if home else f"importbtn_{result_key}"
+    pending_key = "open_backup_ambiguous" if home else f"import_{result_key}_ambiguous"
+    recovery_key = "open_backup_recover_ambiguous" if home else f"import_{result_key}_recover_ambiguous"
     label = "📂 打开备份图解" if home else "📂 导入结果备份"
     with st.expander(label, expanded=False):
         if home:
@@ -40,8 +51,19 @@ def render_backup_import(slot: str = "result", *, result_key: str | None = None)
             destination = "「照片分析（本地）」页" if home else "本页"
             st.caption(f"成功导入会替换{destination}当前图解，请先保存需要保留的完整备份。")
         button = "导入并打开图解" if home else "导入并替换当前结果"
-        if st.button(button, key=button_key, disabled=not payload):
+        requested = st.button(button, key=button_key, disabled=not payload)
+        pending = st.session_state.get(pending_key)
+        if pending and (not payload or _payload_fingerprint(payload) != pending["fingerprint"]):
+            st.session_state.pop(pending_key, None)
+            pending = None
+        recover = False
+        if pending:
+            st.warning(f"旧工程中有 {pending['count']} 个完成圈次无法区分属于哪份实体。"
+                       "可保留原文件，并选择只恢复其他进度；这些圈次需要按实物重新勾选。")
+            recover = st.button("仅恢复无歧义进度并打开", key=recovery_key)
+        if requested or recover:
             from app.ui.result_renderer import md_safe, purge_result_state
+            from app.utils.project import AmbiguousProjectProgressError
 
             try:
                 from app.ui.progress_state import install_progress
@@ -49,13 +71,22 @@ def render_backup_import(slot: str = "result", *, result_key: str | None = None)
 
                 data = decode_backup_json(payload, max_bytes=limit)
                 imported = import_backup(data, uuid.uuid4().hex[:12])
-                progress, notes = read_project_state(data, imported)
+                progress, notes = read_project_state(data, imported, clear_legacy_ambiguity=recover)
                 prepared: dict = {}
                 install_progress(imported, slot, progress, prepared)
                 prepared[f"project_notes_{imported['result_id']}"] = notes
+                if recover and pending:
+                    prepared[f"project_recovery_notice_{imported['result_id']}"] = (
+                        f"从旧工程恢复时，{pending['count']} 个完成圈次无法区分属于哪份实体，"
+                        "已暂不标记；请按实物核对后重新勾选，再保存工程。")
+            except AmbiguousProjectProgressError as exc:
+                st.session_state[pending_key] = {"fingerprint": _payload_fingerprint(payload),
+                                                 "count": exc.count}
+                st.rerun()
             except Exception as exc:
                 st.error(f"导入失败：{md_safe(exc)}")
             else:
+                st.session_state.pop(pending_key, None)
                 if slot in st.session_state:
                     purge_result_state(st.session_state[slot])
                 st.session_state.update(prepared)

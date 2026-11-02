@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app import software_version
 from app.schemas import PatternResult, strip_photo_derived
-from app.ui.progress_state import progress_entries
+from app.ui.progress_state import ambiguous_legacy_progress, has_legacy_identity_collision, progress_entries
 
 MAX_PROJECT_NOTES = 20_000
 
@@ -22,6 +22,15 @@ class ProjectState(BaseModel):
     saved_with_version: str = Field(min_length=1, max_length=80)
     completed_rounds: dict[str, bool] = Field(default_factory=dict)
     notes: str = Field(default="", max_length=MAX_PROJECT_NOTES)
+    progress_identity_version: Literal["2"] | None = None
+
+
+class AmbiguousProjectProgressError(ValueError):
+    """A legacy completed-round key could belong to more than one copy."""
+
+    def __init__(self, count: int) -> None:
+        self.count = count
+        super().__init__(f"旧工程中有 {count} 个完成圈次无法区分属于哪份实体，请按实物核对")
 
 
 def _revision_hash(data: dict) -> str:
@@ -49,9 +58,10 @@ def project_backup(result: dict, progress: dict[str, bool], notes: str = "") -> 
     # 工程文件会下载到用户设备、也可能被转发——只携带图解，剔除照片衍生数据。
     data = strip_photo_derived(PatternResult.from_result(result).to_backup())
     state = ProjectState(pattern_revision=pattern_revision(data), saved_with_version=software_version(),
-                         completed_rounds=progress, notes=notes)
+                         completed_rounds=progress, notes=notes,
+                         progress_identity_version="2" if has_legacy_identity_collision(result) else None)
     _validate_progress(result, state.completed_rounds)
-    return {**data, "project_state": state.model_dump()}
+    return {**data, "project_state": state.model_dump(exclude_none=True)}
 
 
 def _validate_progress(result: dict, progress: dict[str, bool]) -> None:
@@ -66,7 +76,8 @@ def _validate_progress(result: dict, progress: dict[str, bool]) -> None:
         raise ValueError("工程进度引用了不存在的部件、实体或圈次")
 
 
-def read_project_state(data: dict, restored: dict) -> tuple[dict[str, bool], str]:
+def read_project_state(data: dict, restored: dict, *,
+                       clear_legacy_ambiguity: bool = False) -> tuple[dict[str, bool], str]:
     if "project_state" not in data:
         return {}, ""  # Original pattern backups remain supported.
     try:
@@ -76,4 +87,9 @@ def read_project_state(data: dict, restored: dict) -> tuple[dict[str, bool], str
     if state.pattern_revision not in (pattern_revision(data), _legacy_pattern_revision(data)):
         raise ValueError("工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存")
     _validate_progress(restored, state.completed_rounds)
-    return state.completed_rounds, state.notes
+    ambiguous = (ambiguous_legacy_progress(restored, state.completed_rounds)
+                 if state.progress_identity_version is None else set())
+    if ambiguous and not clear_legacy_ambiguity:
+        raise AmbiguousProjectProgressError(len(ambiguous))
+    progress = {key: value for key, value in state.completed_rounds.items() if key not in ambiguous}
+    return progress, state.notes

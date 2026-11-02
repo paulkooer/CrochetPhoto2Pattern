@@ -1,0 +1,1881 @@
+{
+  "analysis": {
+    "body_type": "标准",
+    "head_diameter_cm": 5.7,
+    "height_cm": 36.0,
+    "main_features": [],
+    "pose": "站立",
+    "difficulty": "medium",
+    "parts": [
+      "头部",
+      "身体",
+      "帽子"
+    ],
+    "recommended_colors": null,
+    "hair_color": null,
+    "top_color": null,
+    "bottom_color": null,
+    "clothing_type": null
+  },
+  "structure": {
+    "schema_version": "2.0",
+    "coordinate_system": {
+      "units": "normalized_template_space",
+      "origin": "subject_bottom_center",
+      "x_axis": "left_negative_right_positive",
+      "y_axis": "bottom_zero_top_one",
+      "z_axis": "back_negative_front_positive"
+    },
+    "parts": [
+      {
+        "part_id": "head",
+        "name": "头部",
+        "shape": "sphere",
+        "diameter_cm": 5.7,
+        "color": "红色",
+        "count": 1,
+        "instances": [
+          {
+            "instance_id": "copy2",
+            "position": {
+              "x": 0.0,
+              "y": 0.78,
+              "z": 0.0
+            },
+            "rotation_deg": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "attachments": [
+              {
+                "target_part_id": "body",
+                "target_anchor": "top",
+                "self_anchor": "bottom",
+                "method": "sewn"
+              }
+            ]
+          }
+        ],
+        "source": "template_inferred"
+      },
+      {
+        "part_id": "body",
+        "name": "身体",
+        "shape": "cylinder",
+        "height_cm": 15.2,
+        "color": "红色",
+        "count": 1,
+        "instances": [
+          {
+            "instance_id": "body",
+            "position": {
+              "x": 0.0,
+              "y": 0.43,
+              "z": 0.0
+            },
+            "rotation_deg": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "attachments": []
+          }
+        ],
+        "source": "template_inferred"
+      },
+      {
+        "part_id": "hat",
+        "name": "帽子",
+        "shape": "cup",
+        "diameter_cm": 6.6,
+        "color": "蓝色",
+        "count": 1,
+        "instances": [
+          {
+            "instance_id": "hat",
+            "position": {
+              "x": 0.0,
+              "y": 0.94,
+              "z": 0.0
+            },
+            "rotation_deg": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "attachments": [
+              {
+                "target_part_id": "head",
+                "target_anchor": "top",
+                "self_anchor": "opening",
+                "method": "worn"
+              }
+            ]
+          }
+        ],
+        "source": "template_inferred"
+      }
+    ],
+    "proportions": "头部直径约为身体高度的 0.4 倍，Q 版卡通比例",
+    "notes": "基于单图语义与模板先验；位置、旋转、背面深度和连接锚点不是照片实测值，生成前可人工确认"
+  },
+  "params": {
+    "materials": [
+      {
+        "item": "毛线 · 红色（Catona 506 (Candy Apple)）",
+        "quantity": "约 92.5g（≈231.2m）",
+        "color": "红色",
+        "stitches": 4950,
+        "grams": 92.48,
+        "meters": 231.21,
+        "balls": null
+      },
+      {
+        "item": "毛线 · 蓝色（Catona 113 (Delphinium，近似)）",
+        "quantity": "约 20.7g（≈51.8m）",
+        "color": "蓝色",
+        "stitches": 1110,
+        "grams": 20.74,
+        "meters": 51.85,
+        "balls": null
+      },
+      {
+        "item": "安全眼",
+        "count": 2,
+        "unit": "对",
+        "scope": "per_head",
+        "quantity": "2 对 (8mm；3 岁以下儿童及宠物玩偶禁用——眼件可能脱落误吞，必须改用刺绣眼)"
+      },
+      {
+        "item": "填充棉",
+        "quantity": "适量"
+      },
+      {
+        "item": "配重珠（可选）",
+        "count": 1,
+        "unit": "份",
+        "scope": "per_body",
+        "quantity": "1 份（每份约 3/4 杯，按体积调整）——装入丝袜打结后置底再正常填充；3 岁以下儿童玩偶勿用"
+      },
+      {
+        "item": "2.0–2.5mm 钩针 + 中细/4股棉线（CYC #1 super fine · 标准钩针 2.25–3.5mm）",
+        "quantity": "1 把",
+        "count": 1,
+        "unit": "把",
+        "scope": "reusable"
+      },
+      {
+        "item": "缝合针",
+        "quantity": "1 根",
+        "count": 1,
+        "unit": "根",
+        "scope": "reusable"
+      }
+    ],
+    "material_summary": {
+      "total_stitches": 6060,
+      "grams": 113.22,
+      "meters": 283.06,
+      "balls": null,
+      "waste_percent": 10.0,
+      "basis": "heuristic",
+      "note": "小计已含下列逐色毛线，请勿重复购买；试片与线标适用于所有颜色"
+    },
+    "parts": [
+      {
+        "name": "头部",
+        "type": "sphere",
+        "quantity": 2,
+        "diameter_cm": 5.7,
+        "head_diameter_cm": null,
+        "height_cm": null,
+        "rounds": [
+          {
+            "row": 1,
+            "stitches": 6,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "魔法环起6针（X×6）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 2,
+            "stitches": 12,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "加针×6（V×6，每针都加）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 3,
+            "stitches": 18,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(X,V)×6，隔1针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 4,
+            "stitches": 24,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(X,V,X)×6",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 5,
+            "stitches": 30,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(3X,V)×6，隔3针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 6,
+            "stitches": 36,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(2X,V,2X)×6",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 7,
+            "stitches": 42,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(5X,V)×6，隔5针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 8,
+            "stitches": 48,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(3X,V,3X)×6",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 9,
+            "stitches": 54,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(7X,V)×6，隔7针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 10,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 11,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 12,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 13,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 14,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 15,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 16,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 17,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 18,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 19,
+            "stitches": 48,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(7X,A)×6，隔7针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 20,
+            "stitches": 42,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(6X,A)×6，隔6针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 21,
+            "stitches": 36,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(5X,A)×6，隔5针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 22,
+            "stitches": 30,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(4X,A)×6，隔4针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 23,
+            "stitches": 24,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(3X,A)×6，隔3针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 24,
+            "stitches": 18,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(2X,A)×6，隔2针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 25,
+            "stitches": 12,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(X,A)×6，隔1针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          },
+          {
+            "row": 26,
+            "stitches": 6,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "减针×6（A×6，每2针并1针）；断线留10cm，穿末圈每针前半针后拉紧藏线头（无痕收口，社区/PlanetJune fastening off 通行技法）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": null,
+            "height_range_cm": null,
+            "allow_wide_jump": false
+          }
+        ],
+        "color": "红色",
+        "notes": "标准球形，最大 54 针。第 17 圈（最大围附近）安装安全眼（8mm，两眼间隔约 9 针，可依眼径与脸型调整）。建议先钩小样测试张力。",
+        "auto_color_summary": null,
+        "opening_row": null,
+        "magic_ring": true
+      },
+      {
+        "name": "身体",
+        "type": "cylinder",
+        "quantity": 1,
+        "diameter_cm": null,
+        "head_diameter_cm": null,
+        "height_cm": 15.9,
+        "rounds": [
+          {
+            "row": 1,
+            "stitches": 6,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "魔法环起6针（X×6）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 2,
+            "stitches": 12,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "加针×6（V×6，每针都加）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 3,
+            "stitches": 18,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(X,V)×6，隔1针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 4,
+            "stitches": 24,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(X,V,X)×6",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 5,
+            "stitches": 30,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(3X,V)×6，隔3针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 6,
+            "stitches": 36,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(2X,V,2X)×6",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 7,
+            "stitches": 42,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(5X,V)×6，隔5针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 8,
+            "stitches": 48,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(3X,V,3X)×6",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 9,
+            "stitches": 54,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(7X,V)×6，隔7针加1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 10,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.0,
+              0.3125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 11,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.3125,
+              0.625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 12,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.625,
+              0.9375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 13,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.9375,
+              1.25
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 14,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              1.25,
+              1.5625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 15,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              1.5625,
+              1.875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 16,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              1.875,
+              2.1875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 17,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              2.1875,
+              2.5
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 18,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              2.5,
+              2.8125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 19,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              2.8125,
+              3.125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 20,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              3.125,
+              3.4375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 21,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              3.4375,
+              3.75
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 22,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              3.75,
+              4.0625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 23,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              4.0625,
+              4.375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 24,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              4.375,
+              4.6875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 25,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              4.6875,
+              5.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 26,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              5.0,
+              5.3125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 27,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              5.3125,
+              5.625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 28,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              5.625,
+              5.9375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 29,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              5.9375,
+              6.25
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 30,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              6.25,
+              6.5625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 31,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              6.5625,
+              6.875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 32,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              6.875,
+              7.1875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 33,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              7.1875,
+              7.5
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 34,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              7.5,
+              7.8125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 35,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              7.8125,
+              8.125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 36,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              8.125,
+              8.4375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 37,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              8.4375,
+              8.75
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 38,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              8.75,
+              9.0625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 39,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              9.0625,
+              9.375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 40,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              9.375,
+              9.6875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 41,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              9.6875,
+              10.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 42,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              10.0,
+              10.3125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 43,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              10.3125,
+              10.625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 44,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              10.625,
+              10.9375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 45,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              10.9375,
+              11.25
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 46,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              11.25,
+              11.5625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 47,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              11.5625,
+              11.875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 48,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              11.875,
+              12.1875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 49,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              12.1875,
+              12.5
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 50,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              12.5,
+              12.8125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 51,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              12.8125,
+              13.125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 52,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              13.125,
+              13.4375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 53,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              13.4375,
+              13.75
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 54,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              13.75,
+              14.0625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 55,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              14.0625,
+              14.375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 56,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              14.375,
+              14.6875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 57,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              14.6875,
+              15.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 58,
+            "stitches": 54,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "54X（不加不减）",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              15.0,
+              15.3125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 59,
+            "stitches": 48,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(7X,A)×6，隔7针减1针",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              15.3125,
+              15.625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 60,
+            "stitches": 42,
+            "increase": 0,
+            "decrease": 6,
+            "notes": "(6X,A)×6，隔6针减1针；断线留15cm用于缝合",
+            "color": "红色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              15.625,
+              15.9375
+            ],
+            "allow_wide_jump": false
+          }
+        ],
+        "color": "红色",
+        "notes": "圆柱身体（筒壁高约 15.9cm，另含底部圆盘直径 5.7cm）。收针前填充棉花。",
+        "auto_color_summary": null,
+        "opening_row": null,
+        "magic_ring": true
+      },
+      {
+        "name": "帽子",
+        "type": "cup",
+        "quantity": 1,
+        "diameter_cm": 6.6,
+        "head_diameter_cm": null,
+        "height_cm": 4.1,
+        "rounds": [
+          {
+            "row": 1,
+            "stitches": 6,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "魔法环起6针（X×6）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 2,
+            "stitches": 12,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "加针×6（V×6，每针都加）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 3,
+            "stitches": 18,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(X,V)×6，隔1针加1针",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 4,
+            "stitches": 24,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(X,V,X)×6",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 5,
+            "stitches": 30,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(3X,V)×6，隔3针加1针",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 6,
+            "stitches": 36,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(2X,V,2X)×6",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 7,
+            "stitches": 42,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(5X,V)×6，隔5针加1针",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 8,
+            "stitches": 48,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(3X,V,3X)×6",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 9,
+            "stitches": 54,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(7X,V)×6，隔7针加1针",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 10,
+            "stitches": 60,
+            "increase": 6,
+            "decrease": 0,
+            "notes": "(4X,V,4X)×6",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "base",
+            "height_range_cm": [
+              0.0,
+              0.0
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 11,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.0,
+              0.3125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 12,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.3125,
+              0.625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 13,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.625,
+              0.9375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 14,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              0.9375,
+              1.25
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 15,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              1.25,
+              1.5625
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 16,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              1.5625,
+              1.875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 17,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              1.875,
+              2.1875
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 18,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              2.1875,
+              2.5
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 19,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              2.5,
+              2.8125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 20,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              2.8125,
+              3.125
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 21,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              3.125,
+              3.4375
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 22,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              3.4375,
+              3.75
+            ],
+            "allow_wide_jump": false
+          },
+          {
+            "row": 23,
+            "stitches": 60,
+            "increase": 0,
+            "decrease": 0,
+            "notes": "60X（不加不减）",
+            "color": "蓝色",
+            "auto_color_note": null,
+            "region": "wall",
+            "height_range_cm": [
+              3.75,
+              4.0625
+            ],
+            "allow_wide_jump": false
+          }
+        ],
+        "color": "蓝色",
+        "notes": "开口帽形（帽围 60 针 > 头围，不收口可直接佩戴），筒深 13 圈 ≈ 4.1cm（另有帽顶 10 圈径向加针盘，不计入筒深）。",
+        "auto_color_summary": null,
+        "opening_row": null,
+        "magic_ring": true
+      }
+    ],
+    "assembly_instructions": "1. 按各部件标注数量分别完成并填充棉花\n2. 可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；3 岁以下儿童玩偶勿用）\n3. 头部安装安全眼（第2/3高度处）\n4. 用黑色毛线绣鼻子和嘴巴\n5. 可选：针塑形（needle sculpting）——长针带同色线自一侧眼位入针、横穿头内至对侧眼位再穿回，两端自同一针孔拉紧打结藏线，形成眼窝凹陷（PlanetJune needlesculpting；本图解塑形已内建，此步仅在想要更立体五官时使用）\n6. 头部共 2 个，连接图记录 1 个实例；请在部件结构中核对数量和连接位置\n7. 头部的底部缝合到身体的顶部\n8. 帽口 60 针不收口，直接戴在头部（试戴后可缝合固定）",
+    "difficulty": "medium",
+    "estimated_time_minutes": 679,
+    "time_estimate_basis": {
+      "scope": "round_crochet_baseline",
+      "confidence": "low_uncalibrated",
+      "included": [
+        "stitch_count",
+        "physical_round_overhead"
+      ],
+      "excluded": [
+        "assembly",
+        "stuffing",
+        "color_changes",
+        "embroidery",
+        "rework",
+        "breaks"
+      ],
+      "seconds_per_stitch": 6.5,
+      "seconds_per_round_overhead": 10.0,
+      "minimum_minutes": 30
+    },
+    "total_stitches": 6060,
+    "skirt_style": "ring",
+    "gauge": {
+      "stitches_per_10cm": 30.0,
+      "rows_per_10cm": 32.0
+    },
+    "shaping": {
+      "continuous_delta": 5.89,
+      "max_stitch_change": 6,
+      "quantization": "ceil_to_six_stitch_sectors",
+      "note": "连续几何变化率按六等分针法向上量化；实际圈可使用更小的6针步长"
+    },
+    "notes": "螺旋钩法：全程不引拔、不翻转，每圈第一针挂记号扣；普通圈可参考隐形减针（只挑两针目的前半针）；FLO/BLO 圈按本圈指定针法。基于单图推理生成，比例可能需要试钩调整。",
+    "assembly_plan": {
+      "schema_version": "1.0",
+      "source": "structure_v2",
+      "connections": [
+        {
+          "source_part_id": "head",
+          "source_part_name": "头部",
+          "source_instance_id": "head",
+          "self_anchor": "bottom",
+          "target_part_id": "body",
+          "target_part_name": "身体",
+          "target_anchor": "top",
+          "method": "sewn"
+        },
+        {
+          "source_part_id": "hat",
+          "source_part_name": "帽子",
+          "source_instance_id": "hat",
+          "self_anchor": "opening",
+          "target_part_id": "head",
+          "target_part_name": "头部",
+          "target_anchor": "top",
+          "method": "worn"
+        }
+      ]
+    }
+  },
+  "style": {
+    "sphere_mode": "ladder",
+    "one_piece": false,
+    "skirt_style": "ring",
+    "ruffle_hem": false
+  },
+  "gauge": {
+    "stitches_per_10cm": 30.0,
+    "rows_per_10cm": 32.0
+  },
+  "color_bands": null,
+  "spans": null,
+  "spans_measured": [],
+  "vision_meta": {},
+  "usage": {},
+  "sizing": null,
+  "geometry": null,
+  "generator_version": null,
+  "diagnostics": {},
+  "schema_version": "1",
+  "project_state": {
+    "schema_version": "1",
+    "pattern_revision": "2f4addd9bb7a8178421b7b32ca2c51b03cee16449d3df496e3f7627cd3cdf2bd",
+    "saved_with_version": "0.2.0b2",
+    "completed_rounds": {
+      "[\"头部\", \"copy2\", 1]": true,
+      "[\"帽子\", \"hat\", 1]": true
+    },
+    "notes": "原始合成备注"
+  }
+}

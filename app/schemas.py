@@ -14,7 +14,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.models.gauge import (
+from app.gauge_constraints import (
     INDEPENDENT_GAUGE_PARTS,
     MAX_GAUGE_ROWS,
     MAX_GAUGE_STITCHES,

@@ -1,0 +1,11 @@
+{
+  "base_commit": "d619179447df1694d88abf89ad828cb86740c0d9",
+  "progress_state_sha256": "be71f69dc5a2efff3e471ed4c41f2e9a8f4accf040e9145cc0cd91b4f3828461",
+  "project_module_sha256": "8d1bbace8041250e093d97f42951754a02f2ee2732a35c21091ba2aa7927808c",
+  "project_sha256": "745e3acad38e424c4359bfce47a85464c2aa0369554bfdff8ac15534859b5fc9",
+  "selected": [
+    "头部第二份第1圈",
+    "帽子第1圈"
+  ],
+  "description": "Synthetic legacy project: the head copy identities collide."
+}

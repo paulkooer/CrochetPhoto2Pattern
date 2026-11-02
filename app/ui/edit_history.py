@@ -8,7 +8,13 @@ from copy import deepcopy
 
 import streamlit as st
 
-from app.ui.progress_state import capture_progress, install_progress, progress_impact, retained_progress
+from app.ui.progress_state import (
+    ambiguous_legacy_progress,
+    capture_progress,
+    install_progress,
+    progress_impact,
+    retained_progress,
+)
 
 MAX_SNAPSHOTS = 12
 MAX_HISTORY_BYTES = 8 << 20
@@ -102,6 +108,8 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
         f"project_notes_{old_rid}", "")
     prepared_progress[f"hist_title_{updated['result_id']}"] = st.session_state.get(
         f"hist_title_{old_rid}", current.get("title") or "")
+    if notice := st.session_state.get(f"project_recovery_notice_{old_rid}"):
+        prepared_progress[f"project_recovery_notice_{updated['result_id']}"] = notice
     # All copying, metrics and serialization must succeed before session mutation.
     purge_result_state(current)
     st.session_state.update(prepared_progress)
@@ -120,8 +128,10 @@ def commit_edit(slot: str, current: dict, updated: dict) -> dict:
         return current
     history = deepcopy(get_history(slot, current, create=False))
     progress = capture_progress(current, slot, st.session_state)
-    history["undo"].append({"result": deepcopy(current), "progress": progress})
+    history["undo"].append({"result": deepcopy(current), "progress": progress,
+                            "progress_identity_version": "2"})
     history["redo"].clear()
+    history["legacy_ambiguous_count"] = 0
     retained = retained_progress(current, updated, slot, progress)
     history["cleared_progress"] = len(progress) - len(retained)
     return _install(slot, current, updated, history, retained)
@@ -137,10 +147,16 @@ def restore_edit(slot: str, current: dict, direction: str) -> dict:
     history["cleared_progress"] = 0
     # In-process sessions may still contain snapshots made before this update.
     updated = snapshot.get("result", snapshot)
+    progress = snapshot.get("progress", {})
+    ambiguous = (ambiguous_legacy_progress(updated, progress)
+                 if snapshot.get("progress_identity_version") != "2" else set())
+    history["legacy_ambiguous_count"] = len(ambiguous)
+    progress = {key: value for key, value in progress.items() if key not in ambiguous}
     history["redo" if direction == "undo" else "undo"].append({
         "result": deepcopy(current), "progress": capture_progress(current, slot, st.session_state),
+        "progress_identity_version": "2",
     })
-    return _install(slot, current, updated, history, snapshot.get("progress", {}))
+    return _install(slot, current, updated, history, progress)
 
 
 def preview_edit(slot: str, current: dict, candidate: dict) -> None:
@@ -227,6 +243,9 @@ def render_history(slot: str, result: dict) -> None:
     if history.get("cleared_progress"):
         progress_notice.warning(f"本次修改清除了 {history['cleared_progress']} 个受影响的已完成圈次；"
                                 "其他部件进度及个人备注已保留，可撤销恢复。")
+    if count := history.get("legacy_ambiguous_count"):
+        st.warning(f"旧撤销记录中有 {count} 个完成圈次无法区分属于哪份实体，已暂不标记；"
+                   "请按实物核对后重新勾选。")
     with st.expander("最近一次修改前后对比"):
         if history["comparison"]:
             before, after = history["comparison"]["修改前"], history["comparison"]["修改后"]

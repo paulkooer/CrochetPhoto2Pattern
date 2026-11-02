@@ -515,6 +515,72 @@ async function headProgress(page, scope, rid, checked) {
     await expect(keptNotes).toHaveValue('Review labels and unchanged sizes');
     await samplePage.screenshot({path:path.join(output,'material-preview-redo.png'),fullPage:true});
     record('material preview/cancel/apply and unchanged material/size after undo retain redo, provenance, notes and progress');
+
+    // The legacy fixture saved one ambiguous head completion plus an unrelated hat completion.
+    {
+      const collisionContext = await context();
+      const collisionPage = lastPage = await collisionContext.newPage();
+      await collisionPage.goto(baseURL);
+      const collisionSidebar = collisionPage.locator('[data-testid="stSidebar"]');
+      const collisionFile = path.join(__dirname,'../tests/fixtures/progress_instance_collision/legacy-project.json');
+      const collisionInput = JSON.parse(await fs.readFile(collisionFile));
+      const collisionHeadIndex = collisionInput.params.parts.findIndex(part=>part.name==='头部');
+      const collisionHatIndex = collisionInput.params.parts.findIndex(part=>part.name==='帽子');
+      const collisionHeadRounds = collisionInput.params.parts[collisionHeadIndex].rounds.length;
+      await key(collisionSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(collisionFile);
+      await clickKey(collisionPage,collisionSidebar,'open_backup_apply');
+      await expect(collisionSidebar.getByText(/无法区分属于哪份实体/)).toBeVisible();
+      await collisionPage.screenshot({path:path.join(output,'collision-recovery-choice.png'),fullPage:true});
+      await expect(collisionPage.locator('[class*="st-key-hist_save_"]')).toHaveCount(0);
+      await clickKey(collisionPage,collisionSidebar,'open_backup_recover_ambiguous');
+      const collisionPanel = collisionPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+      const collisionId = await resultId(collisionPanel);
+      await expect(collisionPanel.getByText(/无法区分属于哪份实体，已暂不标记/)).toBeVisible();
+      const headChecks = key(collisionPanel,`sheet_part_${collisionId}_${collisionHeadIndex}`)
+        .locator('input[type="checkbox"]');
+      const firstHead = headChecks.nth(0);
+      const secondHead = headChecks.nth(collisionHeadRounds);
+      const recoveredHat = key(collisionPanel,`sheet_part_${collisionId}_${collisionHatIndex}`)
+        .locator('input[type="checkbox"]').first();
+      await reveal(firstHead);
+      await expect(firstHead).not.toBeChecked();
+      await expect(secondHead).not.toBeChecked();
+      await reveal(recoveredHat);
+      await expect(recoveredHat).toBeChecked();
+      await reveal(secondHead);
+      await secondHead.locator('xpath=ancestor::label').click();
+      await settle(collisionPage);
+      await clickKey(collisionPage,collisionPanel,`project_save_${collisionId}`);
+      const collisionProject = path.join(output,'collision-project.json');
+      const collisionSaved = JSON.parse(await download(collisionPage,
+        collisionPage.getByRole('dialog').getByRole('button',{name:'下载工程 JSON',exact:true}),collisionProject));
+      assert.equal(collisionSaved.project_state.progress_identity_version,'2');
+      const headCompleted = Object.keys(collisionSaved.project_state.completed_rounds)
+        .map(value=>JSON.parse(value)).filter(value=>value[0]==='头部');
+      assert.deepEqual(headCompleted,[['头部','copy2_',1]]);
+      assert.equal(collisionSaved.project_state.notes,'原始合成备注');
+      const collisionFreshContext = await context();
+      const collisionFresh = lastPage = await collisionFreshContext.newPage();
+      await collisionFresh.goto(baseURL);
+      const freshSidebar = collisionFresh.locator('[data-testid="stSidebar"]');
+      await key(freshSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(collisionProject);
+      await clickKey(collisionFresh,freshSidebar,'open_backup_apply');
+      const freshPanel = collisionFresh.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+      const freshId = await resultId(freshPanel);
+      const freshChecks = key(freshPanel,`sheet_part_${freshId}_${collisionHeadIndex}`)
+        .locator('input[type="checkbox"]');
+      const freshFirst = freshChecks.nth(0);
+      const freshSecond = freshChecks.nth(collisionHeadRounds);
+      await reveal(freshFirst);
+      await expect(freshFirst).not.toBeChecked();
+      await expect(freshSecond).toBeChecked();
+      const freshHat = key(freshPanel,`sheet_part_${freshId}_${collisionHatIndex}`)
+        .locator('input[type="checkbox"]').first();
+      await reveal(freshHat);
+      await expect(freshHat).toBeChecked();
+      await collisionFresh.screenshot({path:path.join(output,'collision-progress-restored.png'),fullPage:true});
+      record('legacy collision requires recovery, then separate copy progress survives a fresh project restore');
+    }
     assert.deepEqual(report.page_errors,[]);
     report.status = 'pass';
     console.log(`PASS all ${report.checks.length} browser workflow checks; output ${output}`);

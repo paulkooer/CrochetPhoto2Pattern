@@ -8,6 +8,19 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-02 Physical-copy progress identities
+
+- Separate progress when a graph instance ID collides with an ordinal ID for an extra copy. Structural edits match actual instances by ID and extra copies by ordinal, preventing completion from moving to another piece.
+- When a legacy project contains ambiguous completed rounds, retain the current workspace and offer explicit recovery of unambiguous progress and notes; the affected rounds must be checked against the physical work. Legacy undo snapshots are handled conservatively too. New projects with an identity collision include `progress_identity_version="2"` and need a supporting reader; other projects retain their existing format.
+- Map completed rounds directly and reuse the impact calculation to reduce preview work for large, sparsely completed patterns. See the [synthetic comparison](docs/progress-identity-review-20261102.md).
+- Fix circular imports when a fresh Python process imports `app.schemas` or `app.utils.project` first. Gauge constraints remain shared, and the model package's existing re-exports stay available.
+
+### Fixed / Changed — 2026-11-02 Material bounds and CLI rollback
+
+- Require finite ball weight, ball length and swatch weight of at least `0.000001`, and reject booleans in material measurements. Correct affected legacy files in the prior version and save a new project; normal decimals and numeric strings remain supported. Update the YarnSpec Schema and export cache to 14.
+- Back up existing CLI destinations in 1 MiB chunks. Ordinary rollback restores content, permission bits and modification time; metadata failure still attempts content recovery, and failed content recovery retains a backup and reports its path. A single-output symlink cycle now produces a preparation error. See [limits](docs/image-memory.md).
+- Reuse one per-color material aggregation during generation and refresh. See the [synthetic benchmark](docs/optimization-review-20261102.md) for measurements and output hashes.
+
 ### Fixed / Added — 2026-11-01 Unchanged submissions and material previews
 
 - Preserve the display ID, undo/redo snapshots, progress, notes and storage binding when the complete canonical pattern revision is unchanged. Resubmitting unchanged settings after undo no longer creates a new result and discards redo. Real instruction, color, gauge or provenance changes still create edits even when aggregate metrics match.

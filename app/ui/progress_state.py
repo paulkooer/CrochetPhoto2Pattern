@@ -38,6 +38,67 @@ def progress_copy_prefixes(result: dict, slot: str) -> list[list[str]]:
     return prefixes
 
 
+def _copy_instance_ids(instances: list[dict], quantity: int) -> list[str]:
+    """Reserve graph IDs before assigning deterministic IDs to extra copies."""
+    reserved = {instance["instance_id"] for instance in instances}
+    identities = []
+    for index in range(quantity):
+        if index < len(instances):
+            identity = instances[index]["instance_id"]
+        else:
+            identity = f"copy{index + 1}"
+            while identity in reserved:
+                identity += "_"
+            reserved.add(identity)
+        identities.append(identity)
+    return identities
+
+
+def _legacy_identity_collisions(result: dict) -> dict[str, set[str]]:
+    """Find copy IDs that the old graph/fallback mapping assigned twice."""
+    structure = result.get("structure") or {}
+    graph = {p["name"]: p for p in structure.get("parts", [])}
+    collisions = {}
+    for part in result["params"]["parts"]:
+        instances = (graph.get(part["name"], {}).get("instances", [])
+                     if structure.get("schema_version") == "2.0" else [])
+        ids = [instances[i]["instance_id"] if i < len(instances) else f"copy{i + 1}"
+               for i in range(part.get("quantity", 1))]
+        duplicated = {identity for identity, count in Counter(ids).items() if count > 1}
+        if duplicated:
+            collisions[part["name"]] = duplicated
+    return collisions
+
+
+def has_legacy_identity_collision(result: dict) -> bool:
+    return bool(_legacy_identity_collisions(result))
+
+
+def ambiguous_legacy_progress(result: dict, progress: dict[str, bool]) -> set[str]:
+    """Old duplicate IDs cannot establish which physical copy was completed."""
+    collisions = _legacy_identity_collisions(result)
+    return {identity for part in result["params"]["parts"]
+            for copy_id in collisions.get(part["name"], ()) for rd in part["rounds"]
+            if (identity := json.dumps([part["name"], copy_id, rd["row"]], ensure_ascii=False)) in progress}
+
+
+def _copy_roles(result: dict) -> dict[str, dict[str, tuple[str, str | int]]]:
+    """Distinguish real graph IDs from ordinal IDs assigned to extra copies."""
+    structure = result.get("structure") or {}
+    graph = {p["name"]: p for p in structure.get("parts", [])}
+    roles: dict[str, dict[str, tuple[str, str | int]]] = {}
+    for part in result["params"]["parts"]:
+        instances = (graph.get(part["name"], {}).get("instances", [])
+                     if structure.get("schema_version") == "2.0" else [])
+        identities = _copy_instance_ids(instances, part.get("quantity", 1))
+        roles[part["name"]] = {
+            identity: ("graph", instances[index]["instance_id"]) if index < len(instances)
+            else ("fallback", index + 1)
+            for index, identity in enumerate(identities)
+        }
+    return roles
+
+
 def progress_entries(result: dict, slot: str, *, part_index: int | None = None):
     """Yield semantic identity, widget key and part for each physical round.
 
@@ -58,8 +119,8 @@ def progress_entries(result: dict, slot: str, *, part_index: int | None = None):
         instances = (
             graph.get(name, {}).get("instances", []) if structure.get("schema_version") == "2.0" else []
         )
-        for copy, prefix in enumerate(prefixes[selected_index]):
-            instance = instances[copy]["instance_id"] if copy < len(instances) else f"copy{copy + 1}"
+        for instance, prefix in zip(_copy_instance_ids(instances, len(prefixes[selected_index])),
+                                    prefixes[selected_index], strict=True):
             for index, rd in enumerate(part["rounds"]):
                 identity = json.dumps([name, instance, rd["row"]], ensure_ascii=False)
                 yield identity, f"{prefix}{index}", part
@@ -125,8 +186,7 @@ def progress_limits(current: dict, updated: dict) -> dict[str, int]:
         structure = result.get("structure") or {}
         entry: dict = next((p for p in structure.get("parts", []) if p["name"] == name), {})
         instances = entry.get("instances", []) if structure.get("schema_version") == "2.0" else []
-        return [instances[i]["instance_id"] if i < len(instances) else f"copy{i + 1}"
-                for i in range(part.get("quantity", 1))]
+        return _copy_instance_ids(instances, part.get("quantity", 1))
 
     for connection in old_links + new_links:
         if any(copies(current, connection[field]) != copies(updated, connection[field])
@@ -155,28 +215,58 @@ def progress_limits(current: dict, updated: dict) -> dict[str, int]:
             return limits
 
 
-def retained_progress(current: dict, updated: dict, slot: str, progress: dict) -> dict[str, bool]:
-    """Retain only existing physical rounds before the first affected round."""
-    limits = progress_limits(current, updated)
+def _retained_progress(current: dict, updated: dict, progress: dict,
+                       limits: dict[str, int]) -> tuple[dict[str, bool], dict[str, int]]:
     eligible = {p["name"]: {r["row"] for r in p["rounds"][:limits[p["name"]]]}
                 for p in updated["params"]["parts"]}
-    return {identity: True for identity, _, part in progress_entries(updated, slot)
-            if progress.get(identity) and json.loads(identity)[2] in eligible[part["name"]]}
+    old_roles = _copy_roles(current)
+    new_roles = _copy_roles(updated)
+    next_ids = {}
+    for name, copies in old_roles.items():
+        new_by_role = {role: identity for identity, role in new_roles.get(name, {}).items()}
+        next_ids[name] = {identity: new_by_role[role] for identity, role in copies.items()
+                          if role in new_by_role}
+    retained: dict[str, bool] = {}
+    kept: dict[str, int] = {}
+    # Work from completed rounds: a large pattern can have hundreds of
+    # thousands of physical rounds but only a few checked entries.
+    for identity, completed in progress.items():
+        if not completed:
+            continue
+        try:
+            parsed = json.loads(identity)
+        except (TypeError, ValueError, RecursionError):
+            continue
+        if (not isinstance(parsed, list) or len(parsed) != 3
+                or not isinstance(parsed[0], str) or not isinstance(parsed[1], str)
+                or type(parsed[2]) is not int or json.dumps(parsed, ensure_ascii=False) != identity):
+            continue
+        name, copy_id, row = parsed
+        next_copy = next_ids.get(name, {}).get(copy_id)
+        if next_copy is not None and row in eligible.get(name, set()):
+            next_identity = identity if next_copy == copy_id else json.dumps([name, next_copy, row],
+                                                                            ensure_ascii=False)
+            retained[next_identity] = True
+            kept[name] = kept.get(name, 0) + 1
+    return retained, kept
+
+
+def retained_progress(current: dict, updated: dict, slot: str, progress: dict) -> dict[str, bool]:
+    """Retain only existing physical rounds before the first affected round."""
+    return _retained_progress(current, updated, progress, progress_limits(current, updated))[0]
 
 
 def progress_impact(current: dict, updated: dict, slot: str, progress: dict) -> list[dict]:
     """Human-readable changes, with counts per logical part across its copies."""
     limits = progress_limits(current, updated)
-    retained = retained_progress(current, updated, slot, progress)
+    _, kept = _retained_progress(current, updated, progress, limits)
     old_parts = {p["name"]: p for p in current["params"]["parts"]}
     new_parts = {p["name"]: p for p in updated["params"]["parts"]}
     done: dict[str, int] = {}
-    kept: dict[str, int] = {}
     for identity, value in progress.items():
         if value:
             name = json.loads(identity)[0]
             done[name] = done.get(name, 0) + 1
-            kept[name] = kept.get(name, 0) + int(identity in retained)
     summary = []
     for name in dict.fromkeys([*old_parts, *new_parts]):
         part = new_parts.get(name)

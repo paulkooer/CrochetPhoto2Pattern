@@ -19,6 +19,19 @@
       "title": "Pattern Revision",
       "type": "string"
     },
+    "progress_identity_version": {
+      "anyOf": [
+        {
+          "const": "2",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Progress Identity Version"
+    },
     "saved_with_version": {
       "maxLength": 80,
       "minLength": 1,
