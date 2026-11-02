@@ -18,7 +18,7 @@ from .crochetability import require_crochetable
 from .geometry import GeometryObservation, mock_geometry, observe_geometry
 from .image_parser import ImageParser
 from .runtime import RunTrace
-from .sizing import scale_analysis_to_target_height
+from .sizing import DEFAULT_PROPORTION_STYLE, scale_analysis_to_target_height
 from .structure_designer import StructureDesigner
 from .subject import SubjectObservation
 
@@ -133,6 +133,7 @@ class PipelineOrchestrator:
         target_height_cm: float,
         target_height_source: str,
         progress_cb: ProgressCB | None = None,
+        proportion_style: str = DEFAULT_PROPORTION_STYLE,
     ) -> tuple[ImageAnalysis, dict[str, Any], dict[str, Any]]:
         """Scale the chosen analysis and design its template structure."""
         chosen_data = (analysis or draft.analysis).model_dump()
@@ -142,7 +143,7 @@ class PipelineOrchestrator:
         if not chosen.parts:
             raise ValueError("请至少保留一个部件")
         chosen, sizing = scale_analysis_to_target_height(
-            chosen, target_height_cm, source=target_height_source
+            chosen, target_height_cm, source=target_height_source, proportion_style=proportion_style
         )
         if progress_cb:
             progress_cb(40, text="Step 2/3: 部件结构设计中...")
@@ -164,6 +165,7 @@ class PipelineOrchestrator:
         gauge=None,
         style=None,
         target_height_cm: float = 18,
+        proportion_style: str = DEFAULT_PROPORTION_STYLE,
     ) -> dict[str, Any]:
         """The rounds generate_from_draft would produce, without colors or the gate.
 
@@ -173,7 +175,7 @@ class PipelineOrchestrator:
         from .gauge import DEFAULT, DEFAULT_STYLE
 
         chosen, _sizing, structure = PipelineOrchestrator._design(
-            draft, analysis, None, target_height_cm, "review_preview")
+            draft, analysis, None, target_height_cm, "review_preview", proportion_style=proportion_style)
         return CrochetParamsGenerator.generate_params(
             chosen,
             structure,
@@ -196,6 +198,7 @@ class PipelineOrchestrator:
         progress_cb: ProgressCB | None = None,
         run_trace: RunTrace | None = None,
         enforce_crochetability: bool = True,
+        proportion_style: str = DEFAULT_PROPORTION_STYLE,
     ) -> dict[str, Any]:
         """Generate locally from reviewed data; never contacts a vision provider.
 
@@ -205,6 +208,7 @@ class PipelineOrchestrator:
         the CLI selection and must not certify subject or proportion review.
         Degenerate head/body sizes raise ``PatternCrochetabilityError`` unless
         ``enforce_crochetability`` is false (evaluation scores them separately).
+        ``proportion_style`` maps the photo head ratio into a doll range (Q by default).
         """
         trace = run_trace or deepcopy(draft.trace)
         from .color_design import vertical_color_bands
@@ -213,7 +217,8 @@ class PipelineOrchestrator:
         gauge, style = gauge or DEFAULT, style or DEFAULT_STYLE
         with trace.stage("structure"):
             chosen, sizing, structure = PipelineOrchestrator._design(
-                draft, analysis, parts, target_height_cm, target_height_source, progress_cb)
+                draft, analysis, parts, target_height_cm, target_height_source, progress_cb,
+                proportion_style=proportion_style)
         with trace.stage("colors"):
             color_observation: dict = {}
             bands = vertical_color_bands(draft.image, subject=draft.subject, observation=color_observation)
@@ -284,6 +289,7 @@ class PipelineOrchestrator:
         budget_seconds: float = 180,
         parts: list[str] | None = None,
         enforce_crochetability: bool = True,
+        proportion_style: str = DEFAULT_PROPORTION_STYLE,
     ) -> dict[str, Any]:
         # Keep the original public API and explicit mode validation.
         if vision_mode not in VISION_MODES:
@@ -306,6 +312,7 @@ class PipelineOrchestrator:
                 progress_cb=progress_cb,
                 run_trace=trace,
                 enforce_crochetability=enforce_crochetability,
+                proportion_style=proportion_style,
             )
         finally:
             self.last_diagnostics = trace.payload()

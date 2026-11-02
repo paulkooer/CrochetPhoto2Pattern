@@ -357,8 +357,14 @@ def render_results(result: dict, slot: str) -> None:
     if sizing.get("photo_head_to_height_ratio") is not None:
         ratio = _ratio_text(sizing)
         clamp_note = "（已限制到可生成范围）" if sizing.get("ratio_clamped") else ""
+        from app.models.sizing import PROPORTION_STYLE_LABELS
+
+        styled = ""
+        applied, style_key = sizing.get("applied_head_to_height_ratio"), sizing.get("proportion_style")
+        if style_key in ("q", "balanced") and isinstance(applied, int | float) and applied > 0:
+            styled = f"按「{PROPORTION_STYLE_LABELS[style_key]}」风格换算为玩偶约 1:{1 / applied:.1f}；"
         st.caption(
-            f"📏 照片头径/身高比例约 {ratio}{clamp_note}；"
+            f"📏 照片头径/身高比例约 {ratio}{clamp_note}；{styled}"
             "照片不提供绝对厘米尺度，以上尺寸来自生成时选择的目标高度。")
     elif sizing.get("note"):
         st.caption(f"📏 {md_safe(sizing['note'])}")

@@ -63,6 +63,11 @@ Unknown part names remain available for review. Remove mistaken labels or select
   per-part counts before generation and suggest the smallest single change of target height,
   head ratio or gauge; edits and imports of existing work only warn. Thresholds follow the
   repository's reference patterns and do not validate finished size.
+- Proportion styles: photo head ratios are compressed into a Q-style 1:2–1:3 doll range by
+  default, with balanced (1:2–1:4.5) and photo (unchanged) options. Review shows
+  "photo ≈ 1:5.0 → doll ≈ 1:2.5", and the original ratio is kept as provenance. The face box
+  is expanded into a head box (height ×1.5, width ×1.2) to include forehead and hair; this
+  prior is not yet calibrated on authorized photos, and the head box remains adjustable.
 - **CrochetPARADE export:** translate the pattern into the
   [CrochetPARADE](https://crochetparade.org) DSL (result page / `--parade`) for
   independent 3D rendering and stitch-tension analysis — a second-tier
@@ -270,6 +275,8 @@ Canonical part values in the current schema are Chinese (`头部`, `身体`, and
 the manual CLI example intentionally retains them. Photo mode always uses local vision, regardless of provider environment variables. A pattern that violates stitch
 arithmetic or the active gauge's shaping limit exits with code `2`. So does a head or body
 whose widest round has fewer than 18 stitches; the message names the option to change.
+Photo and mock modes map head ratios with the Q style by default (`--proportion-style q`);
+use `balanced`, or `photo` to keep the photo ratio.
 `--gauge custom` requires both `--stitches` (6–40 per 10cm) and `--rows` (8–50 per 10cm),
 with finite values. Invalid custom density exits with code `2` before generation or output
 changes, including batch-directory creation; it does not clamp or use another preset.

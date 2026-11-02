@@ -96,7 +96,9 @@ trials require review.
 
 As of 2026-11-02, report schema 4 uses release policy 3 (input manifest remains 2; the new
 crochetability threshold is optional). It adds the crochetability rate and reports declared
-Parade constructions separately; rerun older reports. The rules below date from policy 2.
+Parade constructions separately; rerun older reports. The default runner uses the product's
+Q proportion style, recorded in `evaluator.proportion_style` (`null` for custom runners). The
+rules below date from policy 2.
 Since 2026-10-11, part precision/recall/F1 score final `params.parts`. Every case must agree across
 analysis, structure and delivered part names, with matching structure/delivery quantities;
 quantities follow the shared integer contract (1–20, no booleans or fractional values).

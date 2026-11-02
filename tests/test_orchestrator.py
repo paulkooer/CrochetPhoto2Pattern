@@ -66,11 +66,12 @@ def test_full_pipeline_applies_user_target_to_parser_ratio():
     with patch.object(ImageParser, "parse_image_local", return_value=observed):
         result = orch.run_full_pipeline(
             Image.new("RGB", (40, 40)), target_height_cm=30.0,
-            target_height_source="user_photo_target")
+            target_height_source="user_photo_target", proportion_style="photo")
     assert result["analysis"]["height_cm"] == 30.0
     assert result["analysis"]["head_diameter_cm"] == 6.0
     assert result["sizing"]["source"] == "user_photo_target"
     assert result["sizing"]["photo_head_to_height_ratio"] == 0.2
+    assert result["sizing"]["proportion_style"] == "photo"
 
 
 def test_explicit_mock_mode_skips_api_and_photo_geometry():

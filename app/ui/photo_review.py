@@ -9,6 +9,12 @@ import streamlit as st
 from app.models.crochet_params import PatternGenerationError
 from app.models.orchestrator import PhotoDraft, PipelineOrchestrator
 from app.models.photo_review import head_ratio, review_overlay, reviewed_analysis, with_reviewed_body
+from app.models.sizing import (
+    DEFAULT_PROPORTION_STYLE,
+    PROPORTION_STYLE_LABELS,
+    PROPORTION_STYLES,
+    styled_body_ratio,
+)
 from app.schemas import PART_NAMES, ImageAnalysis
 
 
@@ -37,17 +43,17 @@ def _confirmed_draft(draft: PhotoDraft, body_reviewed: PhotoDraft, ratio: float,
 
 
 def _render_preview(reviewed: PhotoDraft, analysis: ImageAnalysis, *, gauge, style,
-                    target_height: float, head_box: bool) -> bool:
+                    target_height: float, head_box: bool, proportion_style: str) -> bool:
     """Exact per-part counts before generation; True keeps generation disabled."""
-    from app.models.crochetability import crochetability_advice
+    from app.models.crochetability import at_or_above, crochetability_advice, crochetability_findings
     from app.models.sizing import MAX_PHOTO_TARGET_HEIGHT_CM, MIN_BODY_TO_HEAD_RATIO
     from app.ui.result_renderer import md_safe
     from app.ui.stitch_preview import preset_option, render_stitch_preview
 
-    def build(height, ratio, selected_gauge):
+    def build(height, ratio, selected_gauge, selected_style=proportion_style):
         return PipelineOrchestrator.preview_params(
             reviewed, analysis=reviewed_analysis(analysis, analysis.parts, ratio),
-            gauge=selected_gauge, style=style, target_height_cm=height)
+            gauge=selected_gauge, style=style, target_height_cm=height, proportion_style=selected_style)
 
     ratio = analysis.head_diameter_cm / analysis.height_cm
     try:
@@ -57,10 +63,14 @@ def _render_preview(reviewed: PhotoDraft, analysis: ImageAnalysis, *, gauge, sty
         return True
 
     def suggest(level):
+        options = []
+        if proportion_style != DEFAULT_PROPORTION_STYLE:
+            styled = build(target_height, ratio, gauge, DEFAULT_PROPORTION_STYLE)
+            if not at_or_above(crochetability_findings(styled), level):
+                options.append(f"把头身比例风格改为「{PROPORTION_STYLE_LABELS[DEFAULT_PROPORTION_STYLE]}」")
         advice = crochetability_advice(
             build, gauge=gauge, level=level, size=target_height, size_max=MAX_PHOTO_TARGET_HEIGHT_CM,
             ratio=ratio, ratio_max=1 / MIN_BODY_TO_HEAD_RATIO)
-        options = []
         if advice.size is not None:
             options.append(f"把目标成品高度提高到 {advice.size:g} cm")
         if advice.ratio is not None:
@@ -99,7 +109,8 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_hei
     elif subject_choice == "食品或其他无法用现有部件表达的作品":
         st.info("当前照片流程不支持该结构。翅膀、象鼻、触角、打结长管等不能用人形部件直接替代。")
     subject_supported = subject_choice == "单个玩偶，所需部件可用下方列表表达"
-    box = meta.get("face_box")
+    # 头部框由人脸框按经验比例扩展（含额头与头发）；旧草稿只有人脸框时沿用人脸框
+    box = meta.get("head_box") or meta.get("face_box")
     w, h = draft.image.size
     detected = (box[0] / w, box[1] / h, (box[0] + box[2]) / w, (box[1] + box[3]) / h) if box else None
     use_box = st.checkbox("手动框选头部范围", key=f"review_box_{key}")
@@ -159,6 +170,15 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_hei
                 step=0.01,
                 key=f"review_ratio_{key}",
             )
+        proportion_style = st.radio(
+            "头身比例风格", list(PROPORTION_STYLES), format_func=PROPORTION_STYLE_LABELS.__getitem__,
+            index=list(PROPORTION_STYLES).index(DEFAULT_PROPORTION_STYLE), horizontal=True,
+            key=f"review_proportion_{key}",
+            help="照片保留被摄者的写实比例；常见玩偶约 1:2–1:3。Q 版把照片比例压缩到 1:2–1:3，"
+                 "适中压缩到 1:2–1:4.5，写实直接使用照片比例。",
+        )
+        st.caption(f"照片约 1:{1 / ratio:.1f} → 玩偶约 1:{styled_body_ratio(1 / ratio, proportion_style):.1f}"
+                   "（身高 : 头径）")
         options = list(dict.fromkeys([*PART_NAMES, *draft.analysis.parts]))
         parts = st.multiselect(
             "确认需要的部件", options, default=draft.analysis.parts, key=f"review_parts_{key}"
@@ -176,8 +196,8 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_hei
             analysis = reviewed_analysis(body_reviewed.analysis, parts, ratio)
             reviewed = _confirmed_draft(draft, body_reviewed, ratio, detected if use_box else None)
             confirmed = (reviewed, analysis)
-            if _render_preview(reviewed, analysis, gauge=gauge, style=style,
-                               target_height=target_height, head_box=use_box):
+            if _render_preview(reviewed, analysis, gauge=gauge, style=style, target_height=target_height,
+                               head_box=use_box, proportion_style=proportion_style):
                 can_generate = False
         if st.button("确认并生成图解", type="primary", key=f"review_generate_{key}",
                      disabled=not can_generate) and can_generate and confirmed is not None:
@@ -192,6 +212,7 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_hei
                     target_height_cm=target_height,
                     target_height_source="user_photo_target",
                     run_trace=run_trace,
+                    proportion_style=proportion_style,
                 )
     except Exception as exc:
         st.error(f"检查或生成失败：{md_safe(exc)}")
