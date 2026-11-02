@@ -8,7 +8,7 @@ from copy import deepcopy
 
 import streamlit as st
 
-from app.ui.progress_state import (
+from app.services.progress_state import (
     ambiguous_legacy_progress,
     capture_progress,
     install_progress,

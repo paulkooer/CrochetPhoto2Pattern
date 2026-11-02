@@ -7,8 +7,8 @@ from app.models.gauge import (
     gauge_for_part,
     gauge_from_result,
 )
+from app.services.result_logic import regenerate_with_part_gauge
 from app.ui.edit_history import preview_edit
-from app.ui.result_logic import regenerate_with_part_gauge
 
 
 def render_part_gauge(result: dict, slot: str) -> None:

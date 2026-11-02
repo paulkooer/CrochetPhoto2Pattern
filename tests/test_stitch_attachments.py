@@ -8,7 +8,7 @@ from app.models.gauge import Gauge, ShapingStyle
 from app.models.instruction_checks import round_expression
 from app.models.validator import require_valid_pattern, validate_pattern
 from app.schemas import PatternResult
-from app.ui.result_logic import import_backup, regenerate_with_size
+from app.services.result_logic import import_backup, regenerate_with_size
 from app.utils.exporters import export_markdown
 from tests.test_crochet_params import _sd
 

@@ -10,8 +10,8 @@ from app.models.photo_review import reviewed_analysis
 from app.models.structure_designer import StructureDesigner
 from app.models.validator import validate_pattern
 from app.schemas import PatternResult
+from app.services.result_logic import import_backup, regenerate_with_size
 from app.ui.pattern_editor import edit_rounds
-from app.ui.result_logic import import_backup, regenerate_with_size
 from app.utils.exporters import export_markdown
 
 

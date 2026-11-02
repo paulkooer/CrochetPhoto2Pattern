@@ -9,7 +9,7 @@ import pytest
 from PIL import Image
 
 from app.models.orchestrator import PipelineOrchestrator
-from app.ui import result_logic
+from app.services import result_logic
 
 
 def _result() -> dict:

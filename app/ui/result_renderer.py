@@ -16,9 +16,9 @@ from app.models.colors import YARN_COLORS
 from app.models.gauge import gauge_for_part, gauge_from_result, has_independent_gauge, part_gauge_text
 from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STITCH_LEGEND_ZH
 from app.schemas import PART_NAMES, PatternResult, difficulty_label, strip_photo_derived
-from app.ui import result_logic
+from app.services import result_logic
+from app.services.result_logic import rebuild_params, result_profile
 from app.ui.design_system import section_heading
-from app.ui.result_logic import rebuild_params, result_profile
 from app.utils.exporters import export_markdown
 from app.utils.share import _BACKUP_KEYS
 
@@ -151,7 +151,7 @@ def purge_result_state(result: dict) -> None:
 @st.fragment
 def _render_paged_progress(result: dict, slot: str) -> None:
     """Bound widget creation; progress survives Streamlit's hidden-widget cleanup."""
-    from app.ui.progress_state import PROGRESS_PAGE_SIZE, progress_entries, progress_store_key
+    from app.services.progress_state import PROGRESS_PAGE_SIZE, progress_entries, progress_store_key
 
     rid = result.get("result_id") or slot
     parts = result["params"]["parts"]
@@ -649,7 +649,7 @@ def render_results(result: dict, slot: str) -> None:
 
     # 按完整图解为每份实体分配勾选编号；历史坏结果中的重名部件仍用
     # 序号区分批量按钮。正常未冲突的编号保持稳定。
-    from app.ui.progress_state import MAX_INLINE_ROUNDS, physical_rounds, progress_copy_prefixes
+    from app.services.progress_state import MAX_INLINE_ROUNDS, physical_rounds, progress_copy_prefixes
     if physical_rounds(result) > MAX_INLINE_ROUNDS:
         _render_paged_progress(result, slot)
     else:

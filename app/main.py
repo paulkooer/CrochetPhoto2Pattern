@@ -32,7 +32,7 @@ _qp = st.query_params
 if "p" in _qp and "result" not in st.session_state:
     import uuid as _uuid
 
-    from app.ui.result_logic import import_backup
+    from app.services.result_logic import import_backup
     from app.utils.share import decode_result
     _shared = decode_result(_qp["p"])
     if _shared:

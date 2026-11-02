@@ -6,7 +6,12 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from app.models.validator import require_valid_pattern
-from app.ui.progress_state import capture_progress, install_progress, progress_entries, retained_progress
+from app.services.progress_state import (
+    capture_progress,
+    install_progress,
+    progress_entries,
+    retained_progress,
+)
 from app.utils.project import project_backup
 from tests.test_app_smoke import _mock_result
 

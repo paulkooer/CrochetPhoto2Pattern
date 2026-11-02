@@ -11,8 +11,8 @@ from app.models.instruction_checks import instruction_issues
 from app.models.stitch_notation import NotationError, StitchCounts, parse_stitch_notation
 from app.models.validator import validate_pattern
 from app.schemas import MAX_ROUND_STITCHES, PatternResult
+from app.services.result_logic import import_backup
 from app.ui.pattern_editor import edit_rounds
-from app.ui.result_logic import import_backup
 from app.utils.exporters import export_markdown
 from app.utils.parade_export import export_parade_report
 from app.utils.pdf_export import export_pdf

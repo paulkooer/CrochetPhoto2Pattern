@@ -11,7 +11,7 @@ from app.models.color_observation import ColorObservation, build_observation
 from app.models.orchestrator import PipelineOrchestrator
 from app.models.subject import SubjectObservation
 from app.schemas import PatternResult
-from app.ui.result_logic import import_backup, regenerate_with_size
+from app.services.result_logic import import_backup, regenerate_with_size
 from app.utils.exporters import export_markdown
 from app.utils.share import decode_result, encode_result
 

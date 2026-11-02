@@ -13,7 +13,7 @@ from streamlit.testing.v1 import AppTest
 from app.cli import main
 from app.models.orchestrator import PipelineOrchestrator
 from app.models.sizing import styled_body_ratio
-from app.ui.result_logic import import_backup
+from app.services.result_logic import import_backup
 from app.utils import history
 from app.utils.backup import decode_backup_json
 from app.utils.exporters import export_markdown

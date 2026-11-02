@@ -13,7 +13,7 @@ def run_python(program):
 
 @pytest.mark.parametrize("module", [
     "app.schemas", "app.utils.project", "app.utils.schema_docs", "app.models.gauge",
-    "app.models.materials", "app.models.geometry", "app.ui.result_logic",
+    "app.models.materials", "app.models.geometry", "app.services.result_logic",
 ])
 def test_public_module_imports_without_prior_package_initialization(module):
     result = run_python(f"import importlib; importlib.import_module({module!r})")

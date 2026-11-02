@@ -11,13 +11,13 @@ from app.models.crochet_params import CrochetParamsGenerator, refresh_derived
 from app.models.gauge import Gauge
 from app.models.validator import validate_pattern
 from app.schemas import ImageAnalysis, PatternResult
-from app.ui.pattern_editor import edit_rounds, edit_structure_part
-from app.ui.result_logic import (
+from app.services.result_logic import (
     import_backup,
     rebuild_params,
     regenerate_with_gauge,
     regenerate_with_structure,
 )
+from app.ui.pattern_editor import edit_rounds, edit_structure_part
 from app.utils import history
 from app.utils.exporters import export_markdown
 

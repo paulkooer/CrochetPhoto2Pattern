@@ -8,6 +8,12 @@
 
 ## Unreleased
 
+### Changed — 2026-11-02 分层整理
+
+- 重生成/导入逻辑与实体进度逻辑从 `app/ui` 迁至新的 `app/services`（`result_logic`、`progress_state`）；依赖 Streamlit 的上传读取移至 `app/ui/uploads.py`，`app/utils/images.py` 不再导入 Streamlit。CLI、评测、试钩工具和工程模块不再加载 Streamlit 或界面包：`import app.cli` 由约 885 个模块、370 ms 降至约 397 个、270 ms（本机测量）。
+- 新增分层守卫测试：`app/models`、`app/utils`、`app/services` 及无头入口不得导入 `app.ui` 或 Streamlit。
+- 打包改为显式只发现 `app*`：本地存在被忽略的 `eval_outputs/` 等目录时，wheel 构建不再因“多个顶层包”失败。功能与数据格式不变。
+
 ### Changed — 2026-11-02 头身比例风格与头部框先验
 
 - 照片流程新增头身比例风格，默认把照片头身比（钳到 1:2–1:8）线性压缩到 Q 版 1:2–1:3，可选适中（1:2–1:4.5）或写实（照片原比例）。确认页显示“照片约 1:5.0 → 玩偶约 1:2.5”，生成前预览随风格更新；写实风格被可钩性门禁拦下时，建议改回 Q 版。默认 classic 密度、18 cm 下，1:2–1:10 的照片均生成至少 24 针的头部（此前 1:5 只有 12 针）。

@@ -5,8 +5,8 @@ from copy import deepcopy
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from app.ui.progress_state import progress_entries, progress_impact, retained_progress
-from app.ui.result_logic import import_backup
+from app.services.progress_state import progress_entries, progress_impact, retained_progress
+from app.services.result_logic import import_backup
 from app.utils.project import project_backup, read_project_state
 from tests.test_project_backup import RENDER, _result
 

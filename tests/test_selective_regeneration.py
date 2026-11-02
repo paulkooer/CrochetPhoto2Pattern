@@ -9,15 +9,15 @@ from app.models.crochet_params import CrochetParamsGenerator, PatternGenerationE
 from app.models.skirt_edit import move_skirt_join, unpin_skirt_waist, waist_rows
 from app.models.validator import require_valid_pattern
 from app.schemas import ImageAnalysis, PatternResult
-from app.ui.pattern_editor import edit_yarn
-from app.ui.progress_state import progress_entries, retained_progress
-from app.ui.result_logic import (
+from app.services.progress_state import progress_entries, retained_progress
+from app.services.result_logic import (
     import_backup,
     rebuild_params,
     regenerate_with_gauge,
     regenerate_with_size,
     regenerate_with_structure,
 )
+from app.ui.pattern_editor import edit_yarn
 from app.utils.exporters import export_markdown
 from app.utils.project import project_backup, read_project_state
 from tests.test_app_smoke import _mock_result
@@ -282,7 +282,7 @@ def test_preview_apply_undo_redo_and_project_save_keep_unrelated_work():
         assert at.checkbox(key=f"chk_{rid}_手臂_copy2_8").value
         assert at.checkbox(key=f"chk_{rid}_头部_0").value == (action == "undo")
         assert at.text_area(key=f"project_notes_{rid}").value == "保留两条手臂的完成进度"
-    from app.ui.progress_state import capture_progress
+    from app.services.progress_state import capture_progress
     progress = capture_progress(saved, "result", at.session_state)
     project = project_backup(saved, progress, "保留两条手臂的完成进度")
     restored = import_backup(json.loads(json.dumps(project)), "new-session")

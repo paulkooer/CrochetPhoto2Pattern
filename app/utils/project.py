@@ -9,7 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app import software_version
 from app.schemas import PatternResult, strip_photo_derived
-from app.ui.progress_state import ambiguous_legacy_progress, has_legacy_identity_collision, progress_entries
+from app.services.progress_state import (
+    ambiguous_legacy_progress,
+    has_legacy_identity_collision,
+    progress_entries,
+)
 
 MAX_PROJECT_NOTES = 20_000
 

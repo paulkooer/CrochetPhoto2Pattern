@@ -42,7 +42,7 @@ def _restore(slot: str, data: bytes) -> None:
 
 def render_trial_open() -> None:
     """Open a saved trial and its original pattern without generating a seed result."""
-    from app.ui.result_logic import import_backup
+    from app.services.result_logic import import_backup
     from app.ui.result_renderer import md_safe, purge_result_state
     from app.utils.backup import decode_backup_json
 

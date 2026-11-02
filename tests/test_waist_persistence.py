@@ -9,8 +9,8 @@ from app.models.skirt_edit import move_skirt_join, skirt_connection, unpin_skirt
 from app.models.stitch_attachments import WAIST_POSITION_KEY, prepare_attached_skirt
 from app.models.validator import require_valid_pattern
 from app.schemas import PatternResult
-from app.ui.progress_state import progress_entries, retained_progress
-from app.ui.result_logic import import_backup, regenerate_with_size, regenerate_with_structure
+from app.services.progress_state import progress_entries, retained_progress
+from app.services.result_logic import import_backup, regenerate_with_size, regenerate_with_structure
 from app.utils.exporters import export_markdown
 from app.utils.project import project_backup, read_project_state
 from tests.test_project_backup import RENDER

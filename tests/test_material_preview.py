@@ -6,10 +6,10 @@ from copy import deepcopy
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from app.services.progress_state import capture_progress
+from app.services.result_logic import import_backup
 from app.ui.edit_history import metrics
 from app.ui.pattern_editor import edit_yarn
-from app.ui.progress_state import capture_progress
-from app.ui.result_logic import import_backup
 from app.utils.project import project_backup, read_project_state
 from app.utils.trial_bundle import create_trial_bundle
 from tests.test_project_backup import RENDER

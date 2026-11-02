@@ -4,6 +4,7 @@ from io import BytesIO
 import pytest
 from PIL import Image, ImageDraw, ImageOps
 
+from app.ui import uploads
 from app.utils import images
 
 
@@ -55,7 +56,7 @@ def check_loaders(tmp_path,blob):
     path=tmp_path/"input.img"
     path.write_bytes(blob)
     upload=Upload(blob)
-    results=[images.load_image_bytes(blob),images.load_image_file(path),images.load_uploaded_image(upload)]
+    results=[images.load_image_bytes(blob),images.load_image_file(path),uploads.load_uploaded_image(upload)]
     assert not upload.closed
     upload.close()
     path.unlink()
@@ -81,7 +82,7 @@ def test_unoriented_large_image_never_clones_full_size_before_downsampling(tmp_p
     path=tmp_path/"large.png"
     path.write_bytes(blob)
     for result in (images.load_image_bytes(blob),images.load_image_file(path),
-                   images.load_uploaded_image(Upload(blob))):
+                   uploads.load_uploaded_image(Upload(blob))):
         assert result is not None and max(result.size)==images.MAX_DECODED_SIDE
     assert sizes
 
@@ -96,4 +97,4 @@ def test_pixel_guard_rejects_before_any_decoder_load(tmp_path,monkeypatch):
     monkeypatch.setattr(Image.Image,"load",forbidden_load)
     assert images.load_image_bytes(blob) is None
     assert images.load_image_file(path) is None
-    assert images.load_uploaded_image(Upload(blob)) is None
+    assert uploads.load_uploaded_image(Upload(blob)) is None

@@ -15,8 +15,8 @@ from app.models.ring_chart import _round_operation_sequence
 from app.models.structure_designer import StructureDesigner
 from app.models.validator import validate_pattern
 from app.schemas import ImageAnalysis, PatternResult
+from app.services.result_logic import import_backup
 from app.ui.pattern_editor import edit_rounds
-from app.ui.result_logic import import_backup
 from app.utils.parade_export import export_parade_report, lint_parade_dsl
 from tests.test_app_smoke import _mock_result
 

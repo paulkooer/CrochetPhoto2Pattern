@@ -10,7 +10,7 @@ from PIL import Image
 from app.cli import build_parser, run
 from app.models.image_parser import ImageParser
 from app.models.orchestrator import PipelineOrchestrator
-from app.ui.result_logic import import_backup
+from app.services.result_logic import import_backup
 
 
 @pytest.mark.parametrize("entry", ["parser", "pipeline", "cli", "cli_local"])

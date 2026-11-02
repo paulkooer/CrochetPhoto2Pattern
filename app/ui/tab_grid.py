@@ -27,7 +27,7 @@ from app.models.grid_pattern import (
     render_text_chart,
 )
 from app.ui.design_system import html_box
-from app.utils.images import load_uploaded_image_cached
+from app.ui.uploads import load_uploaded_image_cached
 
 _GRID_HISTORY_LIMIT = 5
 # 超过此格数时不再即时渲染逐格 SVG（约 175 B/格，80,000 格 ≈ 14 MiB、1.3 s，

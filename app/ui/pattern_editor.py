@@ -13,8 +13,8 @@ from app.models.crochet_params import refresh_derived
 from app.models.gauge import gauge_from_result
 from app.models.geometry import normalize_structure
 from app.models.materials import YarnSpec
+from app.services.result_logic import rebuild_params, regenerate_with_structure
 from app.ui.edit_history import commit_edit, preview_edit, render_history
-from app.ui.result_logic import rebuild_params, regenerate_with_structure
 
 
 def edit_structure_part(

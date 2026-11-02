@@ -193,7 +193,7 @@ def test_standalone_migration_cli_preserves_measurements_and_refuses_overwrites(
 
 
 def test_genuinely_different_round_sequences_can_still_meet_both_gates():
-    from app.ui.result_logic import rebuild_params
+    from app.services.result_logic import rebuild_params
 
     records = []
     for index in range(8):
@@ -289,7 +289,7 @@ def test_migration_write_failure_retains_inputs_and_existing_output(tmp_path, mo
 def test_browser_restores_legacy_partial_measurements_and_rebinds_download(monkeypatch):
     from streamlit.testing.v1 import AppTest
 
-    from app.ui.result_logic import import_backup
+    from app.services.result_logic import import_backup
     from tests.test_trial_editor import RENDER
 
     source, raw_record, raw_draft = _legacy("partial")

@@ -10,6 +10,7 @@ from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 from app.models.trial_draft import TrialDraftState, TrialObservationDraft
 from app.schemas import PatternResult, strip_photo_derived
+from app.services.result_logic import import_backup, regenerate_with_gauge
 from app.trials import (
     MAX_PATTERN_BYTES,
     MAX_TRIAL_BYTES,
@@ -18,7 +19,6 @@ from app.trials import (
     decode_trial_json,
     upgrade_trial_record_from_bytes,
 )
-from app.ui.result_logic import import_backup, regenerate_with_gauge
 from app.utils.backup import decode_backup_json
 from app.utils.numbers import finite_float
 from app.utils.project import pattern_revision

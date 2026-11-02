@@ -10,7 +10,7 @@ from app.models.geometry import PartGeometry, normalize_structure
 from app.models.image_parser import ImageParser
 from app.models.structure_designer import StructureDesigner
 from app.schemas import CrochetPart
-from app.ui.result_logic import import_backup
+from app.services.result_logic import import_backup
 
 
 @pytest.mark.parametrize("field", ["diameter_cm", "height_cm", "length_cm"])

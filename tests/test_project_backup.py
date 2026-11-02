@@ -7,8 +7,13 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from app.schemas import PatternResult
-from app.ui.progress_state import capture_progress, install_progress, progress_entries, retained_progress
-from app.ui.result_logic import import_backup
+from app.services.progress_state import (
+    capture_progress,
+    install_progress,
+    progress_entries,
+    retained_progress,
+)
+from app.services.result_logic import import_backup
 from app.utils.project import MAX_PROJECT_NOTES, pattern_revision, project_backup, read_project_state
 from tests.test_app_smoke import _APP, _mock_result
 

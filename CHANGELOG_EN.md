@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-02 Layering cleanup
+
+- Move regeneration/import logic and physical-progress logic from `app/ui` to a new `app/services` package (`result_logic`, `progress_state`). Streamlit upload helpers move to `app/ui/uploads.py`, and `app/utils/images.py` no longer imports Streamlit. The CLI, evaluation, trial tools and project module no longer load Streamlit or the UI package: `import app.cli` drops from about 885 modules and 370 ms to about 397 modules and 270 ms (local measurement).
+- Add a layering guard: `app/models`, `app/utils`, `app/services` and headless entry points may not import `app.ui` or Streamlit.
+- Package discovery now includes only `app*`, so local ignored directories such as `eval_outputs/` no longer break wheel builds with "multiple top-level packages". Behavior and data formats are unchanged.
+
 ### Changed — 2026-11-02 Proportion styles and head-box prior
 
 - Photo generation gains proportion styles. By default, the photo head ratio (clamped to 1:2–1:8) is compressed linearly into a Q-style 1:2–1:3 doll range; balanced (1:2–1:4.5) and photo (unchanged) are available. Review shows "photo ≈ 1:5.0 → doll ≈ 1:2.5", the stitch preview follows the style, and a blocked photo-style preview suggests switching back to Q. At the default classic gauge and 18 cm, photo ratios from 1:2 to 1:10 now produce heads of at least 24 stitches (1:5 previously gave 12).

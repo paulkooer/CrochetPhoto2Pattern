@@ -10,7 +10,7 @@ import streamlit as st
 from app.models.gauge import gauge_from_ui
 from app.models.orchestrator import PipelineOrchestrator
 from app.ui.result_renderer import md_safe, purge_result_state, render_results
-from app.utils.images import load_uploaded_image_cached
+from app.ui.uploads import load_uploaded_image_cached
 
 logger = logging.getLogger(__name__)
 

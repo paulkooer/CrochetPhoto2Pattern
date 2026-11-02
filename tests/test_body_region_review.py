@@ -10,7 +10,7 @@ from app.models.geometry import SilhouetteObservation
 from app.models.orchestrator import PipelineOrchestrator
 from app.models.photo_review import with_reviewed_body
 from app.schemas import PatternResult
-from app.ui.result_logic import import_backup, regenerate_with_size, result_profile
+from app.services.result_logic import import_backup, regenerate_with_size, result_profile
 from app.utils.provenance import provenance_lines
 from app.utils.share import decode_result, encode_result
 
