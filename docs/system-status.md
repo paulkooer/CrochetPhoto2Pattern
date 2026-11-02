@@ -14,15 +14,27 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-02 proportion styles and head-box prior, on branch `feat/q-style-proportions` based on
+PR #31 (local pre-commit checks): photo head ratios are compressed into a Q-style 1:2–1:3 range by
+default, with balanced and photo options; the face box is expanded into a head box (height ×1.5,
+width ×1.2; not calibrated on authorized photos). At the default classic gauge and 18 cm, photo
+ratios from 1:2 to 1:10 give heads of at least 24 stitches. See the
+[style comparison](images/proportion-style-synthetic.png). Full suite: **2391 passed, 2 skipped in
+86.24s**; repository-wide Ruff and mypy (195 files) pass; local Chrome passes **14 synthetic
+flows**. No remote CI, independent review, authorized-photo evaluation or physical trial; Beta and
+G3/G4 are unchanged.
+
 2026-11-02 crochetability gate and evaluation policy 3, based on `7c4395f` on branch
 `fix/crochetability-gate` (local pre-commit checks; remote CI belongs to the PR head commit):
 first generation refuses heads or bodies whose widest round has fewer than 18 stitches, and
-photo review/manual input preview counts with the smallest fix. Evaluation adds the crochetability rate and reports declared Parade constructions
-such as ring starts separately; see the [blocked-state screenshot](images/crochetability-preview-synthetic.png).
-Full suite: **2366 passed, 2 skipped in 84.87s**; repository-wide
-Ruff and mypy (194 files) pass. Local Chrome passes **14 synthetic flows** and the mask-canvas
-check. No remote CI, independent review, authorized-photo evaluation or physical trial; Beta and
-G3/G4 are unchanged.
+photo review/manual input preview counts with the smallest fix. Evaluation adds the
+crochetability rate and reports declared Parade constructions such as ring starts separately;
+see the [blocked-state screenshot](images/crochetability-preview-synthetic.png). Full suite:
+**2366 passed, 2 skipped in 84.87s**; repository-wide Ruff and mypy (194 files) pass. Local Chrome
+passes **14 synthetic flows** and the mask-canvas check. All **10 remote checks** then passed on
+[PR #31](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/31) head `1a33b5f` (Python
+3.11–3.14, Docker, PDF/pose, dependency audit, type check and browser). No independent review,
+authorized-photo evaluation or physical trial; Beta and G3/G4 are unchanged.
 
 2026-11-02 physical-copy progress and import order, based on the preceding local changes:
 avoid shared copy identities and prevent an edited graph ID from transferring completion to

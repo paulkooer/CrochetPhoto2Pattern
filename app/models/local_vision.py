@@ -28,6 +28,11 @@ DEFAULT_HEAD_CM = 9.0      # 内部比例参考；不是照片实测，管线随
 FRAME_FILL_RATIO = 0.9     # 假设主体大致占满画面高度（全身玩偶照常见构图）
 MIN_BODY_RATIO = 2.0       # 身高/头径 的合理区间（大头 Q 版 … 全身成人照）
 MAX_BODY_RATIO = 8.0
+# Haar 正脸框大致覆盖眉毛到下巴，不含额头上部、头顶与头发。按人体测量学经验扩展为
+# 整头：高度 ×1.5（下巴为底边，向上延伸）、宽度 ×1.2（左右各放宽 10%）。这是未经
+# 授权照片校准的先验，系数须在 G3 数据上复核；确认页可以手动调整头部框。
+HEAD_HEIGHT_PER_FACE = 1.5
+HEAD_WIDTH_PER_FACE = 1.2
 
 _CANONICAL_PARTS = ["头部", "身体", "手臂", "腿部"]
 
@@ -69,11 +74,27 @@ def _subject_vertical_extent(profile: list[float] | None, height: int) -> tuple[
     return 0.0, height * FRAME_FILL_RATIO
 
 
+def _head_size_px(box) -> float:
+    """Whole-head diameter implied by a face box (not clipped by the image edge)."""
+    _x, _y, width, height = box
+    return max(width * HEAD_WIDTH_PER_FACE, height * HEAD_HEIGHT_PER_FACE, 1)
+
+
+def head_box_from_face(box, image_width: int, image_height: int) -> tuple[int, int, int, int]:
+    """Expand a face box upward and sideways into a head box inside the image."""
+    x, y, width, height = box
+    margin = width * (HEAD_WIDTH_PER_FACE - 1) / 2
+    left, right = max(0.0, x - margin), min(float(image_width), x + width + margin)
+    top, bottom = max(0.0, y + height - height * HEAD_HEIGHT_PER_FACE), min(float(image_height), y + height)
+    return round(left), round(top), round(right - left), round(bottom - top)
+
+
 def _face_rejection_reason(image: Image.Image, box, profile: list[float] | None) -> str | None:
     """Conservative checks for an upright subject, not semantic face verification.
 
     Sideways poses and unusual proportions require manual review. These bounds
     reject unsuitable candidates rather than clamp them into plausible measurements.
+    Bounds and position use the raw detection; the size rule uses the implied head.
     """
     x, y, width, height = box
     if width <= 0 or height <= 0 or x < 0 or y < 0 or x + width > image.width or y + height > image.height:
@@ -82,7 +103,7 @@ def _face_rejection_reason(image: Image.Image, box, profile: list[float] | None)
     center = y + height / 2
     if center < top or center > top + (bottom - top) / 2:
         return "检测框不在主体上半部，不能自动作为直立玩偶头部"
-    if (bottom - top) / max(width, height) > MAX_BODY_RATIO:
+    if (bottom - top) / _head_size_px(box) > MAX_BODY_RATIO:
         return "检测框相对主体过小，无法可靠推算头身比例"
     return None
 
@@ -137,24 +158,25 @@ def analyze(
             recommended_colors=colors or None,
         ), meta
 
-    _x, _y, face_w, face_h = box
-    head_px = max(face_w, face_h, 1)
+    head_px = _head_size_px(box)
+    head_box = head_box_from_face(box, image.size[0], H)
     top, bottom = _subject_vertical_extent(profile, H)
     subject_px = bottom - top
     ratio = min(max(subject_px / head_px, MIN_BODY_RATIO), MAX_BODY_RATIO)
     height_cm = round(DEFAULT_HEAD_CM * ratio, 1)
     body_type = "胖" if ratio <= 3.0 else ("标准" if ratio <= 5.5 else "瘦")
-    head_span = (round(box[1] / H, 3), round((box[1] + box[3]) / H, 3))
+    head_span = (round(head_box[1] / H, 3), round((head_box[1] + head_box[3]) / H, 3))
     meta = {
         **candidate_meta,
         "source": "opencv-face",
         "face_box": [int(v) for v in box],
+        "head_box": list(head_box),
         "head_span": head_span,  # M1.3：实测头部纵向占比（先展示，暂不替代先验）
         "body_ratio": round(ratio, 2),
         "head_cm_anchor": DEFAULT_HEAD_CM,
         "note": (
-            "比例来自待确认的人脸候选框，部件来自模板；单图没有绝对尺度，"
-            "厘米尺寸由生成时选择的目标高度决定"
+            "比例来自待确认的头部候选框（由人脸框按经验比例扩展），部件来自模板；"
+            "单图没有绝对尺度，厘米尺寸由生成时选择的目标高度决定"
         ),
     }
     features = [f"主色调 {c}" for c in colors[:2]] or ["本地视觉估算"]

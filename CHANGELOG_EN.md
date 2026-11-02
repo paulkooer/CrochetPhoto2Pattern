@@ -8,6 +8,13 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-02 Proportion styles and head-box prior
+
+- Photo generation gains proportion styles. By default, the photo head ratio (clamped to 1:2–1:8) is compressed linearly into a Q-style 1:2–1:3 doll range; balanced (1:2–1:4.5) and photo (unchanged) are available. Review shows "photo ≈ 1:5.0 → doll ≈ 1:2.5", the stitch preview follows the style, and a blocked photo-style preview suggests switching back to Q. At the default classic gauge and 18 cm, photo ratios from 1:2 to 1:10 now produce heads of at least 24 stitches (1:5 previously gave 12).
+- Sizing provenance adds `sizing.proportion_style`; the original ratio stays in `photo_head_to_height_ratio`. Older backups without the field import unchanged, and unknown values are rejected. Explicit dimensions such as quick resizing are not styled.
+- The face box is expanded into a whole-head box (height ×1.5 upward from the chin, width ×1.2) for the head ratio, head span and the review page's default head box. The "too small" rejection now uses head size, while bounds and position checks keep the raw detection. The prior is not calibrated on authorized photos and must be reviewed with G3 data.
+- The CLI adds `--proportion-style q|balanced|photo` for photo and mock modes (default `q`); evaluation reports record the default runner's style in `evaluator.proportion_style`.
+
 ### Added / Changed — 2026-11-02 Crochetability gate and evaluation policy 3
 
 - Photo review, manual input and the CLI refuse a first generation when the widest head or body round (including a one-piece head section) has fewer than 18 stitches, and warn below 24; 6-stitch limb, tail and small-ear tubes only receive notes. Thresholds follow the repository's reference patterns (smallest full head 24 stitches, smallest body 30). Previously, at the default classic gauge and 18 cm, a 1:5 head ratio produced a 12-stitch head and 1:8 a two-round, 6-stitch "ball" that still passed the self-check. Edits, imports and regeneration of existing work only warn and never rewrite content.

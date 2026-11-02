@@ -51,7 +51,7 @@ def render_tab_photo() -> None:
         target_height = st.slider(
             "目标成品高度 (cm)", 10.0, 60.0, 18.0, 0.5,
             key="photo_target_height",
-            help="单张照片无法测出真实厘米尺寸；系统保留照片头身比例，"
+            help="单张照片无法测出真实厘米尺寸；系统按确认页选择的头身比例风格换算照片比例，"
                  "再按这个目标高度生成图解。",
         )
         st.caption("📏 照片只用于估算相对比例，绝对尺寸由上面的目标高度决定。")

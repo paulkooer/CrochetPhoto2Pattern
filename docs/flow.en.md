@@ -15,8 +15,9 @@ photo upload
    ↓
 3. human review (Photo UI): head box/proportion and parts; local generation
    then target-size transform
-   no absolute centimetres are inferred from a single photo; relative proportions are
-   scaled to the user's selected finished height
+   no absolute centimetres are inferred from a single photo; the photo head ratio is mapped
+   to a doll ratio by the selected style (Q 1:2–1:3 by default, or balanced/photo), then scaled
+   to the user's selected finished height; the original photo ratio is kept as provenance
    ↓
 4. part structure design
    StructureGeometry v2 template skeleton, not a reconstructed 3D mesh:
@@ -43,8 +44,8 @@ only when an old structure has no attachment graph.
 | `app/ui/` | sidebar, photo/manual/grid tabs, result rendering, progress, corrections, downloads |
 | `app/utils/images.py` | defensive loading, size limits, EXIF orientation, transparent-image handling |
 | `app/models/image_parser.py` | local photo analysis, palettes and explicit mock demonstration |
-| `app/models/local_vision.py` | face proportions and silhouette profile without an LLM |
-| `app/models/sizing.py` | relative observation to user target dimensions, with provenance metadata |
+| `app/models/local_vision.py` | head box expanded from the face box, proportions and silhouette profile without an LLM |
+| `app/models/sizing.py` | relative observation through a proportion style to user target dimensions, with provenance metadata |
 | `app/models/geometry.py` | shared observation IR and StructureGeometry v2 graph |
 | `app/models/color_design.py` | longitudinal photo colors to part/round color bands |
 | `app/models/structure_designer.py` | semantic parts to versioned template geometry |

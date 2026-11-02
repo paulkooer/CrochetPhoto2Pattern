@@ -21,11 +21,12 @@ def test_unsuitable_face_is_rejected_before_proportion_inference(monkeypatch, bo
 
 
 def test_head_position_uses_subject_extent_not_whole_canvas(monkeypatch):
-    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _: (60, 220, 80, 80))
+    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _: (75, 230, 50, 50))
     profile = [0.0] * 20 + [0.5] * 18 + [0.0] * 2
     _, meta = analyze(Image.new("RGB", (200, 400)), geometry_profile=profile, geometry_observed=True)
     assert meta["source"] == "opencv-face"
-    assert meta["body_ratio"] == 2.25
+    # 主体 180 px（而非整幅 360 px）÷ 头部 50×1.5 px
+    assert meta["body_ratio"] == 2.4
     assert meta["requires_subject_review"]
 
 

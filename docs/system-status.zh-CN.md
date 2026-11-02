@@ -14,13 +14,22 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+2026-11-02 头身比例风格与头部框先验（基于 PR #31 的分支 `feat/q-style-proportions`；提交前本地验证）：
+照片头身比默认按 Q 版压缩到 1:2–1:3，可选适中或写实；人脸框按高 ×1.5、宽 ×1.2 扩展为头部框
+（未经授权照片校准）。默认 classic 密度、18 cm 下，1:2–1:10 的照片头部均不少于 24 针。风格对照见
+[合成截图](images/proportion-style-synthetic.png)。全量 **2391 passed、2 skipped，86.24s**；全仓 Ruff、
+mypy（195 文件）通过；本地 Chrome 的 **14 条合成流程**通过。未做远端 CI、独立复核、授权照片评测或
+实体试钩；Beta 与 G3/G4 不变。
+
 2026-11-02 可钩性门禁与评测策略 v3（基于 `7c4395f` 的分支 `fix/crochetability-gate`；以下为提交前
 本地验证，远端 CI 以 PR 当前头提交为准）：
 首次生成拒绝最宽一圈少于 18 针的头部或身体，确认页与手动页先预览针数并给出最小调整；
 评测新增可钩率，Parade 门槛单列环形起针等声明不支持的构造；阻断界面见
 [合成截图](images/crochetability-preview-synthetic.png)。全量 **2366 passed、2 skipped，
 84.87s**；全仓 Ruff、mypy（194 文件）通过。本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。
-未做远端 CI、独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+其后 [PR #31](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/31) 头提交 `1a33b5f` 的
+**10 项远端检查全部通过**（Python 3.11–3.14、Docker、PDF/pose、依赖审计、类型检查与浏览器）。
+未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
 
 2026-11-02 实体进度与导入顺序（基于本地上一批改动）：修复结构实例 ID 和额外副本
 编号冲突时多勾选，以及改名后进度转移到另一份实物的问题。旧工程歧义圈次须经用户选择

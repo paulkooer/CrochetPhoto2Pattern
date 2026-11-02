@@ -15,15 +15,16 @@ def _img(w=200, h=400) -> Image.Image:
 
 
 # ── 比例推算（注入假检测结果，纯数学验证）───────────────────────────────────
+# 人脸框按 HEAD_HEIGHT_PER_FACE=1.5 扩展为整头后再计算头身比。
 
 def test_tiny_face_candidate_is_not_clamped_into_plausible_proportions(monkeypatch):
     monkeypatch.setattr("app.models.local_vision._detect_face",
-                        lambda _img: (80, 20, 40, 40))
+                        lambda _img: (90, 20, 26, 26))
     analysis, meta = analyze(_img(200, 400))
-    # 360/40 = 9 exceeds the supported ratio: do not silently clamp to 8.
+    # 360/(26×1.5) ≈ 9.2 exceeds the supported ratio: do not silently clamp to 8.
     assert meta["source"] == "default"
     assert "过小" in meta["face_rejection_reason"]
-    assert meta["rejected_face_box"] == [80, 20, 40, 40]
+    assert meta["rejected_face_box"] == [90, 20, 26, 26]
     assert "face_box" not in meta
     assert "body_ratio" not in meta
     assert analysis.height_cm == 18
@@ -32,20 +33,20 @@ def test_tiny_face_candidate_is_not_clamped_into_plausible_proportions(monkeypat
 
 def test_mid_ratio_is_standard_build(monkeypatch):
     monkeypatch.setattr("app.models.local_vision._detect_face",
-                        lambda _img: (60, 30, 80, 80))
+                        lambda _img: (70, 30, 60, 60))
     analysis, meta = analyze(_img(200, 400))
-    # 360/80 = 4.5 → 标准
-    assert meta["body_ratio"] == 4.5
+    # 360/(60×1.5) = 4.0 → 标准
+    assert meta["body_ratio"] == 4.0
     assert analysis.body_type == "标准"
-    assert analysis.height_cm == 40.5
+    assert analysis.height_cm == 36.0
 
 
 def test_big_head_ratio_is_chubby(monkeypatch):
     """大头照（头占画面 1/3）→ 胖（Q 版）。"""
     monkeypatch.setattr("app.models.local_vision._detect_face",
-                        lambda _img: (25, 40, 150, 150))
+                        lambda _img: (50, 40, 100, 100))
     analysis, meta = analyze(_img(200, 400))
-    assert meta["body_ratio"] == 2.4  # 360/150
+    assert meta["body_ratio"] == 2.4  # 360/(100×1.5)
     assert analysis.body_type == "胖"
 
 
@@ -90,18 +91,18 @@ def test_parse_image_local_records_meta(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.setattr("app.models.local_vision._detect_face",
-                        lambda _img: (60, 30, 80, 80))
+                        lambda _img: (70, 30, 60, 60))
     parser = ImageParser()
     result = parser.parse_image_local(_img())
     assert result.body_type == "标准"
-    assert parser.last_local_meta["body_ratio"] == 4.5
+    assert parser.last_local_meta["body_ratio"] == 4.0
     assert parser.last_local_meta["source"] == "opencv-face"
 
 
 def test_full_pipeline_local_vision_mode(monkeypatch):
     """local_vision=True：全程无 LLM，vision_meta 透传到结果。"""
     monkeypatch.setattr("app.models.local_vision._detect_face",
-                        lambda _img: (60, 30, 80, 80))
+                        lambda _img: (70, 30, 60, 60))
     orch = PipelineOrchestrator()
     result = orch.run_full_pipeline(_img(), local_vision=True)
     assert set(result.keys()) == {

@@ -14,7 +14,8 @@
    semantic 输出：体型、部件列表、关键特征、姿态、相对头身比例、难度
    ↓
 3. 目标尺寸变换（sizing）
-   单图不推断绝对厘米：保留照片头身比例，按用户目标高度计算设计尺寸
+   单图不推断绝对厘米：照片头身比按所选风格换算为玩偶比例（默认 Q 版 1:2–1:3，可选适中或写实），
+   再按用户目标高度计算设计尺寸；原始照片比例记录为来源
    ↓
 4. 部件结构设计（StructureDesigner，模板骨架而非完整 3D 重建）
    输出：StructureGeometry v2 部件图谱
@@ -43,8 +44,8 @@ JSON 输出 + Streamlit UI 展示 + 用户局部修正 + 下载 + 完整结果�
 | `app/utils/exporters.py` | Markdown 图解导出 |
 | `app/utils/images.py` | 上传图片安全加载（损坏文件/超限大小的友好错误、EXIF 方向转置、透明 PNG 合成白底） |
 | `app/models/image_parser.py` | 本地视觉入口、毛线色板和显式 Mock 演示；无云端服务商 |
-| `app/models/local_vision.py` | 无 LLM 本地视觉估算（人脸检测 → 头身比例；轮廓剖面 → 下摆展开待确认提示） |
-| `app/models/sizing.py` | 单图相对比例 → 用户目标成品尺寸；记录尺寸来源、比例限制与变换元数据 |
+| `app/models/local_vision.py` | 无 LLM 本地视觉估算（人脸框按经验比例扩展为头部框 → 头身比例；轮廓剖面 → 下摆展开待确认提示） |
+| `app/models/sizing.py` | 单图相对比例 → 头身比例风格 → 用户目标成品尺寸；记录尺寸来源、比例限制与变换元数据 |
 | `app/models/geometry.py` | 几何契约：本地单图观测 IR，以及 StructureGeometry v2 部件/实例/连接图谱 |
 | `app/models/color_design.py` | 照片纵向色带 → 部件逐圈配色 + 换线说明（换线由照片颜色驱动） |
 | `app/models/structure_designer.py` | 语义部件 → 版本化模板结构图谱（位置、旋转、镜像数量、连接锚点） |

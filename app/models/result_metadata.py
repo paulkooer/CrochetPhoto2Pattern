@@ -28,6 +28,7 @@ class SizingMetadata(Metadata):
     photo_head_to_height_ratio: Fraction | None = None
     applied_head_to_height_ratio: Fraction | None = None
     ratio_clamped: bool = False
+    proportion_style: Literal["q", "balanced", "photo"] | None = None
     absolute_scale_from_photo: bool = False
 
 

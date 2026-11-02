@@ -100,10 +100,11 @@ def test_first_passing_returns_the_smallest_checked_value():
 
 
 def _photo_build(draft, analysis):
+    # 写实风格保留照片比例，是仍会出现退化尺寸的路径
     def build(height, ratio, gauge):
         return PipelineOrchestrator.preview_params(
             draft, analysis=reviewed_analysis(analysis, analysis.parts, ratio), gauge=gauge,
-            style=ShapingStyle(), target_height_cm=height)
+            style=ShapingStyle(), target_height_cm=height, proportion_style="photo")
     return build
 
 
@@ -137,18 +138,26 @@ def test_advice_values_are_exact_single_change_boundaries():
                                  ratio=0.5, ratio_max=0.5).presets == ()
 
 
-def test_preview_matches_generation_and_generation_enforces_the_gate():
+@pytest.mark.parametrize("proportion_style", ["q", "balanced", "photo"])
+def test_preview_matches_generation_for_each_proportion_style(proportion_style):
     draft = _draft()
-    feasible = reviewed_analysis(draft.analysis, _DEFAULT_PARTS, 0.45)
-    preview = PipelineOrchestrator.preview_params(draft, analysis=feasible, target_height_cm=20)
-    result = PipelineOrchestrator.generate_from_draft(draft, analysis=feasible, target_height_cm=20)
+    reviewed = reviewed_analysis(draft.analysis, _DEFAULT_PARTS, 0.3)
+    preview = PipelineOrchestrator.preview_params(draft, analysis=reviewed, target_height_cm=30,
+                                                  proportion_style=proportion_style)
+    result = PipelineOrchestrator.generate_from_draft(draft, analysis=reviewed, target_height_cm=30,
+                                                      proportion_style=proportion_style)
     assert ([[r["stitches"] for r in p["rounds"]] for p in preview["parts"]]
             == [[r["stitches"] for r in p["rounds"]] for p in result["params"]["parts"]])
+    assert result["sizing"]["proportion_style"] == proportion_style
 
+
+def test_generation_enforces_the_gate_on_degenerate_photo_proportions():
+    draft = _draft()
     tiny = reviewed_analysis(draft.analysis, _DEFAULT_PARTS, 0.125)
     with pytest.raises(PatternCrochetabilityError, match="低于 18 针下限"):
-        PipelineOrchestrator.generate_from_draft(draft, analysis=tiny)
-    unchecked = PipelineOrchestrator.generate_from_draft(draft, analysis=tiny, enforce_crochetability=False)
+        PipelineOrchestrator.generate_from_draft(draft, analysis=tiny, proportion_style="photo")
+    unchecked = PipelineOrchestrator.generate_from_draft(
+        draft, analysis=tiny, enforce_crochetability=False, proportion_style="photo")
     assert _blocked(unchecked["params"])
 
 
@@ -199,16 +208,23 @@ def test_photo_review_shows_counts_and_disables_degenerate_generation(monkeypatc
     assert not at.button(key="review_generate_test").disabled
     assert any("各部件最宽一圈：头部 36 针" in c.value for c in at.caption)
 
+    # 写实风格保留照片的 1:5，头部只剩 12 针
+    at.radio(key="review_proportion_test").set_value("photo").run()
     at.number_input(key="review_ratio_test").set_value(0.2).run()
     assert at.button(key="review_generate_test").disabled
     assert any("头部最宽一圈只有 12 针" in e.value for e in at.error)
     advice = " ".join(i.value for i in at.info)
+    assert "头身比例风格改为「Q 版（推荐）」" in advice
     assert "目标成品高度提高到" in advice and "头径／主体高度提高到" in advice and "DK 中粗" in advice
     assert not calls
 
-    at.number_input(key="review_ratio_test").set_value(0.5).run()
+    # 默认 Q 版把同一张照片换算为约 1:2.5
+    at.radio(key="review_proportion_test").set_value("q").run()
+    assert not at.button(key="review_generate_test").disabled
+    assert any("照片约 1:5.0 → 玩偶约 1:2.5" in c.value for c in at.caption)
     at.button(key="review_generate_test").click().run()
     assert not at.exception and len(calls) == 1
+    assert calls[0]["proportion_style"] == "q"
 
 
 _MANUAL_SCRIPT = '''

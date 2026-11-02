@@ -12,6 +12,7 @@ from streamlit.testing.v1 import AppTest
 
 from app.cli import main
 from app.models.orchestrator import PipelineOrchestrator
+from app.models.sizing import styled_body_ratio
 from app.ui.result_logic import import_backup
 from app.utils import history
 from app.utils.backup import decode_backup_json
@@ -83,7 +84,11 @@ if result is not None:
     assert result["vision_meta"]["reviewed_by_user"] is True
     assert result["vision_meta"]["parts_source"] == "user_review"
     assert result["vision_meta"]["requires_subject_review"] is False
-    assert result["analysis"]["head_diameter_cm"] / result["analysis"]["height_cm"] == pytest.approx(0.3)
+    # 确认的照片比例记入来源；默认 Q 版风格把 1:3.3 换算为玩偶约 1:2.2
+    assert result["sizing"]["photo_head_to_height_ratio"] == pytest.approx(0.3)
+    assert result["sizing"]["proportion_style"] == "q"
+    assert result["analysis"]["head_diameter_cm"] / result["analysis"]["height_cm"] == pytest.approx(
+        1 / styled_body_ratio(1 / 0.3, "q"), abs=0.01)
     assert result["analysis"]["parts"] == ["头部", "身体"]
     shown = AppTest.from_file(_APP, default_timeout=30)
     shown.session_state["result"] = import_backup(result, "full-review")

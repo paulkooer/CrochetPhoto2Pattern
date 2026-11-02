@@ -19,7 +19,12 @@ from app.models.crochet_params import CrochetParamsGenerator
 from app.models.gauge import PRESETS, Gauge, ShapingStyle
 from app.models.geometry import mock_geometry, no_photo_geometry
 from app.models.orchestrator import PipelineOrchestrator
-from app.models.sizing import scale_analysis_to_target_height, sizing_meta_for_analysis
+from app.models.sizing import (
+    DEFAULT_PROPORTION_STYLE,
+    PROPORTION_STYLES,
+    scale_analysis_to_target_height,
+    sizing_meta_for_analysis,
+)
 from app.models.structure_designer import StructureDesigner
 from app.schemas import PART_NAMES, ImageAnalysis, PatternResult
 from app.utils.exporters import export_markdown
@@ -40,6 +45,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--head", type=float, default=9.0, help="头部直径 cm（手动模式）")
     parser.add_argument("--height", type=float, default=18.0,
                         help="整体/照片目标成品高度 cm（默认 18）")
+    parser.add_argument("--proportion-style", default=DEFAULT_PROPORTION_STYLE,
+                        choices=list(PROPORTION_STYLES),
+                        help="照片/演示模式的头身比例风格：q=Q 版 1:2–1:3（默认）、"
+                             "balanced=1:2–1:4.5、photo=照片原比例；手动模式按 --head 生成")
     parser.add_argument("--parts", default=None,
                         help=f"显式选择生成部件，照片/批量/手动均生效（可选：{'、'.join(PART_NAMES)}）")
     parser.add_argument("--gauge", default="classic",
@@ -83,7 +92,7 @@ def run(args: argparse.Namespace) -> dict:
         if args.parts is not None:
             analysis = analysis.model_copy(update={"parts": parts})
         analysis, sizing = scale_analysis_to_target_height(
-            analysis, args.height, source="cli_target")
+            analysis, args.height, source="cli_target", proportion_style=args.proportion_style)
         structure = StructureDesigner.design_3d_structure(analysis, infer_missing_parts=args.parts is None)
         params = CrochetParamsGenerator.generate_params(
             analysis, structure, gauge=gauge, style=style)
@@ -112,7 +121,8 @@ def run(args: argparse.Namespace) -> dict:
                                         gauge=gauge, style=style,
                                         target_height_cm=args.height,
                                         target_height_source="cli_target",
-                                        parts=parts if args.parts is not None else None)
+                                        parts=parts if args.parts is not None else None,
+                                        proportion_style=args.proportion_style)
     else:
         analysis = ImageAnalysis(
             body_type="标准", head_diameter_cm=args.head, height_cm=args.height,
@@ -313,8 +323,11 @@ def main(argv=None) -> int:
         if isinstance(e, PatternCrochetabilityError):
             # 照片与演示数据按 --height 缩放头部；手动模式的头径就是 --head
             knob = "--height" if args.image or args.mock else "--head"
+            styled = ("、改用 --proportion-style q" if (args.image or args.mock)
+                      and args.proportion_style != DEFAULT_PROPORTION_STYLE else "")
             review = "，或在界面确认头身比例后再生成" if args.image else ""
-            print(f"{e}。可增大 {knob}、改用更细的密度（--gauge dk / fine）{review}。", file=sys.stderr)
+            print(f"{e}。可增大 {knob}{styled}、改用更细的密度（--gauge dk / fine）{review}。",
+                  file=sys.stderr)
             return 2
         if isinstance(e, PatternGenerationError):
             print(f"图解自检失败: {e}", file=sys.stderr)

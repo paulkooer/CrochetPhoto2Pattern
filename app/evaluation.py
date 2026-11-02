@@ -22,6 +22,7 @@ from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.colors import YARN_COLORS
+from app.models.sizing import DEFAULT_PROPORTION_STYLE
 from app.schemas import PART_NAMES
 from app.utils.images import MAX_UPLOAD_MB, load_image_bytes, load_image_file
 
@@ -669,6 +670,8 @@ def evaluate_dataset(
             "mode": "custom_runner" if runner is not None else "local_vision",
             "python": platform.python_version(),
             "network_images_sent": False,
+            # 默认运行器按产品默认的头身比例风格生成；自定义运行器自行决定
+            "proportion_style": None if runner is not None else DEFAULT_PROPORTION_STYLE,
         },
         "release_readiness": readiness,
         "dataset": manifest.dataset.model_dump(mode="json"),
