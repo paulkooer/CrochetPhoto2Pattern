@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-02 Pattern format migration chain
+
+- Add a pattern-format migration chain (`app/services/migrations.py`). Backup import, share links, local history, project files and trial bundles all upgrade the pattern to the current format before validation and rebuilding. Records without a version field are upgraded to `schema_version="1"` and read exactly as before.
+- Version checks now live in one place: newer, unknown or non-string versions are refused with "unsupported pattern format version". Previously share links, history and backup import each checked the version separately.
+- Future changes to the stored format must bump `SCHEMA_VERSION` and register a step from the previous version. New tests check that every registered version upgrades to the current one, and that the frozen files in `tests/fixtures` import identically without their version field. The format version stays 1; files are unchanged.
+
 ### Changed — 2026-11-02 Per-tab workspace object
 
 - Each tab keeps one workspace record (`workspace_{slot}`) bound to the current result ID. It holds the result state that is not a widget value: export cache and timings, PDF, share link, success/info messages, pending edit preview, personal notes, history-title draft and legacy-recovery notice. Reading it for a different result ID starts a fresh one, so a new generation, import or history load invalidates the old exports and previews without per-key cleanup.

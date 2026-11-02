@@ -23,7 +23,14 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 browser-smoke 首次在工程 JSON 下载处失败（浏览器被关闭），仅重跑该任务后通过，**10 项检查全部通过**后 squash 合入（`98de584`）。
 无独立复核；Beta 与 G3/G4 不变。
 
-2026-11-02 标签页工作区对象（基于 `main` `98de584` 的分支 `refactor/tab-workspace`；提交前本地验证）：
+2026-11-02 图解格式迁移链（基于 `main` `a13efcd` 的分支 `refactor/result-migrations`；提交前本地验证）：
+备份导入、分享链接、本机历史、工程文件和试钩包的图解统一经迁移链升级到当前格式；无版本旧记录标为 `"1"`，
+更新、未知或非字符串版本统一拒绝。当前格式仍为 1，文件不变。全量 **2487 passed、2 skipped，88.69s**；
+全仓 Ruff、mypy（205 文件）通过；本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。未做远端 CI、
+独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+
+2026-11-02 标签页工作区对象（[PR #35](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/35)，头提交 `4f1cf7c`
+**10 项检查全部通过**后 squash 合入 `a13efcd`，合并树相同；以下为合并前本地验证，基于 `main` `98de584` 的分支 `refactor/tab-workspace`）：
 导出缓存、PDF、分享链接、提示消息、待应用的修改预览、备注、历史命名和恢复提示集中到每个标签页一份、
 绑定结果 ID 的工作区，换结果即重建；编辑只携带备注、命名和恢复提示。删除 `_WIDGET_KEY_PREFIXES`，替换结果时按
 结果 ID 整段匹配清理控件键。全量 **2467 passed、2 skipped，87.69s**；全仓 Ruff、mypy（203 文件）通过；

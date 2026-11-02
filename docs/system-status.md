@@ -27,8 +27,17 @@ identical to the previously checked `0e44108`); browser-smoke first failed at th
 passed on a rerun of that job alone, and after all **10 checks** passed it was squash-merged as `98de584`.
 No independent review; Beta and G3/G4 are unchanged.
 
-2026-11-02 per-tab workspace object, on branch `refactor/tab-workspace` based on `main` `98de584` (local
-pre-commit checks): export caches, PDF, share link, messages, pending edit preview, notes, history title and
+2026-11-02 pattern format migration chain, on branch `refactor/result-migrations` based on `main` `a13efcd`
+(local pre-commit checks): backup import, share links, local history, project files and trial bundles upgrade
+the pattern through one migration chain; unversioned records are labelled `"1"`, and newer, unknown or
+non-string versions are refused. The format stays 1 and files are unchanged. Full suite: **2487 passed,
+2 skipped in 88.69s**; repository-wide Ruff and mypy (205 files) pass; local Chrome passes **14 synthetic
+flows** and the mask-canvas check. No remote CI, independent review, authorized-photo evaluation or physical
+trial; Beta and G3/G4 are unchanged.
+
+2026-11-02 per-tab workspace object ([PR #35](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/35) passed all
+**10 checks** on head `4f1cf7c` and was squash-merged as `a13efcd` with an identical tree; the following are its
+pre-merge local checks on branch `refactor/tab-workspace` based on `main` `98de584`): export caches, PDF, share link, messages, pending edit preview, notes, history title and
 recovery notice move into one workspace per tab, bound to the result ID and rebuilt when the result changes;
 edits carry only the notes, title and recovery notice. `_WIDGET_KEY_PREFIXES` is removed, and replacing a result
 clears widget keys whose `_`-separated segment equals the result ID. Full suite: **2467 passed, 2 skipped in

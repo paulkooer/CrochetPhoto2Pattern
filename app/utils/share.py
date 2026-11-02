@@ -11,7 +11,8 @@ import json
 import zlib
 from typing import Any
 
-from ..schemas import RESULT_KEYS, SCHEMA_VERSION, PatternResult, strip_photo_derived
+from ..schemas import RESULT_KEYS, PatternResult, strip_photo_derived
+from ..services.migrations import upgrade_result
 from .backup import loads_strict
 
 _MAX_TOKEN_CHARS = 6000
@@ -73,11 +74,8 @@ def decode_result(token: str) -> dict[str, Any] | None:
         if not isinstance(data, dict) or not all(
                 isinstance(data.get(k), dict) for k in ("analysis", "structure", "params")):
             return None
-        # 未来 schema 版本的结果不猜测兼容性；旧 token（无版本键）
-        # 保留兼容，缺 V4 新键时由渲染层默认值兜底。
-        version = data.get("schema_version")
-        if version is not None and version != SCHEMA_VERSION:
-            return None
-        return data
+        # 更新或未知版本的结果不猜测兼容性；旧 token（无版本键）按迁移链
+        # 升级，缺 V4 新键时由 PatternResult 默认值兜底。
+        return upgrade_result(data)
     except Exception:
         return None
