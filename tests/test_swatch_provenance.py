@@ -16,9 +16,9 @@ from app.models.materials import YarnSpec, material_summary_text
 from app.models.structure_designer import StructureDesigner
 from app.models.validator import require_valid_pattern
 from app.schemas import ImageAnalysis, PatternResult
+from app.services.progress_state import capture_progress
+from app.services.result_logic import import_backup, regenerate_with_gauge, regenerate_with_part_gauge
 from app.ui.pattern_editor import edit_yarn
-from app.ui.progress_state import capture_progress
-from app.ui.result_logic import import_backup, regenerate_with_gauge, regenerate_with_part_gauge
 from app.utils.exporters import export_markdown
 from app.utils.pdf_export import export_pdf
 from app.utils.project import pattern_revision, project_backup, read_project_state

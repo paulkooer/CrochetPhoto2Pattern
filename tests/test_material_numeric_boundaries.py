@@ -8,8 +8,8 @@ from streamlit.testing.v1 import AppTest
 
 from app.models.materials import YarnSpec
 from app.models.validator import require_valid_pattern
+from app.services.result_logic import import_backup
 from app.ui.pattern_editor import edit_yarn
-from app.ui.result_logic import import_backup
 from app.utils.exporters import export_markdown
 from app.utils.pdf_export import export_pdf
 from tests.test_project_backup import RENDER

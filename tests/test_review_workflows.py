@@ -7,7 +7,7 @@ from streamlit.testing.v1 import AppTest
 
 from app.cli import build_parser, run
 from app.models.validator import validate_pattern
-from app.ui.result_logic import import_backup, rebuild_params, regenerate_with_size
+from app.services.result_logic import import_backup, rebuild_params, regenerate_with_size
 from app.utils import history
 from app.utils.exporters import export_markdown
 from app.utils.parade_export import export_parade_report, lint_parade_dsl

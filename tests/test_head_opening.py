@@ -14,8 +14,8 @@ from app.models.instruction_checks import round_expression
 from app.models.structure_designer import StructureDesigner
 from app.models.validator import require_valid_pattern
 from app.schemas import ImageAnalysis, PatternResult
-from app.ui.progress_state import capture_progress
-from app.ui.result_logic import (
+from app.services.progress_state import capture_progress
+from app.services.result_logic import (
     import_backup,
     rebuild_params,
     regenerate_with_gauge,

@@ -293,15 +293,19 @@ CrochetPhoto2Pattern/
 │   │   ├── grid_pattern.py        # 2D 像素网格图案
 │   │   ├── colors.py              # 共享毛线色表 + Lab 感知色距
 │   │   └── orchestrator.py        # 流水线编排
+│   ├── services/                  # 不依赖 Streamlit 的应用逻辑（UI、CLI、工具共用）
+│   │   ├── result_logic.py        # 重生成、导入与尺寸/结构编辑
+│   │   └── progress_state.py      # 实体进度身份、保留与影响预览
 │   ├── ui/
 │   │   ├── sidebar.py             # 密度与塑形配置
 │   │   ├── tab_photo.py           # 照片识别 Tab
 │   │   ├── tab_manual.py          # 手动输入 Tab
 │   │   ├── tab_grid.py            # 2D 网格 Tab
+│   │   ├── uploads.py             # Streamlit 上传读取与会话缓存
 │   │   └── result_renderer.py     # 结果渲染（进度/修正/导出）
 │   ├── utils/
 │   │   ├── exporters.py           # Markdown 导出
-│   │   └── images.py              # 上传图片安全加载（容错/大小限制）
+│   │   └── images.py              # 图片安全解码（容错/大小限制，不依赖 Streamlit）
 ├── tests/                   # 自动化测试
 ├── docs/                    # 文档
 └── pyproject.toml           # 项目配置（依赖单一来源）

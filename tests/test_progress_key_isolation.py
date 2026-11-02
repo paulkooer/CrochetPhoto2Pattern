@@ -7,14 +7,14 @@ from hypothesis import given
 from hypothesis import strategies as hs
 from streamlit.testing.v1 import AppTest
 
-from app.ui.progress_state import (
+from app.services.progress_state import (
     capture_progress,
     install_progress,
     physical_rounds,
     progress_copy_prefixes,
     progress_entries,
 )
-from app.ui.result_logic import import_backup, rebuild_params
+from app.services.result_logic import import_backup, rebuild_params
 from app.utils.project import project_backup, read_project_state
 from tests.test_app_smoke import _APP, _mock_result
 

@@ -50,6 +50,8 @@ uv run --locked --extra dev --extra pose pytest -q
    被摄者同意、用途、保留和哈希记录要求。原图与包含个人信息的报告不得进入仓库。
 5. **保持兼容与可迁移。** 修改备份、分享、图解 JSON 或试钩记录格式时，增加版本、
    兼容读取或清晰迁移说明，并更新测试和 CHANGELOG。
+6. **保持分层方向。** `app/models`、`app/utils`、`app/services` 及 CLI/评测/试钩入口
+   不导入 `app.ui` 或 Streamlit；界面层调用它们，反之不行（`tests/test_layering.py` 守卫）。
 
 ## Pull Request 要求
 

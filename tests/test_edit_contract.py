@@ -5,7 +5,7 @@ import pytest
 
 from app.models.validator import validate_pattern
 from app.schemas import CrochetPart, CrochetStitch
-from app.ui.result_logic import rebuild_params
+from app.services.result_logic import rebuild_params
 
 
 def _params():

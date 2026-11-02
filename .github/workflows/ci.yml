@@ -136,6 +136,7 @@ jobs:
               metadata = archive.read(metadata_name).decode()
               entries = archive.read(entry_name).decode()
           assert "app/py.typed" in names
+          assert "app/services/result_logic.py" in names
           assert "app/ui/mask_canvas/index.html" in names
           assert "app/ui/mask_canvas/editor.js" in names
           assert not any(n.startswith("app/prompts/") for n in names)

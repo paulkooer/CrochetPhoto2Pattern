@@ -5,7 +5,7 @@ import json
 
 import streamlit as st
 
-from app.ui.progress_state import capture_progress
+from app.services.progress_state import capture_progress
 from app.utils.backup import MAX_BACKUP_BYTES
 from app.utils.project import MAX_PROJECT_NOTES, project_backup
 

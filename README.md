@@ -400,8 +400,9 @@ CrochetPhoto2Pattern/
 │   ├── trials.py            # physical-trial records and analysis
 │   ├── schemas.py           # Pydantic contracts
 │   ├── models/              # vision, geometry, sizing, pattern generation, validation
-│   ├── ui/                  # Streamlit tabs and renderers
-│   ├── utils/               # image loading, history, and exporters
+│   ├── services/            # Streamlit-free regeneration, import and progress logic
+│   ├── ui/                  # Streamlit tabs, renderers and upload helpers
+│   ├── utils/               # image decoding, history, and exporters
 │   └── data/                # curated, non-calibrating external evidence
 ├── tests/
 ├── docs/

@@ -68,6 +68,11 @@ pdf = ["reportlab>=4.0"]
 # 当前只在 3.11–3.12 的本地与 Linux extras CI 验证。
 pose = ["mediapipe>=1.0.1,<2; python_version < '3.13'"]
 
+# 显式只打包 app：被忽略的本地目录（如含 .py 的 eval_outputs/）会让平铺布局的
+# 自动发现报“多个顶层包”而无法构建。
+[tool.setuptools.packages.find]
+include = ["app*"]
+
 # Include curated evidence and typing metadata in installed distributions.
 [tool.setuptools.package-data]
 app = ["data/*.json", "py.typed", "ui/mask_canvas/*.html", "ui/mask_canvas/*.js"]

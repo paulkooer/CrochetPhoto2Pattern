@@ -2,8 +2,8 @@
 import streamlit as st
 
 from app.models.head_opening import HEAD_OPENING_KEY, has_declared_head_opening, head_opening_target
+from app.services.result_logic import regenerate_with_head_opening
 from app.ui.edit_history import preview_edit
-from app.ui.result_logic import regenerate_with_head_opening
 from app.utils.counts import integer_count
 
 

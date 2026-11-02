@@ -16,10 +16,8 @@ from app.models.materials import material_summary_text
 from app.models.structure_designer import StructureDesigner
 from app.models.validator import require_valid_pattern, validate_pattern
 from app.schemas import CrochetPart, ImageAnalysis, PatternResult
-from app.trials import TrialDataError, create_trial_draft_from_bytes
-from app.ui.pattern_editor import edit_yarn
-from app.ui.progress_state import capture_progress, progress_entries, retained_progress
-from app.ui.result_logic import (
+from app.services.progress_state import capture_progress, progress_entries, retained_progress
+from app.services.result_logic import (
     import_backup,
     rebuild_params,
     regenerate_with_gauge,
@@ -28,6 +26,8 @@ from app.ui.result_logic import (
     regenerate_with_size,
     regenerate_with_structure,
 )
+from app.trials import TrialDataError, create_trial_draft_from_bytes
+from app.ui.pattern_editor import edit_yarn
 from app.utils.exporters import export_markdown
 from app.utils.pdf_export import export_pdf
 from app.utils.project import pattern_revision, project_backup, read_project_state

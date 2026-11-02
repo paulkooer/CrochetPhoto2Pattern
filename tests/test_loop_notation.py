@@ -18,8 +18,8 @@ from app.models.stitch_notation import (
 )
 from app.models.validator import validate_pattern
 from app.schemas import PatternResult
+from app.services.result_logic import import_backup
 from app.ui.pattern_editor import edit_rounds
-from app.ui.result_logic import import_backup
 from app.utils.exporters import export_markdown
 from app.utils.parade_export import export_parade_report, lint_parade_dsl
 from app.utils.pdf_export import export_pdf

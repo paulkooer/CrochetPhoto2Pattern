@@ -31,7 +31,7 @@ def main() -> None:
     if not source_file.is_file():
         parser.error("source root must contain the app source tree")
     sys.path.insert(0, str(source_root))
-    module = importlib.import_module("app.ui.progress_state")
+    module = importlib.import_module("app.services.progress_state")
     parts = [{"name": f"部件{i}", "type": "cylinder", "quantity": args.copies, "color": "红色",
               "rounds": [{"row": row + 1, "stitches": 6, "notes": "6X"}
                          for row in range(args.rounds_per_part)]} for i in range(args.parts)]

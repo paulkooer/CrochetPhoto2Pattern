@@ -10,7 +10,7 @@ from app.models.mask_review import MaskReview, mask_editor_input, with_reviewed_
 from app.models.orchestrator import PipelineOrchestrator
 from app.models.photo_review import with_reviewed_body
 from app.schemas import PatternResult
-from app.ui.result_logic import import_backup, regenerate_with_size
+from app.services.result_logic import import_backup, regenerate_with_size
 from app.utils.provenance import provenance_lines
 
 

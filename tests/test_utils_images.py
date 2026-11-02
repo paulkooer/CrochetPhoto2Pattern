@@ -1,15 +1,14 @@
-"""Tests for safe uploaded-image loading (app/utils/images.py)."""
+"""Tests for safe image loading (app/utils/images.py, app/ui/uploads.py)."""
 import io
 
 from PIL import Image
 
+from app.ui.uploads import load_uploaded_image, load_uploaded_image_cached
 from app.utils.images import (
     MAX_UPLOAD_MB,
     MAX_UPLOAD_PIXELS,
     MAX_UPLOAD_SIDE,
     load_image_bytes,
-    load_uploaded_image,
-    load_uploaded_image_cached,
 )
 
 

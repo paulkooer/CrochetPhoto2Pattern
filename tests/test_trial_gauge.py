@@ -8,7 +8,7 @@ from app.models.crochet_params import refresh_derived
 from app.models.skirt_edit import move_skirt_join, waist_rows
 from app.models.stitch_attachments import WAIST_POSITION_KEY
 from app.models.validator import require_valid_pattern
-from app.ui.result_logic import import_backup, regenerate_with_gauge
+from app.services.result_logic import import_backup, regenerate_with_gauge
 from app.utils.backup import decode_backup_json
 from app.utils.trial_bundle import (
     create_trial_bundle,

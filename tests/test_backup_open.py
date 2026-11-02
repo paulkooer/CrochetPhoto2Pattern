@@ -7,7 +7,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from app.schemas import PatternResult
-from app.ui.result_logic import import_backup
+from app.services.result_logic import import_backup
 from app.utils.backup import MAX_BACKUP_BYTES, MAX_PASTED_BACKUP_BYTES, decode_backup_json
 from tests.test_app_smoke import _APP, _mock_result
 

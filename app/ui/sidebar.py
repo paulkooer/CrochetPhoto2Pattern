@@ -114,7 +114,7 @@ def render_sidebar() -> None:
                         # 不用 st.stop：那会让下方同行「删」按钮在本轮
                         # 永远渲染不出来，提示里的出路形同虚设。
                         try:
-                            from app.ui.result_logic import import_backup
+                            from app.services.result_logic import import_backup
 
                             data = import_backup(data, uuid.uuid4().hex[:12])
                             data["history_id"] = it["rid"]

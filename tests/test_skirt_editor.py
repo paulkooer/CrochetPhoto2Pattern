@@ -9,8 +9,8 @@ from streamlit.testing.v1 import AppTest
 from app.models.attachment_diagram import attachment_svg, diagram_rows
 from app.models.instruction_checks import round_expression
 from app.models.skirt_edit import move_skirt_join, skirt_connection, waist_rows
-from app.ui.progress_state import progress_entries, retained_progress
-from app.ui.result_logic import import_backup
+from app.services.progress_state import progress_entries, retained_progress
+from app.services.result_logic import import_backup
 from app.utils.exporters import export_markdown
 from app.utils.project import project_backup, read_project_state
 from tests.test_project_backup import RENDER

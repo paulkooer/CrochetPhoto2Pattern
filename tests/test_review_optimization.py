@@ -17,9 +17,9 @@ from app.models.runtime import RunTrace, timed_export
 from app.models.structure_designer import StructureDesigner
 from app.models.subject import SubjectObservation
 from app.schemas import PatternResult
+from app.services.result_logic import import_backup, regenerate_with_size
 from app.ui.edit_history import MAX_HISTORY_BYTES, MAX_SNAPSHOTS, trim_history
 from app.ui.pattern_editor import edit_rounds, edit_structure_part, edit_yarn
-from app.ui.result_logic import import_backup, regenerate_with_size
 from app.utils.exporters import export_markdown
 
 

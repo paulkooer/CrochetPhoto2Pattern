@@ -41,8 +41,9 @@ only when an old structure has no attachment graph.
 | Path | Responsibility |
 |---|---|
 | `app/main.py` | thin Streamlit entry point and tab dispatch |
-| `app/ui/` | sidebar, photo/manual/grid tabs, result rendering, progress, corrections, downloads |
-| `app/utils/images.py` | defensive loading, size limits, EXIF orientation, transparent-image handling |
+| `app/ui/` | sidebar, photo/manual/grid tabs, result rendering, progress, corrections, downloads, uploads |
+| `app/services/` | Streamlit-free regeneration, import, size/structure edits and physical progress shared by UI, CLI and tools |
+| `app/utils/images.py` | defensive decoding, size limits, EXIF orientation, transparent-image handling; no Streamlit |
 | `app/models/image_parser.py` | local photo analysis, palettes and explicit mock demonstration |
 | `app/models/local_vision.py` | head box expanded from the face box, proportions and silhouette profile without an LLM |
 | `app/models/sizing.py` | relative observation through a proportion style to user target dimensions, with provenance metadata |

@@ -8,8 +8,8 @@ from app.models.crochet_params import CrochetParamsGenerator
 from app.models.image_parser import ImageParser
 from app.models.structure_designer import StructureDesigner
 from app.schemas import PatternResult
+from app.services.result_logic import import_backup
 from app.ui.pattern_editor import edit_rounds
-from app.ui.result_logic import import_backup
 from app.utils.exporters import export_markdown
 
 RENDER = '''
@@ -102,7 +102,7 @@ def test_numeric_edit_requires_confirmation_for_unrecognized_instructions(result
 
 
 def test_progress_follows_instance_identity_and_gauge_changes_invalidate(result):
-    from app.ui.progress_state import capture_progress, install_progress, retained_progress
+    from app.services.progress_state import capture_progress, install_progress, retained_progress
 
     state = {"chk_followup_手臂_copy2_0": True}
     progress = capture_progress(result, "result", state)
@@ -239,7 +239,7 @@ def test_accessories_follow_physical_counts(result):
 
 
 def test_large_progress_has_bounded_widgets_and_survives_page_switch(result):
-    from app.ui.progress_state import capture_progress
+    from app.services.progress_state import capture_progress
 
     part = deepcopy(result["params"]["parts"][0])
     part["quantity"] = 20

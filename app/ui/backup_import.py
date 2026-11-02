@@ -6,7 +6,7 @@ import uuid
 
 import streamlit as st
 
-from app.ui.result_logic import import_backup
+from app.services.result_logic import import_backup
 from app.utils.backup import MAX_BACKUP_BYTES, MAX_PASTED_BACKUP_BYTES, decode_backup_json
 
 
@@ -66,7 +66,7 @@ def render_backup_import(slot: str = "result", *, result_key: str | None = None)
             from app.utils.project import AmbiguousProjectProgressError
 
             try:
-                from app.ui.progress_state import install_progress
+                from app.services.progress_state import install_progress
                 from app.utils.project import read_project_state
 
                 data = decode_backup_json(payload, max_bytes=limit)
