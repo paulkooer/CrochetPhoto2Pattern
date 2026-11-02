@@ -8,6 +8,13 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added / Changed — 2026-11-02 Crochetability gate and evaluation policy 3
+
+- Photo review, manual input and the CLI refuse a first generation when the widest head or body round (including a one-piece head section) has fewer than 18 stitches, and warn below 24; 6-stitch limb, tail and small-ear tubes only receive notes. Thresholds follow the repository's reference patterns (smallest full head 24 stitches, smallest body 30). Previously, at the default classic gauge and 18 cm, a 1:5 head ratio produced a 12-stitch head and 1:8 a two-round, 6-stitch "ball" that still passed the self-check. Edits, imports and regeneration of existing work only warn and never rewrite content.
+- Photo review and manual input preview each part's widest round before generation. When blocked, the generate button is disabled and the page suggests the smallest single change of target height, head ratio or gauge preset. The CLI exits with code 2 and names `--height` or `--head` according to mode.
+- Evaluation report schema 4 uses release policy 3: each case records `crochetable` and `crochetability`, and `crochetable_rate` is added (threshold defaults to 1.0). Parade ring starts and cross-part reserved-loop joins are reported as constructions the exporter declares unsupported; `parade_export_rate` fails only other translation gaps, and `parade_complete_rate` keeps the strict rate. The default evaluation runner does not apply the gate, so degenerate results keep their other metrics. The input manifest format is unchanged.
+- Fix disabled primary buttons that still looked clickable. Share the one-piece neck marker and gauge preset labels as constants.
+
 ### Fixed — 2026-11-02 Physical-copy progress identities
 
 - Separate progress when a graph instance ID collides with an ordinal ID for an extra copy. Structural edits match actual instances by ID and extra copies by ordinal, preventing completion from moving to another piece.

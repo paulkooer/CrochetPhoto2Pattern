@@ -14,6 +14,7 @@ from app import software_version
 
 from ..schemas import ImageAnalysis, PatternResult
 from .crochet_params import CrochetParamsGenerator
+from .crochetability import require_crochetable
 from .geometry import GeometryObservation, mock_geometry, observe_geometry
 from .image_parser import ImageParser
 from .runtime import RunTrace
@@ -125,6 +126,64 @@ class PipelineOrchestrator:
         )
 
     @staticmethod
+    def _design(
+        draft: PhotoDraft,
+        analysis: ImageAnalysis | None,
+        parts: list[str] | None,
+        target_height_cm: float,
+        target_height_source: str,
+        progress_cb: ProgressCB | None = None,
+    ) -> tuple[ImageAnalysis, dict[str, Any], dict[str, Any]]:
+        """Scale the chosen analysis and design its template structure."""
+        chosen_data = (analysis or draft.analysis).model_dump()
+        if parts is not None:
+            chosen_data["parts"] = parts
+        chosen = ImageAnalysis.model_validate(chosen_data)
+        if not chosen.parts:
+            raise ValueError("请至少保留一个部件")
+        chosen, sizing = scale_analysis_to_target_height(
+            chosen, target_height_cm, source=target_height_source
+        )
+        if progress_cb:
+            progress_cb(40, text="Step 2/3: 部件结构设计中...")
+        structure = StructureDesigner.design_3d_structure(
+            chosen, infer_missing_parts=analysis is None and parts is None)
+        return chosen, sizing, structure
+
+    @staticmethod
+    def _body_profile(draft: PhotoDraft) -> list[float] | None:
+        if draft.geometry.body_region is not None:
+            return draft.geometry.body_region.profile
+        return draft.geometry.silhouette.profile if draft.geometry.silhouette else None
+
+    @staticmethod
+    def preview_params(
+        draft: PhotoDraft,
+        *,
+        analysis: ImageAnalysis,
+        gauge=None,
+        style=None,
+        target_height_cm: float = 18,
+    ) -> dict[str, Any]:
+        """The rounds generate_from_draft would produce, without colors or the gate.
+
+        Colors never change stitch counts, so the review page can show exact
+        per-part counts and crochetability before the user confirms generation.
+        """
+        from .gauge import DEFAULT, DEFAULT_STYLE
+
+        chosen, _sizing, structure = PipelineOrchestrator._design(
+            draft, analysis, None, target_height_cm, "review_preview")
+        return CrochetParamsGenerator.generate_params(
+            chosen,
+            structure,
+            body_profile=PipelineOrchestrator._body_profile(draft),
+            gauge=gauge or DEFAULT,
+            style=style or DEFAULT_STYLE,
+            spans=draft.spans,
+        )
+
+    @staticmethod
     def generate_from_draft(
         draft: PhotoDraft,
         *,
@@ -136,6 +195,7 @@ class PipelineOrchestrator:
         target_height_source: str = "default_reference",
         progress_cb: ProgressCB | None = None,
         run_trace: RunTrace | None = None,
+        enforce_crochetability: bool = True,
     ) -> dict[str, Any]:
         """Generate locally from reviewed data; never contacts a vision provider.
 
@@ -143,6 +203,8 @@ class PipelineOrchestrator:
         draft does not exhaust it. Local native calls stop at the next checkpoint.
         ``analysis`` supplies a fully reviewed analysis; ``parts`` only overrides
         the CLI selection and must not certify subject or proportion review.
+        Degenerate head/body sizes raise ``PatternCrochetabilityError`` unless
+        ``enforce_crochetability`` is false (evaluation scores them separately).
         """
         trace = run_trace or deepcopy(draft.trace)
         from .color_design import vertical_color_bands
@@ -150,19 +212,8 @@ class PipelineOrchestrator:
 
         gauge, style = gauge or DEFAULT, style or DEFAULT_STYLE
         with trace.stage("structure"):
-            chosen_data = (analysis or draft.analysis).model_dump()
-            if parts is not None:
-                chosen_data["parts"] = parts
-            chosen = ImageAnalysis.model_validate(chosen_data)
-            if not chosen.parts:
-                raise ValueError("请至少保留一个部件")
-            chosen, sizing = scale_analysis_to_target_height(
-                chosen, target_height_cm, source=target_height_source
-            )
-            if progress_cb:
-                progress_cb(40, text="Step 2/3: 部件结构设计中...")
-            structure = StructureDesigner.design_3d_structure(
-                chosen, infer_missing_parts=analysis is None and parts is None)
+            chosen, sizing, structure = PipelineOrchestrator._design(
+                draft, analysis, parts, target_height_cm, target_height_source, progress_cb)
         with trace.stage("colors"):
             color_observation: dict = {}
             bands = vertical_color_bands(draft.image, subject=draft.subject, observation=color_observation)
@@ -171,18 +222,17 @@ class PipelineOrchestrator:
         with trace.stage("pattern"):
             if progress_cb:
                 progress_cb(70, text="Step 3/3: 生成钩织参数...")
-            profile = draft.geometry.silhouette.profile if draft.geometry.silhouette else None
-            if draft.geometry.body_region is not None:
-                profile = draft.geometry.body_region.profile
             params = CrochetParamsGenerator.generate_params(
                 chosen,
                 structure,
                 color_bands=bands or None,
-                body_profile=profile,
+                body_profile=PipelineOrchestrator._body_profile(draft),
                 gauge=gauge,
                 style=style,
                 spans=draft.spans,
             )
+            if enforce_crochetability:
+                require_crochetable(params)
         with trace.stage("preview"):
             from ..utils.images import thumbnail_data_url
 
@@ -233,6 +283,7 @@ class PipelineOrchestrator:
         vision_mode: str = "local",
         budget_seconds: float = 180,
         parts: list[str] | None = None,
+        enforce_crochetability: bool = True,
     ) -> dict[str, Any]:
         # Keep the original public API and explicit mode validation.
         if vision_mode not in VISION_MODES:
@@ -254,6 +305,7 @@ class PipelineOrchestrator:
                 target_height_source=target_height_source,
                 progress_cb=progress_cb,
                 run_trace=trace,
+                enforce_crochetability=enforce_crochetability,
             )
         finally:
             self.last_diagnostics = trace.payload()

@@ -194,6 +194,11 @@ def render_edit_preview(slot: str, current: dict) -> None:
                    for name in before if before[name] != after[name]]
         if changes:
             st.table(changes)
+        from app.models.crochetability import crochetability_findings
+        from app.ui.result_renderer import md_safe
+
+        if concerns := [f for f in crochetability_findings(candidate["params"]) if f.level != "note"]:
+            st.warning("应用后的可钩性提示：" + "；".join(md_safe(f.message) for f in concerns) + "。")
         st.caption("此预览记录点击时的修改方案；继续改动输入或勾选后请重新预览。应用时使用最新进度。"
                    "只保留首次变化之前的圈次；各部件有效密度、整体信息或依赖接合变化时重新核对。"
                    "勾选记录不代表实物无需返工。")

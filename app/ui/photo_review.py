@@ -6,9 +6,69 @@ from copy import copy, deepcopy
 
 import streamlit as st
 
+from app.models.crochet_params import PatternGenerationError
 from app.models.orchestrator import PhotoDraft, PipelineOrchestrator
 from app.models.photo_review import head_ratio, review_overlay, reviewed_analysis, with_reviewed_body
-from app.schemas import PART_NAMES
+from app.schemas import PART_NAMES, ImageAnalysis
+
+
+def _confirmed_draft(draft: PhotoDraft, body_reviewed: PhotoDraft, ratio: float,
+                     head_box: tuple[float, float, float, float] | None) -> PhotoDraft:
+    """The reviewed draft used for both the stitch preview and generation."""
+    reviewed = copy(body_reviewed)
+    reviewed.vision_meta = {**draft.vision_meta,
+                            "head_ratio_source": "user_box" if head_box is not None else "user_review",
+                            "subject_scope_review": "single_representable_subject",
+                            "requires_subject_review": False, "parts_source": "user_review"}
+    reviewed.vision_meta["body_ratio"] = round(1 / ratio, 3)
+    reviewed.vision_meta["original_head_to_height_ratio"] = (
+        draft.analysis.head_diameter_cm / draft.analysis.height_cm
+    )
+    if head_box is not None:
+        reviewed.vision_meta["review_head_box"] = list(head_box)
+        from app.models.color_design import PART_SPAN
+
+        # Same cropped-image coordinates as the extracted color bands.
+        reviewed.spans = {**PART_SPAN, **(reviewed.spans or {}),
+                          "头部": (head_box[1], head_box[3])}
+        # User annotation is not a pose-model measurement.
+        reviewed.spans_measured = [name for name in reviewed.spans_measured if name != "头部"]
+    return reviewed
+
+
+def _render_preview(reviewed: PhotoDraft, analysis: ImageAnalysis, *, gauge, style,
+                    target_height: float, head_box: bool) -> bool:
+    """Exact per-part counts before generation; True keeps generation disabled."""
+    from app.models.crochetability import crochetability_advice
+    from app.models.sizing import MAX_PHOTO_TARGET_HEIGHT_CM, MIN_BODY_TO_HEAD_RATIO
+    from app.ui.result_renderer import md_safe
+    from app.ui.stitch_preview import preset_option, render_stitch_preview
+
+    def build(height, ratio, selected_gauge):
+        return PipelineOrchestrator.preview_params(
+            reviewed, analysis=reviewed_analysis(analysis, analysis.parts, ratio),
+            gauge=selected_gauge, style=style, target_height_cm=height)
+
+    ratio = analysis.head_diameter_cm / analysis.height_cm
+    try:
+        params = build(target_height, ratio, gauge)
+    except (ValueError, PatternGenerationError) as exc:
+        st.warning(f"暂不能生成：{md_safe(exc)}")
+        return True
+
+    def suggest(level):
+        advice = crochetability_advice(
+            build, gauge=gauge, level=level, size=target_height, size_max=MAX_PHOTO_TARGET_HEIGHT_CM,
+            ratio=ratio, ratio_max=1 / MIN_BODY_TO_HEAD_RATIO)
+        options = []
+        if advice.size is not None:
+            options.append(f"把目标成品高度提高到 {advice.size:g} cm")
+        if advice.ratio is not None:
+            options.append(f"扩大头部框，使头径／主体高度达到 {advice.ratio:.2f}" if head_box
+                           else f"把头径／主体高度提高到 {advice.ratio:.2f}")
+        return options + preset_option(advice)
+
+    return render_stitch_preview(params, suggest)
 
 
 def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_height: float) -> dict | None:
@@ -111,26 +171,17 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_hei
         if body_box is not None and "身体" not in parts:
             st.warning("已限定身体轮廓，请选择身体部件，或关闭身体框。")
             can_generate = False
-        if st.button("确认并生成图解", type="primary", key=f"review_generate_{key}",
-                     disabled=not can_generate) and can_generate:
+        confirmed = None
+        if parts and not unsupported:
             analysis = reviewed_analysis(body_reviewed.analysis, parts, ratio)
-            reviewed = copy(body_reviewed)
-            reviewed.vision_meta = {**meta, "head_ratio_source": "user_box" if use_box else "user_review",
-                                    "subject_scope_review": "single_representable_subject",
-                                    "requires_subject_review": False, "parts_source": "user_review"}
-            reviewed.vision_meta["body_ratio"] = round(1 / ratio, 3)
-            reviewed.vision_meta["original_head_to_height_ratio"] = (
-                draft.analysis.head_diameter_cm / draft.analysis.height_cm
-            )
-            if use_box and detected is not None:
-                reviewed.vision_meta["review_head_box"] = list(detected)
-                from app.models.color_design import PART_SPAN
-
-                # Same cropped-image coordinates as the extracted color bands.
-                reviewed.spans = {**PART_SPAN, **(reviewed.spans or {}),
-                                  "头部": (detected[1], detected[3])}
-                # User annotation is not a pose-model measurement.
-                reviewed.spans_measured = [name for name in reviewed.spans_measured if name != "头部"]
+            reviewed = _confirmed_draft(draft, body_reviewed, ratio, detected if use_box else None)
+            confirmed = (reviewed, analysis)
+            if _render_preview(reviewed, analysis, gauge=gauge, style=style,
+                               target_height=target_height, head_box=use_box):
+                can_generate = False
+        if st.button("确认并生成图解", type="primary", key=f"review_generate_{key}",
+                     disabled=not can_generate) and can_generate and confirmed is not None:
+            reviewed, analysis = confirmed
             run_trace = deepcopy(draft.trace)
             with st.spinner("按确认后的比例与部件生成图解…"):
                 return PipelineOrchestrator.generate_from_draft(

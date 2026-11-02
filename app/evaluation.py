@@ -27,7 +27,7 @@ from app.utils.images import MAX_UPLOAD_MB, load_image_bytes, load_image_file
 
 MANIFEST_NAME = "eval_manifest.json"
 MANIFEST_SCHEMA_VERSION = Literal[2]
-REPORT_SCHEMA_VERSION = 3
+REPORT_SCHEMA_VERSION = 4
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
 ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp"})
@@ -186,6 +186,7 @@ class EvaluationThresholds(_StrictModel):
     min_color_top3_accuracy: float = Field(default=0.80, ge=0.0, le=1.0)
     min_pattern_valid_rate: float = Field(default=1.0, ge=0.0, le=1.0)
     min_parade_export_rate: float = Field(default=1.0, ge=0.0, le=1.0)
+    min_crochetable_rate: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
 class EvaluationManifest(_StrictModel):
@@ -302,11 +303,13 @@ def _default_local_runner() -> EvaluationRunner:
     orchestrator = PipelineOrchestrator()
 
     def _run(image: Image.Image) -> dict[str, Any]:
+        # 可钩性在报告里逐例统计；门禁抛错会把整例记为管线错误，丢掉其他指标。
         return orchestrator.run_full_pipeline(
             image,
             vision_mode="local",
             target_height_cm=18.0,
             target_height_source="evaluation_reference",
+            enforce_crochetability=False,
         )
 
     return _run
@@ -378,7 +381,9 @@ def evaluate_dataset(
     flare_matches: list[float] = []
     color_matches: list[float] = []
     pattern_valid_values: list[float] = []
+    crochetable_values: list[float] = []
     parade_export_values: list[float] = []
+    parade_complete_values: list[float] = []
     parade_syntax_values: list[float] = []
     case_pass_values: list[float] = []
     pipeline_errors = 0
@@ -438,6 +443,12 @@ def evaluate_dataset(
 
             validation = validate_pattern(result.get("params") or {})
             pattern_valid = bool(validation["ok"] and validation["checked"] > 0)
+            from dataclasses import asdict
+
+            from app.models.crochetability import at_or_above, crochetability_findings
+
+            findings = crochetability_findings(result.get("params") or {})
+            crochetable = not at_or_above(findings, "block")
             # tier-2（CrochetBench 口径）：结果能否翻译为 CrochetPARADE DSL——
             # 代数自检之外的"可执行正确性"最近似代理（其官方 translator 为
             # GPL，不作依赖；这里校验导出 + emitter-level 语法自检）
@@ -445,21 +456,24 @@ def evaluate_dataset(
 
             parade_detail = None
             try:
-                from dataclasses import asdict
-
                 parade = export_parade_report(result)
                 parade_syntax_ok = not lint_parade_dsl(parade.text)
-                parade_export_ok = bool(parade_syntax_ok and parade.complete)
+                # 策略 v3：导出器已声明不支持的构造（环形起针、跨部件预留半针
+                # 接合）单列；其余内容必须完整翻译。严格完整率另行报告。
+                parade_export_ok = bool(parade_syntax_ok and not parade.failures)
+                parade_complete = bool(parade_syntax_ok and parade.complete)
                 parade_detail = {k: v for k, v in asdict(parade).items() if k != "text"}
             except Exception:
                 parade_syntax_ok = False
                 parade_export_ok = False
+                parade_complete = False
             case_passed = bool(
                 delivery_consistent
                 and recall >= thresholds.min_case_part_recall
                 and (flare_match is not False)
                 and (color_match is not False)
                 and pattern_valid
+                and crochetable
                 and parade_export_ok
             )
             case_report = {
@@ -482,7 +496,10 @@ def evaluate_dataset(
                 "actual_colors_top3": colors,
                 "color_top3_match": color_match,
                 "pattern_valid": pattern_valid,
+                "crochetable": crochetable,
+                "crochetability": [asdict(f) for f in findings],
                 "parade_export_ok": parade_export_ok,
+                "parade_complete": parade_complete,
                 "parade_syntax_ok": parade_syntax_ok,
                 "parade_export": parade_detail,
                 "pattern_issues": validation["issues"],
@@ -495,7 +512,9 @@ def evaluate_dataset(
             flare_match = False if case.expected.flare is not None else None
             color_match = False if case.expected.dominant_colors else None
             pattern_valid = False
+            crochetable = False
             parade_export_ok = False
+            parade_complete = False
             parade_syntax_ok = False
             case_passed = False
             case_report = {
@@ -518,7 +537,10 @@ def evaluate_dataset(
                 "actual_colors_top3": [],
                 "color_top3_match": color_match,
                 "pattern_valid": False,
+                "crochetable": False,
+                "crochetability": [],
                 "parade_export_ok": False,
+                "parade_complete": False,
                 "parade_syntax_ok": False,
                 "parade_export": None,
                 "pattern_issues": [],
@@ -532,7 +554,9 @@ def evaluate_dataset(
         if color_match is not None:
             color_matches.append(float(color_match))
         pattern_valid_values.append(float(pattern_valid))
+        crochetable_values.append(float(crochetable))
         parade_export_values.append(float(parade_export_ok))
+        parade_complete_values.append(float(parade_complete))
         parade_syntax_values.append(float(parade_syntax_ok))
         case_pass_values.append(float(case_passed))
         case_reports.append(case_report)
@@ -541,6 +565,7 @@ def evaluate_dataset(
     flare_accuracy = _mean(flare_matches)
     color_top3_accuracy = _mean(color_matches)
     pattern_valid_rate = _mean(pattern_valid_values)
+    crochetable_rate = _mean(crochetable_values)
     parade_export_rate = _mean(parade_export_values)
     case_pass_rate = _mean(case_pass_values)
     passed = bool(
@@ -551,6 +576,8 @@ def evaluate_dataset(
         and case_pass_rate >= thresholds.min_case_pass_rate
         and pattern_valid_rate is not None
         and pattern_valid_rate >= thresholds.min_pattern_valid_rate
+        and crochetable_rate is not None
+        and crochetable_rate >= thresholds.min_crochetable_rate
         and parade_export_rate is not None
         and parade_export_rate >= thresholds.min_parade_export_rate
         and (flare_accuracy is None or flare_accuracy >= thresholds.min_flare_accuracy)
@@ -583,14 +610,14 @@ def evaluate_dataset(
     fixed_case_pass_rate = _mean([
         float(c.get("part_recall", 0) >= 0.5
               and c["flare_match"] is True and c["color_top3_match"] is True
-              and c["pattern_valid"] and c["parade_export_ok"]) for c in case_reports
+              and c["pattern_valid"] and c["crochetable"] and c["parade_export_ok"]) for c in case_reports
     ])
     fixed_quality = bool(
         macro_part_f1 is not None and macro_part_f1 >= 0.6
         and fixed_case_pass_rate is not None and fixed_case_pass_rate >= 0.8
         and flare_accuracy is not None and flare_accuracy >= 0.8
         and color_top3_accuracy is not None and color_top3_accuracy >= 0.8
-        and pattern_valid_rate == 1 and parade_export_rate == 1
+        and pattern_valid_rate == 1 and crochetable_rate == 1 and parade_export_rate == 1
     )
     if not fixed_quality or not passed:
         reasons.append("quality metrics do not meet release floors and configured thresholds")
@@ -623,7 +650,7 @@ def evaluate_dataset(
     if macro_part_f1 is None or baseline_f1 is None or macro_part_f1 <= baseline_f1:
         reasons.append("delivered part macro F1 must exceed the fixed humanoid-template baseline")
     readiness = {
-        "policy_version": 2, "requested": release,
+        "policy_version": 3, "requested": release,
         "quality_metrics": {"delivered_parts_exact_rate": exact_rate,
                             "part_recall": part_recall, "flare_class_recall": flare_recall,
                             "fixed_template_macro_f1": baseline_f1},
@@ -657,7 +684,9 @@ def evaluate_dataset(
             "color_labeled_cases": len(color_matches),
             "color_top3_accuracy": color_top3_accuracy,
             "pattern_valid_rate": pattern_valid_rate,
+            "crochetable_rate": crochetable_rate,
             "parade_export_rate": parade_export_rate,
+            "parade_complete_rate": _mean(parade_complete_values),
             "parade_syntax_rate": _mean(parade_syntax_values),
             "passed": passed,
         },

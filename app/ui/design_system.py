@@ -223,6 +223,14 @@ hr {{
     border-color: var(--ink-hover);
     color: var(--paper);
 }}
+/* 禁用的主按钮不能仍显示为可点击的墨色（被门禁拦下的生成按钮等） */
+[data-testid="stBaseButton-primary"]:disabled,
+.stButton > button[kind="primary"]:disabled {{
+    background: var(--sheet);
+    border-color: var(--rule);
+    color: var(--ink-soft);
+    cursor: not-allowed;
+}}
 .stButton > button:focus-visible,
 .stDownloadButton > button:focus-visible,
 [data-testid="stTabs"] button[role="tab"]:focus-visible {{

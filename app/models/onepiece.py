@@ -11,7 +11,7 @@ from typing import Any
 from ..schemas import CrochetPart, CrochetStitch
 from .crochet_params import _change_note, _mark_staggered, bridge_rounds
 from .gauge import Gauge, next_shaping_stitch_count
-from .parts import _ONE_PIECE_NAME
+from .parts import _ONE_PIECE_NAME, ONE_PIECE_NECK_MARKER
 from .profile_shaping import strip_dome
 
 
@@ -82,7 +82,7 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
             before = merged_sts[i - 1]
             notes = _change_note(before, n)
             if i == len(head_kept) - 1 and i > 0:
-                notes += "；此处为颈部，不断线直接钩身体"
+                notes += f"；{ONE_PIECE_NECK_MARKER}，不断线直接钩身体"
         rounds_raw.append({
             "row": i + 1, "stitches": n, "notes": notes,
             "increase": max(0, n - merged_sts[i - 1]) if i else 0,

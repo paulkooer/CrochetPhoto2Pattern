@@ -5,6 +5,8 @@ import uuid
 
 import streamlit as st
 
+from app.models.gauge import PRESET_LABELS
+
 
 def render_sidebar() -> None:
     with st.sidebar:
@@ -28,8 +30,7 @@ def render_sidebar() -> None:
             "密度预设",
             options=["classic", "dk", "fine", "custom"],
             value="classic",
-            format_func={"classic": "经典图解(粗线)", "dk": "DK 中粗",
-                         "fine": "紧密玩偶(2.5mm)", "custom": "自定义"}.get,
+            format_func={**PRESET_LABELS, "custom": "自定义"}.get,
             key="gauge_preset",
             help="钩 10×10cm 小样数一下针数×行数再选/填——所有尺寸、网格比例、"
                  "材料标签都由它推导（消除两层隐含几何互相矛盾的问题）",

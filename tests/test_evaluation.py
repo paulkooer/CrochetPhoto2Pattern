@@ -12,6 +12,7 @@ from app.evaluation import (
     load_evaluation_dataset,
     main,
 )
+from app.models.orchestrator import PipelineOrchestrator
 
 _REPO = Path(__file__).resolve().parents[1]
 
@@ -91,6 +92,11 @@ def _case(
     }
 
 
+def _rounds(peak):
+    return [{"row": i, "stitches": 6 * i, "increase": 6 if i > 1 else 0, "decrease": 0}
+            for i in range(1, peak // 6 + 1)]
+
+
 def _valid_result(parts, colors, *, flare):
     parts = list(dict.fromkeys([*parts, *(["裙子"] if flare else [])]))
     structure_parts = [{"name": name} for name in parts]
@@ -103,7 +109,8 @@ def _valid_result(parts, colors, *, flare):
                 # 与真实生成器一致：除腰部环起的裙子外均以魔法环起针
                 # （F-13）；裙子为环形起针，Parade 无法忠实导出（F-10）。
                 "magic_ring": name != "裙子",
-                "rounds": [{"row": 1, "stitches": 6, "increase": 0, "decrease": 0}],
+                # 头部、身体达到可钩性下限（真实图解最小约 24 针）
+                "rounds": _rounds(24 if name in ("头部", "身体") else 6),
             } for name in parts]
         },
     }
@@ -145,28 +152,34 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
 
     report = evaluate_dataset(tmp_path, runner=runner)
     assert report["evaluator"]["network_images_sent"] is False
-    # 带裙案例（red-skirt）含环形起针的裙子，Parade 无法忠实导出（F-10），故
-    # 其 parade_export_ok=False，parade_export_rate 与 case_pass_rate 降为 0.5。
-    # 这是去膨胀后的真实口径（审核 F-10 验收：独立裙筒 complete is False）。
+    # 带裙案例（red-skirt）含环形起针的裙子，Parade 无法忠实导出（F-10）。
+    # 策略 v3 把它登记为导出器声明不支持的构造：严格完整率降为 0.5，但不计为
+    # 导出失败；其余内容仍须完整翻译。
     assert report["summary"] == {
         "cases": 2,
         "tag_counts": {"test-fixture": 2},
         "pipeline_errors": 0,
         "macro_part_f1": 1.0,
-        "case_pass_rate": 0.5,
+        "case_pass_rate": 1.0,
         "flare_labeled_cases": 2,
         "flare_accuracy": 1.0,
         "color_labeled_cases": 2,
         "color_top3_accuracy": 1.0,
         "pattern_valid_rate": 1.0,
-        "parade_export_rate": 0.5,
+        "crochetable_rate": 1.0,
+        "parade_export_rate": 1.0,
+        "parade_complete_rate": 0.5,
         "parade_syntax_rate": 1.0,
-        "passed": False,
+        "passed": True,
     }
     by_id = {case["id"]: case for case in report["cases"]}
-    assert by_id["blue-doll"]["passed"] and by_id["blue-doll"]["parade_export_ok"]
-    assert not by_id["red-skirt"]["passed"] and not by_id["red-skirt"]["parade_export_ok"]
-    assert report["report_schema_version"] == 3
+    assert by_id["blue-doll"]["passed"] and by_id["blue-doll"]["parade_complete"]
+    skirt = by_id["red-skirt"]
+    assert skirt["passed"] and skirt["parade_export_ok"] and not skirt["parade_complete"]
+    assert skirt["parade_export"]["unsupported_constructions"] == [
+        {"part": "裙子", "construction": "ring_start"}]
+    assert skirt["parade_export"]["failures"] == []
+    assert report["report_schema_version"] == 4
     assert report["cases"][0]["rights"]["copyright_basis"] == "self_owned"
 
 
@@ -457,14 +470,14 @@ def test_release_rejects_duplicate_content_and_missing_labels(tmp_path):
     assert any("scene" in reason for reason in readiness["blocking_reasons"])
 
 
-def test_release_floors_block_until_parade_supports_ring_starts(tmp_path):
-    """发布级门槛正确应用，且暴露 F-10 已知限制。
+def test_release_floors_count_declared_ring_starts_separately(tmp_path):
+    """发布级门槛正确应用，F-10 的环形起针单独统计。
 
-    发布策略要求同时覆盖有裙/无裙（各≥5 例），而带裙案例含环形起针的裙子，
-    Parade 无法忠实导出（complete=False，F-10），固定下限 parade_export_rate=1.0
-    因此无法随必需的裙摆覆盖达标。本测试钉死：除 Parade 外各项满分时，自动门槛
-    仍因 parade_export_rate=0.5 被正确拦下，而非被旧口径误判通过。待 Parade 锁针
-    起环语法落地（或下调该下限）后，此场景方可自动通过（见 docs/evaluation.md）。
+    发布策略要求同时覆盖有裙/无裙（各≥5 例），而独立裙筒以环形起针，Parade
+    无法忠实导出（complete=False，F-10）。策略 v2 因此在逻辑上无法达标；策略 v3
+    把它登记为导出器声明不支持的构造：严格完整率如实报告 0.5，门槛使用“其余
+    内容完整翻译”的比例。除此之外各项满分时，自动检查可以通过，但发布批准仍
+    需人工复核和实体试钩（见 docs/evaluation.md）。
     """
     tags = ["full-body", "half-body", "occluded", "plain-background", "complex-background", "low-contrast"]
     cases = []
@@ -482,13 +495,16 @@ def test_release_floors_block_until_parade_supports_ring_starts(tmp_path):
         ["头部"], ["蓝色"], flare=bool(image.getpixel((0, 0))[0] % 2)))
     assert report["thresholds"]["min_cases"] == 30
     assert report["thresholds"]["min_case_part_recall"] == 0.5
-    # 裙件 Parade 不完整 → 导出率 0.5；其余质量项满分（见下）。
-    assert report["summary"]["parade_export_rate"] == 0.5
+    assert report["thresholds"]["min_crochetable_rate"] == 1.0
+    # 裙件 Parade 严格完整率 0.5；声明的环形起针之外全部完整翻译。
+    assert report["summary"]["parade_complete_rate"] == 0.5
+    assert report["summary"]["parade_export_rate"] == 1.0
     assert report["summary"]["parade_syntax_rate"] == 1.0
+    assert report["summary"]["crochetable_rate"] == 1.0
     assert report["summary"]["flare_accuracy"] == 1.0
     assert report["summary"]["macro_part_f1"] == 1.0
-    # 唯一阻断来自质量下限（parade_export_rate < 1.0），门槛被正确拦下。
-    assert not report["release_readiness"]["automated_passed"]
+    assert report["release_readiness"]["policy_version"] == 3
+    assert report["release_readiness"]["automated_passed"], report["release_readiness"]["blocking_reasons"]
     assert not report["release_readiness"]["release_approved"]
     assert report["release_readiness"]["manual_checks_required"]
     assert report["evaluator"]["mode"] == "custom_runner"
@@ -577,3 +593,52 @@ def test_evaluation_expands_only_real_onepiece_parts(tmp_path, kind):
         assert case_report["passed"]
     else:
         assert not case_report["passed"]
+
+
+def _single_case(tmp_path, parts, *, flare=False):
+    digest = _write_image(tmp_path / "one.png", (10, 20, 30))
+    payload = _manifest([_case("one", "one.png", digest, parts, flare=flare, colors=["蓝色"])])
+    payload["thresholds"]["min_cases"] = 1
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
+def test_degenerate_geometry_fails_case_without_hiding_other_metrics(tmp_path):
+    _single_case(tmp_path, ["头部", "身体"])
+    result = _valid_result(["头部", "身体"], ["蓝色"], flare=False)
+    result["params"]["parts"][0]["rounds"] = _rounds(12)
+    report = evaluate_dataset(tmp_path, runner=lambda _image: result)
+    case = report["cases"][0]
+    assert case["error"] is None and case["pattern_valid"] and case["part_f1"] == 1.0
+    assert case["crochetable"] is False and not case["passed"]
+    assert [(f["part"], f["level"], f["peak_stitches"]) for f in case["crochetability"]] == [
+        ("头部", "block", 12)]
+    assert report["summary"]["crochetable_rate"] == 0.0
+    assert report["summary"]["passed"] is False
+
+
+def test_default_runner_scores_crochetability_instead_of_raising(tmp_path, monkeypatch):
+    seen = {}
+    real = PipelineOrchestrator.run_full_pipeline
+
+    def spy(self, image, **kwargs):
+        seen.update(kwargs)
+        return real(self, image, **kwargs)
+
+    monkeypatch.setattr(PipelineOrchestrator, "run_full_pipeline", spy)
+    _single_case(tmp_path, ["头部", "身体", "手臂", "腿部"])
+    case = evaluate_dataset(tmp_path)["cases"][0]
+    assert seen["enforce_crochetability"] is False
+    assert case["error"] is None and case["crochetable"] is True
+
+
+def test_declared_ring_start_does_not_excuse_other_parade_failures(tmp_path):
+    _single_case(tmp_path, ["头部", "裙子"], flare=True)
+    result = _valid_result(["头部"], ["蓝色"], flare=True)
+    result["params"]["parts"][0]["rounds"].append(
+        {"row": 5, "stitches": 25, "increase": 2, "decrease": 1})
+    case = evaluate_dataset(tmp_path, runner=lambda _image: result)["cases"][0]
+    assert case["parade_export"]["unsupported_constructions"] == [
+        {"part": "裙子", "construction": "ring_start"}]
+    assert case["parade_export"]["failures"]
+    assert case["parade_export_ok"] is False and case["parade_complete"] is False
+    assert not case["passed"]

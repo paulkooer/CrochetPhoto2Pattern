@@ -606,6 +606,14 @@ def render_results(result: dict, slot: str) -> None:
                    + "\n".join(md_safe(issue) for issue in _v["issues"]))
     if _v.get("notes"):
         st.caption("ℹ️ " + "；".join(md_safe(n) for n in _v["notes"]))
+    # 已有图解（导入、编辑或重算）只提示；首次生成时的阻断见 app/models/crochetability.py
+    from app.models.crochetability import crochetability_findings
+    _crochetability = crochetability_findings(params)
+    if _concerns := [f for f in _crochetability if f.level != "note"]:
+        st.warning("⚠️ 可钩性提示：" + "；".join(md_safe(f.message) for f in _concerns)
+                   + "。可在「局部修正 → 快速调整尺寸」增大尺寸后重新生成。")
+    if _small := [f for f in _crochetability if f.level == "note"]:
+        st.caption("ℹ️ " + "；".join(md_safe(f.message) for f in _small) + "。")
     shaping_label = "默认密度" if _v["ok"] and has_independent_gauge(params) else "当前密度"
     st.caption(
         f"塑形口径：{shaping_label}的连续几何变化率约 "
