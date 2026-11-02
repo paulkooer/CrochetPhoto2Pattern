@@ -1,15 +1,38 @@
-"""Progress snapshots independent of ephemeral result/widget IDs."""
+"""Physical-round progress keyed by semantic identity, independent of widget keys.
+
+Each tab keeps one record ``{"result_id", "completed"}`` in its session state.
+The record is the single source of truth: checkboxes are initialized from it and
+write back through callbacks, and edits replace it with the retained identities
+instead of migrating widget keys between result IDs.
+"""
 from __future__ import annotations
 
 import json
 from collections import Counter
+from collections.abc import Mapping, MutableMapping
 
 MAX_INLINE_ROUNDS = 500
 PROGRESS_PAGE_SIZE = 50
 
 
-def progress_store_key(result: dict, slot: str) -> str:
-    return f"progress_{result.get('result_id') or slot}"
+def progress_record_key(slot: str) -> str:
+    return f"project_progress_{slot}"
+
+
+def completed_rounds(result: dict, slot: str, state: Mapping) -> dict[str, bool]:
+    """The live record for ``result``; a record left by another result reads as empty."""
+    record = state.get(progress_record_key(slot))
+    if not isinstance(record, dict) or record.get("result_id") != (result.get("result_id") or slot):
+        return {}
+    return record["completed"]
+
+
+def store_completed_rounds(result: dict, slot: str, progress: Mapping[str, bool],
+                           state: MutableMapping) -> dict[str, bool]:
+    """Replace the tab's record with ``progress`` for ``result`` and return the stored dict."""
+    completed = {identity: True for identity, done in progress.items() if done}
+    state[progress_record_key(slot)] = {"result_id": result.get("result_id") or slot, "completed": completed}
+    return completed
 
 
 def physical_rounds(result: dict) -> int:
@@ -126,10 +149,10 @@ def progress_entries(result: dict, slot: str, *, part_index: int | None = None):
                 yield identity, f"{prefix}{index}", part
 
 
-def capture_progress(result: dict, slot: str, state) -> dict[str, bool]:
-    durable = state.get(progress_store_key(result, slot), {})
-    return {identity: True for identity, key, _ in progress_entries(result, slot)
-            if state.get(key, durable.get(key, False))}
+def capture_progress(result: dict, slot: str, state: Mapping) -> dict[str, bool]:
+    """A copy of the live progress, limited to the result's current physical rounds."""
+    completed = completed_rounds(result, slot, state)
+    return {identity: True for identity, _, _ in progress_entries(result, slot) if completed.get(identity)}
 
 
 def progress_limits(current: dict, updated: dict) -> dict[str, int]:
@@ -288,10 +311,7 @@ def progress_impact(current: dict, updated: dict, slot: str, progress: dict) -> 
     return summary
 
 
-def install_progress(result: dict, slot: str, progress: dict, state) -> None:
-    destination = {} if physical_rounds(result) > MAX_INLINE_ROUNDS else state
-    for identity, key, _ in progress_entries(result, slot):
-        if progress.get(identity):
-            destination[key] = True
-    if destination is not state:
-        state[progress_store_key(result, slot)] = destination
+def install_progress(result: dict, slot: str, progress: Mapping[str, bool], state: MutableMapping) -> None:
+    """Record ``progress`` for ``result``; checkboxes initialize from it when rendered."""
+    known = {identity for identity, _, _ in progress_entries(result, slot)}
+    store_completed_rounds(result, slot, {k: v for k, v in progress.items() if k in known}, state)

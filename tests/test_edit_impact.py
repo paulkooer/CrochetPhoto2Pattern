@@ -8,6 +8,7 @@ from streamlit.testing.v1 import AppTest
 from app.services.progress_state import progress_entries, progress_impact, retained_progress
 from app.services.result_logic import import_backup
 from app.utils.project import project_backup, read_project_state
+from tests.progress_helpers import seed_progress
 from tests.test_project_backup import RENDER, _result
 
 
@@ -126,7 +127,7 @@ def test_cancel_preview_keeps_the_pattern_progress_and_notes():
     result = _flat()
     at = AppTest.from_string(RENDER, default_timeout=30)
     at.session_state["result"] = result
-    at.session_state["chk_project_手臂_0"] = True
+    seed_progress(at.session_state, result, {"chk_project_手臂_0"})
     at.session_state["project_notes_project"] = "保留此备注"
     at.run()
     at.button(key="edit_project_json_preview").click().run()

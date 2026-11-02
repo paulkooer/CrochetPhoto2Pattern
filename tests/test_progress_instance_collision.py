@@ -10,7 +10,6 @@ from hypothesis import strategies as st
 from streamlit.testing.v1 import AppTest
 
 from app.services.progress_state import (
-    capture_progress,
     install_progress,
     progress_entries,
     progress_impact,
@@ -18,6 +17,7 @@ from app.services.progress_state import (
 )
 from app.services.result_logic import import_backup, rebuild_params
 from app.utils.project import project_backup, read_project_state
+from tests.progress_helpers import checked_keys, progress_from_keys
 from tests.test_app_smoke import _mock_result
 from tests.test_project_backup import RENDER
 from tests.test_swatch_provenance import source
@@ -43,16 +43,17 @@ def test_project_roundtrip_preserves_each_copy_independently(copies):
     entries = [(identity, key) for identity, key, part in progress_entries(result, "result")
                if part["name"] == "头部" and json.loads(identity)[2] == 1]
     assert len(entries) == 2 and entries[0][0] != entries[1][0]
-    progress = capture_progress(result, "result", {entries[i - 1][1]: True for i in copies})
+    progress = progress_from_keys(result, {entries[i - 1][1] for i in copies})
     project = project_backup(result, progress, "保留其他线索")
     assert project["project_state"]["progress_identity_version"] == "2"
     restored = import_backup(project, "restored")
     saved, notes = read_project_state(project, restored)
-    widgets = {}
-    install_progress(restored, "result", saved, widgets)
+    state = {}
+    install_progress(restored, "result", saved, state)
     assert notes == "保留其他线索"
+    shown = checked_keys(restored, state)
     for i, key in enumerate(("chk_restored_头部_0", "chk_restored_头部_copy2_0"), start=1):
-        assert bool(widgets.get(key)) == (i in copies)
+        assert (key in shown) == (i in copies)
 
 
 def test_paged_progress_keeps_its_physical_copy_after_project_restore():
@@ -61,14 +62,14 @@ def test_paged_progress_keeps_its_physical_copy_after_project_restore():
     head["rounds"] = [{"row": i + 1, "stitches": 6, "increase": 0, "decrease": 0,
                        "notes": "魔法环起6针（X×6）" if i == 0 else "6X"} for i in range(300)]
     result["params"] = rebuild_params(result["params"])
-    progress = capture_progress(result, "result", {"progress_paged": {"chk_paged_头部_copy2_299": True}})
+    progress = progress_from_keys(result, {"chk_paged_头部_copy2_299"})
     project = project_backup(result, progress, "分页进度")
     restored = import_backup(project, "newpage")
     saved, notes = read_project_state(project, restored)
     state = {}
     install_progress(restored, "result", saved, state)
     assert notes == "分页进度"
-    assert state["progress_newpage"] == {"chk_newpage_头部_copy2_299": True}
+    assert checked_keys(restored, state) == {"chk_newpage_头部_copy2_299"}
 
 
 def test_nonconflicting_projects_keep_existing_identity_format():
@@ -109,13 +110,14 @@ def test_generated_copy_identities_and_selected_progress_are_independent(graph_i
     entries = list(progress_entries(result, "result"))
     assert len({identity for identity, _, _ in entries}) == len(entries)
     chosen = {index for index in selected if index < len(entries)}
-    state = {key: True for index, (_, key, _) in enumerate(entries) if index in chosen}
-    progress = capture_progress(result, "result", state)
+    ticked = {key for index, (_, key, _) in enumerate(entries) if index in chosen}
+    progress = progress_from_keys(result, ticked)
     restored = {**result, "result_id": "after"}
     installed = {}
     install_progress(restored, "result", progress, installed)
     after = list(progress_entries(restored, "result"))
-    assert {index for index, (_, key, _) in enumerate(after) if installed.get(key)} == chosen
+    shown = checked_keys(restored, installed)
+    assert {index for index, (_, key, _) in enumerate(after) if key in shown} == chosen
 
 
 @pytest.mark.parametrize("new_graph_id", ["renamed", "copy2_"])
@@ -128,10 +130,10 @@ def test_changing_a_graph_id_never_moves_progress_to_another_copy(new_graph_id):
            if part["name"] == "头部" and json.loads(identity)[2] == 1]
     new = [(identity, key) for identity, key, part in progress_entries(updated, "result")
            if part["name"] == "头部" and json.loads(identity)[2] == 1]
-    first_only = capture_progress(current, "result", {old[0][1]: True})
+    first_only = progress_from_keys(current, {old[0][1]})
     assert retained_progress(current, updated, "result", first_only) == {}
 
-    second_only = capture_progress(current, "result", {old[1][1]: True})
+    second_only = progress_from_keys(current, {old[1][1]})
     assert retained_progress(current, updated, "result", second_only) == {new[1][0]: True}
     impact = next(row for row in progress_impact(current, updated, "result", second_only)
                   if row["部件"] == "头部")
@@ -157,8 +159,9 @@ def test_legacy_ambiguous_progress_requires_explicit_recovery():
     assert len(progress) == 1 and json.loads(next(iter(progress)))[0] == "帽子"
     state = {}
     install_progress(result, "result", progress, state)
-    assert state["chk_restored_帽子_0"]
-    assert "chk_restored_头部_0" not in state and "chk_restored_头部_copy2_0" not in state
+    shown = checked_keys(result, state)
+    assert "chk_restored_帽子_0" in shown
+    assert "chk_restored_头部_0" not in shown and "chk_restored_头部_copy2_0" not in shown
     assert data == original
 
 
@@ -198,9 +201,9 @@ def test_ui_requires_explicit_recovery_and_preserves_other_progress_and_notes():
     restored = at.session_state["result"]
     rid = restored["result_id"]
     assert at.session_state[f"project_notes_{rid}"] == "原始合成备注"
-    assert at.session_state[f"chk_{rid}_帽子_0"]
-    assert f"chk_{rid}_头部_0" not in at.session_state
-    assert f"chk_{rid}_头部_copy2_0" not in at.session_state
+    shown = checked_keys(restored, at.session_state)
+    assert f"chk_{rid}_帽子_0" in shown
+    assert f"chk_{rid}_头部_0" not in shown and f"chk_{rid}_头部_copy2_0" not in shown
     assert at.session_state[f"project_recovery_notice_{rid}"]
 
 

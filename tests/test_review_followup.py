@@ -102,10 +102,10 @@ def test_numeric_edit_requires_confirmation_for_unrecognized_instructions(result
 
 
 def test_progress_follows_instance_identity_and_gauge_changes_invalidate(result):
-    from app.services.progress_state import capture_progress, install_progress, retained_progress
+    from app.services.progress_state import install_progress, retained_progress
+    from tests.progress_helpers import checked_keys, progress_from_keys
 
-    state = {"chk_followup_手臂_copy2_0": True}
-    progress = capture_progress(result, "result", state)
+    progress = progress_from_keys(result, {"chk_followup_手臂_copy2_0"})
     updated = deepcopy(result)
     arm = next(p for p in updated["structure"]["parts"] if p["name"] == "手臂")
     arm["instances"].reverse()
@@ -113,7 +113,7 @@ def test_progress_follows_instance_identity_and_gauge_changes_invalidate(result)
     kept = retained_progress(result, updated, "result", progress)
     destination = {}
     install_progress(updated, "result", kept, destination)
-    assert destination == {"chk_reordered_手臂_0": True}
+    assert checked_keys(updated, destination) == {"chk_reordered_手臂_0"}
     arm["instances"].pop(0)
     arm["count"] = 1
     next(p for p in updated["params"]["parts"] if p["name"] == "手臂")["quantity"] = 1
