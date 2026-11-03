@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-03 Static analysis-data type
+
+- Add `AnalysisData` for the session result's `analysis` field, matching `ImageAnalysis` so mypy can check field names and value types. `ImageAnalysis.to_data()` returns the same plain serialized dict; imports and size regeneration retain their existing validation and data formats.
+- Tests compare model fields, value types and required keys, and cover typed access and legacy backups missing optional fields. The type adds no runtime validation; callers constructing `PatternResult` directly remain responsible for valid nested data.
+
 ### Changed — 2026-11-02 Static result types
 
 - Add static types for session results in `app.schemas`: `ResultData`, `PatternParams`, `PartData` and `RoundData` (`TypedDict`). At runtime results remain plain dicts; the types are for mypy only. `tests/test_result_types.py` checks that their fields match `CrochetStitch`, `CrochetPart` and `RESULT_KEYS`, and that generators produce only declared keys.

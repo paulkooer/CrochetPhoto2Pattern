@@ -1,13 +1,15 @@
 """The static result types describe exactly what the models and generators produce."""
 from types import UnionType
-from typing import Annotated, Union, get_args, get_origin, get_type_hints
+from typing import Annotated, Union, assert_type, get_args, get_origin, get_type_hints
 
 import pytest
 
 from app.schemas import (
     RESULT_KEYS,
+    AnalysisData,
     CrochetPart,
     CrochetStitch,
+    ImageAnalysis,
     PartData,
     PartGauge,
     PatternParams,
@@ -18,13 +20,15 @@ from app.schemas import (
 from tests.test_app_smoke import _mock_result
 
 
-@pytest.mark.parametrize(("typed", "model"), [(RoundData, CrochetStitch), (PartData, CrochetPart)])
-def test_part_and_round_types_match_their_models(typed, model):
+@pytest.mark.parametrize(("typed", "model"), [
+    (AnalysisData, ImageAnalysis), (RoundData, CrochetStitch), (PartData, CrochetPart),
+])
+def test_data_fields_match_their_models(typed, model):
     assert set(get_type_hints(typed)) == set(model.model_fields)
 
 
 def _serialized_type(annotation):
-    """Compare model field types after stripping validation and serializing rounds."""
+    """Strip validation annotations and normalize serialized round types."""
     origin = get_origin(annotation)
     if origin is Annotated:
         return _serialized_type(get_args(annotation)[0])
@@ -36,9 +40,10 @@ def _serialized_type(annotation):
 
 
 @pytest.mark.parametrize(("typed", "model", "exceptions"), [
+    (AnalysisData, ImageAnalysis, set()),
     (RoundData, CrochetStitch, set()),
     (PartData, CrochetPart, {"gauge"}),
-    (ResultData, PatternResult, {"params", "result_id", "history_id"}),
+    (ResultData, PatternResult, {"analysis", "params", "result_id", "history_id"}),
 ])
 def test_serialized_field_types_match_their_models(typed, model, exceptions):
     for name, annotation in get_type_hints(typed).items():
@@ -60,6 +65,8 @@ def test_part_gauge_type_matches_the_serialized_model():
 
 
 def test_required_keys_for_session_shapes():
+    assert AnalysisData.__required_keys__ == {
+        name for name, field in ImageAnalysis.model_fields.items() if field.is_required()}
     assert RoundData.__required_keys__ == {"row", "stitches"}
     assert PartData.__required_keys__ == {"name", "rounds"}
     assert PatternParams.__required_keys__ == {"parts"}
@@ -96,3 +103,35 @@ def test_generated_params_use_only_declared_keys(style):
 def test_crochet_part_to_data_is_its_dump():
     part = CrochetPart(**_mock_result("typed")["params"]["parts"][0])
     assert part.to_data() == part.model_dump()
+
+
+def test_analysis_data_is_a_plain_model_dump() -> None:
+    from app.models.image_parser import ImageParser
+
+    analysis = ImageParser._mock_analysis()
+    data = analysis.to_data()
+    assert type(data) is dict
+    assert data == analysis.model_dump()
+
+
+def test_result_analysis_fields_are_statically_typed() -> None:
+    from app.models.image_parser import ImageParser
+
+    result: ResultData = {"analysis": ImageParser._mock_analysis().to_data(),
+                          "structure": {}, "params": {"parts": []}}
+    assert_type(result["analysis"]["body_type"], str)
+    assert_type(result["analysis"]["head_diameter_cm"], float)
+    assert_type(result["analysis"]["parts"], list[str])
+    assert_type(result["analysis"].get("recommended_colors"), list[str] | None)
+
+
+def test_legacy_analysis_is_normalized_on_import():
+    from app.services.result_logic import import_backup
+
+    original = _mock_result("legacy-analysis")
+    backup = PatternResult.from_result(original).to_backup()
+    for key in ("recommended_colors", "hair_color", "top_color", "bottom_color", "clothing_type"):
+        backup["analysis"].pop(key, None)
+    restored = import_backup(backup, "restored")
+    assert restored["analysis"] == ImageAnalysis(**backup["analysis"]).model_dump()
+    assert type(restored["analysis"]) is dict

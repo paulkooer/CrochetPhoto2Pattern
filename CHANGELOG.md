@@ -8,6 +8,11 @@
 
 ## Unreleased
 
+### Changed — 2026-11-03 分析数据静态类型
+
+- 新增 `AnalysisData`，为会话结果的 `analysis` 字段提供与 `ImageAnalysis` 对齐的静态类型；mypy 现在可以检查字段拼写及值类型。`ImageAnalysis.to_data()` 返回模型序列化后的普通 dict，导入和尺寸重算沿用原有校验及数据格式。
+- 测试核对模型的字段、类型与必填键，并覆盖静态字段访问和缺少可选字段的旧备份。类型声明不会新增运行时校验；直接构造 `PatternResult` 的调用方仍须保证嵌套数据有效。
+
 ### Changed — 2026-11-02 结果数据静态类型
 
 - 在 `app.schemas` 中新增会话结果的静态类型：`ResultData`、`PatternParams`、`PartData`、`RoundData`（`TypedDict`）。运行时仍是原来的纯 dict，只供 mypy 检查。`tests/test_result_types.py` 核对字段与 `CrochetStitch`、`CrochetPart`、`RESULT_KEYS` 一致，并确认生成器只产出已声明的键。

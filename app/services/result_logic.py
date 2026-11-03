@@ -25,7 +25,14 @@ from app.models.gauge import (
 from app.models.geometry import PROPORTIONS_HEAD_BODY_PREFIX, normalize_structure
 from app.models.head_opening import HEAD_OPENING_KEY, has_declared_head_opening, head_opening_target
 from app.models.sizing import sizing_meta_for_analysis
-from app.schemas import MAX_PATTERN_PARTS, ImageAnalysis, PatternParams, PatternResult, ResultData
+from app.schemas import (
+    MAX_PATTERN_PARTS,
+    AnalysisData,
+    ImageAnalysis,
+    PatternParams,
+    PatternResult,
+    ResultData,
+)
 
 # 与侧栏"塑形选项（进阶）"的默认值同源；result["style"] 缺失时兜底
 STYLE_DEFAULTS: dict[str, Any] = {
@@ -131,14 +138,14 @@ def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bo
     return rebuilt
 
 
-def validate_backup(data: dict) -> tuple[dict, dict]:
+def validate_backup(data: dict) -> tuple[AnalysisData, dict]:
     """备份 JSON → (analysis, structure)，与 params 同等待遇的入参校验。
 
     旧版只重建 params，analysis/structure 原样入库——手改坏的结构要到
     下一次 rerun 的渲染层才崩（import 的 try 管不到那里），表现为
     Streamlit 异常页。在这里拦住，错误以 st.error 呈现。
     """
-    analysis = ImageAnalysis(**data["analysis"]).model_dump()
+    analysis = ImageAnalysis(**data["analysis"]).to_data()
     # V2 is a real graph contract: reject dangling attachment/mirror IDs,
     # invalid coordinates and count/instance mismatches at the import edge.
     # Legacy backups retain their historical minimal contract.
@@ -153,10 +160,11 @@ def regenerate_with_size(result: ResultData, new_head: float, new_height: float)
     纯本地计算，无 API 成本。
     """
     previous = ImageAnalysis(**result["analysis"])
-    analysis = ImageAnalysis(**{
+    edited_analysis: AnalysisData = {
         **result["analysis"],
         "head_diameter_cm": new_head, "height_cm": new_height,
-    })
+    }
+    analysis = ImageAnalysis(**edited_analysis)
     current_structure = normalize_structure(result["structure"])
     current_head = next((part["diameter_cm"] for part in current_structure["parts"]
                          if part["name"] == "头部" and part.get("diameter_cm")),
@@ -184,7 +192,7 @@ def regenerate_with_size(result: ResultData, new_head: float, new_height: float)
     updated = PatternResult.from_result({
         **result,
         "generator_version": software_version(),
-        "analysis": analysis.model_dump(),
+        "analysis": analysis.to_data(),
         "structure": structure,
         "params": params,
         "gauge": asdict(gauge),
