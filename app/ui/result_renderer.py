@@ -208,11 +208,11 @@ def _render_paged_progress(result: ResultData, slot: str) -> None:
     done = sum(bool(completed.get(identity)) for identity, _ in entries)
     st.progress(done / len(entries) if entries else 0,
                 text=f"{md_safe(part['name'])}：已完成 {done}/{len(entries)} 圈次")
-    left, right = st.columns(2)
-    left.button("重置进度", key=f"clear_{rid}_{part['name']}",
-                on_click=set_completed, args=(False,))
-    right.button("全部完成", key=f"all_{rid}_{part['name']}",
-                 on_click=set_completed, args=(True,))
+    with st.container(horizontal=True):
+        st.button("重置进度", key=f"clear_{rid}_{part['name']}",
+                  on_click=set_completed, args=(False,))
+        st.button("全部完成", key=f"all_{rid}_{part['name']}",
+                  on_click=set_completed, args=(True,))
     pages = max(1, (len(entries) + PROGRESS_PAGE_SIZE - 1) // PROGRESS_PAGE_SIZE)
     next_offset = next((i for i, (identity, _) in enumerate(entries) if not completed.get(identity)), None)
     if next_offset is not None:
@@ -313,11 +313,10 @@ def _render_part_progress(
         st.progress(
             pct, text=f"钩织进度 {pct}%  ({n_done}/{physical_rounds} 圈次)")
         st.markdown("**逐圈进度**：勾选已完成的圈")
-        col_clear, col_all = st.columns(2)
-        with col_clear:
+        # Two content-width buttons side by side; st.columns(2) spread them half a panel apart.
+        with st.container(horizontal=True):
             st.button("重置进度", key=f"clear_{part_key}",
                       on_click=set_completed, args=(False,))
-        with col_all:
             st.button("全部完成", key=f"all_{part_key}",
                       on_click=set_completed, args=(True,))
         for copy, copy_entries in enumerate(entries_by_copy, 1):
@@ -733,58 +732,54 @@ def render_results(result: ResultData, slot: str) -> None:
     if success := ws["success"]:
         ws["success"] = None
         st.success(success)
-    from app.ui.edit_history import commit_edit, preview_edit
-    from app.ui.pattern_editor import render_pattern_editor
+    from app.ui.edit_history import preview_edit
+    from app.ui.pattern_editor import apply_edit_with_notice, render_pattern_editor
 
-    def apply_edit(updated: ResultData, success: str) -> None:
-        installed = commit_edit(slot, result, updated)
-        if installed is not result:
-            workspace(installed, slot, st.session_state)["success"] = success
-        st.rerun()
-
+    # Undo/redo first, then the common editors in order of use (size → parts and
+    # rounds → materials). Raw JSON editing is the advanced layer below them.
     render_pattern_editor(result, slot)
-    st.caption("也可使用下方尺寸滑块或高级 JSON 编辑。")
 
-    # ── 快速调整尺寸（不重新调用 AI）：改头径/身高 → 结构+参数层重算 ──────
-    # 生成时的 style/gauge/色带随 result 透传，重生成与首次行为一致；
-    # 纯本地计算，无 API 成本，比手改 JSON 快且不会改坏结构。
-    with st.expander("快速调整尺寸（不重新识别照片）", expanded=False):
-        st.caption("保留已编辑的部件、数量、位姿、连接与颜色；头径使用指定值，其他尺寸按比例缩放。")
-        _current_head = next((p.get("diameter_cm") for p in structure.get("parts", [])
-                              if p.get("name") == "头部" and p.get("diameter_cm")), None)
-        _current_head = float(_current_head or analysis.get("head_diameter_cm") or 9.0)
-        _current_height = float(analysis.get("height_cm") or 18.0)
-        if _current_head != float(analysis.get("head_diameter_cm") or _current_head):
-            st.caption("当前结构头径与原分析不同；提交会同步头径，可能重算依赖尺寸的部件，建议先预览。")
-        _sz_c1, _sz_c2 = st.columns(2)
-        with _sz_c1:
-            _new_head = st.slider(
-                "头部直径 (cm)", min(4.0, _current_head), max(20.0, _current_head),
-                _current_head, 0.5,
-                key=f"sz_head_{result_key}")
-        with _sz_c2:
-            _new_height = st.slider(
-                "整体高度 (cm)", min(10.0, _current_height), max(60.0, _current_height),
-                _current_height, 0.5,
-                key=f"sz_height_{result_key}")
-        preview_size = st.button("预览尺寸修改影响", key=f"edit_{result_key}_size_preview")
-        apply_size = st.button("按新尺寸重新生成", key=f"sz_go_{result_key}")
-        if apply_size or preview_size:
+    serializable_params = json.loads(
+        json.dumps(params, default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o),
+                   ensure_ascii=False, indent=2)
+    )
+    applied_params_json = json.dumps(serializable_params, ensure_ascii=False, indent=2)
+
+    # ── 高级编辑：输出 JSON 与结构 JSON 共用一个默认折叠的面板 ──────────────
+    # 两段编辑器始终同时渲染，不用单选切换：Streamlit 会丢弃未渲染控件的状态，
+    # 切换会让尚未应用的草稿消失。
+    with st.expander("高级编辑（JSON）", expanded=False):
+        st.caption("直接编辑生成结果或部件结构的 JSON；建议先预览影响再应用。"
+                   "尺寸、部件、逐圈与材料的常用修正请使用上方面板。")
+        correction_json = st.text_area(
+            "编辑 JSON 输出",
+            applied_params_json,
+            height=300,
+            key=f"json_edit_{result_key}",
+        )
+        draft_pending = correction_json != applied_params_json
+        if draft_pending:
+            st.caption("JSON 草稿尚未应用。请点击「重新生成」应用修改；"
+                       "下载、分享和存入历史使用当前已应用的图解。")
+        with st.container(horizontal=True):
+            preview_json = st.button("预览 JSON 修改影响", key=f"edit_{result_key}_json_preview")
+            apply_json = st.button("重新生成", key=f"regen_{result_key}")
+        if apply_json or preview_json:
             try:
-                # 业务逻辑在 result_logic（纯函数，可离线单测）
-                _new_result = result_logic.regenerate_with_size(
-                    result, _new_head, _new_height)
-                if preview_size:
-                    preview_edit(slot, result, _new_result)
+                corrected = json.loads(correction_json)
+                candidate = deepcopy(result)
+                candidate["params"] = rebuild_params(corrected)
+                candidate["gauge"] = candidate["params"].get("gauge")
+                if preview_json:
+                    preview_edit(slot, result, candidate)
                 else:
-                    apply_edit(_new_result, "✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！")
+                    apply_edit_with_notice(slot, result, candidate, "✅ 已根据修正更新图解，向上查看结果！")
             except Exception as e:
-                st.error(f"尺寸重生成失败: {md_safe(e)}")
+                st.error(f"解析/应用失败: {md_safe(e)}")
 
-    # ── StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI ──────
-    with st.expander("调整部件结构（高级）", expanded=False):
+        # ── StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI ──────
         st.caption(
-            "可修改部件尺寸、形状、数量、位置和连接节点。结构 v2 会严格检查 "
+            "部件结构 JSON：可修改部件尺寸、形状、数量、位置和连接节点。结构 v2 会严格检查 "
             "part_id、实例数量、镜像引用与 attachment 目标；修改数量时也要同步 "
             "instances。位置/旋转用于结构表达，连接节点影响装配说明；"
             "针数主要由形状和尺寸决定。")
@@ -794,8 +789,10 @@ def render_results(result: ResultData, slot: str) -> None:
             height=360,
             key=f"struct_edit_{result_key}",
         )
-        preview_structure = st.button("预览结构 JSON 修改影响", key=f"edit_{result_key}_structure_preview")
-        apply_structure = st.button("校验结构并重新生成", key=f"struct_go_{result_key}")
+        with st.container(horizontal=True):
+            preview_structure = st.button("预览结构 JSON 修改影响",
+                                          key=f"edit_{result_key}_structure_preview")
+            apply_structure = st.button("校验结构并重新生成", key=f"struct_go_{result_key}")
         if apply_structure or preview_structure:
             try:
                 # 校验 + 重生成在 result_logic（纯函数，可离线单测）
@@ -804,24 +801,10 @@ def render_results(result: ResultData, slot: str) -> None:
                 if preview_structure:
                     preview_edit(slot, result, _updated)
                 else:
-                    apply_edit(_updated, "✅ 已按修正后的部件结构重新生成图解与装配说明！")
+                    apply_edit_with_notice(slot, result, _updated,
+                                           "✅ 已按修正后的部件结构重新生成图解与装配说明！")
             except Exception as e:
                 st.error(f"结构校验或重生成失败: {md_safe(e)}")
-
-    serializable_params = json.loads(
-        json.dumps(params, default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o),
-                   ensure_ascii=False, indent=2)
-    )
-    applied_params_json = json.dumps(serializable_params, ensure_ascii=False, indent=2)
-    correction_json = st.text_area(
-        "编辑 JSON 输出",
-        applied_params_json,
-        height=300,
-        key=f"json_edit_{result_key}",
-    )
-    if correction_json != applied_params_json:
-        st.caption("JSON 草稿尚未应用。请点击「重新生成」应用修改；"
-                   "下载、分享和存入历史使用当前已应用的图解。")
 
     from app.models.runtime import timed_export
     from app.ui.export_cache import EXPORT_CACHE_VERSION, cached_export, parade_payload
@@ -847,77 +830,10 @@ def render_results(result: ResultData, slot: str) -> None:
         except Exception as exc:
             st.error(f"Markdown 生成失败：{md_safe(exc)}")
 
-    col_btn1, col_btn2, col_btn3 = st.columns(3)
-    with col_btn1:
-        preview_json = st.button("预览 JSON 修改影响", key=f"edit_{result_key}_json_preview")
-        apply_json = st.button("重新生成", key=f"regen_{result_key}")
-        if apply_json or preview_json:
-            try:
-                corrected = json.loads(correction_json)
-                candidate = deepcopy(result)
-                candidate["params"] = rebuild_params(corrected)
-                candidate["gauge"] = candidate["params"].get("gauge")
-                if preview_json:
-                    preview_edit(slot, result, candidate)
-                else:
-                    apply_edit(candidate, "✅ 已根据修正更新图解，向上查看结果！")
-            except Exception as e:
-                st.error(f"解析/应用失败: {md_safe(e)}")
-    with col_btn2:
-        st.download_button(
-            "下载 JSON",
-            applied_params_json,
-            file_name="amigurumi_pattern.json",
-            mime="application/json",
-            key=f"dl_json_{result_key}",
-        )
-    with col_btn3:
-        st.download_button(
-            "下载 Markdown 图解",
-            md_content,
-            file_name="amigurumi_pattern.md",
-            mime="text/markdown",
-            key=f"dl_md_{result_key}",
-            disabled=not md_ready,
-        )
-
-    # ── CrochetPARADE 导出（3D 验证）：独立 DSL 出口的差异化功能 ──────────
-    with st.expander("导出 CrochetPARADE（3D 验证）", expanded=False):
-        st.caption(
-            "把图解翻译为 [CrochetPARADE](https://crochetparade.org) 的文本语法："
-            "粘贴到其网页应用（本地计算、照片不外发）可得可旋转 3D 模型、"
-            "\"过松/过紧针目\"物理分析与逐针动画——本应用代数自检之外的"
-            "独立检查工具。语法映射基于其官方手册的已核对子集。")
-        st.caption("本应用只检查导出完整性与文本语法，尚未运行外部仿真；仿真结果也不能替代实体试钩。")
-        st.caption("可识别操作式保留针法顺序及明确的 FLO/BLO；挑针范围不清时停止该部件导出。"
-                   "仅文字描述的错位和收口动作需对照原图解核对。")
-        try:
-            if not _v["ok"]:
-                raise ValueError("请先修复图解自检错误")
-            _parade = cached_export(
-                export_cache, "parade", {"params": serializable_params, "export_version": software_version()},
-                lambda: parade_payload(result))
-            _parade_text = _parade["text"]
-            if _parade["inferred_rounds"]:
-                st.caption(f"{_parade['inferred_rounds']} 个实体圈次仅按数值均匀安排针位；"
-                           "其余可识别操作式保留针法顺序，特殊工艺及文字错位提示仍需核对。")
-            if not _parade["complete"]:
-                st.warning("仅导出部分图解；不可视为完整验证："
-                           f"{_parade['exported_rounds']}/{_parade['requested_rounds']} 圈次，"
-                           f"{_parade['exported_parts']}/{_parade['requested_parts']} 个完整实体部件。")
-            _parade_issues = _parade["issues"]
-            if _parade_issues:
-                st.warning("导出自检提示：\n" + "\n".join(md_safe(i)
-                                                       for i in _parade_issues))
-            st.code(_parade_text, language=None)
-            st.download_button(
-                "下载 CrochetPARADE DSL",
-                _parade_text,
-                file_name="amigurumi_parade.txt",
-                mime="text/plain",
-                key=f"dl_parade_{result_key}")
-        except Exception as e:
-            st.caption(f"CrochetPARADE 导出不可用: {md_safe(e)}")
+    # ── 下载与保存：常用出口始终可见，不进折叠面板 ─────────────────────────
+    st.markdown("**下载与保存**")
+    if draft_pending:
+        st.caption("「高级编辑」中有尚未应用的 JSON 草稿；以下下载、分享和存入历史使用当前已应用的图解。")
 
     # ── 完整结果备份/导入（刷新会丢 session，备份 JSON 可跨会话恢复）───────
     # F24：备份键集走 _BACKUP_KEYS 与分享同构——旧版只写三键，导入后
@@ -937,6 +853,21 @@ def render_results(result: ResultData, slot: str) -> None:
             mime="application/json",
             key=f"dl_backup_{result_key}",
             help="含解析/结构/参数的完整结果，可稍后在任意会话导入恢复",
+        )
+        st.download_button(
+            "下载 JSON",
+            applied_params_json,
+            file_name="amigurumi_pattern.json",
+            mime="application/json",
+            key=f"dl_json_{result_key}",
+        )
+        st.download_button(
+            "下载 Markdown 图解",
+            md_content,
+            file_name="amigurumi_pattern.md",
+            mime="text/markdown",
+            key=f"dl_md_{result_key}",
+            disabled=not md_ready,
         )
     with col_bk2:
         # A live session must regenerate PDFs after printable guidance changes.
@@ -1008,6 +939,44 @@ def render_results(result: ResultData, slot: str) -> None:
         from app.ui.backup_import import render_backup_import
 
         render_backup_import(slot, result_key=result_key)
+
+    # ── CrochetPARADE 导出（3D 验证）：独立 DSL 出口的差异化功能 ──────────
+    with st.expander("导出 CrochetPARADE（3D 验证）", expanded=False):
+        st.caption(
+            "把图解翻译为 [CrochetPARADE](https://crochetparade.org) 的文本语法："
+            "粘贴到其网页应用（本地计算、照片不外发）可得可旋转 3D 模型、"
+            "\"过松/过紧针目\"物理分析与逐针动画——本应用代数自检之外的"
+            "独立检查工具。语法映射基于其官方手册的已核对子集。")
+        st.caption("本应用只检查导出完整性与文本语法，尚未运行外部仿真；仿真结果也不能替代实体试钩。")
+        st.caption("可识别操作式保留针法顺序及明确的 FLO/BLO；挑针范围不清时停止该部件导出。"
+                   "仅文字描述的错位和收口动作需对照原图解核对。")
+        try:
+            if not _v["ok"]:
+                raise ValueError("请先修复图解自检错误")
+            _parade = cached_export(
+                export_cache, "parade", {"params": serializable_params, "export_version": software_version()},
+                lambda: parade_payload(result))
+            _parade_text = _parade["text"]
+            if _parade["inferred_rounds"]:
+                st.caption(f"{_parade['inferred_rounds']} 个实体圈次仅按数值均匀安排针位；"
+                           "其余可识别操作式保留针法顺序，特殊工艺及文字错位提示仍需核对。")
+            if not _parade["complete"]:
+                st.warning("仅导出部分图解；不可视为完整验证："
+                           f"{_parade['exported_rounds']}/{_parade['requested_rounds']} 圈次，"
+                           f"{_parade['exported_parts']}/{_parade['requested_parts']} 个完整实体部件。")
+            _parade_issues = _parade["issues"]
+            if _parade_issues:
+                st.warning("导出自检提示：\n" + "\n".join(md_safe(i)
+                                                       for i in _parade_issues))
+            st.code(_parade_text, language=None)
+            st.download_button(
+                "下载 CrochetPARADE DSL",
+                _parade_text,
+                file_name="amigurumi_parade.txt",
+                mime="text/plain",
+                key=f"dl_parade_{result_key}")
+        except Exception as e:
+            st.caption(f"CrochetPARADE 导出不可用: {md_safe(e)}")
 
     with st.expander("最近一次导出耗时"):
         st.json(export_record.get("diagnostics", {}))

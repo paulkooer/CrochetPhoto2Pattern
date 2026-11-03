@@ -29,7 +29,8 @@ def render_project_save(result: ResultData, slot: str) -> None:
                              max_chars=MAX_PROJECT_NOTES, height=100,
                              help="可记录针号、线材、暂停位置或返工情况。分享链接和图解备份不包含这些备注。")
         st.caption("工程文件保留每份部件的进度、备注和图解版本；关闭页面前请保存到自己的设备。"
-                   "重新打开时，在侧栏「打开备份图解」上传工程文件。撤销历史仅保留在当前会话。")
+                   "重新打开时，在侧栏「打开已有工作」下的「打开备份图解」上传工程文件。"
+                   "撤销历史仅保留在当前会话。")
         if st.button("保存工程（含进度）", key=f"project_save_{rid}"):
             from app.ui.result_renderer import md_safe
 

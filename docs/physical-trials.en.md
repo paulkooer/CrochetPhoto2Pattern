@@ -17,7 +17,7 @@ automatically into qualifying trials. See [online evidence scope](SOURCES.en.md)
 
 ### Record and restore in the web UI
 
-Expand **🧪 实体试钩记录** on a result page, enter a trial ID, stable anonymous maker ID and
+Expand **实体试钩记录** on a result page, enter a trial ID, stable anonymous maker ID and
 cohort, then choose **以当前图解新建试钩**. The original pattern snapshot stays fixed while
 you enter measurements.
 
@@ -34,7 +34,7 @@ you enter measurements.
    invalid inputs do not replace it. Saving a completed record as a draft retains its measurements
    for further work. Fields stay visible when completion status changes; blank dates are not
    silently replaced with today's date.
-4. In a fresh session, use the sidebar's **🧪 打开试钩包** to reopen the ZIP without generating
+4. In a fresh session, use **打开试钩包** under the sidebar's **打开已有工作** to reopen the ZIP without generating
    another pattern. This replaces the Photo result and its active trial, leaving the Manual
    result alone. The restore control inside a result's trial panel replaces only that trial,
    preserving the current pattern.

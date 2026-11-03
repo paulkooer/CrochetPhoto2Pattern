@@ -14,6 +14,17 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-03 frontend information architecture, on `fix/frontend-info-architecture` based on `main` `fcad19a`
+(local pre-commit checks): the sidebar leads with the gauge and groups the backup, trial-bundle and history
+entries under "打开已有工作" (the disabled-history branch no longer ends the sidebar early); result chapter 5
+keeps the common editors visible, moves both raw JSON editors into one collapsed "高级编辑（JSON）" panel and
+collects the downloads under "下载与保存"; progress, undo/redo, preview and JSON button pairs sit left-aligned.
+Widget keys, formats and behaviour are unchanged. `skin`/`body` placeholder colours were investigated only.
+Full suite: **2555 passed, 2 skipped in 90.78s**; Ruff and mypy (209 files) pass. Local Chrome passes
+**21 synthetic browser flows**, including a 390 px sidebar drawer, and the separate canvas check. No remote CI
+for this pre-commit snapshot; no independent review, authorized-photo evaluation or physical trial.
+Beta and G3/G4 are unchanged.
+
 2026-11-03 frontend design repair, on `fix/frontend-design-review` based on `main` `7118a77` (local
 pre-commit checks, including follow-up browser assertions): stable progress panels, restored marker styles,
 mobile chrome and themed mask canvas. Full suite: **2551 passed, 2 skipped in 105.14s**; Ruff and mypy

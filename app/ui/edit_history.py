@@ -206,10 +206,10 @@ def render_edit_preview(slot: str, current: ResultData) -> None:
                    "勾选记录不代表实物无需返工。")
         # Commit before the full render, so old progress fragments cannot leave
         # stale widgets behind when the new pattern changes their layout.
-        apply, cancel = st.columns(2)
-        apply.button("应用这次修改", key=f"edit_{current.get('result_id') or slot}_preview_apply",
-                     on_click=_apply_preview, args=(slot,))
-        cancel.button("取消预览", key=f"edit_{current.get('result_id') or slot}_preview_cancel",
+        with st.container(horizontal=True):
+            st.button("应用这次修改", key=f"edit_{current.get('result_id') or slot}_preview_apply",
+                      on_click=_apply_preview, args=(slot,))
+            st.button("取消预览", key=f"edit_{current.get('result_id') or slot}_preview_cancel",
                       on_click=_cancel_preview, args=(slot,))
 
 
@@ -244,11 +244,11 @@ def render_history(slot: str, result: ResultData) -> None:
     if notice := ws["notice"]:
         ws["notice"] = None
         st.info(notice)
-    left, right = st.columns(2)
-    left.button("↶ 撤销修改", key=f"edit_{rid}_undo", disabled=not history["undo"],
-                on_click=_restore_before_render, args=(slot, "undo"))
-    right.button("↷ 重做修改", key=f"edit_{rid}_redo", disabled=not history["redo"],
-                 on_click=_restore_before_render, args=(slot, "redo"))
+    with st.container(horizontal=True):
+        st.button("↶ 撤销修改", key=f"edit_{rid}_undo", disabled=not history["undo"],
+                  on_click=_restore_before_render, args=(slot, "undo"))
+        st.button("↷ 重做修改", key=f"edit_{rid}_redo", disabled=not history["redo"],
+                  on_click=_restore_before_render, args=(slot, "redo"))
     st.caption("保留本会话最近的修改（最多 12 份、合计 8 MB）；重新导入或生成会开启新的记录。")
     st.caption("材料估算修改保留进度；逐圈修改保留首次变化前的圈次，有效密度或整体变化的部件重新核对。"
                "依赖接合件同时重新核对；撤销可恢复。")

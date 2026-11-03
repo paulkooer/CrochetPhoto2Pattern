@@ -16,7 +16,8 @@ from app.models.gauge import gauge_from_result
 from app.models.geometry import normalize_structure
 from app.models.materials import YarnSpec
 from app.schemas import ResultData, RoundData
-from app.services.result_logic import rebuild_params, regenerate_with_structure
+from app.services.result_logic import rebuild_params, regenerate_with_size, regenerate_with_structure
+from app.services.workspace import workspace
 from app.ui.edit_history import commit_edit, preview_edit, render_history
 
 
@@ -144,6 +145,66 @@ def _apply(slot, result, candidate):
     st.rerun()
 
 
+def apply_edit_with_notice(slot: str, result: ResultData, updated: ResultData, success: str) -> None:
+    """Commit ``updated`` and show ``success`` on the next run.
+
+    A no-op commit keeps the current result and its own "unchanged" notice, so the
+    success message only appears when the pattern actually changed. The message is
+    stored in the new result's workspace: ``st.success`` right before ``st.rerun``
+    would be discarded with the run.
+    """
+    installed = commit_edit(slot, result, updated)
+    if installed is not result:
+        workspace(installed, slot, st.session_state)["success"] = success
+    st.rerun()
+
+
+def _render_quick_size(result: ResultData, slot: str) -> None:
+    """Head diameter / height → structure and pattern recomputed locally.
+
+    生成时的 style/gauge/色带随 result 透传，重生成与首次行为一致；纯本地计算，
+    无 API 成本，比手改 JSON 快且不会改坏结构。
+    """
+    from app.ui.result_renderer import md_safe
+
+    rid = result.get("result_id") or slot
+    analysis = result["analysis"]
+    structure = result["structure"]
+    with st.expander("快速调整尺寸（不重新识别照片）", expanded=False):
+        st.caption("保留已编辑的部件、数量、位姿、连接与颜色；头径使用指定值，其他尺寸按比例缩放。")
+        current_head = next((p.get("diameter_cm") for p in structure.get("parts", [])
+                             if p.get("name") == "头部" and p.get("diameter_cm")), None)
+        current_head = float(current_head or analysis.get("head_diameter_cm") or 9.0)
+        current_height = float(analysis.get("height_cm") or 18.0)
+        if current_head != float(analysis.get("head_diameter_cm") or current_head):
+            st.caption("当前结构头径与原分析不同；提交会同步头径，可能重算依赖尺寸的部件，建议先预览。")
+        head_col, height_col = st.columns(2)
+        with head_col:
+            new_head = st.slider(
+                "头部直径 (cm)", min(4.0, current_head), max(20.0, current_head),
+                current_head, 0.5,
+                key=f"sz_head_{rid}")
+        with height_col:
+            new_height = st.slider(
+                "整体高度 (cm)", min(10.0, current_height), max(60.0, current_height),
+                current_height, 0.5,
+                key=f"sz_height_{rid}")
+        with st.container(horizontal=True):
+            preview_size = st.button("预览尺寸修改影响", key=f"edit_{rid}_size_preview")
+            apply_size = st.button("按新尺寸重新生成", key=f"sz_go_{rid}")
+        if apply_size or preview_size:
+            try:
+                # 业务逻辑在 result_logic（纯函数，可离线单测）
+                candidate = regenerate_with_size(result, new_head, new_height)
+                if preview_size:
+                    preview_edit(slot, result, candidate)
+                else:
+                    apply_edit_with_notice(slot, result, candidate,
+                                           "✅ 已按新尺寸重新生成图解（配色与塑形选项保持不变）！")
+            except Exception as e:
+                st.error(f"尺寸重生成失败: {md_safe(e)}")
+
+
 def _render_stitch_calculator(key: str) -> None:
     from app.models.stitch_notation import NotationError, parse_stitch_notation
 
@@ -172,17 +233,17 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
 
     rid = result.get("result_id") or slot
     render_history(slot, result)
+    # Common corrections in order of use; raw JSON stays in the advanced panel below.
+    st.caption("常用修正按使用频率排列：先调整尺寸，再修改部件、逐圈针法与材料；"
+               "之后是留口、独立密度、接裙、逐针连接与并腿等专项工具。"
+               "直接编辑 JSON 收在下方「高级编辑」面板。修改前可先预览影响，应用后可撤销。")
+    _render_quick_size(result, slot)
     from app.ui.head_opening import render_head_opening
     from app.ui.leg_join import render_leg_join
     from app.ui.part_gauge import render_part_gauge
     from app.ui.skirt_editor import render_skirt_editor
     from app.ui.stitch_connections import render_stitch_connections
 
-    render_head_opening(result, slot)
-    render_part_gauge(result, slot)
-    render_skirt_editor(result, slot)
-    render_leg_join(f"{slot}_{rid}", result)
-    render_stitch_connections(result, slot)
     with st.expander("可视化编辑部件", expanded=False):
         st.caption("尺寸、数量或连接变化会重算受影响部件；可确认构造未变的其他部件保留手改针法、配色和备注。"
                    "建议先预览影响；无法确认保留范围时按整份图解重算，可撤销恢复。")
@@ -424,3 +485,10 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
                 st.error(f"材料估算失败：{md_safe(exc)}")
         if spec and st.button("恢复默认用量估算", key=f"edit_{rid}_yarnreset"):
             _apply(slot, result, edit_yarn(result, None))
+    # Special-purpose tools after the everyday editors: neck opening, independent
+    # swatches, waist join, per-stitch connections and the leg-bridge calculator.
+    render_head_opening(result, slot)
+    render_part_gauge(result, slot)
+    render_skirt_editor(result, slot)
+    render_stitch_connections(result, slot)
+    render_leg_join(f"{slot}_{rid}", result)

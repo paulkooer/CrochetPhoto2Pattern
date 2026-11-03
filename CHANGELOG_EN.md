@@ -8,6 +8,17 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-03 UI information architecture: sidebar and local corrections
+
+- The sidebar now reads creation settings (gauge → shaping) → "打开已有工作" (open backup, open trial bundle, my history). The gauge no longer sits below two import panels, the three dividers are down to one, and the sidebar's own divider margin is narrower. The two open entries keep their own panels, grouped by a subheading rather than nested: Streamlit 1.66 does allow nested expanders, but nesting only costs an extra click before the uploader.
+- The "history disabled" notice used to `return` from inside the panel and ended the whole sidebar; now it only ends that panel's body. A new AppTest checks both open entries are usable with history disabled and actually opens a trial bundle.
+- Result chapter 5 ("局部修正") is layered: undo/redo, then quick size, visual part editor, round table, material estimate, then the special-purpose tools (neck opening, independent swatches, waist join, per-stitch connections, leg bridge), and one collapsed "高级编辑（JSON）" panel holding the output-JSON editor and the former structure-JSON panel. Both JSON editors stay rendered rather than switching behind a selector — Streamlit drops the state of widgets it does not render, which would lose an unapplied draft; the draft notice appears both under the editor and above the downloads. Preview-vs-apply wording and progress/notes impact notes are unchanged.
+- Common exits are collected under a visible "下载与保存" heading: backup, JSON, Markdown, PDF, and history naming/share/save/import; the CrochetPARADE export moved below them. No download sits inside a collapsed panel.
+- The progress pair "重置进度 / 全部完成", undo/redo, the preview apply/cancel pair and the JSON editor pairs now sit left-aligned in horizontal containers (`st.columns(2)` spread content-width buttons half a panel apart). The two sidebar captions are merged into one line and chapter 5's duplicate "也可使用下方尺寸滑块或高级 JSON 编辑" is gone.
+- Widget keys, pattern/project/trial-bundle formats and behaviour are unchanged. README and the physical-trial docs now name the trial entry as it appears and place it under "打开已有工作".
+- Tests: new `tests/test_frontend_information_architecture.py` (sidebar order, both entries with history disabled, chapter-5 layering and download placement, a JSON draft surviving preview and cancel); browser regression adds the sidebar order, the collapsed advanced panel with downloads outside it, the draft flow and a 390 px sidebar drawer, for 21 flows in total.
+- `skin` / `body` placeholder colours were investigated only, with a written plan and no change to stored patterns or material totals; see the [frontend design review](docs/frontend-design-review-20261103.md) (Chinese).
+
 ### Fixed — 2026-11-03 UI: marker and round checklist
 
 - Ticking a round no longer collapses its part panel: the live completion count in the `st.expander` label changed on every tick, so the element remounted collapsed. The label is now stable and the count lives in the panel's progress bar.
