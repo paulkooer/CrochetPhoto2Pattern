@@ -81,6 +81,16 @@ def test_ring_chart_uses_theme_colours_and_plain_labels():
     assert theme.SHEET in strip and " · " not in strip
 
 
+def test_mask_canvas_fallbacks_mirror_tokens():
+    """The canvas iframe cannot import theme.py; its :root fallbacks must not drift."""
+    html = (_REPO / "app/ui/mask_canvas/index.html").read_text(encoding="utf-8")
+    for name, value in (("--ink", theme.INK), ("--ink-soft", theme.INK_SOFT),
+                        ("--edge", theme.EDGE), ("--sheet", theme.SHEET),
+                        ("--paper", theme.PAPER), ("--rule", theme.RULE)):
+        assert f"{name}:{value};" in html, name
+    assert "http" not in html
+
+
 def test_hero_mark_draws_six_rings_and_has_static_variant():
     svg = ring_mark_svg()
     assert svg.count('class="ring"') == 6

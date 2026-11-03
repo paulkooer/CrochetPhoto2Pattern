@@ -46,3 +46,7 @@ borderColor = "#848da2"
 # 20MB 检查形同虚设，超限文件先占满内存才被拒绝。
 [server]
 maxUploadSize = 20
+
+# 产品界面不需要 "Deploy" 按钮与开发者菜单项；手机视口下它们还会压住首行内容。
+[client]
+toolbarMode = "minimal"

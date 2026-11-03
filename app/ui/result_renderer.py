@@ -33,6 +33,12 @@ from app.utils.share import _BACKUP_KEYS
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
 
+# 内部形状枚举 → 用户可读名称（结构表与部件圈序共用；未知值原样显示）
+_SHAPE_LABELS: dict[str | None, str | None] = {
+    "sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
+    "profile": "照片轮廓", "onepiece": "头身一体",
+}
+
 # E1：零宽/BiDi 控制符（显示欺骗面——同一字段可从 LLM 输出进来）
 _INVISIBLE_RE = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
@@ -203,9 +209,9 @@ def _render_paged_progress(result: ResultData, slot: str) -> None:
     st.progress(done / len(entries) if entries else 0,
                 text=f"{md_safe(part['name'])}：已完成 {done}/{len(entries)} 圈次")
     left, right = st.columns(2)
-    left.button("↩️ 重置进度", key=f"clear_{rid}_{part['name']}",
+    left.button("重置进度", key=f"clear_{rid}_{part['name']}",
                 on_click=set_completed, args=(False,))
-    right.button("✅ 全部完成", key=f"all_{rid}_{part['name']}",
+    right.button("全部完成", key=f"all_{rid}_{part['name']}",
                  on_click=set_completed, args=(True,))
     pages = max(1, (len(entries) + PROGRESS_PAGE_SIZE - 1) // PROGRESS_PAGE_SIZE)
     next_offset = next((i for i, (identity, _) in enumerate(entries) if not completed.get(identity)), None)
@@ -263,12 +269,14 @@ def _render_part_progress(
     quantity_label = f" × {quantity} 个" if quantity > 1 else ""
     rounds_label = (f"{n_rounds} 圈/个，共 {physical_rounds} 圈次"
                     if quantity > 1 else f"{n_rounds} 圈")
-    label_exp = (
-        f"{md_safe(part_data['name'])}{quantity_label}（{rounds_label}）"
-        f"　已完成 {n_done}/{physical_rounds} 圈次"
-    )
+    # 标签必须稳定：st.expander 没有 key，元素 id 由标签派生。带实时完成数的
+    # 标签会在每次勾选（fragment 重跑）后让面板重新挂载为折叠态——"边钩边勾选"
+    # 每勾一圈就得重新展开（浏览器实测）。完成数由面板内的进度条承载。
+    label_exp = f"{md_safe(part_data['name'])}{quantity_label}（{rounds_label}）"
     with st.expander(label_exp):
-        st.write(f"**形状**: {md_safe(part_data['type'])} | "
+        shape = part_data.get("type")
+        shape_text = _SHAPE_LABELS.get(shape, shape) if isinstance(shape, str) else "—"
+        st.write(f"**形状**: {md_safe(shape_text)} | "
                  f"**颜色**: {md_safe(part_data['color'])}")
         if caption := part_gauge_text(part_data, gauge_from_result(result)):
             st.caption(caption)
@@ -276,7 +284,7 @@ def _render_part_progress(
             st.info(f"此圈序需制作 {quantity} 份相同部件；总针数、材料和工时已按 {quantity} 份计算。")
         # T8：环形圈数图（球/一体件的顶视图；勾选列表上方的直观总览）
         if part_data.get("type") in ("sphere", "onepiece"):
-            with st.expander("⭕ 顶视图（环形圈数图）", expanded=False):
+            with st.expander("顶视图（环形圈数图）", expanded=False):
                 try:
                     from app.models.ring_chart import (
                         render_ring_svg,
@@ -307,10 +315,10 @@ def _render_part_progress(
         st.markdown("**逐圈进度**：勾选已完成的圈")
         col_clear, col_all = st.columns(2)
         with col_clear:
-            st.button("↩️ 重置进度", key=f"clear_{part_key}",
+            st.button("重置进度", key=f"clear_{part_key}",
                       on_click=set_completed, args=(False,))
         with col_all:
-            st.button("✅ 全部完成", key=f"all_{part_key}",
+            st.button("全部完成", key=f"all_{part_key}",
                       on_click=set_completed, args=(True,))
         for copy, copy_entries in enumerate(entries_by_copy, 1):
             if quantity > 1:
@@ -344,8 +352,8 @@ def render_results(result: ResultData, slot: str) -> None:
 
     st.divider()
     st.markdown(
-        "<p class='sheet-note'>图解已生成。"
-        "你可以查看结构、逐圈勾选进度、局部修正并下载备份。</p>",
+        "<p class='sheet-note'>下面是这份图解：先核对比例与结构，"
+        "再按部件逐圈勾选进度；需要时局部修正，并下载备份。</p>",
         unsafe_allow_html=True,
     )
     if notice := workspace(result, slot, st.session_state)["recovery_notice"]:
@@ -486,7 +494,7 @@ def render_results(result: ResultData, slot: str) -> None:
     if not isinstance(colors, list):
         colors = []
     if colors:
-        st.write("**🎨 推荐毛线颜色**（按主色占比排序）:")
+        st.write("**推荐毛线颜色**（按主色占比排序）:")
         # 胶囊带真实毛线色样（_yarn_chip_html 内做 html.escape +
         # 未知色名降级）；颜色名来自模型可写字段，转义后才进
         # unsafe_allow_html（图片内文字可能借 prompt injection 注入）。
@@ -506,7 +514,7 @@ def render_results(result: ResultData, slot: str) -> None:
         _verifications = None
         st.caption(f"轮廓可视化不可用：{md_safe(e)}")
     if _verifications:
-        with st.expander("📐 轮廓对应验证（生成侧影 vs 照片剖面）", expanded=False):
+        with st.expander("轮廓对应验证（生成侧影 vs 照片剖面）", expanded=False):
             from app.ui.design_system import html_box
 
             for _name, _svg in _verifications:
@@ -519,8 +527,7 @@ def render_results(result: ResultData, slot: str) -> None:
         for part in structure.get("parts", [])
         if isinstance(part_id := part.get("part_id"), str) and part_id
     }
-    shape_labels: dict[str | None, str | None] = {
-        "sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形", "profile": "照片轮廓"}
+    shape_labels = _SHAPE_LABELS
     for structure_part in structure.get("parts", []):
         dims = []
         if structure_part.get("diameter_cm"):
@@ -570,7 +577,7 @@ def render_results(result: ResultData, slot: str) -> None:
             st.caption(
                 "结构 v2 坐标：x 左−右+，y 底部0→顶部1，z 后−前+；"
                 "位置、旋转和连接来自模板推断，并非单张照片的三维测量。")
-        with st.expander("🧸 3D 结构预览（示意）", expanded=False):
+        with st.expander("3D 结构预览（示意）", expanded=False):
             from app.ui.preview3d import structure_preview_html
 
             _pv = structure_preview_html(result)
@@ -596,7 +603,7 @@ def render_results(result: ResultData, slot: str) -> None:
         symbol_strip_html,
     )
 
-    with st.expander("🪡 针法速查（五体系对照 · 含突尼斯针族）", expanded=False):
+    with st.expander("针法速查（五体系对照 · 含突尼斯针族）", expanded=False):
         # 符号条走 markdown 通道（st.html 的净化器剥整个 <svg>，实测 1.60）
         st.markdown(symbol_strip_html(), unsafe_allow_html=True)
         st.markdown(glossary_table_markdown())
@@ -741,7 +748,7 @@ def render_results(result: ResultData, slot: str) -> None:
     # ── 快速调整尺寸（不重新调用 AI）：改头径/身高 → 结构+参数层重算 ──────
     # 生成时的 style/gauge/色带随 result 透传，重生成与首次行为一致；
     # 纯本地计算，无 API 成本，比手改 JSON 快且不会改坏结构。
-    with st.expander("📏 快速调整尺寸（不重新识别照片）", expanded=False):
+    with st.expander("快速调整尺寸（不重新识别照片）", expanded=False):
         st.caption("保留已编辑的部件、数量、位姿、连接与颜色；头径使用指定值，其他尺寸按比例缩放。")
         _current_head = next((p.get("diameter_cm") for p in structure.get("parts", [])
                               if p.get("name") == "头部" and p.get("diameter_cm")), None)
@@ -761,7 +768,7 @@ def render_results(result: ResultData, slot: str) -> None:
                 _current_height, 0.5,
                 key=f"sz_height_{result_key}")
         preview_size = st.button("预览尺寸修改影响", key=f"edit_{result_key}_size_preview")
-        apply_size = st.button("📐 按新尺寸重新生成", key=f"sz_go_{result_key}")
+        apply_size = st.button("按新尺寸重新生成", key=f"sz_go_{result_key}")
         if apply_size or preview_size:
             try:
                 # 业务逻辑在 result_logic（纯函数，可离线单测）
@@ -775,7 +782,7 @@ def render_results(result: ResultData, slot: str) -> None:
                 st.error(f"尺寸重生成失败: {md_safe(e)}")
 
     # ── StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI ──────
-    with st.expander("🧩 调整部件结构（高级）", expanded=False):
+    with st.expander("调整部件结构（高级）", expanded=False):
         st.caption(
             "可修改部件尺寸、形状、数量、位置和连接节点。结构 v2 会严格检查 "
             "part_id、实例数量、镜像引用与 attachment 目标；修改数量时也要同步 "
@@ -788,7 +795,7 @@ def render_results(result: ResultData, slot: str) -> None:
             key=f"struct_edit_{result_key}",
         )
         preview_structure = st.button("预览结构 JSON 修改影响", key=f"edit_{result_key}_structure_preview")
-        apply_structure = st.button("🧩 校验结构并重新生成", key=f"struct_go_{result_key}")
+        apply_structure = st.button("校验结构并重新生成", key=f"struct_go_{result_key}")
         if apply_structure or preview_structure:
             try:
                 # 校验 + 重生成在 result_logic（纯函数，可离线单测）
@@ -843,7 +850,7 @@ def render_results(result: ResultData, slot: str) -> None:
     col_btn1, col_btn2, col_btn3 = st.columns(3)
     with col_btn1:
         preview_json = st.button("预览 JSON 修改影响", key=f"edit_{result_key}_json_preview")
-        apply_json = st.button("🔄 重新生成", key=f"regen_{result_key}")
+        apply_json = st.button("重新生成", key=f"regen_{result_key}")
         if apply_json or preview_json:
             try:
                 corrected = json.loads(correction_json)
@@ -858,7 +865,7 @@ def render_results(result: ResultData, slot: str) -> None:
                 st.error(f"解析/应用失败: {md_safe(e)}")
     with col_btn2:
         st.download_button(
-            "📥 下载 JSON",
+            "下载 JSON",
             applied_params_json,
             file_name="amigurumi_pattern.json",
             mime="application/json",
@@ -866,7 +873,7 @@ def render_results(result: ResultData, slot: str) -> None:
         )
     with col_btn3:
         st.download_button(
-            "📄 下载 Markdown 图解",
+            "下载 Markdown 图解",
             md_content,
             file_name="amigurumi_pattern.md",
             mime="text/markdown",
@@ -875,7 +882,7 @@ def render_results(result: ResultData, slot: str) -> None:
         )
 
     # ── CrochetPARADE 导出（3D 验证）：独立 DSL 出口的差异化功能 ──────────
-    with st.expander("🧶 导出 CrochetPARADE（3D 验证）", expanded=False):
+    with st.expander("导出 CrochetPARADE（3D 验证）", expanded=False):
         st.caption(
             "把图解翻译为 [CrochetPARADE](https://crochetparade.org) 的文本语法："
             "粘贴到其网页应用（本地计算、照片不外发）可得可旋转 3D 模型、"
@@ -904,7 +911,7 @@ def render_results(result: ResultData, slot: str) -> None:
                                                        for i in _parade_issues))
             st.code(_parade_text, language=None)
             st.download_button(
-                "💾 下载 CrochetPARADE DSL",
+                "下载 CrochetPARADE DSL",
                 _parade_text,
                 file_name="amigurumi_parade.txt",
                 mime="text/plain",
@@ -924,7 +931,7 @@ def render_results(result: ResultData, slot: str) -> None:
     col_bk1, col_bk2, col_bk3 = st.columns(3)
     with col_bk1:
         st.download_button(
-            "💾 备份完整结果",
+            "备份完整结果",
             backup_json,
             file_name="amigurumi_backup.json",
             mime="application/json",
@@ -937,7 +944,7 @@ def render_results(result: ResultData, slot: str) -> None:
             ws["pdf"] = None
         # PDF（S4）：点"生成"才构建（避免每次 rerun 都渲染 PDF），
         # 字节缓存进工作区后出现下载按钮
-        if st.button("🖨 生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
+        if st.button("生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
             try:
                 from app.utils.pdf_export import export_pdf
                 ws["pdf"] = {"format": EXPORT_CACHE_VERSION, "bytes": timed_export(
@@ -949,7 +956,7 @@ def render_results(result: ResultData, slot: str) -> None:
                 st.error(f"PDF 生成失败: {md_safe(e)}")
         _pdf_bytes = ws["pdf"]["bytes"] if ws["pdf"] is not None else None
         if _pdf_bytes and _v["ok"]:
-            st.download_button("📄 下载 PDF", _pdf_bytes,
+            st.download_button("下载 PDF", _pdf_bytes,
                                file_name="amigurumi_pattern.pdf",
                                mime="application/pdf",
                                key=f"dl_pdf_{result_key}")
@@ -963,7 +970,7 @@ def render_results(result: ResultData, slot: str) -> None:
         # F23：分享入口。token 计算含全量 JSON + zlib，按需生成并缓存进
         # 工作区——不再每次 rerun 都压缩；编辑图解后需重新生成。
         from app.utils.share import encode_result
-        if st.button("🔗 生成分享链接", key=f"share_{result_key}"):
+        if st.button("生成分享链接", key=f"share_{result_key}"):
             ws["share"] = {"token": encode_result({
                 **{k: result.get(k) for k in _BACKUP_KEYS
                    if k not in ("params", "preview")},
@@ -978,12 +985,12 @@ def render_results(result: ResultData, slot: str) -> None:
             st.caption(f"🔗 分享链接（{len(_share_token)}/6000 字符，"
                        f"复制下面整行拼到本应用域名后打开即载入；"
                        f"修改图解后请重新生成）：")
-            with st.expander("📎 展开分享链接", expanded=False):
+            with st.expander("展开分享链接", expanded=False):
                 st.code(f"?p={_share_token}", language=None)
         # 历史持久化（S4）：SQLite 单文件，跨会话在侧栏"我的图解"恢复
         from app.utils import history
 
-        if st.button("🗂 存入历史", key=f"hist_save_{result_key}",
+        if st.button("存入历史", key=f"hist_save_{result_key}",
                      disabled=not history.history_enabled() or not _v["ok"],
                      help="保存到部署主机的图解历史，可在侧栏随时载回"):
             try:
@@ -1006,5 +1013,5 @@ def render_results(result: ResultData, slot: str) -> None:
         st.json(export_record.get("diagnostics", {}))
 
     # Inline Markdown preview
-    with st.expander("📋 预览 Markdown 图解", expanded=False):
+    with st.expander("预览 Markdown 图解", expanded=False):
         st.markdown(md_content)

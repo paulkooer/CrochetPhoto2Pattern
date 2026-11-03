@@ -161,7 +161,7 @@ def test_history_saves_applied_result_not_unapplied_json_draft(result, monkeypat
     download_button = result_renderer.st.download_button
 
     def capture_download(label, data, *args, **kwargs):
-        if label == "📥 下载 JSON":
+        if label == "下载 JSON":
             downloads.append(json.loads(data))
         return download_button(label, data, *args, **kwargs)
 

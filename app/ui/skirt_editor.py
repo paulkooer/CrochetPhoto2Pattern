@@ -15,7 +15,7 @@ def render_skirt_editor(result: ResultData, slot: str) -> None:
     if params.get("skirt_style") != "attached":
         return
     rid = result.get("result_id") or slot
-    with st.expander("🪡 接裙位置图示与调整"):
+    with st.expander("接裙位置图示与调整"):
         try:
             connection = skirt_connection(params)
             st.markdown(attachment_svg(connection), unsafe_allow_html=True)

@@ -34,7 +34,7 @@ def _build_orchestrator() -> PipelineOrchestrator:
 
 
 def render_tab_photo() -> None:
-    st.subheader("📷 从照片开始创作")
+    st.subheader("从照片开始创作")
     st.markdown(
         "<p class='sheet-note'>上传一张轮廓清晰的正面照片，"
         "我们会整理人物比例、结构与逐圈针法。</p>",
@@ -58,11 +58,11 @@ def render_tab_photo() -> None:
         st.caption("🔒 上传的照片会传到运行此应用的主机；只有在自己电脑部署时才是本机处理。"
                    "照片通过本地算法处理，不调用云端视觉模型。"
                    "历史记录默认关闭，启用后保存于部署主机的磁盘。")
-        with st.expander("➕ 多角度照片（规划中）", expanded=False):
+        with st.expander("多角度照片（规划中）", expanded=False):
             st.caption("上传侧面/背面照片以辅助 3D 结构推理——尚未开放；"
                        "当前可用结果页的「快速调整尺寸」与姿态实测分段弥补部分场景。")
 
-        mode_options = ["🧮 本地视觉估算（推荐）", "🎬 Mock 演示数据"]
+        mode_options = ["本地视觉估算（推荐）", "Mock 演示数据"]
         mode_help = ("本地估算：轮廓与头部候选框推算比例，部件需人工确认；"
                      "Mock：固定演示数据，配色来自照片。")
         # 清理升级前的 AI 模式残留值，
@@ -76,7 +76,7 @@ def render_tab_photo() -> None:
             horizontal=True,
             help=mode_help,
         )
-        vision_mode = {"🧮": "local", "🎬": "mock"}[mode[0]]
+        vision_mode = {"本地视觉估算（推荐）": "local", "Mock 演示数据": "mock"}[mode]
 
     with col_preview:
         if uploaded_file is None:

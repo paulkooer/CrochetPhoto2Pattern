@@ -96,6 +96,15 @@ window.addEventListener("message", event => {
   if (event.source !== window.parent || event.data?.type !== "streamlit:render") return;
   const next = event.data.args;
   disabled = Boolean(event.data.disabled);
+  // Theme tokens from app/theme.py (optional; index.html carries matching fallbacks).
+  const palette = next && next.theme;
+  if (palette && typeof palette === "object") {
+    for (const [name, value] of Object.entries(palette)) {
+      if (/^[a-z_]+$/.test(name) && typeof value === "string" && /^[#\w\s,"'-]+$/.test(value)) {
+        document.documentElement.style.setProperty(`--${name.replace(/_/g, "-")}`, value);
+      }
+    }
+  }
   if (!next || !Number.isInteger(next.width) || !Number.isInteger(next.height)
       || next.width < 1 || next.height < 1 || next.width > 160 || next.height > 160
       || !/^[01]+$/.test(next.current_pixels) || next.current_pixels.length !== next.width * next.height) return;

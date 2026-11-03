@@ -107,7 +107,7 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> ResultData:
 
 
 def render_tab_manual() -> None:
-    st.subheader("✏️ 手动设计玩偶")
+    st.subheader("手动设计玩偶")
     st.markdown(
         "<p class='sheet-note'>无需上传照片，填写人物比例、姿态与部件，"
         "就能直接生成专属钩织图解。</p>",
@@ -154,7 +154,7 @@ def render_tab_manual() -> None:
         )
         blocked = _render_manual_preview(analysis)
 
-    if st.button("🚀 生成钩织图解", type="primary",
+    if st.button("生成钩织图解", type="primary",
                  width="stretch", key="btn_manual", disabled=blocked):
         if analysis is None:
             st.warning("请至少选择一个部件。")
@@ -166,7 +166,7 @@ def render_tab_manual() -> None:
                 if "manual_result" in st.session_state:
                     purge_result_state(st.session_state.manual_result)
                 st.session_state.manual_result = result
-                st.success("✅ 图解已生成！")
+                st.success("图解已生成")
             except Exception as e:
                 st.error(f"生成失败: {md_safe(e)}")
                 logger.exception("Manual pipeline failed")

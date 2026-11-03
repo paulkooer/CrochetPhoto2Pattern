@@ -45,14 +45,14 @@ if "p" in _qp and "result" not in st.session_state:
     if _shared:
         _shared["result_id"] = _uuid.uuid4().hex[:12]
         st.session_state["result"] = _shared
-        st.info("🔗 已通过分享链接载入图解——刷新会丢失，请点结果页「💾 备份完整结果」"
-                "下载到本机保存；「🗂 存入历史」仅在部署方开启单用户历史时可用，"
+        st.info("🔗 已通过分享链接载入图解——刷新会丢失，请点结果页「备份完整结果」"
+                "下载到本机保存；「存入历史」仅在部署方开启单用户历史时可用，"
                 "且存在运行 Streamlit 的主机上（默认关闭）。")
 
 render_sidebar()
 
 tab_photo, tab_manual, tab_grid = st.tabs(
-    ["📸 照片分析（本地）", "✏️ 手动输入", "📹 2D 像素网格"]
+    ["照片分析（本地）", "手动输入", "2D 像素网格"]
 )
 with tab_photo:
     render_tab_photo()
@@ -62,4 +62,4 @@ with tab_grid:
     render_tab_grid()
 
 st.divider()
-st.caption(f"{PRODUCT_NAME} — 本地视觉与规则驱动的立体钩织图解生成器")
+st.caption(f"{PRODUCT_NAME}：本地视觉与规则驱动的立体钩织图解生成器")

@@ -17,6 +17,7 @@
 | External rule references / 外部规则参考证据 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
 | Opus 5.5 whole-system review brief / Opus 5.5 全系统审核交待 | [Pinned review brief (Chinese)](audit-brief-opus-20261029.md) | [固定版本审核交待](audit-brief-opus-20261029.md) |
 | Pattern consistency fixes / 图解一致性修复复核 | [Eight acceptance cases and pinned-version checks](audit-fix-review-20261030.md) | [八项验收与固定版本检查](audit-fix-review-20261030.md) |
+| Frontend design review / 前端设计审视 | [2026-11-03 review (Chinese)](frontend-design-review-20261103.md) | [2026-11-03 审视记录](frontend-design-review-20261103.md) |
 | Real-browser regression / 真实浏览器回归 | [Setup and evidence scope](browser-regression.md) | [运行方式与验证范围](browser-regression.md) |
 | Image memory and batch concurrency / 图片内存与批量并发 | [Measurements and reproduction (Chinese)](image-memory.md) | [测量范围与复现](image-memory.md) |
 | Single-image 3D design / 单图 3D 重建设计 | [3d-reconstruction-design.en.md](3d-reconstruction-design.en.md) | [3d-reconstruction-design.md](3d-reconstruction-design.md) |

@@ -128,8 +128,8 @@ async function headProgress(page, scope, rid, checked) {
     const photo = path.join(output, 'synthetic-doll.png');
     await page.locator('svg').screenshot({path:photo});
     await page.goto(baseURL);
-    await page.getByRole('tab', {name:'📸 照片分析（本地）',exact:true}).click();
-    const photoPanel = page.getByRole('tabpanel', {name:'📸 照片分析（本地）',exact:true});
+    await page.getByRole('tab', {name:'照片分析（本地）',exact:true}).click();
+    const photoPanel = page.getByRole('tabpanel', {name:'照片分析（本地）',exact:true});
     await key(photoPanel,'photo_uploader').locator('input[type="file"]').setInputFiles(photo);
     await key(photoPanel,'btn_photo').getByRole('button').waitFor({state:'visible'});
     await clickKey(page,photoPanel,'btn_photo');
@@ -216,7 +216,7 @@ async function headProgress(page, scope, rid, checked) {
     const legacySidebar = legacyPage.locator('[data-testid="stSidebar"]');
     await key(legacySidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(legacyPath);
     await clickKey(legacyPage,legacySidebar,'open_backup_apply');
-    const legacyPanel = legacyPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const legacyPanel = legacyPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const legacyId = await resultId(legacyPanel);
     const legacyExport = JSON.parse(await download(legacyPage,key(legacyPanel,`dl_backup_${legacyId}`)
       .getByRole('button'),path.join(output,'legacy-structure-custom-id-export.json')));
@@ -238,7 +238,7 @@ async function headProgress(page, scope, rid, checked) {
     const uncertainSidebar = uncertainPage.locator('[data-testid="stSidebar"]');
     await key(uncertainSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(uncertainPath);
     await clickKey(uncertainPage,uncertainSidebar,'open_backup_apply');
-    const uncertainPanel = uncertainPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const uncertainPanel = uncertainPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const uncertainId = await resultId(uncertainPanel);
     const reviewWarning = uncertainPanel.getByText('复核记录无法识别，请重新核对主体、头部与部件。',{exact:true});
     await expect(reviewWarning).toBeVisible();
@@ -259,8 +259,8 @@ async function headProgress(page, scope, rid, checked) {
     lastPage = page;
     await uncertainContext.close();
 
-    await page.getByRole('tab',{name:'✏️ 手动输入',exact:true}).click();
-    const manual = page.getByRole('tabpanel',{name:'✏️ 手动输入',exact:true});
+    await page.getByRole('tab',{name:'手动输入',exact:true}).click();
+    const manual = page.getByRole('tabpanel',{name:'手动输入',exact:true});
     await clickKey(page,manual,'btn_manual');
     let manualId = await resultId(manual);
     await headProgress(page,manual,manualId,true);
@@ -295,14 +295,14 @@ async function headProgress(page, scope, rid, checked) {
     record('project download contains the current progress and personal notes');
 
     await clickKey(page,sidebar,`hist_load_${storedId}`);
-    await page.getByRole('tab',{name:'📸 照片分析（本地）',exact:true}).click();
+    await page.getByRole('tab',{name:'照片分析（本地）',exact:true}).click();
     photoId = await resultId(photoPanel,photoId);
     assert.notEqual(photoId,manualId);
     await headProgress(page,photoPanel,photoId,true);
-    const clearPhoto = key(photoPanel,`sheet_part_${photoId}_0`).getByRole('button',{name:'↩️ 重置进度',exact:true,includeHidden:true});
+    const clearPhoto = key(photoPanel,`sheet_part_${photoId}_0`).getByRole('button',{name:'重置进度',exact:true,includeHidden:true});
     await reveal(clearPhoto);await clearPhoto.click();await settle(page);
     await fillKey(page,photoPanel,`project_notes_${photoId}`,'photo workspace note');
-    await page.getByRole('tab',{name:'✏️ 手动输入',exact:true}).click();
+    await page.getByRole('tab',{name:'手动输入',exact:true}).click();
     await expect(headCheck(manual,manualId)).toBeChecked();
     await expect(key(manual,`project_notes_${manualId}`).locator('textarea')).toHaveValue(notes);
     await page.screenshot({path:path.join(output,'history-isolation.png'),fullPage:true});
@@ -315,7 +315,7 @@ async function headProgress(page, scope, rid, checked) {
     const uploader = key(freshSidebar,'open_backup_file').locator('input[type="file"]');
     await uploader.setInputFiles(projectFile);
     await clickKey(fresh,freshSidebar,'open_backup_apply');
-    const restored = fresh.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const restored = fresh.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const restoredId = await resultId(restored);
     const restoredNotes = key(restored,`project_notes_${restoredId}`).locator('textarea');
     await reveal(restoredNotes);
@@ -369,7 +369,7 @@ async function headProgress(page, scope, rid, checked) {
     const openSidebar = reopened.locator('[data-testid="stSidebar"]');
     await key(openSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(openProjectFile);
     await clickKey(reopened,openSidebar,'open_backup_apply');
-    const openPanel = reopened.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const openPanel = reopened.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const reopenedId = await resultId(openPanel);
     const savedOpen = key(openPanel,`edit_${reopenedId}_head_open`).locator('input');
     await reveal(savedOpen);
@@ -403,7 +403,7 @@ async function headProgress(page, scope, rid, checked) {
     const garmentSidebar = garmentPage.locator('[data-testid="stSidebar"]');
     await key(garmentSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(garmentInput);
     await clickKey(garmentPage,garmentSidebar,'open_backup_apply');
-    const garmentPanel = garmentPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const garmentPanel = garmentPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const garmentId = await resultId(garmentPanel);
     await headProgress(garmentPage,garmentPanel,garmentId,true);
     const hatIndex = garmentSource.params.parts.findIndex(p=>p.name==='帽子');
@@ -442,7 +442,7 @@ async function headProgress(page, scope, rid, checked) {
     const mixedSidebar = mixedPage.locator('[data-testid="stSidebar"]');
     await key(mixedSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(mixedProjectFile);
     await clickKey(mixedPage,mixedSidebar,'open_backup_apply');
-    const mixedPanel = mixedPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const mixedPanel = mixedPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const recoveredId = await resultId(mixedPanel);
     const recoveredGauge = key(mixedPanel,`edit_${recoveredId}_partgauge0_enabled`).locator('input');
     await reveal(recoveredGauge);
@@ -510,7 +510,7 @@ async function headProgress(page, scope, rid, checked) {
     const sampleSidebar = samplePage.locator('[data-testid="stSidebar"]');
     await key(sampleSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(sampleProject);
     await clickKey(samplePage,sampleSidebar,'open_backup_apply');
-    const samplePanel = samplePage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const samplePanel = samplePage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const sampleId = await resultId(samplePanel);
     const recoveredSample = JSON.parse(await download(samplePage,key(samplePanel,`dl_backup_${sampleId}`).getByRole('button'),path.join(output,'swatch-restored.json')));
     assert.deepEqual(recoveredSample.params.yarn_spec,adjusted.params.yarn_spec);
@@ -592,7 +592,7 @@ async function headProgress(page, scope, rid, checked) {
       await collisionPage.screenshot({path:path.join(output,'collision-recovery-choice.png'),fullPage:true});
       await expect(collisionPage.locator('[class*="st-key-hist_save_"]')).toHaveCount(0);
       await clickKey(collisionPage,collisionSidebar,'open_backup_recover_ambiguous');
-      const collisionPanel = collisionPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+      const collisionPanel = collisionPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
       const collisionId = await resultId(collisionPanel);
       await expect(collisionPanel.getByText(/无法区分属于哪份实体，已暂不标记/)).toBeVisible();
       const headChecks = key(collisionPanel,`sheet_part_${collisionId}_${collisionHeadIndex}`)
@@ -624,7 +624,7 @@ async function headProgress(page, scope, rid, checked) {
       const freshSidebar = collisionFresh.locator('[data-testid="stSidebar"]');
       await key(freshSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(collisionProject);
       await clickKey(collisionFresh,freshSidebar,'open_backup_apply');
-      const freshPanel = collisionFresh.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+      const freshPanel = collisionFresh.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
       const freshId = await resultId(freshPanel);
       const freshChecks = key(freshPanel,`sheet_part_${freshId}_${collisionHeadIndex}`)
         .locator('input[type="checkbox"]');

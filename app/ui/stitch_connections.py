@@ -18,7 +18,7 @@ def _span(numbers: tuple[int, ...]) -> str:
 def render_stitch_connections(result: ResultData, slot: str) -> None:
     rid = result.get("result_id") or slot
     prefix = f"edit_{rid}_connections_"
-    with st.expander("🔗 逐针连接核对", expanded=False):
+    with st.expander("逐针连接核对", expanded=False):
         st.caption("查看本圈每个操作使用上一圈的哪些针目。仅展开明确的完整操作式，"
                    "不按总针数推测排针，也不表示实物形状或线股路径。")
         enabled = st.checkbox("显示逐针连接", key=prefix + "enabled")

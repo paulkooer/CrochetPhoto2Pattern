@@ -79,7 +79,7 @@ def _apply_restore(slot: str) -> None:
 
 
 def render_leg_join(slot: str, result: ResultData | None = None) -> None:
-    with st.expander("🧮 锁针并腿方案（手动核对）", expanded=False):
+    with st.expander("锁针并腿方案（手动核对）", expanded=False):
         st.caption("用于两条已留有开口的腿：分别钩完两个开口的每一针，"
                    "连接锁针的两侧各钩一短针。本工具只计算这一种做法。")
         st.warning("填写实际开口圈和记号位置；须人工确认起点、方向、锁针两侧及开口未封闭。"

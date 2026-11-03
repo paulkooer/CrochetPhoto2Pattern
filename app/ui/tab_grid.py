@@ -140,14 +140,14 @@ def _show_grid_error(action: str, exc: Exception) -> None:
 
 
 def render_tab_grid() -> None:
-    st.subheader("🎨 制作平面像素图案")
+    st.subheader("制作平面像素图案")
     st.markdown(
         "<p class='sheet-note'>将照片整理成彩色针目网格，适合平面嵌花钩织、"
         "C2C 或十字绣。每格代表 1 针，符号对应一种毛线颜色。</p>",
         unsafe_allow_html=True,
     )
 
-    with st.expander("📂 恢复可编辑网格工程", expanded=False):
+    with st.expander("恢复可编辑网格工程", expanded=False):
         project_file = st.file_uploader(
             "上传此前下载的网格工程 JSON",
             type=["json"],
@@ -217,7 +217,7 @@ def render_tab_grid() -> None:
     if grid_file:
         grid_image = load_uploaded_image_cached(grid_file)
         if grid_image is not None:
-            with st.expander("✂️ 生成前裁剪与定位", expanded=False):
+            with st.expander("生成前裁剪与定位", expanded=False):
                 crop_x = st.slider(
                     "横向保留范围（左 → 右，%）", 0, 100, (0, 100), 1,
                     key="grid_crop_x")
@@ -244,7 +244,7 @@ def render_tab_grid() -> None:
                 st.caption("裁剪会改变构图和网格高宽比；调整后请重新生成。")
 
             if cropped_image is not None and st.button(
-                "🎨 生成网格图案", type="primary", width="stretch", key="btn_grid"
+                "生成网格图案", type="primary", width="stretch", key="btn_grid"
             ):
                 try:
                     with st.spinner("生成中…"):
@@ -296,7 +296,7 @@ def render_tab_grid() -> None:
                         if restored:
                             st.rerun()
 
-            with st.expander("✏️ 单格 / 矩形修色（不重新量化图片）", expanded=False):
+            with st.expander("单格 / 矩形修色（不重新量化图片）", expanded=False):
                 edit_mode = st.radio(
                     "编辑范围", ["单格", "矩形"], horizontal=True,
                     key="grid_edit_mode")
@@ -419,7 +419,7 @@ def render_tab_grid() -> None:
 
         col_v1, col_v2 = st.columns([3, 1])
         with col_v1:
-            st.subheader("🖼️ 彩色网格预览")
+            st.subheader("彩色网格预览")
             # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>（实测 1.60）；
             # st.markdown unsafe_allow_html 不净化，内联 SVG 无空行时不经
             # markdown 重排。components.v1.html 已过弃用线；定高与滚动由
@@ -438,16 +438,16 @@ def render_tab_grid() -> None:
                 st.caption(f"大网格（{view['width']}×{view['height']} 格）以位图预览、不显示符号；"
                            "符号见下方文字符号图，或下载 SVG 获取带符号的矢量图（点击时生成）。")
         with col_v2:
-            st.subheader("📋 颜色图例")
+            st.subheader("颜色图例")
             # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown。
             # 升级前遗留的会话缓存只有 Markdown 图例，回退显示而不是 KeyError。
             st.markdown(view.get("legend_html") or view.get("legend", ""),
                         unsafe_allow_html=True)
 
-        st.subheader("📝 文字符号图表")
+        st.subheader("文字符号图表")
         with st.expander("展开查看 / 复制到聊天", expanded=False):
             st.code(view["chart"], language="")
-        with st.expander("🧶 C2C 逐行指令（对角行）", expanded=False):
+        with st.expander("C2C 逐行指令（对角行）", expanded=False):
             st.code(view.get("c2c")
                     or "旧版缓存网格未包含 C2C 指令；重新生成后可用。",
                     language="")
@@ -456,15 +456,15 @@ def render_tab_grid() -> None:
         col_d1, col_d2, col_d3 = st.columns(3)
         with col_d1:
             st.download_button(
-                "📥 下载 SVG 网格图",
+                "下载 SVG 网格图",
                 _svg_download_data(view),
                 file_name="tapestry_grid.svg",
                 mime="image/svg+xml",
             )
         with col_d2:
             st.download_button(
-                ("📄 下载完整 Markdown 图解"
-                 if view.get("markdown") else "📄 下载 Markdown 图例"),
+                ("下载完整 Markdown 图解"
+                 if view.get("markdown") else "下载 Markdown 图例"),
                 view.get("markdown") or view["legend"],
                 file_name=("tapestry_pattern.md"
                            if view.get("markdown") else "tapestry_legend.md"),
@@ -473,7 +473,7 @@ def render_tab_grid() -> None:
         with col_d3:
             if view.get("project_json"):
                 st.download_button(
-                    "💾 下载可编辑工程",
+                    "下载可编辑工程",
                     view["project_json"],
                     file_name="tapestry_grid_project.json",
                     mime="application/json",

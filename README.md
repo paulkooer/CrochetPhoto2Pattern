@@ -183,7 +183,7 @@ uv run streamlit run app/main.py
 
 ### Save and reopen a pattern
 
-Choose **💾 备份完整结果** (back up the complete result) on a result page to save JSON.
+Choose **备份完整结果** (back up the complete result) on a result page to save JSON.
 In a fresh session, expand **📂 打开备份图解** in the sidebar, upload that file, and click
 **导入并打开图解**. The restored pattern appears in the local Photo tab without generating
 a seed pattern or enabling history. Uploads accept UTF-8 JSON up to 20 MiB; the paste
@@ -193,7 +193,7 @@ Import validates the format, stitch counts and explicit operations before replac
 Photo result. Failed imports preserve current work, and sidebar imports leave the Manual
 tab's result untouched. The import panel on each result page replaces that page's result.
 To retain actual crochet progress, expand **🧺 我的钩织工程**, enter personal notes, choose
-**💾 保存工程（含进度）**, and download the project JSON from the dialog. Projects save
+**保存工程（含进度）**, and download the project JSON from the dialog. Projects save
 completed rounds for each physical copy, notes and a pattern revision. Reopen them through
 the same sidebar uploader. Save again after working: each file captures the state when Save
 was clicked. Edits report affected progress resets; undo restores progress. Ordinary pattern

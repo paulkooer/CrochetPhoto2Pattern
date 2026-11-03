@@ -4,11 +4,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>主体区域修正</title>
 <style>
-  body { margin: 0; font: 14px system-ui, sans-serif; color: #262626; }
-  .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 8px 0; }
-  button, select { padding: 7px; border: 1px solid #aaa; border-radius: 5px; background: #fff; color: #222; }
-  canvas { display: block; max-width: 100%; touch-action: none; cursor: crosshair; border: 1px solid #aaa; }
-  #status { margin: 8px 0; min-height: 20px; }
+  /* 回退令牌与 app/theme.py 同源（tests/test_theme_tokens.py 断言一致）；
+     运行时 editor.js 用组件参数里的 theme 覆盖，和外层页面保持同一套墨色/边线/字体。 */
+  :root {
+    --ink:#1d2440;
+    --ink-soft:#5f6580;
+    --edge:#848da2;
+    --sheet:#ffffff;
+    --paper:#f6f7f4;
+    --rule:#cfd6e3;
+    --font:"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "Noto Sans SC", system-ui, sans-serif;
+  }
+  body { margin: 0; font: 14px/1.5 var(--font); color: var(--ink); background: transparent; }
+  .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 2px 0 10px; }
+  label { display: inline-flex; align-items: center; gap: 6px; }
+  button, select {
+    font: inherit; font-weight: 600; padding: 6px 10px;
+    border: 1px solid var(--edge); border-radius: 3px;
+    background: var(--sheet); color: var(--ink); cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease;
+  }
+  button:hover, select:hover { border-color: var(--ink); background: var(--paper); }
+  button:disabled { border-color: var(--rule); color: var(--ink-soft); background: var(--sheet); cursor: not-allowed; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  input[type="range"], input[type="checkbox"] { accent-color: var(--ink); }
+  canvas {
+    display: block; max-width: 100%; touch-action: none; cursor: crosshair;
+    border: 1px solid var(--edge); border-radius: 3px; background: var(--sheet);
+  }
+  #status { margin: 8px 0 0; min-height: 20px; color: var(--ink-soft); }
+  @media (prefers-reduced-motion: reduce) { button, select { transition: none; } }
 </style>
 <div class="tools">
   <label>操作 <select id="mode"><option value="1">补选主体</option><option value="0">擦除背景</option></select></label>

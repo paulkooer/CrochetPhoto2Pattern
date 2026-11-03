@@ -8,6 +8,7 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
+from app import theme
 from app.models.mask_review import mask_editor_input, with_reviewed_mask
 from app.models.orchestrator import PhotoDraft
 
@@ -33,9 +34,14 @@ def render_mask_editor(draft: PhotoDraft, key: str) -> PhotoDraft:
     buffer = BytesIO()
     preview.save(buffer, format="PNG")
     image_url = "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+    # The iframe cannot import theme.py; pass the tokens so its controls are
+    # drawn with the same ink, edges and type as the page around it.
+    palette = {"ink": theme.INK, "ink_soft": theme.INK_SOFT, "edge": theme.EDGE,
+               "sheet": theme.SHEET, "paper": theme.PAPER, "rule": theme.RULE,
+               "font": theme.FONT_SANS}
     value = _canvas(image_url=image_url, image_token=token, width=small.width, height=small.height,
                     base_pixels=base_pixels, current_pixels=saved["pixels"] if saved else base_pixels,
-                    key=f"review_mask_canvas_{key}", default=saved)
+                    theme=palette, key=f"review_mask_canvas_{key}", default=saved)
     if value is None:
         return draft
     # Keep the last canvas value, including an empty mask, so undo remains

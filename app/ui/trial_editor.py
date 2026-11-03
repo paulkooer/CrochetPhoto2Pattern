@@ -47,7 +47,7 @@ def render_trial_open() -> None:
     from app.ui.result_renderer import md_safe, purge_result_state
     from app.utils.backup import decode_backup_json
 
-    with st.expander("🧪 打开试钩包", expanded=False):
+    with st.expander("打开试钩包", expanded=False):
         st.caption("恢复原图解与实测记录，在「照片分析（本地）」页继续。"
                    "会替换该页当前图解与试钩记录，需要保留时请先分别保存。")
         uploaded = st.file_uploader("选择试钩包 ZIP", type=["zip"], key="trial_open_file")
@@ -149,7 +149,7 @@ def render_trial_editor(result: ResultData, slot: str) -> None:
     from app.ui.result_renderer import md_safe
 
     key = f"trial_workspace_{slot}"
-    with st.expander("🧪 实体试钩记录", expanded=False):
+    with st.expander("实体试钩记录", expanded=False):
         if notice := st.session_state.pop(f"trial_notice_{slot}", None):
             st.success(notice)
         st.caption("记录实测密度、尺寸、用线和工时。试钩包独立保存，不包含在普通图解备份或工程文件中。")

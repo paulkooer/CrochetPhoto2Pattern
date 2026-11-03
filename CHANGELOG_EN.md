@@ -8,6 +8,18 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-03 UI: marker and round checklist
+
+- Ticking a round no longer collapses its part panel: the live completion count in the `st.expander` label changed on every tick, so the element remounted collapsed. The label is now stable and the count lives in the panel's progress bar.
+- Streamlit 1.60 changed the tab and radio DOM (`div[data-testid=stTab]`, `label[data-testid=stRadioOption]`), which silently disabled the marker rules. The active tab wears the stitch-marker yellow again (with a keyboard focus ring), the chosen radio option its pale highlight, and round rows are highlighted edge to edge.
+- Phones: the fixed app bar is paper-coloured so content no longer shows through it when scrolled; `client.toolbarMode = "minimal"` removes the Deploy button; the hero title no longer breaks mid-word.
+- The subject-mask canvas iframe now uses the token system: Python passes the `theme.py` ink/edge/font values as component args, and the fallbacks in `index.html` are guarded by `tests/test_theme_tokens.py`.
+- Part panels show the Chinese shape name instead of the internal enum.
+
+### Changed — 2026-11-03 Emoji removed from UI chrome
+
+- Decorative emoji are removed from tabs, headings, sidebar titles, expander titles and buttons (about 60 places): the pattern-sheet concept reserves the marker yellow as the only highlight and yarn colours as the only other colour, and colourful emoji contradicted it. Status glyphs inside message bodies are unchanged. Tests, the browser script and the READMEs that quoted those labels are updated. Review notes: [Frontend design review](docs/frontend-design-review-20261103.md) (Chinese).
+
 ### Fixed — 2026-11-03 Review provenance
 
 - The result page and Markdown/PDF no longer treat strings, numbers, explicit `null` or unknown subject markers as human confirmation. Unrecognized records prompt rechecking and remain intact in backups; missing legacy fields remain supported. A head box is labeled as user-selected only when its coordinates are valid and match the recorded head span.

@@ -98,8 +98,10 @@ def build_css() -> str:
     background: var(--paper);
     color: var(--ink);
 }}
+/* Fixed app bar: paper, so content scrolling under it reads as the page edge.
+   Transparent let the toolbar collide with the first lines on phones. */
 [data-testid="stHeader"] {{
-    background: transparent;
+    background: var(--paper);
 }}
 [data-testid="stMainBlockContainer"],
 .block-container {{
@@ -150,18 +152,22 @@ hr {{
 }}
 
 /* ── Binder tabs: the open one wears the marker ─────────────────────── */
-[data-testid="stTabs"] [data-baseweb="tab-list"] {{
+/* Streamlit ≥ 1.60 renders tabs as div[data-testid="stTab"][role="tab"]
+   inside [role="tablist"] with a react-aria SelectionIndicator underline;
+   the former baseweb tab-list / button[role="tab"] hooks no longer exist. */
+[data-testid="stTabs"] [role="tablist"] {{
     gap: 0.3rem;
     padding: 0;
     background: transparent;
     border-bottom: 1px solid var(--edge);
     box-shadow: none;
 }}
+[data-testid="stTabs"] .react-aria-SelectionIndicator,
 [data-testid="stTabs"] [data-baseweb="tab-highlight"],
 [data-testid="stTabs"] [data-baseweb="tab-border"] {{
     display: none;
 }}
-[data-testid="stTabs"] button[role="tab"] {{
+[data-testid="stTabs"] [role="tab"] {{
     margin-bottom: -1px;
     padding: 0.55rem 0.95rem;
     border: 1px solid transparent;
@@ -171,19 +177,21 @@ hr {{
     color: var(--ink-soft);
     font-family: var(--sans);
     font-weight: 600;
+    cursor: pointer;
 }}
-[data-testid="stTabs"] button[role="tab"]:hover {{
+[data-testid="stTabs"] [role="tab"]:hover {{
     color: var(--ink);
     background: var(--sheet);
 }}
-[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
     background: var(--marker);
     color: var(--ink);
     border-color: var(--edge);
     border-bottom-color: var(--marker);
 }}
-[data-testid="stTabs"] button[role="tab"] p {{
+[data-testid="stTabs"] [role="tab"] p {{
     font-family: var(--sans);
+    color: inherit;
 }}
 
 /* ── Controls: sans, ruled, no lift ─────────────────────────────────── */
@@ -233,17 +241,20 @@ hr {{
 }}
 .stButton > button:focus-visible,
 .stDownloadButton > button:focus-visible,
-[data-testid="stTabs"] button[role="tab"]:focus-visible {{
+[data-testid="stTabs"] [role="tab"]:focus-visible {{
     outline: 2px solid var(--ink);
     outline-offset: 2px;
 }}
 
-/* Chosen option wears the marker (radio) */
+/* Chosen option wears the marker (radio). Streamlit ≥ 1.60 marks the option
+   as label[data-testid="stRadioOption"][data-selected="true"]. */
+[data-testid="stRadio"] label[data-testid="stRadioOption"],
 [data-testid="stRadio"] label[data-baseweb="radio"] {{
     padding: 0.2rem 0.6rem 0.2rem 0.35rem;
     border-radius: 3px;
     transition: background-color 120ms ease;
 }}
+[data-testid="stRadio"] label[data-testid="stRadioOption"][data-selected="true"],
 [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {{
     background: var(--marker-soft);
 }}
@@ -333,6 +344,8 @@ hr {{
     font-weight: 600;
 }}
 [class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label {{
+    display: flex;
+    width: 100%;
     align-items: baseline;
     gap: 0.6rem;
     margin: 0;
@@ -358,6 +371,18 @@ hr {{
 }}
 [class*="st-key-sheet_part_"] [data-testid="stCheckbox"] {{
     margin-bottom: 0;
+    width: 100%;
+}}
+/* Streamlit sizes the checkbox's element container to its content; a sheet
+   row runs edge to edge so the marker sweep and the rule read as one ruled
+   line. The container carries the widget key class (chk_<rid>_…). */
+[class*="st-key-sheet_part_"] [class*="st-key-chk_"] {{
+    width: 100%;
+    align-self: stretch;
+}}
+[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] > label {{
+    width: 100%;
+    flex: 1 1 auto;
 }}
 
 /* ── Hero: mark + title, one drawn moment ───────────────────────────── */
@@ -403,7 +428,8 @@ hr {{
 @keyframes sheet-fade {{
     to {{ opacity: 1; }}
 }}
-.sheet-hero__title {{
+/* header.sheet-hero h1: outranks Streamlit's own markdown h1 sizing rule. */
+header.sheet-hero h1.sheet-hero__title {{
     margin: 0;
     font-family: var(--serif);
     font-size: clamp(1.6rem, 3vw, 2.1rem);
@@ -433,6 +459,12 @@ hr {{
     .sheet-hero__mark {{
         width: 56px;
         height: 56px;
+    }}
+    /* One unbreakable word next to the mark: size it to fit a phone column
+       rather than letting the browser split it mid-name. */
+    header.sheet-hero h1.sheet-hero__title {{
+        font-size: 1.25rem;
+        overflow-wrap: anywhere;
     }}
 }}
 
@@ -521,6 +553,7 @@ hr {{
         opacity: 1;
     }}
     [class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label,
+    [data-testid="stRadio"] label[data-testid="stRadioOption"],
     [data-testid="stRadio"] label[data-baseweb="radio"],
     .stButton > button,
     .stDownloadButton > button {{
