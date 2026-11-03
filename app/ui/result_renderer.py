@@ -27,7 +27,7 @@ from app.schemas import (
 from app.services import result_logic
 from app.services.result_logic import rebuild_params, result_profile
 from app.services.workspace import workspace
-from app.ui.design_system import section_heading
+from app.ui.design_system import controls_row, section_heading
 from app.utils.exporters import export_markdown
 from app.utils.share import _BACKUP_KEYS
 
@@ -208,7 +208,7 @@ def _render_paged_progress(result: ResultData, slot: str) -> None:
     done = sum(bool(completed.get(identity)) for identity, _ in entries)
     st.progress(done / len(entries) if entries else 0,
                 text=f"{md_safe(part['name'])}：已完成 {done}/{len(entries)} 圈次")
-    with st.container(horizontal=True):
+    with controls_row():
         st.button("重置进度", key=f"clear_{rid}_{part['name']}",
                   on_click=set_completed, args=(False,))
         st.button("全部完成", key=f"all_{rid}_{part['name']}",
@@ -314,7 +314,7 @@ def _render_part_progress(
             pct, text=f"钩织进度 {pct}%  ({n_done}/{physical_rounds} 圈次)")
         st.markdown("**逐圈进度**：勾选已完成的圈")
         # Two content-width buttons side by side; st.columns(2) spread them half a panel apart.
-        with st.container(horizontal=True):
+        with controls_row():
             st.button("重置进度", key=f"clear_{part_key}",
                       on_click=set_completed, args=(False,))
             st.button("全部完成", key=f"all_{part_key}",
@@ -761,7 +761,7 @@ def render_results(result: ResultData, slot: str) -> None:
         if draft_pending:
             st.caption("JSON 草稿尚未应用。请点击「重新生成」应用修改；"
                        "下载、分享和存入历史使用当前已应用的图解。")
-        with st.container(horizontal=True):
+        with controls_row():
             preview_json = st.button("预览 JSON 修改影响", key=f"edit_{result_key}_json_preview")
             apply_json = st.button("重新生成", key=f"regen_{result_key}")
         if apply_json or preview_json:
@@ -789,7 +789,7 @@ def render_results(result: ResultData, slot: str) -> None:
             height=360,
             key=f"struct_edit_{result_key}",
         )
-        with st.container(horizontal=True):
+        with controls_row():
             preview_structure = st.button("预览结构 JSON 修改影响",
                                           key=f"edit_{result_key}_structure_preview")
             apply_structure = st.button("校验结构并重新生成", key=f"struct_go_{result_key}")

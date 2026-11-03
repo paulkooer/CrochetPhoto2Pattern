@@ -147,6 +147,10 @@ uv sync --locked
 # Alternative: python -m pip install -e .
 ```
 
+Use the locked Streamlit version for the UI. Although the package metadata currently
+allows 1.40, existing UI calls are incompatible with that version; the declared lower
+bound needs a separate compatibility review.
+
 ### Configure
 
 No API key or model service is needed. Optionally copy `.env.example` to `.env` to

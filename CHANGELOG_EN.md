@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-03 Older Streamlit container API
+
+- Button groups fall back to vertical containers when Streamlit lacks the `horizontal` argument; the locked version keeps the horizontal layout. Other existing UI calls remain incompatible with 1.40, so the dependency lower bound or broader compatibility still needs separate work.
+
 ### Changed — 2026-11-03 UI information architecture: sidebar and local corrections
 
 - The sidebar now reads creation settings (gauge → shaping) → "打开已有工作" (open backup, open trial bundle, my history). The gauge no longer sits below two import panels, the three dividers are down to one, and the sidebar's own divider margin is narrower. The two open entries keep their own panels, grouped by a subheading rather than nested: Streamlit 1.66 does allow nested expanders, but nesting only costs an extra click before the uploader.
