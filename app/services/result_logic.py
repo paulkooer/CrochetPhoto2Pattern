@@ -32,6 +32,7 @@ from app.schemas import (
     PatternParams,
     PatternResult,
     ResultData,
+    StructureData,
 )
 
 # 与侧栏"塑形选项（进阶）"的默认值同源；result["style"] 缺失时兜底
@@ -56,7 +57,7 @@ def result_profile(result: ResultData) -> list[float] | None:
     return profile if isinstance(profile, list) and profile else None
 
 
-def _resize_structure(result: ResultData, analysis: ImageAnalysis) -> dict:
+def _resize_structure(result: ResultData, analysis: ImageAnalysis) -> StructureData:
     """Scale physical dimensions while retaining the user's edited graph.
 
     Diameters and round accessories follow head size; other lengths follow
@@ -83,8 +84,9 @@ def _resize_structure(result: ResultData, analysis: ImageAnalysis) -> dict:
             part["diameter_cm"] = analysis.head_diameter_cm
     if str(structure.get("proportions", "")).startswith(PROPORTIONS_HEAD_BODY_PREFIX):
         by_name = {part["name"]: part for part in structure["parts"]}
-        head = by_name.get("头部", {}).get("diameter_cm")
-        body = by_name.get("身体", {}).get("height_cm")
+        head_part, body_part = by_name.get("头部"), by_name.get("身体")
+        head = head_part.get("diameter_cm") if head_part is not None else None
+        body = body_part.get("height_cm") if body_part is not None else None
         if head and body:
             structure["proportions"] = (
                 f"{PROPORTIONS_HEAD_BODY_PREFIX}{head / body:.1f} 倍，Q 版卡通比例")
@@ -95,7 +97,7 @@ def _result_style(result: ResultData) -> ShapingStyle:
     return ShapingStyle(**{**STYLE_DEFAULTS, **(result.get("style") or {})})
 
 
-def saved_part_gauges(result: ResultData, structure: dict | None = None) -> dict[str, Gauge]:
+def saved_part_gauges(result: ResultData, structure: StructureData | None = None) -> dict[str, Gauge]:
     names = {p["name"] for p in (structure or result["structure"])["parts"]}
     default = gauge_from_result(result)
     return {p["name"]:gauge_for_part(p, default) for p in result["params"]["parts"]
@@ -138,7 +140,7 @@ def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bo
     return rebuilt
 
 
-def validate_backup(data: dict) -> tuple[AnalysisData, dict]:
+def validate_backup(data: dict) -> tuple[AnalysisData, StructureData]:
     """备份 JSON → (analysis, structure)，与 params 同等待遇的入参校验。
 
     旧版只重建 params，analysis/structure 原样入库——手改坏的结构要到
@@ -201,7 +203,7 @@ def regenerate_with_size(result: ResultData, new_head: float, new_height: float)
     return _finish_geometry_edit(result, updated)
 
 
-def regenerate_with_structure(result: ResultData, corrected_structure: dict) -> ResultData:
+def regenerate_with_structure(result: ResultData, corrected_structure: dict | StructureData) -> ResultData:
     """StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI。"""
     structure = normalize_structure(corrected_structure)
 
@@ -282,7 +284,7 @@ def regenerate_with_part_gauge(result: ResultData, name: str, gauge: Gauge | Non
                                 part_gauges=overrides)
 
 
-def _regenerate_geometry(result: ResultData, structure: dict, gauge: Gauge,
+def _regenerate_geometry(result: ResultData, structure: StructureData, gauge: Gauge,
                          head_opening_stitches: int | None, *, reset_head: bool = False,
                          part_gauges: dict[str, Gauge] | None = None) -> ResultData:
     analysis = ImageAnalysis(**result["analysis"])

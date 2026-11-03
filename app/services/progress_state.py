@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from collections.abc import Iterator, Mapping, MutableMapping
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 
-from app.schemas import PartData, ResultData
+from app.schemas import PartData, ResultData, StructureData, StructureInstanceData
 
 MAX_INLINE_ROUNDS = 500
 PROGRESS_PAGE_SIZE = 50
@@ -63,7 +63,7 @@ def progress_copy_prefixes(result: ResultData, slot: str) -> list[list[str]]:
     return prefixes
 
 
-def _copy_instance_ids(instances: list[dict], quantity: int) -> list[str]:
+def _copy_instance_ids(instances: Sequence[StructureInstanceData], quantity: int) -> list[str]:
     """Reserve graph IDs before assigning deterministic IDs to extra copies."""
     reserved = {instance["instance_id"] for instance in instances}
     identities = []
@@ -81,12 +81,13 @@ def _copy_instance_ids(instances: list[dict], quantity: int) -> list[str]:
 
 def _legacy_identity_collisions(result: ResultData) -> dict[str, set[str]]:
     """Find copy IDs that the old graph/fallback mapping assigned twice."""
-    structure = result.get("structure") or {}
+    structure: StructureData = result.get("structure") or {"parts": []}
     graph = {p["name"]: p for p in structure.get("parts", [])}
     collisions = {}
     for part in result["params"]["parts"]:
-        instances = (graph.get(part["name"], {}).get("instances", [])
-                     if structure.get("schema_version") == "2.0" else [])
+        entry = graph.get(part["name"])
+        instances = (entry.get("instances", [])
+                     if entry is not None and structure.get("schema_version") == "2.0" else [])
         ids = [instances[i]["instance_id"] if i < len(instances) else f"copy{i + 1}"
                for i in range(part.get("quantity", 1))]
         duplicated = {identity for identity, count in Counter(ids).items() if count > 1}
@@ -109,12 +110,13 @@ def ambiguous_legacy_progress(result: ResultData, progress: dict[str, bool]) -> 
 
 def _copy_roles(result: ResultData) -> dict[str, dict[str, tuple[str, str | int]]]:
     """Distinguish real graph IDs from ordinal IDs assigned to extra copies."""
-    structure = result.get("structure") or {}
+    structure: StructureData = result.get("structure") or {"parts": []}
     graph = {p["name"]: p for p in structure.get("parts", [])}
     roles: dict[str, dict[str, tuple[str, str | int]]] = {}
     for part in result["params"]["parts"]:
-        instances = (graph.get(part["name"], {}).get("instances", [])
-                     if structure.get("schema_version") == "2.0" else [])
+        entry = graph.get(part["name"])
+        instances = (entry.get("instances", [])
+                     if entry is not None and structure.get("schema_version") == "2.0" else [])
         identities = _copy_instance_ids(instances, part.get("quantity", 1))
         roles[part["name"]] = {
             identity: ("graph", instances[index]["instance_id"]) if index < len(instances)
@@ -136,15 +138,15 @@ def progress_entries(result: ResultData, slot: str, *,
             and (type(part_index) is not int or not 0 <= part_index < len(parts))):
         raise ValueError("进度部件索引无效")
     prefixes = progress_copy_prefixes(result, slot)
-    structure = result.get("structure") or {}
+    structure: StructureData = result.get("structure") or {"parts": []}
     graph = {p["name"]: p for p in structure.get("parts", [])}
     for selected_index, part in enumerate(parts):
         if part_index is not None and selected_index != part_index:
             continue
         name = part["name"]
-        instances = (
-            graph.get(name, {}).get("instances", []) if structure.get("schema_version") == "2.0" else []
-        )
+        entry = graph.get(name)
+        instances = (entry.get("instances", [])
+                     if entry is not None and structure.get("schema_version") == "2.0" else [])
         for instance, prefix in zip(_copy_instance_ids(instances, len(prefixes[selected_index])),
                                     prefixes[selected_index], strict=True):
             for index, rd in enumerate(part["rounds"]):
@@ -209,9 +211,10 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
         part = next((p for p in result["params"]["parts"] if p["name"] == name), None)
         if part is None:
             return []
-        structure = result.get("structure") or {}
-        entry: dict = next((p for p in structure.get("parts", []) if p["name"] == name), {})
-        instances = entry.get("instances", []) if structure.get("schema_version") == "2.0" else []
+        structure: StructureData = result.get("structure") or {"parts": []}
+        entry = next((p for p in structure.get("parts", []) if p["name"] == name), None)
+        instances = (entry.get("instances", [])
+                     if entry is not None and structure.get("schema_version") == "2.0" else [])
         return _copy_instance_ids(instances, part.get("quantity", 1))
 
     for connection in old_links + new_links:

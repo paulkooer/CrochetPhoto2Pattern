@@ -383,8 +383,8 @@ class PatternResult(BaseModel):
         result_id/history_id/title 未设置时不出键，保证 orchestrator 产物与既有
         键集断言完全一致。"""
         data = self.model_dump(exclude={"schema_version"})
-        # Only the top-level shape was validated. Callers must supply valid analysis
-        # and params; imports use validate_backup and rebuild_params first.
+        # Only the top-level shape was validated. Callers must supply valid analysis,
+        # structure and params; imports validate and rebuild these first.
         return cast("ResultData", {k: v for k, v in data.items()
                                    if k not in ("result_id", "history_id", "title") or v is not None})
 
@@ -435,6 +435,53 @@ class AnalysisData(TypedDict, total=False):
     top_color: str | None
     bottom_color: str | None
     clothing_type: str | None
+
+
+class StructureVectorData(TypedDict):
+    x: float
+    y: float
+    z: float
+
+
+class StructureAttachmentData(TypedDict):
+    target_part_id: str
+    target_anchor: str
+    self_anchor: str
+    method: Literal["sewn", "worn", "crocheted_or_sewn"]
+
+
+class StructureInstanceData(TypedDict, total=False):
+    instance_id: Required[str]
+    position: Required[StructureVectorData]
+    rotation_deg: Required[StructureVectorData]
+    attachments: Required[list[StructureAttachmentData]]
+    mirror_of: str
+
+
+class StructurePartData(TypedDict, total=False):
+    name: Required[str]
+    shape: str | int | float | None
+    type: str | int | float | None
+    color: str | int | float | None
+    diameter_cm: float
+    height_cm: float
+    length_cm: float
+    count: int
+    instances: list[StructureInstanceData]
+    # Legacy payloads can retain arbitrary values for these v2-only keys.
+    part_id: object
+    mirror_group: object
+    source: object
+    confidence: object
+
+
+class StructureData(TypedDict, total=False):
+    parts: Required[list[StructurePartData]]
+    # Legacy metadata is preserved without requiring the v2 model's types.
+    schema_version: object
+    coordinate_system: object
+    proportions: object
+    notes: object
 
 
 class RoundData(TypedDict, total=False):
@@ -488,7 +535,7 @@ class PatternParams(TypedDict, total=False):
 
 class ResultData(TypedDict, total=False):
     analysis: Required[AnalysisData]
-    structure: Required[dict[str, Any]]
+    structure: Required[StructureData]
     params: Required[PatternParams]
     style: dict[str, Any] | None
     gauge: dict[str, Any] | None

@@ -200,6 +200,32 @@ async function headProgress(page, scope, rid, checked) {
     assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
     record('download backup/JSON/Markdown/PDF and compare actual contents');
 
+    // Old structure payloads can preserve arbitrary custom IDs without v2 instances.
+    const legacy = structuredClone(backup);
+    const legacyKeys = new Set(['name','shape','color','diameter_cm','height_cm','length_cm','count']);
+    legacy.structure = {parts:backup.structure.parts.map((part,index) => ({
+      ...Object.fromEntries(Object.entries(part).filter(([name]) => legacyKeys.has(name))),
+      part_id:index % 2 ? ['legacy','custom'] : {legacy:'custom'},
+    }))};
+    assert(legacy.structure.parts.length > 0);
+    const legacyPath = path.join(output,'legacy-structure-custom-id-input.json');
+    await fs.writeFile(legacyPath,JSON.stringify(legacy));
+    const legacyContext = await context();
+    const legacyPage = lastPage = await legacyContext.newPage();
+    await legacyPage.goto(baseURL);
+    const legacySidebar = legacyPage.locator('[data-testid="stSidebar"]');
+    await key(legacySidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(legacyPath);
+    await clickKey(legacyPage,legacySidebar,'open_backup_apply');
+    const legacyPanel = legacyPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const legacyId = await resultId(legacyPanel);
+    const legacyExport = JSON.parse(await download(legacyPage,key(legacyPanel,`dl_backup_${legacyId}`)
+      .getByRole('button'),path.join(output,'legacy-structure-custom-id-export.json')));
+    assert.deepEqual(legacyExport.structure,legacy.structure);
+    await legacyPage.screenshot({path:path.join(output,'legacy-structure-custom-id.png'),fullPage:true});
+    record('legacy custom structure IDs survive import, rendering and backup export');
+    lastPage = page;
+    await legacyContext.close();
+
     await page.getByRole('tab',{name:'✏️ 手动输入',exact:true}).click();
     const manual = page.getByRole('tabpanel',{name:'✏️ 手动输入',exact:true});
     await clickKey(page,manual,'btn_manual');

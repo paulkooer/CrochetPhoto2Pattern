@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import re
 import uuid
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import asdict
+from typing import Any
 
 import streamlit as st
 
@@ -28,7 +30,8 @@ def edit_structure_part(
     instance_index: int = 0,
     attachments: list[dict] | None = None,
 ) -> ResultData:
-    structure = deepcopy(normalize_structure(result["structure"]))
+    # Form inputs may be invalid until regenerate_with_structure validates them.
+    structure: dict[str, Any] = dict(deepcopy(normalize_structure(result["structure"])))
     part = structure["parts"][index]
     part.update(dimensions)
     part["count"] = count
@@ -191,7 +194,8 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
                 format_func=lambda i: parts[i]["name"],
                 key=f"edit_{rid}_part",
             )
-            part = parts[index]
+            # Dynamic form keys and values are validated when the edit is applied.
+            part: Mapping[str, Any] = parts[index]
             prefix = f"edit_{rid}_part{index}"
             inst_index = 0
             if result["structure"].get("schema_version") == "2.0" and part.get("instances"):

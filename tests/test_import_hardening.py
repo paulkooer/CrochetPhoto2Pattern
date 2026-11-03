@@ -69,6 +69,43 @@ def test_legacy_structure_accepts_scalar_fields():
     assert out["parts"][0]["shape"] == "sphere"
 
 
+@pytest.mark.parametrize("part_id", [{"legacy": "custom"}, ["legacy", "custom"]])
+def test_legacy_custom_part_ids_survive_import_and_render(part_id):
+    from streamlit.testing.v1 import AppTest
+
+    from app.schemas import PatternResult
+    from app.services.result_logic import import_backup
+    from tests.test_project_backup import RENDER
+
+    backup = PatternResult.from_result(_mock_result("legacy-custom")).to_backup()
+    backup["structure"] = {"parts": [
+        {**{key: part[key] for key in ("name", "shape", "color", "diameter_cm", "height_cm", "length_cm")
+            if key in part}, "part_id": part_id}
+        for part in backup["structure"]["parts"]]}
+    restored = import_backup(backup, "legacy-custom")
+    assert restored["structure"]["parts"][0]["part_id"] == part_id
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = restored
+    at.run()
+    assert not at.exception
+    structure_table = next(frame.value for frame in at.dataframe if "连接" in frame.value.columns)
+    assert set(structure_table["部件"]) == {part["name"] for part in restored["structure"]["parts"]}
+
+
+def test_v2_structure_still_renders_attachment_target_names():
+    from streamlit.testing.v1 import AppTest
+
+    from tests.test_project_backup import RENDER
+
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = _mock_result("v2-structure")
+    at.run()
+    assert not at.exception
+    structure_table = next(frame.value for frame in at.dataframe if "连接" in frame.value.columns)
+    head = structure_table.loc[structure_table["部件"] == "头部"].iloc[0]
+    assert "身体.top" in head["连接"]
+
+
 # 注：圈号「递增」未作强制。插入/重排圈的编辑会产生非递增但唯一的标签，
 # 进度按位置标识跟踪而非圈号（见 test_edit_impact），应允许其往返保存；
 # 重复圈号仍被拒（唯一性由 validate_pattern 与 CrochetPart 双重保证）。

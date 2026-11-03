@@ -504,20 +504,23 @@ def render_results(result: ResultData, slot: str) -> None:
                            "与照片剖面（橙虚线）")
     rows = []
     id_to_name = {
-        part.get("part_id"): part.get("name", "?")
-        for part in structure.get("parts", []) if part.get("part_id")
+        part_id: part.get("name", "?")
+        for part in structure.get("parts", [])
+        if isinstance(part_id := part.get("part_id"), str) and part_id
     }
-    for part in structure.get("parts", []):
+    shape_labels: dict[str | None, str | None] = {
+        "sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形", "profile": "照片轮廓"}
+    for structure_part in structure.get("parts", []):
         dims = []
-        if part.get("diameter_cm"):
-            dims.append(f"直径 {part['diameter_cm']}cm")
-        if part.get("height_cm"):
-            dims.append(f"高 {part['height_cm']}cm")
-        if part.get("length_cm"):
-            dims.append(f"长 {part['length_cm']}cm")
+        if structure_part.get("diameter_cm"):
+            dims.append(f"直径 {structure_part['diameter_cm']}cm")
+        if structure_part.get("height_cm"):
+            dims.append(f"高 {structure_part['height_cm']}cm")
+        if structure_part.get("length_cm"):
+            dims.append(f"长 {structure_part['length_cm']}cm")
         poses = []
         connections = []
-        for instance in part.get("instances", []):
+        for instance in structure_part.get("instances", []):
             position = instance.get("position") or {}
             rotation = instance.get("rotation_deg") or {}
             poses.append(
@@ -537,19 +540,18 @@ def render_results(result: ResultData, slot: str) -> None:
                     f"{target}.{attachment.get('target_anchor', '?')}"
                     f"（{attachment.get('method', 'sewn')}）"
                 )
+        shape = structure_part.get("shape", "—")
         rows.append({
-            "部件": part.get("name", "?"),
-            "数量": part.get("count", 1),
+            "部件": structure_part.get("name", "?"),
+            "数量": structure_part.get("count", 1),
             # shape 正常是字符串；非标量（旧备份注入的 dict/list）会让 dict.get
             # 抛 unhashable TypeError，这里降级为「—」而非崩溃（import 侧已拦截，
             # 此为渲染层兜底）。
-            "形状": ({"sphere": "球形", "cylinder": "圆柱", "cup": "开口杯形",
-                      "profile": "照片轮廓"}.get(part.get("shape"), part.get("shape", "—"))
-                     if isinstance(part.get("shape"), (str, type(None))) else "—"),
+            "形状": shape_labels.get(shape, shape) if isinstance(shape, (str, type(None))) else "—",
             "尺寸": "，".join(dims) or "—",
             "位置 / 旋转": "；".join(poses) or "旧版未记录",
             "连接": "；".join(connections) or "独立部件 / 未记录",
-            "基准色": part.get("color", "—"),
+            "基准色": structure_part.get("color", "—"),
         })
     if rows:
         st.dataframe(rows, hide_index=True, width="stretch")
@@ -570,8 +572,8 @@ def render_results(result: ResultData, slot: str) -> None:
             else:
                 st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):
-            for part in structure.get("parts", []):
-                st.json(part)
+            for structure_part in structure.get("parts", []):
+                st.json(structure_part)
 
     # Section 3: Crochet Pattern  (with round progress tracking)
     section_heading(3, "钩织参数")

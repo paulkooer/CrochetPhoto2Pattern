@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Mapping
 from copy import deepcopy
+from typing import Any
 
 import streamlit as st
 
@@ -41,10 +43,11 @@ def metrics(result: ResultData) -> dict:
                   f"{spec['swatch_rows']} 行；{density}")
     dimensions = []
     for part in result["structure"].get("parts", []):
+        values: Mapping[str, Any] = part
         sizes = "、".join(
-            f"{label} {part[key]:g}"
+            f"{label} {values[key]:g}"
             for key, label in (("diameter_cm", "直径"), ("height_cm", "高度"), ("length_cm", "长度"))
-            if part.get(key) is not None
+            if values.get(key) is not None
         )
         dimensions.append(f"{part['name']} × {part.get('count', 1)}：{sizes}")
     return {

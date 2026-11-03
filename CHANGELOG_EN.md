@@ -8,6 +8,15 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-03 Static structure-data types
+
+- Add `TypedDict` contracts for structures, parts, instances, positions and attachments across result, generation and rebuild paths. Unconstrained legacy metadata retains broad types and custom fields survive normalization; v2 continues to use the existing model validation and runtime data remains plain dicts.
+- Add contract tests for model fields, serialization, legacy numeric values and custom fields. The static types do not add runtime validation; callers constructing `PatternResult` directly remain responsible for valid nested data.
+
+### Fixed — 2026-11-03 Legacy structure result page
+
+- A legacy backup with a dict or list in its custom `part_id` no longer crashes the result page after import. The custom value is retained, and v2 attachments still show the target part name.
+
 ### Changed — 2026-11-03 Static analysis-data type
 
 - Add `AnalysisData` for the session result's `analysis` field, matching `ImageAnalysis` so mypy can check field names and value types. `ImageAnalysis.to_data()` returns the same plain serialized dict; imports and size regeneration retain their existing validation and data formats.
