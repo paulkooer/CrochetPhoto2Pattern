@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 权威状态快照：2026-11-02。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 权威状态快照：2026-11-03。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 
@@ -14,6 +14,11 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+2026-11-03 分析数据静态类型（基于 `main` `f5fc642` 的分支 `refactor/typed-analysis`；提交前本地验证）：
+`AnalysisData` 为会话分析字段提供与 `ImageAnalysis` 一致的静态类型，旧备份继续使用原有校验与默认值。
+全量 **2508 passed、2 skipped，87.10s**；全仓 Ruff、mypy（206 文件）通过。本次提交前未重跑浏览器或远端 CI；
+未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+
 2026-11-02 合并：按维护者指示，[PR #31](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/31) 以 squash 合入
 `main`（`c0b6919`），合并树与受检头提交 `1a33b5f` 相同，其 **10 项远端检查全部通过**；
 [PR #32](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/32) 合并 `main` 后的头提交 `bd6f98d`（文件树与此前受检的
@@ -23,12 +28,13 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 browser-smoke 首次在工程 JSON 下载处失败（浏览器被关闭），仅重跑该任务后通过，**10 项检查全部通过**后 squash 合入（`98de584`）。
 无独立复核；Beta 与 G3/G4 不变。
 
-2026-11-02 结果数据静态类型（基于 `main` `0680738` 的分支 `refactor/typed-result`；提交前本地验证）：
+2026-11-02 结果数据静态类型（[PR #38](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/38)，头提交 `33d685e`
+**10 项检查全部通过**后 squash 合入 `f5fc642`，合并树相同；以下为基于 `main` `0680738` 的提交前本地验证）：
 新增 `ResultData`、`PatternParams`、`PartData`、`RoundData` 静态类型，服务层、界面编辑器、CLI 与编排器改用这些类型，
 只读模型函数接受 `Mapping`；运行时仍为纯 dict。挑针接裙的预留圈缺少 `notes` 时现在提示校验错误，不再抛出 `KeyError`。
 2026-11-03 收尾后的全量测试 **2503 passed、2 skipped，89.64s**；
-全仓 Ruff、mypy（206 文件）通过；此前本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。未做远端 CI、
-独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+全仓 Ruff、mypy（206 文件）通过；此前本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。未做独立复核、
+授权照片评测或实体试钩；Beta 与 G3/G4 不变。
 
 2026-11-02 图解格式迁移链（[PR #36](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/36)，头提交 `3c4eb50`
 **10 项检查全部通过**后 squash 合入 `0680738`，合并树相同；以下为合并前本地验证，基于 `main` `a13efcd` 的分支 `refactor/result-migrations`）：
@@ -769,8 +775,8 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **功能基线已合并：`de0a65a`** | PR #31、#32 已 squash 合入 `main`，合并树分别与受检头提交 `1a33b5f`、`bd6f98d` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **PR #32 最终头提交的 10 项远端检查通过** | 受检头提交 `bd6f98d`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和 14 条浏览器流程均通过。合并后及后续提交的检查按各自 SHA 核对 |
+| G1 可复现源码 | **最近合并基线：`f5fc642`** | PR #38 已 squash 合入 `main`，合并树与受检头提交 `33d685e` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
+| G2 支持版本自动化 | **PR #38 头提交的 10 项远端检查通过** | 受检头提交 `33d685e`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和浏览器冒烟均通过。合并后及后续提交的检查按各自 SHA 核对 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛（含可钩率 100%，以及除声明不支持的构造外 Parade 100% 完整导出）。默认本地流程只交付固定模板部件，部件宏 F1 高于模板基线这一条仍需新的识别能力 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |

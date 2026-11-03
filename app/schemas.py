@@ -242,6 +242,10 @@ class ImageAnalysis(BaseModel):
         去重（保序）比报错更符合"尽力生成图解"的产品语义。"""
         return list(dict.fromkeys(value))
 
+    def to_data(self) -> "AnalysisData":
+        """Serialize the validated analysis as the plain session dictionary."""
+        return cast("AnalysisData", self.model_dump())
+
 
 # 参考画布：VisionOutput 只产出比例，换算到内部 ImageAnalysis 时用它作为
 # 高度画布（与旧"固定 18.0 画布"的 prompt 口径数值等价）。
@@ -379,8 +383,8 @@ class PatternResult(BaseModel):
         result_id/history_id/title 未设置时不出键，保证 orchestrator 产物与既有
         键集断言完全一致。"""
         data = self.model_dump(exclude={"schema_version"})
-        # Only the top-level shape was validated. Callers must supply valid params;
-        # imported data goes through rebuild_params before it becomes a session result.
+        # Only the top-level shape was validated. Callers must supply valid analysis
+        # and params; imports use validate_backup and rebuild_params first.
         return cast("ResultData", {k: v for k, v in data.items()
                                    if k not in ("result_id", "history_id", "title") or v is not None})
 
@@ -416,6 +420,21 @@ def strip_photo_derived(backup: Mapping[str, Any]) -> dict[str, Any]:
 # 只给 mypy 描述同一形态，不做运行时校验。字段须与上面的 pydantic 模型和
 # RESULT_KEYS 一致，tests/test_result_types.py 会核对。旧数据可能缺少部分字段，
 # 因此按会话使用的最低键要求标记必有键。
+
+
+class AnalysisData(TypedDict, total=False):
+    body_type: Required[str]
+    head_diameter_cm: Required[float]
+    height_cm: Required[float]
+    main_features: Required[list[str]]
+    pose: Required[str]
+    difficulty: Required[Difficulty]
+    parts: Required[list[str]]
+    recommended_colors: list[str] | None
+    hair_color: str | None
+    top_color: str | None
+    bottom_color: str | None
+    clothing_type: str | None
 
 
 class RoundData(TypedDict, total=False):
@@ -468,7 +487,7 @@ class PatternParams(TypedDict, total=False):
 
 
 class ResultData(TypedDict, total=False):
-    analysis: Required[dict[str, Any]]
+    analysis: Required[AnalysisData]
     structure: Required[dict[str, Any]]
     params: Required[PatternParams]
     style: dict[str, Any] | None

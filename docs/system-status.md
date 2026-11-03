@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-11-02. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-11-03. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -13,6 +13,13 @@ real-photo baseline and an independent physical-trial baseline are still missing
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
 ## Latest reproducible validation
+
+2026-11-03 static analysis-data type, on branch `refactor/typed-analysis` based on `main` `f5fc642`
+(local pre-commit checks): `AnalysisData` gives session analysis fields static types aligned with
+`ImageAnalysis`; legacy imports still use the same validation and defaults. Full suite: **2508 passed,
+2 skipped in 87.10s**; repository-wide Ruff and mypy (206 files) pass. No new browser run or remote CI
+at this pre-commit snapshot. No independent review, authorized-photo evaluation or physical trial;
+Beta and G3/G4 are unchanged.
 
 2026-11-02 merges, as directed by the maintainer:
 [PR #31](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/31) was squash-merged into `main` as
@@ -27,14 +34,15 @@ identical to the previously checked `0e44108`); browser-smoke first failed at th
 passed on a rerun of that job alone, and after all **10 checks** passed it was squash-merged as `98de584`.
 No independent review; Beta and G3/G4 are unchanged.
 
-2026-11-02 static result types, on branch `refactor/typed-result` based on `main` `0680738` (local pre-commit
-checks): add `ResultData`, `PatternParams`, `PartData` and `RoundData` static types; services, UI editors, the CLI
+2026-11-02 static result types ([PR #38](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/38) passed all
+**10 checks** on head `33d685e` and was squash-merged as `f5fc642` with an identical tree; the following are
+its local pre-commit checks on `refactor/typed-result` based on `main` `0680738`): add `ResultData`, `PatternParams`,
+`PartData` and `RoundData` static types; services, UI editors, the CLI
 and orchestrator use them, and read-only model functions accept `Mapping`. Results stay plain dicts at runtime;
 an attached-skirt reservation row missing `notes` now gets a validation message instead of `KeyError`.
 Full suite after the 2026-11-03 follow-up: **2503 passed, 2 skipped in 89.64s**; repository-wide Ruff and mypy
 (206 files) pass. An earlier local Chrome run passed **14 synthetic flows** and the mask-canvas check.
-No remote CI, independent review,
-authorized-photo evaluation or physical trial; Beta and G3/G4 are unchanged.
+No independent review, authorized-photo evaluation or physical trial; Beta and G3/G4 are unchanged.
 
 2026-11-02 pattern format migration chain ([PR #36](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/36) passed
 all **10 checks** on head `3c4eb50` and was squash-merged as `0680738` with an identical tree; the following are its
@@ -906,8 +914,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Feature baseline merged: `de0a65a`** | PRs #31 and #32 were squash-merged into `main`; their trees match checked heads `1a33b5f` and `bd6f98d`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 10 remote checks passed for final PR #32 head** | Checked head `bd6f98d`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and all 14 browser flows pass. Verify post-merge and later-commit results against their own SHAs |
+| G1 Reproducible source | **Latest merged baseline: `f5fc642`** | PR #38 was squash-merged into `main` with the same tree as checked head `33d685e`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 10 remote checks passed for PR #38 head** | Checked head `33d685e`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |
