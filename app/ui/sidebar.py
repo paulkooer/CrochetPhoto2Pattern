@@ -10,7 +10,7 @@ from app.models.gauge import PRESET_LABELS
 
 def render_sidebar() -> None:
     with st.sidebar:
-        st.header("🧺 创作设置")
+        st.header("创作设置")
         st.caption("先选择密度与塑形偏好，再开始生成你的专属钩织图解。")
         # Remove obsolete credentials from sessions surviving an app upgrade.
         for key in ("openai_key", "anthropic_key", "openai_base_url", "anthropic_base_url",
@@ -25,7 +25,7 @@ def render_sidebar() -> None:
 
         render_trial_open()
         st.divider()
-        st.subheader("🧵 编织密度（小样）")
+        st.subheader("编织密度（小样）")
         preset = st.select_slider(
             "密度预设",
             options=["classic", "dk", "fine", "custom"],
@@ -48,7 +48,7 @@ def render_sidebar() -> None:
                 disabled=preset != "custom")
 
         st.divider()
-        with st.expander("🎛 塑形选项（进阶）", expanded=False):
+        with st.expander("塑形选项（进阶）", expanded=False):
             st.select_slider(
                 "头部球体", options=["ladder", "ideal", "egg"], value="ladder",
                 format_func={"ladder": "经典阶梯球（图解通行）",
@@ -72,7 +72,7 @@ def render_sidebar() -> None:
 
         # ── 图解历史（S4）：SQLite 本机持久化，跨会话载回 ─────────────────
         st.divider()
-        with st.expander("🗂 我的图解（历史）", expanded=False):
+        with st.expander("我的图解（历史）", expanded=False):
             from app.ui.result_renderer import md_safe, purge_result_state
             from app.utils import history
 
@@ -99,7 +99,7 @@ def render_sidebar() -> None:
                                   "display:flex;align-items:center;"
                                   "justify-content:center;"
                                   "border:1px dashed var(--edge);"
-                                  "border-radius:3px;'>🧶</div>",
+                                  "border-radius:3px;'></div>",
                                   unsafe_allow_html=True)
                 _display = it.get("title") or it["summary"]
                 c_h1.caption(f"{history.format_time(it['created_at'])}\n\n{md_safe(_display)}")

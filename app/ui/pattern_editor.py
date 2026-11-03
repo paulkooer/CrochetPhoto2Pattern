@@ -183,7 +183,7 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
     render_skirt_editor(result, slot)
     render_leg_join(f"{slot}_{rid}", result)
     render_stitch_connections(result, slot)
-    with st.expander("🧩 可视化编辑部件", expanded=False):
+    with st.expander("可视化编辑部件", expanded=False):
         st.caption("尺寸、数量或连接变化会重算受影响部件；可确认构造未变的其他部件保留手改针法、配色和备注。"
                    "建议先预览影响；无法确认保留范围时按整份图解重算，可撤销恢复。")
         parts = result["structure"].get("parts", [])
@@ -301,7 +301,7 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
                         _apply(slot, result, candidate)
                 except Exception as exc:
                     st.error(f"部件修改失败：{md_safe(exc)}")
-    with st.expander("🧵 逐圈表格编辑", expanded=False):
+    with st.expander("逐圈表格编辑", expanded=False):
         pattern_parts = result["params"].get("parts", [])
         if pattern_parts:
             index = st.selectbox(
@@ -350,7 +350,7 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
                         _apply(slot, result, candidate)
                 except Exception as exc:
                     st.error(f"逐圈修改失败：{md_safe(exc)}")
-    with st.expander("🧶 按实际毛线与试片估算用量", expanded=False):
+    with st.expander("按实际毛线与试片估算用量", expanded=False):
         spec = result["params"].get("yarn_spec") or {}
         from app.models.gauge import Gauge
 

@@ -27,7 +27,7 @@ def render_backup_import(slot: str = "result", *, result_key: str | None = None)
     button_key = "open_backup_apply" if home else f"importbtn_{result_key}"
     pending_key = "open_backup_ambiguous" if home else f"import_{result_key}_ambiguous"
     recovery_key = "open_backup_recover_ambiguous" if home else f"import_{result_key}_recover_ambiguous"
-    label = "📂 打开备份图解" if home else "📂 导入结果备份"
+    label = "打开备份图解" if home else "导入结果备份"
     with st.expander(label, expanded=False):
         if home:
             st.caption("无需先生成图解或开启历史。导入后在「照片分析（本地）」页查看。")

@@ -110,8 +110,8 @@ async function headProgress(page, scope, rid, checked) {
   report.browser = browser.version();
   let lastPage;
   const record = name => {report.checks.push({name,status:'pass'}); console.log(`PASS ${name}`);};
-  async function context() {
-    const ctx = await browser.newContext({viewport:{width:1440,height:1100},acceptDownloads:true});
+  async function context(viewport = {width:1440,height:1100}) {
+    const ctx = await browser.newContext({viewport,acceptDownloads:true});
     await ctx.route('**/*', route => {
       const hostname = new URL(route.request().url()).hostname;
       if (['127.0.0.1','localhost','[::1]'].includes(hostname)) return route.continue();
@@ -128,8 +128,18 @@ async function headProgress(page, scope, rid, checked) {
     const photo = path.join(output, 'synthetic-doll.png');
     await page.locator('svg').screenshot({path:photo});
     await page.goto(baseURL);
-    await page.getByRole('tab', {name:'📸 照片分析（本地）',exact:true}).click();
-    const photoPanel = page.getByRole('tabpanel', {name:'📸 照片分析（本地）',exact:true});
+    const photoTab = page.getByRole('tab', {name:'照片分析（本地）',exact:true});
+    const manualTab = page.getByRole('tab', {name:'手动输入',exact:true});
+    await photoTab.focus();
+    await photoTab.press('ArrowRight');
+    await expect(manualTab).toBeFocused();
+    await expect(manualTab).toHaveCSS('outline-width','2px');
+    await expect(manualTab).toHaveCSS('outline-color','rgb(29, 36, 64)');
+    await manualTab.press('ArrowLeft');
+    await expect(photoTab).toBeFocused();
+    await expect(photoTab).toHaveAttribute('aria-selected','true');
+    await photoTab.click();
+    const photoPanel = page.getByRole('tabpanel', {name:'照片分析（本地）',exact:true});
     await key(photoPanel,'photo_uploader').locator('input[type="file"]').setInputFiles(photo);
     await key(photoPanel,'btn_photo').getByRole('button').waitFor({state:'visible'});
     await clickKey(page,photoPanel,'btn_photo');
@@ -141,6 +151,14 @@ async function headProgress(page, scope, rid, checked) {
     await settle(page);
     const editor = page.frameLocator('iframe[title*="subject_mask_editor"]');
     await editor.locator('#canvas').waitFor({state:'visible'});
+    // The iframe receives theme values from Python, rather than relying only on its fallbacks.
+    const outerPalette = await page.evaluate(() => {
+      const css = getComputedStyle(document.documentElement);
+      return ['ink','edge','paper','sans'].map(name => css.getPropertyValue(`--${name}`).trim());
+    });
+    await expect.poll(() => editor.locator('html').evaluate(element =>
+      ['ink','edge','paper','font'].map(name => element.style.getPropertyValue(`--${name}`).trim())
+    )).toEqual(outerPalette);
     await page.evaluate(() => {
       window.__crochetMaskMessages = [];
       window.addEventListener('message', e => {
@@ -177,6 +195,10 @@ async function headProgress(page, scope, rid, checked) {
 
     await photoPanel.getByText('单个玩偶，所需部件可用下方列表表达',{exact:true}).click();
     await settle(page);
+    await expect(page.getByRole('tab',{name:'照片分析（本地）',exact:true}))
+      .toHaveCSS('background-color','rgb(255, 225, 77)');
+    await expect(photoPanel.getByText('单个玩偶，所需部件可用下方列表表达',{exact:true})
+      .locator('xpath=ancestor::label[1]')).toHaveCSS('background-color','rgb(255, 244, 184)');
     const ratio = photoPanel.locator('[class*="st-key-review_ratio_"] input');
     await ratio.fill('0.3');await ratio.press('Tab');await settle(page);
     const generate = photoPanel.getByRole('button',{name:'确认并生成图解',exact:true});
@@ -185,6 +207,33 @@ async function headProgress(page, scope, rid, checked) {
     let photoId = await resultId(photoPanel);
     await expect(photoPanel.getByText('✓ 比例与部件已经过人工确认；原始解析来源保留如下。',{exact:true})).toHaveCount(1);
     record('complete subject/proportion/parts review and generate');
+
+    // A fragment rerun must not close the part panel or shrink the marked row.
+    const sheet = key(photoPanel,`sheet_part_${photoId}_0`);
+    const rounds = sheet.locator('input[type="checkbox"]');
+    await reveal(rounds.first());
+    const partDetails = rounds.first().locator('xpath=ancestor::details[1]');
+    const progress = sheet.locator('[data-testid="stProgress"]');
+    for (let i=0;i<3;i++) {
+      const checkbox = rounds.nth(i);
+      await checkbox.locator('xpath=ancestor::label').click();
+      await expect(checkbox).toBeChecked();
+      await expect(progress).toContainText(`(${i+1}/`);
+      await expect(partDetails).toHaveAttribute('open','');
+    }
+    const firstRow = rounds.first().locator('xpath=ancestor::label');
+    const widths = await firstRow.evaluate(element => ({
+      row:element.getBoundingClientRect().width,
+      panel:element.closest('[data-testid="stExpanderDetails"]').getBoundingClientRect().width,
+    }));
+    assert(widths.row >= widths.panel * 0.9, `Marked row does not fill the panel: ${JSON.stringify(widths)}`);
+    await expect(firstRow).toHaveCSS('background-image',/rgb\(255,\s*244,\s*184\)/);
+    await page.screenshot({path:path.join(output,'pattern-sheet-progress.png')});
+    await sheet.getByRole('button',{name:'重置进度',exact:true}).click();
+    await expect(progress).toContainText('(0/');
+    await expect(partDetails).toHaveAttribute('open','');
+    await expect(rounds.first()).not.toBeChecked();
+    record('marker styles and repeated progress changes preserve the open, full-width part panel');
 
     const backupBytes = await download(page,key(photoPanel,`dl_backup_${photoId}`).getByRole('button'),path.join(output,'photo-backup.json'));
     const backup = JSON.parse(backupBytes);
@@ -216,7 +265,7 @@ async function headProgress(page, scope, rid, checked) {
     const legacySidebar = legacyPage.locator('[data-testid="stSidebar"]');
     await key(legacySidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(legacyPath);
     await clickKey(legacyPage,legacySidebar,'open_backup_apply');
-    const legacyPanel = legacyPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const legacyPanel = legacyPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const legacyId = await resultId(legacyPanel);
     const legacyExport = JSON.parse(await download(legacyPage,key(legacyPanel,`dl_backup_${legacyId}`)
       .getByRole('button'),path.join(output,'legacy-structure-custom-id-export.json')));
@@ -238,7 +287,7 @@ async function headProgress(page, scope, rid, checked) {
     const uncertainSidebar = uncertainPage.locator('[data-testid="stSidebar"]');
     await key(uncertainSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(uncertainPath);
     await clickKey(uncertainPage,uncertainSidebar,'open_backup_apply');
-    const uncertainPanel = uncertainPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const uncertainPanel = uncertainPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const uncertainId = await resultId(uncertainPanel);
     const reviewWarning = uncertainPanel.getByText('复核记录无法识别，请重新核对主体、头部与部件。',{exact:true});
     await expect(reviewWarning).toBeVisible();
@@ -259,8 +308,8 @@ async function headProgress(page, scope, rid, checked) {
     lastPage = page;
     await uncertainContext.close();
 
-    await page.getByRole('tab',{name:'✏️ 手动输入',exact:true}).click();
-    const manual = page.getByRole('tabpanel',{name:'✏️ 手动输入',exact:true});
+    await page.getByRole('tab',{name:'手动输入',exact:true}).click();
+    const manual = page.getByRole('tabpanel',{name:'手动输入',exact:true});
     await clickKey(page,manual,'btn_manual');
     let manualId = await resultId(manual);
     await headProgress(page,manual,manualId,true);
@@ -295,14 +344,14 @@ async function headProgress(page, scope, rid, checked) {
     record('project download contains the current progress and personal notes');
 
     await clickKey(page,sidebar,`hist_load_${storedId}`);
-    await page.getByRole('tab',{name:'📸 照片分析（本地）',exact:true}).click();
+    await page.getByRole('tab',{name:'照片分析（本地）',exact:true}).click();
     photoId = await resultId(photoPanel,photoId);
     assert.notEqual(photoId,manualId);
     await headProgress(page,photoPanel,photoId,true);
-    const clearPhoto = key(photoPanel,`sheet_part_${photoId}_0`).getByRole('button',{name:'↩️ 重置进度',exact:true,includeHidden:true});
+    const clearPhoto = key(photoPanel,`sheet_part_${photoId}_0`).getByRole('button',{name:'重置进度',exact:true,includeHidden:true});
     await reveal(clearPhoto);await clearPhoto.click();await settle(page);
     await fillKey(page,photoPanel,`project_notes_${photoId}`,'photo workspace note');
-    await page.getByRole('tab',{name:'✏️ 手动输入',exact:true}).click();
+    await page.getByRole('tab',{name:'手动输入',exact:true}).click();
     await expect(headCheck(manual,manualId)).toBeChecked();
     await expect(key(manual,`project_notes_${manualId}`).locator('textarea')).toHaveValue(notes);
     await page.screenshot({path:path.join(output,'history-isolation.png'),fullPage:true});
@@ -315,7 +364,7 @@ async function headProgress(page, scope, rid, checked) {
     const uploader = key(freshSidebar,'open_backup_file').locator('input[type="file"]');
     await uploader.setInputFiles(projectFile);
     await clickKey(fresh,freshSidebar,'open_backup_apply');
-    const restored = fresh.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const restored = fresh.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const restoredId = await resultId(restored);
     const restoredNotes = key(restored,`project_notes_${restoredId}`).locator('textarea');
     await reveal(restoredNotes);
@@ -369,7 +418,7 @@ async function headProgress(page, scope, rid, checked) {
     const openSidebar = reopened.locator('[data-testid="stSidebar"]');
     await key(openSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(openProjectFile);
     await clickKey(reopened,openSidebar,'open_backup_apply');
-    const openPanel = reopened.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const openPanel = reopened.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const reopenedId = await resultId(openPanel);
     const savedOpen = key(openPanel,`edit_${reopenedId}_head_open`).locator('input');
     await reveal(savedOpen);
@@ -403,7 +452,7 @@ async function headProgress(page, scope, rid, checked) {
     const garmentSidebar = garmentPage.locator('[data-testid="stSidebar"]');
     await key(garmentSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(garmentInput);
     await clickKey(garmentPage,garmentSidebar,'open_backup_apply');
-    const garmentPanel = garmentPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const garmentPanel = garmentPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const garmentId = await resultId(garmentPanel);
     await headProgress(garmentPage,garmentPanel,garmentId,true);
     const hatIndex = garmentSource.params.parts.findIndex(p=>p.name==='帽子');
@@ -442,7 +491,7 @@ async function headProgress(page, scope, rid, checked) {
     const mixedSidebar = mixedPage.locator('[data-testid="stSidebar"]');
     await key(mixedSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(mixedProjectFile);
     await clickKey(mixedPage,mixedSidebar,'open_backup_apply');
-    const mixedPanel = mixedPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const mixedPanel = mixedPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const recoveredId = await resultId(mixedPanel);
     const recoveredGauge = key(mixedPanel,`edit_${recoveredId}_partgauge0_enabled`).locator('input');
     await reveal(recoveredGauge);
@@ -510,7 +559,7 @@ async function headProgress(page, scope, rid, checked) {
     const sampleSidebar = samplePage.locator('[data-testid="stSidebar"]');
     await key(sampleSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(sampleProject);
     await clickKey(samplePage,sampleSidebar,'open_backup_apply');
-    const samplePanel = samplePage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const samplePanel = samplePage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const sampleId = await resultId(samplePanel);
     const recoveredSample = JSON.parse(await download(samplePage,key(samplePanel,`dl_backup_${sampleId}`).getByRole('button'),path.join(output,'swatch-restored.json')));
     assert.deepEqual(recoveredSample.params.yarn_spec,adjusted.params.yarn_spec);
@@ -592,7 +641,7 @@ async function headProgress(page, scope, rid, checked) {
       await collisionPage.screenshot({path:path.join(output,'collision-recovery-choice.png'),fullPage:true});
       await expect(collisionPage.locator('[class*="st-key-hist_save_"]')).toHaveCount(0);
       await clickKey(collisionPage,collisionSidebar,'open_backup_recover_ambiguous');
-      const collisionPanel = collisionPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+      const collisionPanel = collisionPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
       const collisionId = await resultId(collisionPanel);
       await expect(collisionPanel.getByText(/无法区分属于哪份实体，已暂不标记/)).toBeVisible();
       const headChecks = key(collisionPanel,`sheet_part_${collisionId}_${collisionHeadIndex}`)
@@ -624,7 +673,7 @@ async function headProgress(page, scope, rid, checked) {
       const freshSidebar = collisionFresh.locator('[data-testid="stSidebar"]');
       await key(freshSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(collisionProject);
       await clickKey(collisionFresh,freshSidebar,'open_backup_apply');
-      const freshPanel = collisionFresh.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+      const freshPanel = collisionFresh.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
       const freshId = await resultId(freshPanel);
       const freshChecks = key(freshPanel,`sheet_part_${freshId}_${collisionHeadIndex}`)
         .locator('input[type="checkbox"]');
@@ -640,6 +689,19 @@ async function headProgress(page, scope, rid, checked) {
       await collisionFresh.screenshot({path:path.join(output,'collision-progress-restored.png'),fullPage:true});
       record('legacy collision requires recovery, then separate copy progress survives a fresh project restore');
     }
+    const mobileContext = await context({width:390,height:844});
+    const mobile = lastPage = await mobileContext.newPage();
+    await mobile.goto(baseURL);
+    const mobileTitle = mobile.locator('h1.sheet-hero__title [data-heading-text]');
+    await expect(mobileTitle).toBeVisible();
+    assert.equal(await mobileTitle.evaluate(element => element.getClientRects().length),1,
+                 'Product title should fit on one line at a 390 px viewport.');
+    await expect(mobile.locator('[data-testid="stHeader"]')).toHaveCSS('background-color','rgb(246, 247, 244)');
+    await expect(mobile.getByRole('button',{name:'Deploy',exact:true})).toHaveCount(0);
+    await mobile.screenshot({path:path.join(output,'pattern-sheet-mobile.png')});
+    record('390 px viewport keeps the title on one line and the header opaque without Deploy');
+    await mobileContext.close();
+    lastPage = page;
     assert.deepEqual(report.page_errors,[]);
     report.status = 'pass';
     console.log(`PASS all ${report.checks.length} browser workflow checks; output ${output}`);

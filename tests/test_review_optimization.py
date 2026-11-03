@@ -395,7 +395,7 @@ def test_photo_tab_crop_mode_invalidation_and_failure_preserves_result(monkeypat
     )
     at.session_state["result"] = deepcopy(result)
     at.run()
-    at.radio(key="vision_mode").set_value("🎬 Mock 演示数据").run()
+    at.radio(key="vision_mode").set_value("Mock 演示数据").run()
     at.slider(key="crop_x").set_value((20, 80)).run()
     at.button(key="btn_photo").click().run()
     assert not at.exception

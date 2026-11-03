@@ -174,10 +174,10 @@ def test_edit_undo_redo_keep_downloads_and_preview_in_sync(monkeypatch):
         assert not at.exception
         expected = original[0] if action == "undo" else changed
         assert at.session_state["grid_view"] == expected
-        pattern = import_grid_project(downloads["💾 下载可编辑工程"])
+        pattern = import_grid_project(downloads["下载可编辑工程"])
         assert grid_pattern_to_payload(pattern) == expected["pattern_payload"]
-        assert downloads["📥 下载 SVG 网格图"] == expected["svg"] == render_svg(pattern)
-        assert downloads["📄 下载完整 Markdown 图解"] == expected["markdown"] == export_grid_markdown(pattern)
+        assert downloads["下载 SVG 网格图"] == expected["svg"] == render_svg(pattern)
+        assert downloads["下载完整 Markdown 图解"] == expected["markdown"] == export_grid_markdown(pattern)
     assert at.session_state["result"] == {"unrelated": "photo result"}
     assert at.session_state["trial_workspace_result"] == {"unrelated": "physical trial"}
 

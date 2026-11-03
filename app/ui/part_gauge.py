@@ -18,7 +18,7 @@ def render_part_gauge(result: ResultData, slot: str) -> None:
     if not parts:
         return
     rid = result.get("result_id") or slot
-    with st.expander("🧵 帽子与独立裙筒密度", expanded=False):
+    with st.expander("帽子与独立裙筒密度", expanded=False):
         default = gauge_from_result(result)
         index = st.selectbox("选择独立密度部件", range(len(parts)),
                              format_func=lambda i:parts[i]["name"], key=f"edit_{rid}_gauge_part")

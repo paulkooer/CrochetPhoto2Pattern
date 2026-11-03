@@ -14,7 +14,7 @@ def render_head_opening(result: ResultData, slot: str) -> None:
     if head is None:
         return
     rid = result.get("result_id") or slot
-    with st.expander("🪡 独立头部留口", expanded=False):
+    with st.expander("独立头部留口", expanded=False):
         try:
             maximum = max(integer_count(row["stitches"]) for row in head["rounds"])
             raw = result["params"].get(HEAD_OPENING_KEY)

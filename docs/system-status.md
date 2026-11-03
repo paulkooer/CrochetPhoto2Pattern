@@ -14,12 +14,21 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
-2026-11-03 review-provenance fix, on `fix/review-provenance` based on `main` `a2a238b` (local pre-commit
-checks): unrecognized review markers no longer produce affirmative labels; malformed or mismatched head
+2026-11-03 frontend design repair, on `fix/frontend-design-review` based on `main` `7118a77` (local
+pre-commit checks, including follow-up browser assertions): stable progress panels, restored marker styles,
+mobile chrome and themed mask canvas. Full suite: **2551 passed, 2 skipped in 105.14s**; Ruff and mypy
+(208 files) pass. Local Chrome passes **18 synthetic browser flows** including a 390 px viewport, and the
+separate canvas check. No remote CI for this pre-commit snapshot; no independent review, authorized-photo
+evaluation or physical trial. Beta and G3/G4 are unchanged.
+
+2026-11-03 review-provenance fix ([PR #41](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/41)
+passed all **10 checks** on head `9a2a95e` and was squash-merged as `7118a77` with an identical tree;
+the following are local pre-commit checks on `fix/review-provenance` based on `main` `a2a238b`):
+unrecognized review markers no longer produce affirmative labels; malformed or mismatched head
 boxes do not claim manual selection, and original backup metadata remains intact. Export cache is now 15.
 Full suite: **2550 passed, 2 skipped in 105.47s**; Ruff and mypy (208 files) pass. Local Chrome passes
-**16 synthetic browser flows** and the separate canvas check. No remote CI at this pre-commit snapshot;
-no independent review, authorized-photo evaluation or physical trial. Beta and G3/G4 are unchanged.
+**16 synthetic browser flows** and the separate canvas check. No independent review, authorized-photo
+evaluation or physical trial. Beta and G3/G4 are unchanged.
 
 2026-11-03 static structure-data types and legacy result-page fix ([PR #40](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/40)
 passed all **10 checks** on head `5ad6bbe` and was squash-merged as `a2a238b` with an identical tree;
@@ -934,8 +943,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Latest merged baseline: `a2a238b`** | PR #40 was squash-merged into `main` with the same tree as checked head `5ad6bbe`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 10 remote checks passed for PR #40 head** | Checked head `5ad6bbe`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
+| G1 Reproducible source | **Latest merged baseline: `7118a77`** | PR #41 was squash-merged into `main` with the same tree as checked head `9a2a95e`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 10 remote checks passed for PR #41 head** | Checked head `9a2a95e`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

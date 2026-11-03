@@ -321,7 +321,7 @@ def test_sidebar_removes_legacy_credentials():
     assert "openai_key" not in at.session_state
     assert "anthropic_base_url" not in at.session_state
     assert not any("API" in item.label or "Base URL" in item.label for item in at.text_input)
-    assert at.radio(key="vision_mode").value == "🧮 本地视觉估算（推荐）"
+    assert at.radio(key="vision_mode").value == "本地视觉估算（推荐）"
 
 
 def test_nokey_mode_radio_renders(monkeypatch):
@@ -333,7 +333,7 @@ def test_nokey_mode_radio_renders(monkeypatch):
     assert not at.exception
     radio = at.radio(key="vision_mode")
     assert radio is not None
-    assert radio.value.startswith("🧮")
+    assert radio.value.startswith("本地视觉估算")
     assert any("Mock" in o for o in radio.options)
 
 
@@ -346,7 +346,7 @@ def test_env_keys_keep_local_default_with_explicit_mock(monkeypatch):
     assert not at.exception
     radio = at.radio(key="vision_mode")
     assert radio is not None
-    assert radio.value.startswith("🧮")          # 始终本地
+    assert radio.value.startswith("本地视觉估算")          # 始终本地
     assert any("Mock" in o for o in radio.options)      # Mock 常驻可选
     assert any("本地" in o for o in radio.options)      # 免费的本地模式仍可选
 
@@ -357,9 +357,9 @@ def test_env_keys_offer_local_mode_for_free(monkeypatch):
     at = AppTest.from_file(_APP, default_timeout=30)
     at.run()
     radio = at.radio(key="vision_mode")
-    at.radio(key="vision_mode").set_value("🧮 本地视觉估算（推荐）").run()
+    at.radio(key="vision_mode").set_value("本地视觉估算（推荐）").run()
     assert not at.exception
-    assert radio.value.startswith("🧮")
+    assert radio.value.startswith("本地视觉估算")
 
 
 def test_vision_mode_stays_local_when_keys_appear(monkeypatch):
@@ -368,13 +368,13 @@ def test_vision_mode_stays_local_when_keys_appear(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     at = AppTest.from_file(_APP, default_timeout=30)
     at.run()
-    at.radio(key="vision_mode").set_value("🧮 本地视觉估算（推荐）").run()
-    assert at.radio(key="vision_mode").value.startswith("🧮")
+    at.radio(key="vision_mode").set_value("本地视觉估算（推荐）").run()
+    assert at.radio(key="vision_mode").value.startswith("本地视觉估算")
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-only")
     at.run()  # 旧 Key 不改变 options
     assert not at.exception
-    assert at.radio(key="vision_mode").value.startswith("🧮")
+    assert at.radio(key="vision_mode").value.startswith("本地视觉估算")
 
 
 def test_local_vision_result_renders_with_meta():

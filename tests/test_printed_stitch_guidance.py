@@ -89,7 +89,7 @@ render_results(st.session_state.result, "result")
     at.run()
     assert not at.exception
     assert at.session_state["workspace_result"]["pdf"] is None
-    assert not any(button.label == "📄 下载 PDF" for button in at.get("download_button"))
+    assert not any(button.label == "下载 PDF" for button in at.get("download_button"))
     assert not built
     at.button(key="pdf_gen_printed-guidance").click().run()
     assert not at.exception and len(built) == 1
@@ -97,7 +97,7 @@ render_results(st.session_state.result, "result")
         "format": EXPORT_CACHE_VERSION, "bytes": b"%PDF-updated-guidance"}
     at.run()
     assert len(built) == 1
-    assert any(button.label == "📄 下载 PDF" for button in at.get("download_button"))
+    assert any(button.label == "下载 PDF" for button in at.get("download_button"))
     # Edits/imports install a workspace for the new result, without the old PDF.
     state = dict(at.session_state.to_dict())
     assert workspace({**_result(), "result_id": "edited"}, "result", state)["pdf"] is None

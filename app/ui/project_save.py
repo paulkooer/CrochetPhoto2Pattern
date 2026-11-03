@@ -24,13 +24,13 @@ def render_project_save(result: ResultData, slot: str) -> None:
 
     rid = result.get("result_id") or slot
     seed_widget(notes_key(rid), live_workspace(result, slot)["notes"])
-    with st.expander("🧺 我的钩织工程", expanded=False):
+    with st.expander("我的钩织工程", expanded=False):
         notes = st.text_area("个人备注（随工程保存）", key=notes_key(rid),
                              max_chars=MAX_PROJECT_NOTES, height=100,
                              help="可记录针号、线材、暂停位置或返工情况。分享链接和图解备份不包含这些备注。")
         st.caption("工程文件保留每份部件的进度、备注和图解版本；关闭页面前请保存到自己的设备。"
                    "重新打开时，在侧栏「打开备份图解」上传工程文件。撤销历史仅保留在当前会话。")
-        if st.button("💾 保存工程（含进度）", key=f"project_save_{rid}"):
+        if st.button("保存工程（含进度）", key=f"project_save_{rid}"):
             from app.ui.result_renderer import md_safe
 
             try:
