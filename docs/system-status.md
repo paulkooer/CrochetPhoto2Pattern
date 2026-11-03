@@ -14,14 +14,24 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-03 local review of `chore/streamlit-lower-bound` at `707ec2a`, followed by documentation and
+test-description corrections in the working tree: the locked dev+PDF environment passed the full suite
+with **2555 passed, 2 skipped in 90.84s** before those corrections; the focused floor/UI/hygiene suite
+passed **58 tests** afterward. Ruff, mypy (209 files), offline `uv lock --check`, and an offline wheel
+build passed. Wheel metadata records `streamlit<2.0,>=1.66.1`; all 75 package identities and artifact
+hashes match `fcad19a`, and the all-extras lock exports match, including markers. A separate floor
+environment with Streamlit 1.66.1, Pillow 13.0.0 and protobuf 7.36.2 passed `uv pip check` and **44**
+floor/UI tests. No remote CI was run for this working-tree snapshot.
+
 2026-11-03 declared Streamlit range, on local branch `chore/streamlit-lower-bound` based on `main` `fcad19a`
-(local pre-commit checks): the declared `streamlit>=1.40.0,<2.0` becomes `>=1.66.1,<2.0`. Of the old range only
-1.66.1 can be installed next to the required `pillow>=13.0.0`: installing the old declaration silently resolved to
-1.66.1, while pinned `streamlit==1.40.0`/`1.48.0` demand `pillow<12` and `1.66.0` demands `pillow<13`, all
-unsatisfiable. `width="stretch"` (and, for the pending frontend branch, `st.container(horizontal=True)`) also
+(local pre-commit checks): the declared `streamlit>=1.40.0,<2.0` becomes `>=1.66.1,<2.0`. The unpinned
+installation tested with the old range resolved to 1.66.1; pinned `streamlit==1.40.0`/`1.48.0` demand
+`pillow<12` and `1.66.0` demands `pillow<13`, conflicting with the required `pillow>=13.0.0`. The new floor
+is the lowest version verified in this work. `width="stretch"` (and, for the pending frontend branch,
+`st.container(horizontal=True)`) also
 arrive only in 1.48.0. `uv.lock` records
 the new range and the markers the resolver tightens for it; every package version and artifact hash was compared
-and is unchanged. New `tests/test_dependency_floor.py` (floor at or above the installable minimum, lock and
+and is unchanged. New `tests/test_dependency_floor.py` (floor at or above the verified minimum, lock and
 `pyproject.toml` record the same range, installed environment satisfies every declared floor, installed Streamlit
 accepts the arguments the UI passes) and a new `streamlit-floor` CI job that pins the declared floor from PyPI
 without the lock file, boots a real server and runs the UI smoke tests; the wheel check now asserts the recorded
@@ -31,19 +41,21 @@ clean environment holding only the declared floor (PyPI resolved `streamlit 1.66
 environment CI uses) passes the standalone canvas check and all **18 workflow flows**. No remote CI for
 this local commit; no independent review, authorized-photo evaluation or physical trial. Beta and G3/G4 unchanged.
 
-Branch relationship: `fix/frontend-info-architecture` (`57cbd42`, still unpushed) was verified against Streamlit
-1.66.1, so it is compatible with this floor by construction; re-run on this floor it passes its own
-information-architecture tests (6) and UI smoke tests (40), and its `controls_row` fallback is simply unused where
+Branch relationship: `fix/frontend-info-architecture` (`57cbd42`, still unpushed) was previously verified against
+Streamlit 1.66.1. Re-run on this floor it passes its own information-architecture tests (6) and UI smoke tests
+(40), and its `controls_row` fallback is unused where
 `horizontal` exists. Both branches edit the same regions of README, CHANGELOG and this document, so merging them
 needs conflict resolution; the frontend branch's README sentence about metadata “currently allowing 1.40” and its
 CHANGELOG note that 1.40 still needs separate work are superseded by this change and should be dropped in the merge.
 
-2026-11-03 frontend design repair, on `fix/frontend-design-review` based on `main` `7118a77` (local
-pre-commit checks, including follow-up browser assertions): stable progress panels, restored marker styles,
+2026-11-03 frontend design repair ([PR #42](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/42)
+passed all **10 checks** on head `1bf23ab` and was squash-merged as `fcad19a` with an identical tree;
+the following are local pre-commit checks on `fix/frontend-design-review` based on `main` `7118a77`):
+stable progress panels, restored marker styles,
 mobile chrome and themed mask canvas. Full suite: **2551 passed, 2 skipped in 105.14s**; Ruff and mypy
 (208 files) pass. Local Chrome passes **18 synthetic browser flows** including a 390 px viewport, and the
-separate canvas check. No remote CI for this pre-commit snapshot; no independent review, authorized-photo
-evaluation or physical trial. Beta and G3/G4 are unchanged.
+separate canvas check. No independent review, authorized-photo evaluation or physical trial.
+Beta and G3/G4 are unchanged.
 
 2026-11-03 review-provenance fix ([PR #41](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/41)
 passed all **10 checks** on head `9a2a95e` and was squash-merged as `7118a77` with an identical tree;
@@ -967,8 +979,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Latest merged baseline: `7118a77`** | PR #41 was squash-merged into `main` with the same tree as checked head `9a2a95e`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 10 remote checks passed for PR #41 head** | Checked head `9a2a95e`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
+| G1 Reproducible source | **Latest merged baseline: `fcad19a`** | PR #42 was squash-merged into `main` with the same tree as checked head `1bf23ab`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 10 remote checks passed for PR #42 head** | Checked head `1bf23ab`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

@@ -7,11 +7,12 @@ promised support the project could not deliver. The upstream facts behind the cu
 bound:
 
 * `pillow>=13.0.0` protects the upload path, which decodes untrusted images (the
-  dependency-security workflow tracks it). Streamlit declared `pillow<12` up to 1.50.0,
-  `pillow<13` from 1.51.0 through 1.66.0, and `pillow<14` only from 1.66.1, so
-  **1.66.1 is the lowest Streamlit that can be installed next to the required Pillow**.
-* `protobuf>=6.33.5,<8` is satisfied from 1.56.0 onward: 1.45–1.55 cap `protobuf<7`,
-  which 6.33.5 still fits, and earlier versions cap `<6`.
+  dependency-security workflow tracks it). The sampled 1.40.0 and 1.48.0 releases
+  require `pillow<12`, 1.66.0 requires `pillow<13`, and 1.66.1 allows `pillow<14`.
+  The floor is the lowest version verified in this work, not a claim about future releases.
+* `protobuf>=6.33.5,<8` overlaps with the `protobuf<7` cap in the sampled 1.45.0
+  and 1.55.0 releases via 6.x; 1.56.0 allows 7.x by widening its cap to `<8`.
+  The `<6` caps in 1.40.0 and 1.44.0 conflict with the project floor.
 * The UI calls `width="stretch"` on buttons, images and dataframes, and the pending
   frontend-information-architecture branch adds `st.container(horizontal=True)`. Both
   first exist in 1.48.0; earlier releases take an int `width` and `use_container_width`
@@ -37,12 +38,9 @@ from packaging.version import Version
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Streamlit 1.66.0 and every earlier release require pillow<13, while this project
-# requires pillow>=13.0.0, so no lower version resolves next to that floor at all
-# (measured: streamlit==1.40.0 and 1.48.0 need pillow<12, 1.66.0 needs pillow<13).
-# Lowering this constant means proving a version against the pillow, protobuf and UI
-# constraints above.
-MIN_INSTALLABLE_FLOOR = Version("1.66.1")
+# This is the verified support floor, not an exhaustive claim about every historical
+# release. Lowering it requires installation and UI evidence with all current floors.
+MIN_VERIFIED_FLOOR = Version("1.66.1")
 
 # Arguments the UI passes straight to Streamlit. `width` also changed meaning in
 # 1.48.0 (int → "stretch"/"content" strings), so the string default is part of the check.
@@ -85,17 +83,17 @@ def _locked_project_specifiers() -> dict[str, str]:
             if not item.get("marker")}
 
 
-def test_declared_floor_never_drops_below_the_installable_minimum():
-    """The declared lower bound is a promise; it may not promise the impossible."""
+def test_declared_floor_never_drops_below_the_verified_minimum():
+    """The declared lower bound must not fall below the verified support floor."""
     requirement = _declared_one("streamlit")
     floors = [Version(spec.version) for spec in requirement.specifier
               if spec.operator in (">=", ">")]
     assert floors, f"streamlit 缺少下限声明：{requirement}"
     floor = min(floors)
-    assert floor >= MIN_INSTALLABLE_FLOOR, (
-        f"声明的 streamlit 下限 {floor} 低于可安装下限 {MIN_INSTALLABLE_FLOOR}："
-        f"更低版本要求 pillow<13，无法与本项目声明的 pillow>=13.0.0、"
-        f"protobuf>=6.33.5,<8 同时解析。降低下限必须先给出可复现的安装证据。")
+    assert floor >= MIN_VERIFIED_FLOOR, (
+        f"声明的 streamlit 下限 {floor} 低于已验证下限 {MIN_VERIFIED_FLOOR}："
+        f"已抽查的旧版本与 pillow>=13.0.0 不兼容。降低下限必须先给出"
+        f"完整依赖解析和界面运行证据。")
     assert Version("2.0") not in requirement.specifier, (
         "Streamlit 2.x 需要人工验证后才能放开上界")
 
