@@ -25,8 +25,13 @@ classifiers = [
 ]
 
 dependencies = [
+    # 下限取已验证的锁定版本 1.66.1，其 Pillow 上界为 <14。
+    # 实测 streamlit==1.40.0／1.48.0 要求 pillow<12、1.66.0 要求 pillow<13，
+    # 均与下方 pillow>=13.0.0 冲突；更低下限须先提供完整的安装与运行验证。
+    # 界面层同样需要 1.48.0 以上：现有按钮/图片/表格调用用 width="stretch"，
+    # 待合并的前端信息架构分支还会用 st.container(horizontal=True)。
     # 上界 <2.0：Streamlit 大版本常有破坏性 API 变更，升 2.x 需人工验证
-    "streamlit>=1.40.0,<2.0",
+    "streamlit>=1.66.1,<2.0",
     "pydantic>=2.0",
     # 下限锁到 13.0.0：Pillow 12.x 及更早在图像解码路径有多项已知漏洞
     # （见 dependency-security 工作流），而上传路径会解码不可信图片。
@@ -60,6 +65,9 @@ dev = [
     "ruff>=0.4",
     "hypothesis>=6.100",
     "mypy>=1.11",
+    # tests/test_dependency_floor.py 直接解析依赖声明与锁文件，需要 packaging
+    # 的 Requirement/SpecifierSet（此前只作为 pytest 传递依赖存在）。
+    "packaging>=24.0",
 ]
 # PDF 图解导出（可选，S4）：中文用 Adobe CID 字体，无需额外字体文件
 pdf = ["reportlab>=4.0"]

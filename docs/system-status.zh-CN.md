@@ -14,10 +14,41 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
-2026-11-03 前端设计修复（基于 `main` `7118a77` 的分支 `fix/frontend-design-review`；含后续浏览器断言的
-提交前本地验证）：进度面板保持展开，记号扣样式、窄视口头栏与画布主题得到修复。全量 **2551 passed、
+2026-11-03 对本地 `chore/streamlit-lower-bound` 的 `707ec2a` 独立复核，并在工作树修正说明与测试描述：
+修正前用锁定 dev+PDF 环境复跑全量 **2555 passed、2 skipped，90.84s**；修正后下限、界面和仓库卫生的
+定向测试 **58 项通过**。Ruff、mypy（209 文件）、离线 `uv lock --check` 与离线 wheel 构建通过；wheel
+元数据为 `streamlit<2.0,>=1.66.1`。75 个包的身份和产物哈希与 `fcad19a` 一致，all-extras 锁文件导出
+（含 marker）也一致。独立下限环境的 Streamlit 1.66.1、Pillow 13.0.0、protobuf 7.36.2 通过
+`uv pip check` 和 **44 项**下限/界面测试。本工作树快照未运行远端 CI。
+
+2026-11-03 Streamlit 依赖下限（本地分支 `chore/streamlit-lower-bound`，基于 `main` `fcad19a`；提交前本地验证）：
+`pyproject.toml` 声明的 `streamlit>=1.40.0,<2.0` 改为 `>=1.66.1,<2.0`。本次按旧范围不固定版本安装时
+解析到 1.66.1；固定安装 `streamlit==1.40.0`／`1.48.0` 要求 `pillow<12`、1.66.0 要求 `pillow<13`，
+均与 `pillow>=13.0.0` 冲突。新下限是本轮已验证的最低版本；界面所需的
+`width="stretch"`（以及待合并的前端分支所用的 `st.container(horizontal=True)`）也要到 1.48.0 才出现。
+`uv.lock` 只更新记录的依赖范围
+与解析器据此收紧的 marker，包版本集合与全部产物哈希经逐条比对无变化。新增
+`tests/test_dependency_floor.py`（下限不得低于已验证下限、锁文件与 `pyproject.toml` 记录的范围必须一致、
+已安装环境须满足全部声明下限、安装的 Streamlit 须支持界面实际传入的参数），以及 CI 作业
+`streamlit-floor`（不使用锁文件、按声明固定安装下限、启动真实服务并跑界面烟雾测试、wheel 元数据断言）。
+全量 **2538 passed、19 skipped，195.75s**（覆盖率 93.69%）；Ruff、mypy（209 文件）通过。在只装了声明的下限的
+干净环境（PyPI 解析得到 `streamlit 1.66.1`、`pillow 13.0.0`、`protobuf 7.36.2`，未使用锁文件）：服务健康检查
+与首页 HTML 正常、**40 项界面烟雾测试通过**。本地浏览器回归（无头 Chrome，用与 CI 相同的
+`--extra dev --extra pdf` 环境）通过独立画布检查与全部 **18 条浏览器流程**。本次为本地提交，无远端 CI；
+未做独立复核、授权照片评测或实体试钩；
+Beta 与 G3/G4 不变。
+
+分支关系：`fix/frontend-info-architecture`（`57cbd42`，尚未推送）此前在 Streamlit 1.66.1 上验证；本次用同一下限
+在该分支重跑，其信息架构测试（6 项）与界面烟雾测试（40 项）通过，`controls_row` 回退在
+存在 `horizontal` 参数时不生效。两个分支改动了 README、CHANGELOG 与本文件的相同区段，合并需人工解冲突；前端
+分支里“元数据目前允许 1.40”的 README 说明与 CHANGELOG 中“1.40 仍需另行处理”的记录已被本次改动取代，应在合并
+时删除。
+
+2026-11-03 前端设计修复（[PR #42](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/42)，头提交 `1bf23ab`
+的 **10 项检查全部通过**后 squash 合入 `fcad19a`，合并树相同；以下为基于 `main` `7118a77` 的提交前本地验证）：
+进度面板保持展开，记号扣样式、窄视口头栏与画布主题得到修复。全量 **2551 passed、
 2 skipped，105.14s**；Ruff、mypy（208 文件）通过；本地 Chrome 的 **18 条合成流程**（含 390 px 窄视口）
-及独立画布检查通过。本次提交前无远端 CI；未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+及独立画布检查通过。未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
 
 2026-11-03 复核来源状态修复（[PR #41](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/41)，头提交
 `9a2a95e` **10 项检查全部通过**后 squash 合入 `7118a77`，合并树相同；以下为基于 `main` `a2a238b` 的提交前本地验证）：
@@ -796,8 +827,8 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **最近合并基线：`7118a77`** | PR #41 已 squash 合入 `main`，合并树与受检头提交 `9a2a95e` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **PR #41 头提交的 10 项远端检查通过** | 受检头提交 `9a2a95e`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和浏览器冒烟均通过。合并后及后续提交的检查按各自 SHA 核对 |
+| G1 可复现源码 | **最近合并基线：`fcad19a`** | PR #42 已 squash 合入 `main`，合并树与受检头提交 `1bf23ab` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
+| G2 支持版本自动化 | **PR #42 头提交的 10 项远端检查通过** | 受检头提交 `1bf23ab`：Python 3.11–3.14、Docker、PDF、pose、mypy、依赖审计和浏览器冒烟均通过。合并后及后续提交的检查按各自 SHA 核对 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛（含可钩率 100%，以及除声明不支持的构造外 Parade 100% 完整导出）。默认本地流程只交付固定模板部件，部件宏 F1 高于模板基线这一条仍需新的识别能力 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
@@ -833,6 +864,9 @@ uv run --locked --extra dev ruff check .
 uv run --locked --extra dev pytest -q --cov=app --cov-report=term-missing
 uv lock --check
 uv build --wheel --out-dir dist/
+# 声明的 Streamlit 下限必须真的能安装、能运行（CI：streamlit-floor 作业）
+uv venv --python 3.12 /tmp/floor && uv pip install --python /tmp/floor/bin/python "streamlit==1.66.1" -e ".[dev]"
+/tmp/floor/bin/python -m pytest -q tests/test_app_smoke.py tests/test_dependency_floor.py
 uv run crochet2pattern-trials external-report --curated
 git status --short
 ```

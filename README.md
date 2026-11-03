@@ -132,7 +132,7 @@ Unknown part names remain available for review. Remove mistaken labels or select
 ## Technology
 
 - Python 3.11–3.14
-- Streamlit
+- Streamlit 1.66.1+ (declared, verified floor)
 - Pydantic v2
 - OpenCV / Pillow / NumPy
 
@@ -146,6 +146,10 @@ cd CrochetPhoto2Pattern
 uv sync --locked
 # Alternative: python -m pip install -e .
 ```
+
+Streamlit's declared floor is 1.66.1, which is also the version `uv.lock` pins. The
+sampled 1.40.0, 1.48.0 and 1.66.0 releases cannot be installed alongside the Pillow
+version this project requires for decoding uploads. Lower versions are not supported.
 
 ### Configure
 
