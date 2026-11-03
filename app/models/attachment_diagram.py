@@ -1,5 +1,7 @@
 """A bounded connection schematic shared by screen and printable exports."""
+from collections.abc import Mapping
 from html import escape
+from typing import Any
 
 from app.models.stitch_attachments import LoopAttachment, LoopAttachmentPlan
 
@@ -34,6 +36,6 @@ def attachment_svg(connection: dict) -> str:
     return "".join(fragments)
 
 
-def attachment_tables(params: dict) -> list[list[tuple[str, str, str]]]:
+def attachment_tables(params: Mapping[str, Any]) -> list[list[tuple[str, str, str]]]:
     plan = LoopAttachmentPlan.model_validate(params.get("stitch_attachments", {}))
     return [diagram_rows(c.model_dump()) for c in plan.connections]

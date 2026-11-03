@@ -6,6 +6,7 @@ params["parts"] 的统一 dict 形态（见 crochet_params._build_result 双态�
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 # 头身一体件：粗略计入两组用线（实际占比取决于配色，可试钩后修正）
@@ -19,15 +20,15 @@ _SKIN_PARTS = frozenset({"头部", "手臂", "腿部", "耳朵"})
 _BODY_PARTS = frozenset({"身体", "帽子", "裙子", "尾巴"})
 
 
-def _part_name(part: dict[str, Any]) -> str:
+def _part_name(part: Mapping[str, Any]) -> str:
     return part["name"]
 
 
-def _part_rounds(part: dict[str, Any]) -> list[dict[str, Any]]:
+def _part_rounds(part: Mapping[str, Any]) -> list[dict[str, Any]]:
     return part.get("rounds", [])
 
 
-def _part_quantity(part: dict[str, Any]) -> int:
+def _part_quantity(part: Mapping[str, Any]) -> int:
     """Physical copies represented by one logical part pattern (legacy = 1)."""
     try:
         return max(1, min(20, int(part.get("quantity", 1))))

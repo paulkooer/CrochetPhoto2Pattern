@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import deepcopy
-from typing import TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T", str, dict)
 MAX_EXPORT_CACHE_BYTES = 2 << 20
@@ -38,7 +38,7 @@ def cached_export(cache: dict, name: str, source: dict, build: Callable[[], T]) 
     return value
 
 
-def parade_payload(result: dict) -> dict:
+def parade_payload(result: Mapping[str, Any]) -> dict:
     from dataclasses import asdict
 
     from app.utils.parade_export import export_parade_report, lint_parade_dsl

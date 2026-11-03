@@ -9,6 +9,7 @@ from __future__ import annotations
 import html
 import io
 import re
+from collections.abc import Mapping
 from typing import Any
 
 from app import PRODUCT_NAME, theme
@@ -21,8 +22,8 @@ from app.models.stitches import (
 from app.schemas import difficulty_label
 
 
-def export_pdf(params: dict[str, Any], analysis: dict[str, Any] | None = None,
-               *, result: dict[str, Any] | None = None) -> bytes:
+def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = None,
+               *, result: Mapping[str, Any] | None = None) -> bytes:
     """生成图解 PDF，返回字节流。reportlab 缺失时抛 ImportError。"""
     if result is not None:
         params, analysis = result["params"], result["analysis"]

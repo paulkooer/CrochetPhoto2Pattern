@@ -8,6 +8,7 @@ from copy import deepcopy
 
 import streamlit as st
 
+from app.schemas import ResultData
 from app.services.progress_state import (
     ambiguous_legacy_progress,
     capture_progress,
@@ -21,7 +22,7 @@ MAX_SNAPSHOTS = 12
 MAX_HISTORY_BYTES = 8 << 20
 
 
-def metrics(result: dict) -> dict:
+def metrics(result: ResultData) -> dict:
     from app.models.gauge import gauge_from_result, part_gauge_text
     from app.models.materials import YarnSpec
     from app.models.stitch_attachments import WAIST_POSITION_KEY
@@ -76,7 +77,7 @@ def trim_history(history: dict) -> None:
         (history["undo"] or history["redo"]).pop(0)
 
 
-def get_history(slot: str, result: dict, *, create: bool = True) -> dict:
+def get_history(slot: str, result: ResultData, *, create: bool = True) -> dict:
     key = f"edit_history_{slot}"
     identity = result.get("result_id") or slot
     history = st.session_state.get(key)
@@ -87,7 +88,8 @@ def get_history(slot: str, result: dict, *, create: bool = True) -> dict:
     return history
 
 
-def _install(slot: str, current: dict, updated: dict, history: dict, progress: dict) -> dict:
+def _install(slot: str, current: ResultData, updated: ResultData, history: dict,
+             progress: dict) -> ResultData:
     from app.ui.result_renderer import purge_result_state
     from app.ui.workspace import live_workspace
 
@@ -115,7 +117,7 @@ def _install(slot: str, current: dict, updated: dict, history: dict, progress: d
     return updated
 
 
-def commit_edit(slot: str, current: dict, updated: dict) -> dict:
+def commit_edit(slot: str, current: ResultData, updated: ResultData) -> ResultData:
     from app.utils.project import pattern_revision
 
     if pattern_revision(current) == pattern_revision(updated):
@@ -134,7 +136,7 @@ def commit_edit(slot: str, current: dict, updated: dict) -> dict:
     return _install(slot, current, updated, history, retained)
 
 
-def restore_edit(slot: str, current: dict, direction: str) -> dict:
+def restore_edit(slot: str, current: ResultData, direction: str) -> ResultData:
     if direction not in ("undo", "redo"):
         raise ValueError("invalid history direction")
     history = deepcopy(get_history(slot, current, create=False))
@@ -156,7 +158,7 @@ def restore_edit(slot: str, current: dict, direction: str) -> dict:
     return _install(slot, current, updated, history, progress)
 
 
-def preview_edit(slot: str, current: dict, candidate: dict) -> None:
+def preview_edit(slot: str, current: ResultData, candidate: ResultData) -> None:
     """An optional review path; apply exactly this candidate against its source."""
     from app.utils.project import pattern_revision
 
@@ -170,7 +172,7 @@ def preview_edit(slot: str, current: dict, candidate: dict) -> None:
     st.rerun()
 
 
-def render_edit_preview(slot: str, current: dict) -> None:
+def render_edit_preview(slot: str, current: ResultData) -> None:
     from app.utils.project import pattern_revision
 
     ws = workspace(current, slot, st.session_state)
@@ -231,7 +233,7 @@ def _restore_before_render(slot: str, direction: str) -> None:
     restore_edit(slot, st.session_state[slot], direction)
 
 
-def render_history(slot: str, result: dict) -> None:
+def render_history(slot: str, result: ResultData) -> None:
     history = get_history(slot, result)
     render_edit_preview(slot, result)
     rid = result.get("result_id") or slot

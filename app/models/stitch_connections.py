@@ -5,8 +5,9 @@ simulation. No positions are inferred from aggregate counts or assembly prose.
 """
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import asdict, dataclass
+from typing import Any
 
 from app.models.instruction_checks import instruction_issues, round_expression
 from app.models.stitch_notation import (
@@ -90,7 +91,7 @@ def _window(expression: StitchExpression, start: int, stop: int, counts: dict[in
                 target_offset += child.counts.produced
 
 
-def round_connections(part: dict, row_index: int, *, start: int = 0,
+def round_connections(part: Mapping[str, Any], row_index: int, *, start: int = 0,
                       limit: int = CONNECTION_PAGE_SIZE) -> RoundConnections:
     """Map a bounded window of operations; row_index is an index, not a row label."""
     if type(start) is not int or start < 0:

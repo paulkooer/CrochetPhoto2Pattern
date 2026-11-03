@@ -7,10 +7,11 @@ import pytest
 from PIL import Image
 
 from app.models.orchestrator import PipelineOrchestrator
+from app.schemas import ResultData
 from app.utils.parade_export import export_parade_dsl, lint_parade_dsl
 
 
-def _result() -> dict:
+def _result() -> ResultData:
     return PipelineOrchestrator().run_full_pipeline(
         Image.new("RGB", (40, 80)), local_vision=True)
 

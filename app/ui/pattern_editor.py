@@ -13,12 +13,13 @@ from app.models.crochet_params import refresh_derived
 from app.models.gauge import gauge_from_result
 from app.models.geometry import normalize_structure
 from app.models.materials import YarnSpec
+from app.schemas import ResultData, RoundData
 from app.services.result_logic import rebuild_params, regenerate_with_structure
 from app.ui.edit_history import commit_edit, preview_edit, render_history
 
 
 def edit_structure_part(
-    result: dict,
+    result: ResultData,
     index: int,
     *,
     count: int,
@@ -26,7 +27,7 @@ def edit_structure_part(
     position: dict | None = None,
     instance_index: int = 0,
     attachments: list[dict] | None = None,
-) -> dict:
+) -> ResultData:
     structure = deepcopy(normalize_structure(result["structure"]))
     part = structure["parts"][index]
     part.update(dimensions)
@@ -53,7 +54,7 @@ def edit_structure_part(
     return regenerate_with_structure(result, structure)
 
 
-def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
+def edit_rounds(result: ResultData, index: int, rounds: list[RoundData]) -> ResultData:
     if len(rounds) != len(result["params"]["parts"][index]["rounds"]):
         raise ValueError("逐圈表格只支持修改现有圈；增删圈请使用高级 JSON")
     updated = deepcopy(result)
@@ -112,7 +113,7 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
             # finishing action and may no longer apply after a numeric edit.
             actions = [s for s in suffix.split("；") if s and s != "加针位置与上一圈错开半组"]
             if actions:
-                rd["notes"] += "；" + "；".join(actions)
+                rd["notes"] = f"{rd['notes']}；" + "；".join(actions)
     from app.models.validator import require_valid_pattern
 
     require_valid_pattern(updated["params"])
@@ -120,7 +121,7 @@ def edit_rounds(result: dict, index: int, rounds: list[dict]) -> dict:
     return updated
 
 
-def edit_yarn(result: dict, spec: dict | None) -> dict:
+def edit_yarn(result: ResultData, spec: dict | None) -> ResultData:
     updated = deepcopy(result)
     if spec is None:
         updated["params"].pop("yarn_spec", None)
@@ -163,7 +164,7 @@ def _render_stitch_calculator(key: str) -> None:
     )
 
 
-def render_pattern_editor(result: dict, slot: str) -> None:
+def render_pattern_editor(result: ResultData, slot: str) -> None:
     from app.ui.result_renderer import md_safe
 
     rid = result.get("result_id") or slot

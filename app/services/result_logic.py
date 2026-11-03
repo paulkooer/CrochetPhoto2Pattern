@@ -8,9 +8,10 @@ st.rerun。
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import asdict
-from typing import Any
+from typing import Any, cast
 
 from app import software_version
 from app.models.crochet_params import CrochetParamsGenerator, PatternGenerationError, refresh_derived
@@ -24,7 +25,7 @@ from app.models.gauge import (
 from app.models.geometry import PROPORTIONS_HEAD_BODY_PREFIX, normalize_structure
 from app.models.head_opening import HEAD_OPENING_KEY, has_declared_head_opening, head_opening_target
 from app.models.sizing import sizing_meta_for_analysis
-from app.schemas import MAX_PATTERN_PARTS, ImageAnalysis, PatternResult
+from app.schemas import MAX_PATTERN_PARTS, ImageAnalysis, PatternParams, PatternResult, ResultData
 
 # 与侧栏"塑形选项（进阶）"的默认值同源；result["style"] 缺失时兜底
 STYLE_DEFAULTS: dict[str, Any] = {
@@ -33,7 +34,7 @@ STYLE_DEFAULTS: dict[str, Any] = {
 }
 
 
-def result_profile(result: dict) -> list[float] | None:
+def result_profile(result: ResultData) -> list[float] | None:
     """读取当前几何 IR 剖面；旧结果回退 vision_meta（legacy 备份）。"""
     geometry = result.get("geometry") or {}
     body_region = geometry.get("body_region") or {}
@@ -48,7 +49,7 @@ def result_profile(result: dict) -> list[float] | None:
     return profile if isinstance(profile, list) and profile else None
 
 
-def _resize_structure(result: dict, analysis: ImageAnalysis) -> dict:
+def _resize_structure(result: ResultData, analysis: ImageAnalysis) -> dict:
     """Scale physical dimensions while retaining the user's edited graph.
 
     Diameters and round accessories follow head size; other lengths follow
@@ -83,18 +84,18 @@ def _resize_structure(result: dict, analysis: ImageAnalysis) -> dict:
     return normalize_structure(structure)
 
 
-def _result_style(result: dict) -> ShapingStyle:
+def _result_style(result: ResultData) -> ShapingStyle:
     return ShapingStyle(**{**STYLE_DEFAULTS, **(result.get("style") or {})})
 
 
-def saved_part_gauges(result: dict, structure: dict | None = None) -> dict[str, Gauge]:
+def saved_part_gauges(result: ResultData, structure: dict | None = None) -> dict[str, Gauge]:
     names = {p["name"] for p in (structure or result["structure"])["parts"]}
     default = gauge_from_result(result)
     return {p["name"]:gauge_for_part(p, default) for p in result["params"]["parts"]
             if p.get("gauge") is not None and p["name"] in names}
 
 
-def rebuild_params(corrected: dict, *, check_notes: bool = True) -> dict:
+def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bool = True) -> PatternParams:
     """把用户 JSON 中的 parts 重建为 CrochetPart 并重算派生量（regen/导入共用）。
 
     CrochetPart 只作校验器：重建后立即 dump 回 dict——params["parts"]
@@ -112,15 +113,16 @@ def rebuild_params(corrected: dict, *, check_notes: bool = True) -> dict:
     for p in corrected["parts"]:
         if not isinstance(p, dict):
             raise ValueError("每个部件必须是对象")
-        p = dict(p)  # 不原地改动用户输入
+        part_input: dict[str, Any] = dict(p)  # 不原地改动用户输入
         # rows 由 len(rounds) 派生（schema 已无该字段），丢弃过期值防失同步。
-        p.pop("rows", None)
-        part = CrochetPart(**p)
+        part_input.pop("rows", None)
+        part = CrochetPart(**part_input)
         if part.name in names:
             raise ValueError(f"部件名称不能重复: {part.name}")
         names.add(part.name)
-        rebuilt_parts.append(part.model_dump())
-    rebuilt = {**corrected, "parts": rebuilt_parts}
+        rebuilt_parts.append(part.to_data())
+    # Parts passed CrochetPart; other params retain their legacy, partly validated shape.
+    rebuilt = cast(PatternParams, {**corrected, "parts": rebuilt_parts})
     from app.models.validator import require_valid_pattern
 
     require_valid_pattern(rebuilt, check_notes=check_notes)
@@ -144,7 +146,7 @@ def validate_backup(data: dict) -> tuple[dict, dict]:
     return analysis, structure
 
 
-def regenerate_with_size(result: dict, new_head: float, new_height: float) -> dict:
+def regenerate_with_size(result: ResultData, new_head: float, new_height: float) -> ResultData:
     """快速调整尺寸：改头径/身高 → 结构+参数层重算（不重新调用 AI）。
 
     style/gauge/色带随 result 透传；对照新旧模板保留构造未变部件的手改。
@@ -191,7 +193,7 @@ def regenerate_with_size(result: dict, new_head: float, new_height: float) -> di
     return _finish_geometry_edit(result, updated)
 
 
-def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
+def regenerate_with_structure(result: ResultData, corrected_structure: dict) -> ResultData:
     """StructureGeometry 修正：严格校验后本地重生成，不重新调用 AI。"""
     structure = normalize_structure(corrected_structure)
 
@@ -213,7 +215,7 @@ def regenerate_with_structure(result: dict, corrected_structure: dict) -> dict:
     return _regenerate_geometry(result, structure, gauge, opening)
 
 
-def regenerate_with_gauge(result: dict, stitches_per_10cm: float, rows_per_10cm: float) -> dict:
+def regenerate_with_gauge(result: ResultData, stitches_per_10cm: float, rows_per_10cm: float) -> ResultData:
     """Recompute rounds at measured density while keeping the target geometry."""
     gauge = Gauge(stitches_per_10cm, rows_per_10cm)
     if gauge == gauge_from_result(result):
@@ -223,7 +225,7 @@ def regenerate_with_gauge(result: dict, stitches_per_10cm: float, rows_per_10cm:
                                 result["params"].get(HEAD_OPENING_KEY))
 
 
-def regenerate_with_head_opening(result: dict, stitches: int | None) -> dict:
+def regenerate_with_head_opening(result: ResultData, stitches: int | None) -> ResultData:
     """Preview a regenerated separate head; None restores the closed template."""
     from app.models.validator import require_valid_pattern
 
@@ -237,7 +239,7 @@ def regenerate_with_head_opening(result: dict, stitches: int | None) -> dict:
                                 gauge_from_result(result), target, reset_head=True)
 
 
-def regenerate_with_part_gauge(result: dict, name: str, gauge: Gauge | None) -> dict:
+def regenerate_with_part_gauge(result: ResultData, name: str, gauge: Gauge | None) -> ResultData:
     """Change an independent garment's swatch while retaining other authored work."""
     from app.models.validator import require_valid_pattern
 
@@ -272,9 +274,9 @@ def regenerate_with_part_gauge(result: dict, name: str, gauge: Gauge | None) -> 
                                 part_gauges=overrides)
 
 
-def _regenerate_geometry(result: dict, structure: dict, gauge: Gauge,
+def _regenerate_geometry(result: ResultData, structure: dict, gauge: Gauge,
                          head_opening_stitches: int | None, *, reset_head: bool = False,
-                         part_gauges: dict[str, Gauge] | None = None) -> dict:
+                         part_gauges: dict[str, Gauge] | None = None) -> ResultData:
     analysis = ImageAnalysis(**result["analysis"])
     params = CrochetParamsGenerator.generate_params(
         analysis, structure,
@@ -294,7 +296,8 @@ def _regenerate_geometry(result: dict, structure: dict, gauge: Gauge,
     return _finish_geometry_edit(result, updated, reset_head=reset_head)
 
 
-def _finish_geometry_edit(current: dict, generated: dict, *, reset_head: bool = False) -> dict:
+def _finish_geometry_edit(current: ResultData, generated: ResultData, *,
+                          reset_head: bool = False) -> ResultData:
     """Keep authored parts whose old and new generated constructions agree.
 
     Comparing templates rather than dimensions alone includes inferred sizes,
@@ -340,7 +343,7 @@ def _finish_geometry_edit(current: dict, generated: dict, *, reset_head: bool = 
     return {**generated, "params": params}
 
 
-def import_backup(data: dict, result_id: str) -> dict:
+def import_backup(data: Mapping[str, Any], result_id: str) -> ResultData:
     """备份 JSON → 可渲染的会话 result dict（导入/历史载入共用入口）。
 
     F24/G1：非重建键按契约从备份数据回填——旧版 setdefault(k, None)
@@ -373,7 +376,7 @@ def import_backup(data: dict, result_id: str) -> dict:
     }).to_result_dict()
 
 
-def _preserve_yarn_spec(result: dict, params: dict) -> None:
+def _preserve_yarn_spec(result: ResultData, params: PatternParams) -> None:
     if result.get("params", {}).get("yarn_spec") is not None:
         params["yarn_spec"] = deepcopy(result["params"]["yarn_spec"])
         refresh_derived(params)

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .parts import _ONE_PIECE_NAME, _part_name, _part_rounds, _round_stitches
@@ -15,7 +16,7 @@ from .parts import _ONE_PIECE_NAME, _part_name, _part_rounds, _round_stitches
 _CLOSING_RE = re.compile(r"(?<![不勿未没别])收口")
 
 
-def joining_round(part: dict) -> dict | None:
+def joining_round(part: Mapping[str, Any]) -> dict | None:
     """Resolve one actual joining row, sharing the legacy fallback rules."""
     rounds = _part_rounds(part)
     if not rounds:
@@ -26,13 +27,13 @@ def joining_round(part: dict) -> dict | None:
     return None if _CLOSING_RE.search(str(row.get("notes") or "")) else row
 
 
-def opening_rows_by_part(parts: list[dict]) -> dict[str, int]:
+def opening_rows_by_part(parts: Sequence[Mapping[str, Any]]) -> dict[str, int]:
     return {_part_name(p): row["row"] for p in parts
             if (row := joining_round(p)) is not None and "row" in row
             and (_part_name(p) != "头部" or p.get("opening_row") is not None)}
 
 
-def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
+def _openings_by_part(parts: Sequence[Mapping[str, Any]]) -> dict[str, int]:
     """Resolve the declared joining round; legacy skirts join at their first row.
 
     专业图解装配段的通行惯例：缝合前先报开口针数（"sew the remaining
@@ -46,7 +47,7 @@ def _openings_by_part(parts: list[dict[str, Any]]) -> dict[str, int]:
     return openings
 
 
-def assembly_for_pattern(params: dict) -> str:
+def assembly_for_pattern(params: Mapping[str, Any]) -> str:
     """Render declared loop references from current data, not stale saved prose."""
     if "stitch_attachments" not in params and params.get("head_opening_stitches") is None:
         return params.get("assembly_instructions") or ""

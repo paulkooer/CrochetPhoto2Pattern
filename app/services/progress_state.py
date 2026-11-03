@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Iterator, Mapping, MutableMapping
+
+from app.schemas import PartData, ResultData
 
 MAX_INLINE_ROUNDS = 500
 PROGRESS_PAGE_SIZE = 50
@@ -19,7 +21,7 @@ def progress_record_key(slot: str) -> str:
     return f"project_progress_{slot}"
 
 
-def completed_rounds(result: dict, slot: str, state: Mapping) -> dict[str, bool]:
+def completed_rounds(result: ResultData, slot: str, state: Mapping) -> dict[str, bool]:
     """The live record for ``result``; a record left by another result reads as empty."""
     record = state.get(progress_record_key(slot))
     if not isinstance(record, dict) or record.get("result_id") != (result.get("result_id") or slot):
@@ -27,7 +29,7 @@ def completed_rounds(result: dict, slot: str, state: Mapping) -> dict[str, bool]
     return record["completed"]
 
 
-def store_completed_rounds(result: dict, slot: str, progress: Mapping[str, bool],
+def store_completed_rounds(result: ResultData, slot: str, progress: Mapping[str, bool],
                            state: MutableMapping) -> dict[str, bool]:
     """Replace the tab's record with ``progress`` for ``result`` and return the stored dict."""
     completed = {identity: True for identity, done in progress.items() if done}
@@ -35,11 +37,11 @@ def store_completed_rounds(result: dict, slot: str, progress: Mapping[str, bool]
     return completed
 
 
-def physical_rounds(result: dict) -> int:
+def physical_rounds(result: ResultData) -> int:
     return sum(len(p["rounds"]) * p.get("quantity", 1) for p in result["params"]["parts"])
 
 
-def progress_copy_prefixes(result: dict, slot: str) -> list[list[str]]:
+def progress_copy_prefixes(result: ResultData, slot: str) -> list[list[str]]:
     """Keep legacy widget keys unless a part name aliases another copy's prefix."""
     rid = result.get("result_id") or slot
     prefixes = [
@@ -77,7 +79,7 @@ def _copy_instance_ids(instances: list[dict], quantity: int) -> list[str]:
     return identities
 
 
-def _legacy_identity_collisions(result: dict) -> dict[str, set[str]]:
+def _legacy_identity_collisions(result: ResultData) -> dict[str, set[str]]:
     """Find copy IDs that the old graph/fallback mapping assigned twice."""
     structure = result.get("structure") or {}
     graph = {p["name"]: p for p in structure.get("parts", [])}
@@ -93,11 +95,11 @@ def _legacy_identity_collisions(result: dict) -> dict[str, set[str]]:
     return collisions
 
 
-def has_legacy_identity_collision(result: dict) -> bool:
+def has_legacy_identity_collision(result: ResultData) -> bool:
     return bool(_legacy_identity_collisions(result))
 
 
-def ambiguous_legacy_progress(result: dict, progress: dict[str, bool]) -> set[str]:
+def ambiguous_legacy_progress(result: ResultData, progress: dict[str, bool]) -> set[str]:
     """Old duplicate IDs cannot establish which physical copy was completed."""
     collisions = _legacy_identity_collisions(result)
     return {identity for part in result["params"]["parts"]
@@ -105,7 +107,7 @@ def ambiguous_legacy_progress(result: dict, progress: dict[str, bool]) -> set[st
             if (identity := json.dumps([part["name"], copy_id, rd["row"]], ensure_ascii=False)) in progress}
 
 
-def _copy_roles(result: dict) -> dict[str, dict[str, tuple[str, str | int]]]:
+def _copy_roles(result: ResultData) -> dict[str, dict[str, tuple[str, str | int]]]:
     """Distinguish real graph IDs from ordinal IDs assigned to extra copies."""
     structure = result.get("structure") or {}
     graph = {p["name"]: p for p in structure.get("parts", [])}
@@ -122,7 +124,8 @@ def _copy_roles(result: dict) -> dict[str, dict[str, tuple[str, str | int]]]:
     return roles
 
 
-def progress_entries(result: dict, slot: str, *, part_index: int | None = None):
+def progress_entries(result: ResultData, slot: str, *,
+                     part_index: int | None = None) -> Iterator[tuple[str, str, PartData]]:
     """Yield semantic identity, widget key and part for each physical round.
 
     Graph instances have stable IDs; legacy patterns use copy ordinals. Part
@@ -149,13 +152,13 @@ def progress_entries(result: dict, slot: str, *, part_index: int | None = None):
                 yield identity, f"{prefix}{index}", part
 
 
-def capture_progress(result: dict, slot: str, state: Mapping) -> dict[str, bool]:
+def capture_progress(result: ResultData, slot: str, state: Mapping) -> dict[str, bool]:
     """A copy of the live progress, limited to the result's current physical rounds."""
     completed = completed_rounds(result, slot, state)
     return {identity: True for identity, _, _ in progress_entries(result, slot) if completed.get(identity)}
 
 
-def progress_limits(current: dict, updated: dict) -> dict[str, int]:
+def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
     """Count the unchanged leading rounds, before propagating join dependencies.
 
     Compare full instructions (including colors and finishing notes), not just
@@ -202,7 +205,7 @@ def progress_limits(current: dict, updated: dict) -> dict[str, int]:
 
     old_links = (current["params"].get("stitch_attachments") or {}).get("connections", [])
     new_links = (updated["params"].get("stitch_attachments") or {}).get("connections", [])
-    def copies(result: dict, name: str) -> list[str]:
+    def copies(result: ResultData, name: str) -> list[str]:
         part = next((p for p in result["params"]["parts"] if p["name"] == name), None)
         if part is None:
             return []
@@ -230,15 +233,15 @@ def progress_limits(current: dict, updated: dict) -> dict[str, int]:
         previous = limits.copy()
         for connection in old_links + new_links:
             target = connection["target_part"]
-            before, after = old.get(target, {}), new.get(target, {})
-            if (not before or not after or limits.get(target, 0) < len(before["rounds"])
+            before, after = old.get(target), new.get(target)
+            if (before is None or after is None or limits.get(target, 0) < len(before["rounds"])
                     or limits.get(target, 0) < len(after["rounds"])):
                 cut(connection["source_part"])
         if limits == previous:
             return limits
 
 
-def _retained_progress(current: dict, updated: dict, progress: dict,
+def _retained_progress(current: ResultData, updated: ResultData, progress: dict,
                        limits: dict[str, int]) -> tuple[dict[str, bool], dict[str, int]]:
     eligible = {p["name"]: {r["row"] for r in p["rounds"][:limits[p["name"]]]}
                 for p in updated["params"]["parts"]}
@@ -274,12 +277,12 @@ def _retained_progress(current: dict, updated: dict, progress: dict,
     return retained, kept
 
 
-def retained_progress(current: dict, updated: dict, slot: str, progress: dict) -> dict[str, bool]:
+def retained_progress(current: ResultData, updated: ResultData, slot: str, progress: dict) -> dict[str, bool]:
     """Retain only existing physical rounds before the first affected round."""
     return _retained_progress(current, updated, progress, progress_limits(current, updated))[0]
 
 
-def progress_impact(current: dict, updated: dict, slot: str, progress: dict) -> list[dict]:
+def progress_impact(current: ResultData, updated: ResultData, slot: str, progress: dict) -> list[dict]:
     """Human-readable changes, with counts per logical part across its copies."""
     limits = progress_limits(current, updated)
     _, kept = _retained_progress(current, updated, progress, limits)
@@ -311,7 +314,8 @@ def progress_impact(current: dict, updated: dict, slot: str, progress: dict) -> 
     return summary
 
 
-def install_progress(result: dict, slot: str, progress: Mapping[str, bool], state: MutableMapping) -> None:
+def install_progress(result: ResultData, slot: str, progress: Mapping[str, bool],
+                     state: MutableMapping) -> None:
     """Record ``progress`` for ``result``; checkboxes initialize from it when rendered."""
     known = {identity for identity, _, _ in progress_entries(result, slot)}
     store_completed_rounds(result, slot, {k: v for k, v in progress.items() if k in known}, state)

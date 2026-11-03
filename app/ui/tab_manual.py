@@ -17,7 +17,9 @@ from app.schemas import (
     PART_NAMES,
     Difficulty,
     ImageAnalysis,
+    PatternParams,
     PatternResult,
+    ResultData,
     difficulty_label,
 )
 from app.ui.result_renderer import md_safe, purge_result_state, render_results
@@ -46,7 +48,7 @@ def _gauge_values():
             st.session_state.get("gauge_st_input"), st.session_state.get("gauge_rw_input"))
 
 
-def _manual_design(analysis: ImageAnalysis, gauge, style) -> tuple[dict, dict]:
+def _manual_design(analysis: ImageAnalysis, gauge, style) -> tuple[dict, PatternParams]:
     """Structure and params for manual dimensions; the preview uses the same path."""
     structure = StructureDesigner.design_3d_structure(analysis)
     return structure, CrochetParamsGenerator.generate_params(analysis, structure, gauge=gauge, style=style)
@@ -77,7 +79,7 @@ def _render_manual_preview(analysis: ImageAnalysis) -> bool:
     return render_stitch_preview(params, suggest)
 
 
-def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
+def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> ResultData:
     """Run structure + param stages given an already-parsed ImageAnalysis.
 
     手动输入无需 Vision 解析，因此直接用后两个阶段类，不构造
@@ -91,7 +93,7 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> dict:
         generator_version=software_version(),
         analysis=analysis.model_dump(),
         structure=structure,
-        params=params,
+        params=dict(params),
         result_id=uuid.uuid4().hex[:12],
         style={"sphere_mode": style.sphere_mode,
                "one_piece": style.one_piece,

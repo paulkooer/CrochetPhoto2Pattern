@@ -25,6 +25,7 @@ GPLv3，本项目 MIT——保持单向文本出口即可，无需许可合并�
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -345,7 +346,7 @@ def lint_parade_dsl(text: str) -> list[str]:
     return issues
 
 
-def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
+def export_parade_report(result: Mapping[str, Any]) -> ParadeExportReport:
     """Return DSL, completeness, physical-copy counts and structured warnings.
 
     raises:
@@ -391,6 +392,6 @@ def export_parade_report(result: dict[str, Any]) -> ParadeExportReport:
     return report
 
 
-def export_parade_dsl(result: dict[str, Any]) -> str:
+def export_parade_dsl(result: Mapping[str, Any]) -> str:
     """Compatibility text API; partial exports carry warnings in the text."""
     return export_parade_report(result).text

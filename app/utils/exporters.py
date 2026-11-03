@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import html as _html
 import re as _re
+from collections.abc import Mapping
+from typing import Any
 
 from app import PRODUCT_NAME
 from app.models.instruction_checks import round_expression
@@ -76,7 +78,8 @@ def _repeat_notation(st: int, prev: int, inc: int, dec: int) -> str | None:
     return f"({head}{op})×{groups}"
 
 
-def export_markdown(params: dict, analysis: dict | None = None, *, result: dict | None = None) -> str:
+def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = None, *,
+                    result: Mapping[str, Any] | None = None) -> str:
     """Convert crochet params dict to a printable Markdown pattern."""
     if result is not None:
         params, analysis = result["params"], result["analysis"]

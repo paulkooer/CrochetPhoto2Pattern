@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from typing import Any
 
 from app import theme
@@ -23,7 +24,7 @@ from app.models.gauge import gauge_for_part, gauge_from_result
 _PLACEHOLDER_HEX = {"skin": "#e8bfa8", "body": "#9aa7b8"}
 
 
-def _hex_by_name(result: dict) -> dict[str, str]:
+def _hex_by_name(result: Mapping[str, Any]) -> dict[str, str]:
     """params 部件名 → 毛线色 hex（结构层的 color 字段可能还是占位符）。"""
     from app.models.colors import YARN_COLORS
 
@@ -42,7 +43,7 @@ def _hex_by_name(result: dict) -> dict[str, str]:
     return hex_by_name
 
 
-def build_payload(result: dict) -> dict[str, Any] | None:
+def build_payload(result: Mapping[str, Any]) -> dict[str, Any] | None:
     """result dict → 3D 预览数据；无可渲染实体时返回 None。"""
     structure = result.get("structure") or {}
     sparts = structure.get("parts") or []
@@ -291,7 +292,7 @@ def _render_static_svg(payload: dict) -> str:
     return "".join(parts)
 
 
-def structure_preview_html(result: dict) -> str | None:
+def structure_preview_html(result: Mapping[str, Any]) -> str | None:
     """结构 v2 → 静态等距 SVG；无可渲染实体时返回 None。
 
     与环形图/符号条同通道：经 st.markdown unsafe_allow_html 渲染

@@ -1,7 +1,7 @@
 import json
 from collections.abc import Mapping
 from enum import StrEnum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Required, TypedDict, cast
 
 from pydantic import (
     BaseModel,
@@ -201,6 +201,10 @@ class CrochetPart(BaseModel):
         """Convenience alias — always derived, never stored."""
         return len(self.rounds)
 
+    def to_data(self) -> "PartData":
+        """The plain dict stored in ``params["parts"]``, typed for mypy."""
+        return cast("PartData", self.model_dump())
+
 class ImageAnalysis(BaseModel):
     body_type: str
     # 值域是"硬安全上限"，比 prompt（头径 4–20 / 身高 10–60，软目标）宽松：
@@ -369,14 +373,16 @@ class PatternResult(BaseModel):
                                if hasattr(o, "model_dump") else str(o))))
         return cls.model_validate(plain)
 
-    def to_result_dict(self) -> dict[str, Any]:
+    def to_result_dict(self) -> "ResultData":
         """会话内 result dict（render_results/历史 blob 的运行时形态）。
 
         result_id/history_id/title 未设置时不出键，保证 orchestrator 产物与既有
         键集断言完全一致。"""
         data = self.model_dump(exclude={"schema_version"})
-        return {k: v for k, v in data.items()
-                if k not in ("result_id", "history_id", "title") or v is not None}
+        # Only the top-level shape was validated. Callers must supply valid params;
+        # imported data goes through rebuild_params before it becomes a session result.
+        return cast("ResultData", {k: v for k, v in data.items()
+                                   if k not in ("result_id", "history_id", "title") or v is not None})
 
     def to_backup(self) -> dict[str, Any]:
         """备份/分享用的完整键集（RESULT_KEYS + schema_version）。"""
@@ -403,3 +409,81 @@ def strip_photo_derived(backup: Mapping[str, Any]) -> dict[str, Any]:
         geometry.pop("mask_review", None)
         cleaned["geometry"] = geometry
     return cleaned
+
+
+# ── 会话内 result dict 的静态类型 ─────────────────────────────────────────
+# 运行时 params.parts 是 CrochetPart.model_dump() 的纯 dict（双态收敛），这里
+# 只给 mypy 描述同一形态，不做运行时校验。字段须与上面的 pydantic 模型和
+# RESULT_KEYS 一致，tests/test_result_types.py 会核对。旧数据可能缺少部分字段，
+# 因此按会话使用的最低键要求标记必有键。
+
+
+class RoundData(TypedDict, total=False):
+    row: Required[int]
+    stitches: Required[int]
+    increase: int
+    decrease: int
+    notes: str | None
+    color: str | None
+    auto_color_note: str | None
+    region: Literal["base", "wall", "closure"] | None
+    height_range_cm: list[float] | None
+    allow_wide_jump: bool
+
+
+class PartData(TypedDict, total=False):
+    name: Required[str]
+    type: str
+    quantity: int
+    diameter_cm: float | None
+    head_diameter_cm: float | None
+    height_cm: float | None
+    rounds: Required[list[RoundData]]
+    color: str
+    notes: str | None
+    auto_color_summary: str | None
+    opening_row: int | None
+    magic_ring: bool
+    gauge: dict[str, float]
+
+
+class PatternParams(TypedDict, total=False):
+    parts: Required[list[PartData]]
+    gauge: dict[str, float]
+    materials: list[Any]
+    material_summary: dict[str, Any]
+    assembly_instructions: str
+    assembly_plan: dict[str, Any]
+    difficulty: str
+    estimated_time_minutes: int
+    time_estimate_basis: dict[str, Any]
+    total_stitches: int
+    skirt_style: str
+    shaping: dict[str, Any]
+    notes: str
+    yarn_spec: dict[str, Any] | None
+    stitch_attachments: dict[str, Any]
+    head_opening_stitches: int
+    skirt_waist_position: float
+
+
+class ResultData(TypedDict, total=False):
+    analysis: Required[dict[str, Any]]
+    structure: Required[dict[str, Any]]
+    params: Required[PatternParams]
+    style: dict[str, Any] | None
+    gauge: dict[str, Any] | None
+    color_bands: list[Any] | None
+    spans: dict[str, Any] | None
+    spans_measured: list[str]
+    vision_meta: dict[str, Any]
+    preview: str | None
+    usage: dict[str, Any]
+    sizing: dict[str, Any] | None
+    geometry: dict[str, Any] | None
+    generator_version: str | None
+    diagnostics: dict[str, Any]
+    # 会话/存储层字段
+    result_id: str
+    history_id: str
+    title: str | None

@@ -7,6 +7,7 @@ from datetime import date
 
 import streamlit as st
 
+from app.schemas import ResultData
 from app.utils.project import pattern_revision
 from app.utils.trial_bundle import (
     MAX_TRIAL_BUNDLE_BYTES,
@@ -144,7 +145,7 @@ def _check_required(swatch: dict, observation: dict, *, completed: bool) -> None
         raise ValueError("改过图解时请勾选并填写修改内容；未改图解时请将修改内容留空")
 
 
-def render_trial_editor(result: dict, slot: str) -> None:
+def render_trial_editor(result: ResultData, slot: str) -> None:
     from app.ui.result_renderer import md_safe
 
     key = f"trial_workspace_{slot}"

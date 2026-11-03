@@ -23,7 +23,15 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 browser-smoke 首次在工程 JSON 下载处失败（浏览器被关闭），仅重跑该任务后通过，**10 项检查全部通过**后 squash 合入（`98de584`）。
 无独立复核；Beta 与 G3/G4 不变。
 
-2026-11-02 图解格式迁移链（基于 `main` `a13efcd` 的分支 `refactor/result-migrations`；提交前本地验证）：
+2026-11-02 结果数据静态类型（基于 `main` `0680738` 的分支 `refactor/typed-result`；提交前本地验证）：
+新增 `ResultData`、`PatternParams`、`PartData`、`RoundData` 静态类型，服务层、界面编辑器、CLI 与编排器改用这些类型，
+只读模型函数接受 `Mapping`；运行时仍为纯 dict。挑针接裙的预留圈缺少 `notes` 时现在提示校验错误，不再抛出 `KeyError`。
+2026-11-03 收尾后的全量测试 **2503 passed、2 skipped，89.64s**；
+全仓 Ruff、mypy（206 文件）通过；此前本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。未做远端 CI、
+独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+
+2026-11-02 图解格式迁移链（[PR #36](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/36)，头提交 `3c4eb50`
+**10 项检查全部通过**后 squash 合入 `0680738`，合并树相同；以下为合并前本地验证，基于 `main` `a13efcd` 的分支 `refactor/result-migrations`）：
 备份导入、分享链接、本机历史、工程文件和试钩包的图解统一经迁移链升级到当前格式；无版本旧记录标为 `"1"`，
 更新、未知或非字符串版本统一拒绝。当前格式仍为 1，文件不变。全量 **2487 passed、2 skipped，88.69s**；
 全仓 Ruff、mypy（205 文件）通过；本地 Chrome 的 **14 条合成流程**及遮罩画布回归通过。未做远端 CI、

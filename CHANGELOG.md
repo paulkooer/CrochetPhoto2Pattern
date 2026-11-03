@@ -8,6 +8,12 @@
 
 ## Unreleased
 
+### Changed — 2026-11-02 结果数据静态类型
+
+- 在 `app.schemas` 中新增会话结果的静态类型：`ResultData`、`PatternParams`、`PartData`、`RoundData`（`TypedDict`）。运行时仍是原来的纯 dict，只供 mypy 检查。`tests/test_result_types.py` 核对字段与 `CrochetStitch`、`CrochetPart`、`RESULT_KEYS` 一致，并确认生成器只产出已声明的键。
+- 服务层（重生成、导入、进度、工作区、工程）、编辑历史、结果页与各编辑器、CLI 和编排器改用这些类型。只读的模型函数（校验、导出、装配、材料、预览）改为接受 `Mapping[str, Any]`；类型断言用于序列化和重建边界，以及一处临时原位恢复裙子数据。`PatternResult` 只校验顶层；重建会校验部件及图解约束，其他旧参数字段仅作部分检查。`HEAD_OPENING_KEY`、`WAIST_POSITION_KEY` 标为 `Final`，可作为类型化键使用。
+- 全仓 mypy（206 文件）继续保持 0 错误。行为不变；唯一的差异是挑针接裙的预留圈缺少 `notes` 字段时，由 `KeyError` 改为与缺少操作式相同的提示。
+
 ### Changed — 2026-11-02 图解格式迁移链
 
 - 新增图解格式迁移链（`app/services/migrations.py`）。备份导入、分享链接、本机历史、工程文件和试钩包的图解统一先升级到当前格式，再校验和重建；没有版本字段的旧记录升级为 `schema_version="1"`，读取结果与此前相同。

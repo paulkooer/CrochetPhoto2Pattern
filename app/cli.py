@@ -26,7 +26,7 @@ from app.models.sizing import (
     sizing_meta_for_analysis,
 )
 from app.models.structure_designer import StructureDesigner
-from app.schemas import PART_NAMES, ImageAnalysis, PatternResult
+from app.schemas import PART_NAMES, ImageAnalysis, PatternResult, ResultData
 from app.utils.exporters import export_markdown
 from app.utils.images import load_image_file
 
@@ -72,7 +72,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run(args: argparse.Namespace) -> dict:
+def run(args: argparse.Namespace) -> ResultData:
     """执行管线并返回 result dict（CLI 与测试共用）。"""
     parts = [p.strip() for p in (args.parts if args.parts is not None
                                 else "头部,身体,手臂,腿部").split(",") if p.strip()]
@@ -99,7 +99,7 @@ def run(args: argparse.Namespace) -> dict:
         result = PatternResult(
             generator_version=software_version(),
             analysis=analysis.model_dump(), structure=structure,
-            params=params,
+            params=dict(params),
             # CLI --mock 无照片参与：配色为生成器默认值（与照片路径的
             # "配色来自照片"标注不同，诚实区分）
             vision_meta={"source": "mock",
@@ -133,7 +133,7 @@ def run(args: argparse.Namespace) -> dict:
         result = PatternResult(
             generator_version=software_version(),
             analysis=analysis.model_dump(), structure=structure,
-            params=params, vision_meta={},
+            params=dict(params), vision_meta={},
             gauge={"stitches_per_10cm": gauge.stitches_per_10cm,
                    "rows_per_10cm": gauge.rows_per_10cm},
             style={"sphere_mode": style.sphere_mode, "one_piece": style.one_piece,
