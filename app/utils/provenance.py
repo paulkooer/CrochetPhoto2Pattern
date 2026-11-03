@@ -4,6 +4,44 @@ from typing import Any
 
 from app import software_version
 
+CONFIRMED_SUBJECT_SCOPE = "single_representable_subject"
+
+
+def _known_review_flags(meta: Mapping[str, Any]) -> bool:
+    """Missing legacy flags are allowed; present flags must be real booleans."""
+    return all(key not in meta or type(meta[key]) is bool
+               for key in ("requires_subject_review", "reviewed_by_user"))
+
+
+def unrecognized_review_record(meta: Mapping[str, Any]) -> bool:
+    scope = meta.get("subject_scope_review")
+    return (not _known_review_flags(meta)
+            or ("subject_scope_review" in meta and scope != CONFIRMED_SUBJECT_SCOPE))
+
+
+def confirmed_analysis_review(meta: Mapping[str, Any]) -> bool:
+    return (not unrecognized_review_record(meta) and meta.get("requires_subject_review") is not True
+            and meta.get("reviewed_by_user") is True)
+
+
+def confirmed_subject_scope(meta: Mapping[str, Any]) -> bool:
+    return (not unrecognized_review_record(meta) and meta.get("requires_subject_review") is not True
+            and meta.get("subject_scope_review") == CONFIRMED_SUBJECT_SCOPE)
+
+
+def has_consistent_head_box(meta: Mapping[str, Any], spans: Mapping[str, Any] | None) -> bool:
+    """Recognize a recorded head box only when its geometry agrees with the span."""
+    box = meta.get("review_head_box")
+    if (not isinstance(box, (list, tuple)) or len(box) != 4
+            or not all(type(value) in (int, float) and 0 <= value <= 1 for value in box)):
+        return False
+    x0, y0, x1, y1 = box
+    if x0 >= x1 or y0 >= y1 or not isinstance(spans, Mapping):
+        return False
+    span = spans.get("头部")
+    return (isinstance(span, (list, tuple)) and len(span) == 2
+            and all(type(value) in (int, float) for value in span) and list(span) == [y0, y1])
+
 
 def provenance_lines(result: Mapping[str, Any] | None = None) -> list[str]:
     result = result or {}
@@ -28,13 +66,15 @@ def provenance_lines(result: Mapping[str, Any] | None = None) -> list[str]:
         "说明检查：仅拦截可识别的针数矛盾；自由文字和自定义工艺仍需人工复核。",
     ]
 
-    if meta.get("requires_subject_review"):
+    if meta.get("requires_subject_review") is True:
         if meta.get("parts_source") == "cli_explicit":
             lines.append("主体复核：尚未确认主体类型、头部与比例；部件为 CLI 显式选择，不代表完整人工复核。")
         else:
             lines.append("主体复核：尚未确认主体类型、头部与部件；当前部件来自默认模板，不能视为照片识别结果。")
-    elif meta.get("subject_scope_review"):
+    elif confirmed_subject_scope(meta):
         lines.append("主体复核：用户已确认单个可表达主体及部件；并非自动识别准确性的验证。")
+    elif unrecognized_review_record(meta):
+        lines.append("主体复核：记录无法识别，请重新核对主体、头部与部件。")
     if (result.get("geometry") or {}).get("body_region"):
         lines.append("身体轮廓来源：用户框选区域内的主体掩码；不是自动部件识别，未做实物校准。")
     if (result.get("geometry") or {}).get("mask_review"):

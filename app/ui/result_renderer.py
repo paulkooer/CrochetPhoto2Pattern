@@ -434,8 +434,16 @@ def render_results(result: ResultData, slot: str) -> None:
 
     # 解析来源透明展示：AI（LLM）/ 本地估算 / Mock 三类（vision_meta）
     vmeta = result.get("vision_meta") or {}
-    if vmeta.get("reviewed_by_user") and not vmeta.get("requires_subject_review"):
+    from app.utils.provenance import (
+        confirmed_analysis_review,
+        has_consistent_head_box,
+        unrecognized_review_record,
+    )
+
+    if confirmed_analysis_review(vmeta):
         st.caption("✓ 比例与部件已经过人工确认；原始解析来源保留如下。")
+    elif unrecognized_review_record(vmeta):
+        st.warning("复核记录无法识别，请重新核对主体、头部与部件。")
     elif vmeta.get("parts_source") == "cli_explicit":
         st.caption("部件为 CLI 显式选择；主体类型、头部与比例仍待人工确认。")
     if vmeta.get("source") == "mock":
@@ -458,8 +466,11 @@ def render_results(result: ResultData, slot: str) -> None:
     manual_spans = []
     if geometry.get("body_region"):
         manual_spans.append("身体")
-    if vmeta.get("review_head_box"):
+    head_box_consistent = has_consistent_head_box(vmeta, result.get("spans"))
+    if head_box_consistent:
         manual_spans.append("头部")
+    elif vmeta.get("review_head_box") is not None:
+        st.caption("头部框记录无效或与分段不一致，无法确认人工框选来源。")
     if manual_spans:
         st.caption("📐 人工框选分段：" + "、".join(manual_spans)
                    + "；身体框仅限定轮廓范围，不代表实物尺寸校准。")

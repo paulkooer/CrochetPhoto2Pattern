@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-03 Review provenance
+
+- The result page and Markdown/PDF no longer treat strings, numbers, explicit `null` or unknown subject markers as human confirmation. Unrecognized records prompt rechecking and remain intact in backups; missing legacy fields remain supported. A head box is labeled as user-selected only when its coordinates are valid and match the recorded head span.
+- Bump the export-cache version to **15** so live sessions do not reuse old confirmation text. Normal reviewed and pending records retain their existing labels; records are not independently authenticated.
+
 ### Changed — 2026-11-03 Static structure-data types
 
 - Add `TypedDict` contracts for structures, parts, instances, positions and attachments across result, generation and rebuild paths. Unconstrained legacy metadata retains broad types and custom fields survive normalization; v2 continues to use the existing model validation and runtime data remains plain dicts.

@@ -226,6 +226,39 @@ async function headProgress(page, scope, rid, checked) {
     lastPage = page;
     await legacyContext.close();
 
+    // Unknown historical review markers must remain data, not affirmative claims.
+    const uncertain = structuredClone(backup);
+    uncertain.vision_meta = {...uncertain.vision_meta, reviewed_by_user:'false',
+      requires_subject_review:false, subject_scope_review:'not_reviewed', review_head_box:{invalid:true}};
+    const uncertainPath = path.join(output,'unrecognized-review-input.json');
+    await fs.writeFile(uncertainPath,JSON.stringify(uncertain));
+    const uncertainContext = await context();
+    const uncertainPage = lastPage = await uncertainContext.newPage();
+    await uncertainPage.goto(baseURL);
+    const uncertainSidebar = uncertainPage.locator('[data-testid="stSidebar"]');
+    await key(uncertainSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(uncertainPath);
+    await clickKey(uncertainPage,uncertainSidebar,'open_backup_apply');
+    const uncertainPanel = uncertainPage.getByRole('tabpanel',{name:'📸 照片分析（本地）',exact:true});
+    const uncertainId = await resultId(uncertainPanel);
+    const reviewWarning = uncertainPanel.getByText('复核记录无法识别，请重新核对主体、头部与部件。',{exact:true});
+    await expect(reviewWarning).toBeVisible();
+    await expect(uncertainPanel.getByText('✓ 比例与部件已经过人工确认；原始解析来源保留如下。',
+                                         {exact:true})).toHaveCount(0);
+    await expect(uncertainPanel.getByText('头部框记录无效或与分段不一致，无法确认人工框选来源。',
+                                         {exact:true})).toBeVisible();
+    const uncertainMarkdown = await download(uncertainPage,key(uncertainPanel,`dl_md_${uncertainId}`)
+      .getByRole('button'),path.join(output,'unrecognized-review.md'));
+    assert(uncertainMarkdown.toString().includes('主体复核：记录无法识别'));
+    assert(!uncertainMarkdown.toString().includes('主体复核：用户已确认'));
+    const uncertainExport = JSON.parse(await download(uncertainPage,key(uncertainPanel,`dl_backup_${uncertainId}`)
+      .getByRole('button'),path.join(output,'unrecognized-review-export.json')));
+    assert.deepEqual(uncertainExport.vision_meta,uncertain.vision_meta);
+    await reviewWarning.scrollIntoViewIfNeeded();
+    await uncertainPage.screenshot({path:path.join(output,'unrecognized-review.png')});
+    record('unrecognized review markers remain in backup without false confirmation');
+    lastPage = page;
+    await uncertainContext.close();
+
     await page.getByRole('tab',{name:'✏️ 手动输入',exact:true}).click();
     const manual = page.getByRole('tabpanel',{name:'✏️ 手动输入',exact:true});
     await clickKey(page,manual,'btn_manual');
