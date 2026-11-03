@@ -8,6 +8,14 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-03 Declared Streamlit range no longer matches nothing
+
+- `pyproject.toml` declared `streamlit>=1.40.0,<2.0`. That range resolved (the resolver picks its newest member, 1.66.1), but it advertised versions that cannot be installed: measured, `streamlit==1.40.0` and `1.48.0` require `pillow<12` and `1.66.0` requires `pillow<13`, each conflicting with the `pillow>=13.0.0` this project needs to decode uploads. The protobuf cap reaches `<8` only from 1.56.0. The UI calls `width="stretch"`, which first exists in 1.48.0 (the pending frontend-information-architecture branch also needs `st.container(horizontal=True)`), so 1.40 failed at run time as well. The declared floor is now `>=1.66.1`, the verified locked version; no security floor was lowered.
+- `uv.lock` records the new range and the marker annotations the resolver tightens for it; every package version and artifact hash was compared and is unchanged (no incidental upgrades).
+- New `tests/test_dependency_floor.py`: the declared floor may not drop below the installable minimum, `uv.lock` must record the same range as `pyproject.toml`, the installed environment must satisfy every declared floor, and the installed Streamlit must accept the arguments the UI passes (including the string semantics of `width`).
+- New `streamlit-floor` CI job: installs the declared floor plus project dependencies from PyPI in a clean environment without the lock file, asserts the floor environment (Streamlit equal to the floor, Pillow ≥13), boots a real server, and runs the UI smoke tests (boot, result page, buttons, import paths). Because the job pins the declared floor, the previous `>=1.40.0` declaration makes it install `streamlit==1.40.0` and fail at that step; the wheel metadata check now asserts the recorded Streamlit range too.
+- `packaging>=24.0` added to `[dev]`: the new test uses its `Requirement`/`SpecifierSet` directly instead of relying on pytest's transitive dependency.
+
 ### Fixed — 2026-11-03 UI: marker and round checklist
 
 - Ticking a round no longer collapses its part panel: the live completion count in the `st.expander` label changed on every tick, so the element remounted collapsed. The label is now stable and the count lives in the panel's progress bar.

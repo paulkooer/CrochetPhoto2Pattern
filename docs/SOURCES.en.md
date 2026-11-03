@@ -145,7 +145,10 @@ Evidence covers counting and software boundaries, not photo accuracy or physical
 
 The [Streamlit bidirectional-component guide](https://docs.streamlit.io/develop/concepts/custom-components/components-v1/intro)
 and [v1.40 message interface](https://github.com/streamlit/streamlit/blob/1.40.0/component-lib/src/streamlit.ts)
-were checked for the Python/JavaScript protocol. The canvas is original project code with no remote scripts.
+were checked for the Python/JavaScript protocol. That file has since moved in the Streamlit
+repository (it does not exist under the 1.66.1 tag), so the 1.40.0 tag is cited as a pinned
+historical implementation, not as a supported version. The canvas is original project code
+with no remote scripts.
 It directly edits the final mask; it does not rerun GrabCut or generate unseen anatomy.
 See `tests/test_mask_review.py` and the optional Playwright browser smoke test
 `scripts/check_mask_canvas.cjs`. Local Chrome and an actual Streamlit page verified

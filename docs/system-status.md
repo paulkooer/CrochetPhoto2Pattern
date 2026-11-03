@@ -14,6 +14,30 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-03 declared Streamlit range, on local branch `chore/streamlit-lower-bound` based on `main` `fcad19a`
+(local pre-commit checks): the declared `streamlit>=1.40.0,<2.0` becomes `>=1.66.1,<2.0`. Of the old range only
+1.66.1 can be installed next to the required `pillow>=13.0.0`: installing the old declaration silently resolved to
+1.66.1, while pinned `streamlit==1.40.0`/`1.48.0` demand `pillow<12` and `1.66.0` demands `pillow<13`, all
+unsatisfiable. `width="stretch"` (and, for the pending frontend branch, `st.container(horizontal=True)`) also
+arrive only in 1.48.0. `uv.lock` records
+the new range and the markers the resolver tightens for it; every package version and artifact hash was compared
+and is unchanged. New `tests/test_dependency_floor.py` (floor at or above the installable minimum, lock and
+`pyproject.toml` record the same range, installed environment satisfies every declared floor, installed Streamlit
+accepts the arguments the UI passes) and a new `streamlit-floor` CI job that pins the declared floor from PyPI
+without the lock file, boots a real server and runs the UI smoke tests; the wheel check now asserts the recorded
+range. Full suite: **2538 passed, 19 skipped in 195.75s** (coverage 93.69%); Ruff and mypy (209 files) pass. In a
+clean environment holding only the declared floor (PyPI resolved `streamlit 1.66.1`, `pillow 13.0.0`,
+`protobuf 7.36.2`, no lock file): server health and index HTML OK, **40 UI smoke tests passed**. The local browser regression (headless Chrome, in the same `--extra dev --extra pdf`
+environment CI uses) passes the standalone canvas check and all **18 workflow flows**. No remote CI for
+this local commit; no independent review, authorized-photo evaluation or physical trial. Beta and G3/G4 unchanged.
+
+Branch relationship: `fix/frontend-info-architecture` (`57cbd42`, still unpushed) was verified against Streamlit
+1.66.1, so it is compatible with this floor by construction; re-run on this floor it passes its own
+information-architecture tests (6) and UI smoke tests (40), and its `controls_row` fallback is simply unused where
+`horizontal` exists. Both branches edit the same regions of README, CHANGELOG and this document, so merging them
+needs conflict resolution; the frontend branch's README sentence about metadata “currently allowing 1.40” and its
+CHANGELOG note that 1.40 still needs separate work are superseded by this change and should be dropped in the merge.
+
 2026-11-03 frontend design repair, on `fix/frontend-design-review` based on `main` `7118a77` (local
 pre-commit checks, including follow-up browser assertions): stable progress panels, restored marker styles,
 mobile chrome and themed mask canvas. Full suite: **2551 passed, 2 skipped in 105.14s**; Ruff and mypy
@@ -982,6 +1006,9 @@ uv run --locked --extra dev ruff check .
 uv run --locked --extra dev pytest -q --cov=app --cov-report=term-missing
 uv lock --check
 uv build --wheel --out-dir dist/
+# The declared Streamlit floor must really install and run (CI: the streamlit-floor job)
+uv venv --python 3.12 /tmp/floor && uv pip install --python /tmp/floor/bin/python "streamlit==1.66.1" -e ".[dev]"
+/tmp/floor/bin/python -m pytest -q tests/test_app_smoke.py tests/test_dependency_floor.py
 uv run crochet2pattern-trials external-report --curated
 git status --short
 ```

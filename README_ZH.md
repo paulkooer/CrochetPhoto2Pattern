@@ -84,7 +84,7 @@
 ## 🛠 技术栈
 
 - Python 3.11+
-- Streamlit（交互 UI）
+- Streamlit 1.66.1+（声明的下限；更低版本与要求的 Pillow 无法同时安装）
 - Pydantic v2（数据验证）
 
 ## 🚀 快速开始
@@ -96,6 +96,9 @@ cd CrochetPhoto2Pattern
 uv sync --locked              # 推荐：严格使用仓库锁定依赖
 # 或：python -m pip install -e .
 ```
+
+Streamlit 的声明下限是 1.66.1，与锁文件锁定版本一致。更低版本把 Pillow 限制在 13 以下，
+无法与本项目解码上传图片所需的 Pillow 版本共存，因此属于不支持而非“未测试”。
 
 ### 配置
 
