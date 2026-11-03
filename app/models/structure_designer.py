@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Literal
 
-from ..schemas import PART_LABELS_ZH, PART_NAMES, ImageAnalysis
+from ..schemas import PART_LABELS_ZH, PART_NAMES, ImageAnalysis, StructureData
 from .geometry import (
     PROPORTIONS_HEAD_BODY_PREFIX,
     AttachmentSpec,
@@ -125,7 +125,7 @@ class StructureDesigner:
         )]}
 
     @staticmethod
-    def design_3d_structure(analysis: ImageAnalysis, *, infer_missing_parts: bool = True) -> dict[str, Any]:
+    def design_3d_structure(analysis: ImageAnalysis, *, infer_missing_parts: bool = True) -> StructureData:
         """Convert image analysis to 3D part specifications.
 
         Maps each identified part to a basic 3D shape with
@@ -188,4 +188,4 @@ class StructureDesigner:
                 "基于单图语义与模板先验；位置、旋转、背面深度和连接锚点"
                 "不是照片实测值，生成前可人工确认"
             ),
-        ).model_dump(exclude_none=True)
+        ).to_data()

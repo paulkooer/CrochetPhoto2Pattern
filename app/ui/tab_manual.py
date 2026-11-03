@@ -20,6 +20,7 @@ from app.schemas import (
     PatternParams,
     PatternResult,
     ResultData,
+    StructureData,
     difficulty_label,
 )
 from app.ui.result_renderer import md_safe, purge_result_state, render_results
@@ -48,7 +49,7 @@ def _gauge_values():
             st.session_state.get("gauge_st_input"), st.session_state.get("gauge_rw_input"))
 
 
-def _manual_design(analysis: ImageAnalysis, gauge, style) -> tuple[dict, PatternParams]:
+def _manual_design(analysis: ImageAnalysis, gauge, style) -> tuple[StructureData, PatternParams]:
     """Structure and params for manual dimensions; the preview uses the same path."""
     structure = StructureDesigner.design_3d_structure(analysis)
     return structure, CrochetParamsGenerator.generate_params(analysis, structure, gauge=gauge, style=style)
@@ -92,7 +93,7 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> ResultData:
     return PatternResult(
         generator_version=software_version(),
         analysis=analysis.model_dump(),
-        structure=structure,
+        structure=dict(structure),
         params=dict(params),
         result_id=uuid.uuid4().hex[:12],
         style={"sphere_mode": style.sphere_mode,

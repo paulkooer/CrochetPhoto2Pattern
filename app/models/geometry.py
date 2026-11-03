@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from PIL import Image
 from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
-from ..schemas import MAX_PART_DIMENSION_CM, MAX_PATTERN_PARTS, IntegerCount
+from ..schemas import MAX_PART_DIMENSION_CM, MAX_PATTERN_PARTS, IntegerCount, StructureData
 from ..utils.counts import integer_count
 from ..utils.numbers import finite_float
 from .color_design import _BG_DIST_THRESHOLD
@@ -181,8 +181,12 @@ class StructureGeometry(BaseModel):
                             f"{attachment.target_part_id!r}")
         return self
 
+    def to_data(self) -> StructureData:
+        """Serialize the validated v2 graph in its established session format."""
+        return cast(StructureData, self.model_dump(exclude_none=True))
 
-def normalize_structure(structure: Any) -> dict[str, Any]:
+
+def normalize_structure(structure: Any) -> StructureData:
     """Validate a structure payload while preserving pre-v2 backup support.
 
     Declaring schema_version=2.0 opts into the complete graph contract.  Older
@@ -200,7 +204,7 @@ def normalize_structure(structure: Any) -> dict[str, Any]:
         raise ValueError(
             f"部件数量 {len(structure['parts'])} 超过上限 {MAX_PATTERN_PARTS}")
     if structure.get("schema_version") == "2.0":
-        return StructureGeometry(**structure).model_dump(exclude_none=True)
+        return StructureGeometry(**structure).to_data()
     names: set[str] = set()
     parts = []
     for source in structure["parts"]:
@@ -231,7 +235,7 @@ def normalize_structure(structure: Any) -> dict[str, Any]:
             if not 1 <= part["count"] <= 20:
                 raise ValueError("部件数量必须是 1–20 的整数")
         parts.append(part)
-    return {**structure, "parts": parts}
+    return cast(StructureData, {**structure, "parts": parts})
 
 
 def _mask_width_profile(mask, n_rows: int) -> list[float] | None:

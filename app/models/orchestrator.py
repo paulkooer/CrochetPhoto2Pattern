@@ -12,7 +12,7 @@ from PIL import Image
 
 from app import software_version
 
-from ..schemas import ImageAnalysis, PatternParams, PatternResult, ResultData
+from ..schemas import ImageAnalysis, PatternParams, PatternResult, ResultData, StructureData
 from .crochet_params import CrochetParamsGenerator
 from .crochetability import require_crochetable
 from .geometry import GeometryObservation, mock_geometry, observe_geometry
@@ -134,7 +134,7 @@ class PipelineOrchestrator:
         target_height_source: str,
         progress_cb: ProgressCB | None = None,
         proportion_style: str = DEFAULT_PROPORTION_STYLE,
-    ) -> tuple[ImageAnalysis, dict[str, Any], dict[str, Any]]:
+    ) -> tuple[ImageAnalysis, dict[str, Any], StructureData]:
         """Scale the chosen analysis and design its template structure."""
         chosen_data = (analysis or draft.analysis).model_dump()
         if parts is not None:
@@ -256,7 +256,7 @@ class PipelineOrchestrator:
         return PatternResult(
             generator_version=software_version(),
             analysis=chosen.model_dump(),
-            structure=structure,
+            structure=dict(structure),
             params=dict(params),
             usage=draft.usage,
             vision_meta=meta,

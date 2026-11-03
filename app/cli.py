@@ -98,7 +98,7 @@ def run(args: argparse.Namespace) -> ResultData:
             analysis, structure, gauge=gauge, style=style)
         result = PatternResult(
             generator_version=software_version(),
-            analysis=analysis.model_dump(), structure=structure,
+            analysis=analysis.model_dump(), structure=dict(structure),
             params=dict(params),
             # CLI --mock 无照片参与：配色为生成器默认值（与照片路径的
             # "配色来自照片"标注不同，诚实区分）
@@ -132,7 +132,7 @@ def run(args: argparse.Namespace) -> ResultData:
             analysis, structure, gauge=gauge, style=style)
         result = PatternResult(
             generator_version=software_version(),
-            analysis=analysis.model_dump(), structure=structure,
+            analysis=analysis.model_dump(), structure=dict(structure),
             params=dict(params), vision_meta={},
             gauge={"stitches_per_10cm": gauge.stitches_per_10cm,
                    "rows_per_10cm": gauge.rows_per_10cm},

@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from dataclasses import asdict
 from typing import Any
 
-from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis, PartGauge, PatternParams
+from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis, PartGauge, PatternParams, StructureData
 from .assembly import _openings_by_part, build_assembly, opening_rows_by_part
 from .color_design import (
     PART_SPAN,
@@ -487,7 +487,7 @@ class CrochetParamsGenerator:
     @staticmethod
     def generate_params(
         analysis: ImageAnalysis,
-        structure: dict,
+        structure: dict | StructureData,
         color_bands: list[dict] | None = None,
         body_profile: list[float] | None = None,
         gauge: Gauge = DEFAULT_GAUGE,
@@ -513,11 +513,12 @@ class CrochetParamsGenerator:
             head_opening_stitches = head_opening_target(head_opening_stitches)
             if style.one_piece:
                 raise ValueError("头部留口仅适用于独立头部，不能与头身一体同时使用")
-        if "parts" in structure:
+        prepared_structure: dict[str, Any] = dict(structure)
+        if "parts" in prepared_structure:
             from .geometry import normalize_structure
-            structure = normalize_structure(structure)
+            prepared_structure = dict(normalize_structure(prepared_structure))
         struct_parts: dict[str, dict] = {
-            p["name"]: p for p in structure.get("parts", [])
+            p["name"]: p for p in prepared_structure.get("parts", [])
         }
         head_d = analysis.head_diameter_cm
 
@@ -525,8 +526,8 @@ class CrochetParamsGenerator:
 
         # Explicit structure edits are authoritative, including deletion of all
         # parts (the generation gate then reports an empty pattern).
-        part_order = ([p["name"] for p in structure["parts"]]
-                      if "parts" in structure else analysis.parts)
+        part_order = ([p["name"] for p in prepared_structure["parts"]]
+                      if "parts" in prepared_structure else analysis.parts)
         if head_opening_stitches is not None and "头部" not in part_order:
             raise ValueError("头部留口需要图解包含独立头部")
         overrides: dict[str, Gauge] = {}
@@ -836,7 +837,7 @@ class CrochetParamsGenerator:
                 crochet_parts, gauge, sections=sections)
 
         result = CrochetParamsGenerator._build_result(
-            analysis, crochet_parts, gauge, style, structure, body_rows=sections.get("body"))
+            analysis, crochet_parts, gauge, style, prepared_structure, body_rows=sections.get("body"))
         if head_opening_stitches is not None:
             result[HEAD_OPENING_KEY] = head_opening_stitches
             validation = validate_pattern(result)

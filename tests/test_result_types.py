@@ -43,7 +43,7 @@ def _serialized_type(annotation):
     (AnalysisData, ImageAnalysis, set()),
     (RoundData, CrochetStitch, set()),
     (PartData, CrochetPart, {"gauge"}),
-    (ResultData, PatternResult, {"analysis", "params", "result_id", "history_id"}),
+    (ResultData, PatternResult, {"analysis", "structure", "params", "result_id", "history_id"}),
 ])
 def test_serialized_field_types_match_their_models(typed, model, exceptions):
     for name, annotation in get_type_hints(typed).items():
@@ -118,7 +118,7 @@ def test_result_analysis_fields_are_statically_typed() -> None:
     from app.models.image_parser import ImageParser
 
     result: ResultData = {"analysis": ImageParser._mock_analysis().to_data(),
-                          "structure": {}, "params": {"parts": []}}
+                          "structure": {"parts": []}, "params": {"parts": []}}
     assert_type(result["analysis"]["body_type"], str)
     assert_type(result["analysis"]["head_diameter_cm"], float)
     assert_type(result["analysis"]["parts"], list[str])
