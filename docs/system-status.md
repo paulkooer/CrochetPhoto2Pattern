@@ -14,16 +14,12 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
-2026-11-03 information-architecture follow-up on local `fix/frontend-info-architecture` after `1f7820b`
-(pre-commit working tree): button groups fall back to vertical containers when the installed Streamlit
-container API lacks `horizontal`; the locked version retains the horizontal layout. Full suite:
-**2557 passed, 2 skipped in 106.94s**; Ruff and mypy (209 files) pass. Local Chrome passes **21 synthetic
-browser flows** and the separate canvas check. A standalone button-row test also passes with the actual
-Streamlit 1.40 package loaded from a temporary directory. This is not full 1.40 support: existing
-`width="stretch"` calls and nested expanders fail with 1.40. The package metadata still declares
-`streamlit>=1.40`; reconciling that bound or restoring broader compatibility requires separate work.
-The temporary 1.40 probe reused other dependencies from the current environment. No remote CI for this
-working-tree snapshot.
+2026-11-03 frontend information-architecture merge preparation, on `fix/frontend-info-architecture`
+after incorporating `main` `9f686d1` (local pre-commit working tree): resolve the documentation overlap
+and remove the obsolete pre-1.66.1 button-container fallback. Full suite: **2559 passed, 2 skipped in
+91.63s**; Ruff, mypy (210 files), Node syntax and offline `uv lock --check` pass. Local Chrome passes
+**21 synthetic browser flows** and the standalone canvas check, with no page errors or external requests.
+This working-tree snapshot has not run remote CI. The browser's 390 px viewport is not a physical device.
 
 2026-11-03 frontend information architecture, on `fix/frontend-info-architecture` based on `main` `fcad19a`
 (local pre-commit checks): the sidebar leads with the gauge and groups the backup, trial-bundle and history
@@ -35,6 +31,34 @@ Full suite: **2555 passed, 2 skipped in 90.78s**; Ruff and mypy (209 files) pass
 **21 synthetic browser flows**, including a 390 px sidebar drawer, and the separate canvas check. No remote CI
 for this pre-commit snapshot; no independent review, authorized-photo evaluation or physical trial.
 Beta and G3/G4 are unchanged.
+
+2026-11-03 local review of `chore/streamlit-lower-bound` at `707ec2a`, followed by documentation and
+test-description corrections in the working tree: the locked dev+PDF environment passed the full suite
+with **2555 passed, 2 skipped in 90.84s** before those corrections; the focused floor/UI/hygiene suite
+passed **58 tests** afterward. Ruff, mypy (209 files), offline `uv lock --check`, and an offline wheel
+build passed. Wheel metadata records `streamlit<2.0,>=1.66.1`; all 75 package identities and artifact
+hashes match `fcad19a`, and the all-extras lock exports match, including markers. A separate floor
+environment with Streamlit 1.66.1, Pillow 13.0.0 and protobuf 7.36.2 passed `uv pip check` and **44**
+floor/UI tests. No remote CI was run for this working-tree snapshot.
+
+2026-11-03 declared Streamlit range ([PR #43](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/43)
+passed all **11 checks** on head `d2aecf7` and was squash-merged as `9f686d1` with an identical tree;
+the following are local pre-commit checks based on `main` `fcad19a`): the declared `streamlit>=1.40.0,<2.0` becomes `>=1.66.1,<2.0`. The unpinned
+installation tested with the old range resolved to 1.66.1; pinned `streamlit==1.40.0`/`1.48.0` demand
+`pillow<12` and `1.66.0` demands `pillow<13`, conflicting with the required `pillow>=13.0.0`. The new floor
+is the lowest version verified in this work. `width="stretch"` and `st.container(horizontal=True)` also
+arrive only in 1.48.0. `uv.lock` records
+the new range and the markers the resolver tightens for it; every package version and artifact hash was compared
+and is unchanged. New `tests/test_dependency_floor.py` (floor at or above the verified minimum, lock and
+`pyproject.toml` record the same range, installed environment satisfies every declared floor, installed Streamlit
+accepts the arguments the UI passes) and a new `streamlit-floor` CI job that pins the declared floor from PyPI
+without the lock file, boots a real server and runs the UI smoke tests; the wheel check now asserts the recorded
+range. Full suite: **2538 passed, 19 skipped in 195.75s** (coverage 93.69%); Ruff and mypy (209 files) pass. In a
+clean environment holding only the declared floor (PyPI resolved `streamlit 1.66.1`, `pillow 13.0.0`,
+`protobuf 7.36.2`, no lock file): server health and index HTML OK, **40 UI smoke tests passed**. The local browser regression (headless Chrome, in the same `--extra dev --extra pdf`
+environment CI uses) passes the standalone canvas check and all **18 workflow flows**. No remote CI was
+run for that pre-commit snapshot; no independent review, authorized-photo evaluation or physical trial.
+Beta and G3/G4 unchanged.
 
 2026-11-03 frontend design repair ([PR #42](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/42)
 passed all **10 checks** on head `1bf23ab` and was squash-merged as `fcad19a` with an identical tree;
@@ -967,8 +991,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Latest merged baseline: `fcad19a`** | PR #42 was squash-merged into `main` with the same tree as checked head `1bf23ab`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 10 remote checks passed for PR #42 head** | Checked head `1bf23ab`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
+| G1 Reproducible source | **Latest merged baseline: `9f686d1`** | PR #43 was squash-merged into `main` with the same tree as checked head `d2aecf7`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 11 remote checks passed for PR #43 head** | Checked head `d2aecf7`: Python 3.11–3.14, Docker, PDF, pose, Streamlit floor, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |
@@ -1006,6 +1030,9 @@ uv run --locked --extra dev ruff check .
 uv run --locked --extra dev pytest -q --cov=app --cov-report=term-missing
 uv lock --check
 uv build --wheel --out-dir dist/
+# The declared Streamlit floor must really install and run (CI: the streamlit-floor job)
+uv venv --python 3.12 /tmp/floor && uv pip install --python /tmp/floor/bin/python "streamlit==1.66.1" -e ".[dev]"
+/tmp/floor/bin/python -m pytest -q tests/test_app_smoke.py tests/test_dependency_floor.py
 uv run crochet2pattern-trials external-report --curated
 git status --short
 ```

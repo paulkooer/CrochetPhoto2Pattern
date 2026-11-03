@@ -18,7 +18,6 @@ from app.models.materials import YarnSpec
 from app.schemas import ResultData, RoundData
 from app.services.result_logic import rebuild_params, regenerate_with_size, regenerate_with_structure
 from app.services.workspace import workspace
-from app.ui.design_system import controls_row
 from app.ui.edit_history import commit_edit, preview_edit, render_history
 
 
@@ -190,7 +189,7 @@ def _render_quick_size(result: ResultData, slot: str) -> None:
                 "整体高度 (cm)", min(10.0, current_height), max(60.0, current_height),
                 current_height, 0.5,
                 key=f"sz_height_{rid}")
-        with controls_row():
+        with st.container(horizontal=True):
             preview_size = st.button("预览尺寸修改影响", key=f"edit_{rid}_size_preview")
             apply_size = st.button("按新尺寸重新生成", key=f"sz_go_{rid}")
         if apply_size or preview_size:

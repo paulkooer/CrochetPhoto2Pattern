@@ -9,7 +9,6 @@ import json
 from copy import deepcopy
 from io import BytesIO
 
-import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from app.utils.trial_bundle import create_trial_bundle, encode_trial_bundle
@@ -116,44 +115,3 @@ def test_json_draft_survives_preview_and_cancel_then_applies():
     assert applied["result_id"] != "ia-draft"
     assert applied["params"]["parts"][0]["rounds"][0]["notes"].endswith("核对张力")
     assert not [item for item in at.caption if "JSON 草稿" in item.value]
-
-
-def test_result_page_accepts_legacy_streamlit_container_signature(monkeypatch):
-    """Simulate the older container signature without changing the rest of Streamlit."""
-    original = st.container
-
-    def legacy_container(*, height=None, border=None, key=None):
-        kwargs = {name: value for name, value in
-                  (("height", height), ("border", border), ("key", key)) if value is not None}
-        return original(**kwargs)
-
-    monkeypatch.setattr(st, "container", legacy_container)
-    at = AppTest.from_string(_RENDER, default_timeout=30)
-    at.session_state["result"] = _mock_result("legacy-layout")
-    at.run()
-    assert not at.exception
-    round_checkbox = next(item for item in at.checkbox if item.key and item.key.startswith("chk_"))
-    round_checkbox.check().run()
-    assert not at.exception and at.checkbox(key=round_checkbox.key).value
-    at.button(key="edit_legacy-layout_size_preview").click().run()
-    assert not at.exception
-    assert at.button(key="edit_legacy-layout_preview_apply")
-    at.button(key="edit_legacy-layout_preview_cancel").click().run()
-    assert not at.exception
-    assert at.button(key="regen_legacy-layout")
-
-
-def test_controls_row_renders_and_handles_buttons():
-    at = AppTest.from_string('''
-import streamlit as st
-from app.ui.design_system import controls_row
-with controls_row():
-    if st.button("First", key="first"):
-        st.write("clicked")
-    st.button("Second", key="second")
-''', default_timeout=30).run()
-    assert not at.exception
-    at.button(key="first").click().run()
-    assert not at.exception
-    assert any(item.value == "clicked" for item in at.markdown)
-    assert at.button(key="second")

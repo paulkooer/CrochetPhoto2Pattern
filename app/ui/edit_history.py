@@ -19,7 +19,6 @@ from app.services.progress_state import (
     retained_progress,
 )
 from app.services.workspace import carried_workspace, workspace, workspace_key
-from app.ui.design_system import controls_row
 
 MAX_SNAPSHOTS = 12
 MAX_HISTORY_BYTES = 8 << 20
@@ -207,7 +206,7 @@ def render_edit_preview(slot: str, current: ResultData) -> None:
                    "勾选记录不代表实物无需返工。")
         # Commit before the full render, so old progress fragments cannot leave
         # stale widgets behind when the new pattern changes their layout.
-        with controls_row():
+        with st.container(horizontal=True):
             st.button("应用这次修改", key=f"edit_{current.get('result_id') or slot}_preview_apply",
                       on_click=_apply_preview, args=(slot,))
             st.button("取消预览", key=f"edit_{current.get('result_id') or slot}_preview_cancel",
@@ -245,7 +244,7 @@ def render_history(slot: str, result: ResultData) -> None:
     if notice := ws["notice"]:
         ws["notice"] = None
         st.info(notice)
-    with controls_row():
+    with st.container(horizontal=True):
         st.button("↶ 撤销修改", key=f"edit_{rid}_undo", disabled=not history["undo"],
                   on_click=_restore_before_render, args=(slot, "undo"))
         st.button("↷ 重做修改", key=f"edit_{rid}_redo", disabled=not history["redo"],

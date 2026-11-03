@@ -8,10 +8,6 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
-### Fixed — 2026-11-03 Older Streamlit container API
-
-- Button groups fall back to vertical containers when Streamlit lacks the `horizontal` argument; the locked version keeps the horizontal layout. Other existing UI calls remain incompatible with 1.40, so the dependency lower bound or broader compatibility still needs separate work.
-
 ### Changed — 2026-11-03 UI information architecture: sidebar and local corrections
 
 - The sidebar now reads creation settings (gauge → shaping) → "打开已有工作" (open backup, open trial bundle, my history). The gauge no longer sits below two import panels, the three dividers are down to one, and the sidebar's own divider margin is narrower. The two open entries keep their own panels, grouped by a subheading rather than nested: Streamlit 1.66 does allow nested expanders, but nesting only costs an extra click before the uploader.
@@ -22,6 +18,14 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - Widget keys, pattern/project/trial-bundle formats and behaviour are unchanged. README and the physical-trial docs now name the trial entry as it appears and place it under "打开已有工作".
 - Tests: new `tests/test_frontend_information_architecture.py` (sidebar order, both entries with history disabled, chapter-5 layering and download placement, a JSON draft surviving preview and cancel); browser regression adds the sidebar order, the collapsed advanced panel with downloads outside it, the draft flow and a 390 px sidebar drawer, for 21 flows in total.
 - `skin` / `body` placeholder colours were investigated only, with a written plan and no change to stored patterns or material totals; see the [frontend design review](docs/frontend-design-review-20261103.md) (Chinese).
+
+### Fixed — 2026-11-03 Declared Streamlit support floor
+
+- `pyproject.toml` declared `streamlit>=1.40.0,<2.0`. That range resolved to 1.66.1 in the tested unpinned installation, but it also included versions incompatible with the other project requirements: tested `streamlit==1.40.0` and `1.48.0` require `pillow<12` and `1.66.0` requires `pillow<13`, each conflicting with the `pillow>=13.0.0` needed to decode uploads. The `protobuf<7` cap in the sampled Streamlit 1.45.0 and 1.55.0 releases still overlaps the project's `>=6.33.5,<8` via 6.x; 1.56.0 widens the cap to `<8`, allowing 7.x. The UI calls `width="stretch"`, which first exists in 1.48.0 (the UI also uses `st.container(horizontal=True)`), so 1.40 failed at run time as well. The declared floor is now `>=1.66.1`, the verified locked version; no security floor was lowered.
+- `uv.lock` records the new range and the marker annotations the resolver tightens for it; every package version and artifact hash was compared and is unchanged (no incidental upgrades).
+- New `tests/test_dependency_floor.py`: the declared floor may not drop below the verified minimum, `uv.lock` must record the same range as `pyproject.toml`, the installed environment must satisfy every declared floor, and the installed Streamlit must accept the arguments the UI passes (including the string semantics of `width`).
+- New `streamlit-floor` CI job: installs the declared floor plus project dependencies from PyPI in a clean environment without the lock file, asserts the floor environment (Streamlit equal to the floor, Pillow ≥13), boots a real server, and runs the UI smoke tests (boot, result page, buttons, import paths). Because the job pins the declared floor, the previous `>=1.40.0` declaration makes it install `streamlit==1.40.0` and fail at that step; the wheel metadata check now asserts the recorded Streamlit range too.
+- `packaging>=24.0` added to `[dev]`: the new test uses its `Requirement`/`SpecifierSet` directly instead of relying on pytest's transitive dependency.
 
 ### Fixed — 2026-11-03 UI: marker and round checklist
 

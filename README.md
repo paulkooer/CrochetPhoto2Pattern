@@ -132,7 +132,7 @@ Unknown part names remain available for review. Remove mistaken labels or select
 ## Technology
 
 - Python 3.11–3.14
-- Streamlit
+- Streamlit 1.66.1+ (declared, verified floor)
 - Pydantic v2
 - OpenCV / Pillow / NumPy
 
@@ -147,9 +147,9 @@ uv sync --locked
 # Alternative: python -m pip install -e .
 ```
 
-Use the locked Streamlit version for the UI. Although the package metadata currently
-allows 1.40, existing UI calls are incompatible with that version; the declared lower
-bound needs a separate compatibility review.
+Streamlit's declared floor is 1.66.1, which is also the version `uv.lock` pins. The
+sampled 1.40.0, 1.48.0 and 1.66.0 releases cannot be installed alongside the Pillow
+version this project requires for decoding uploads. Lower versions are not supported.
 
 ### Configure
 

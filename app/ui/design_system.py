@@ -14,10 +14,8 @@ from __future__ import annotations
 
 import html
 import math
-from inspect import signature
 
 import streamlit as st
-from streamlit.delta_generator import DeltaGenerator
 
 from app import PRODUCT_NAME, theme
 
@@ -25,13 +23,6 @@ from app import PRODUCT_NAME, theme
 # with N, so the rings of a plain +6 sphere sit at equal spacing — that is
 # the mark: a top view of the first six rounds.
 _MARK_ROUNDS = 6
-
-
-def controls_row() -> DeltaGenerator:
-    """Keep controls usable on Streamlit versions predating horizontal containers."""
-    if "horizontal" in signature(st.container).parameters:
-        return st.container(horizontal=True)
-    return st.container()
 
 
 def html_box(content: str, height: int, scroll: bool = False) -> str:

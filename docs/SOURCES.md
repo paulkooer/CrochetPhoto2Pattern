@@ -151,8 +151,10 @@ Markdown 和符号条共用有序表达式。只有聚合数据时，DSL 报告�
 ## 2026-10-15 主体修正画布
 
 - [Streamlit 双向组件文档](https://docs.streamlit.io/develop/concepts/custom-components/components-v1/intro)
-  与[最低支持版本的消息接口](https://github.com/streamlit/streamlit/blob/1.40.0/component-lib/src/streamlit.ts)
-  用于核对画布和 Python 之间的消息协议。画布为本项目自写，不加载远程脚本。
+  与[组件 v1 消息接口](https://github.com/streamlit/streamlit/blob/1.40.0/component-lib/src/streamlit.ts)
+  用于核对画布和 Python 之间的消息协议。该文件在当前 Streamlit 仓库中已移走（1.66.1 标签下不存在），
+  因此固定引用 1.40.0 标签的这份历史实现，不再声称它是“最低支持版本”。
+  画布为本项目自写，不加载远程脚本。
 - 本轮采用直接补选/擦除最终掩码，不是重新执行 GrabCut 或生成照片中不存在的结构。
   修正与备份回归见 `tests/test_mask_review.py`；浏览器合成烟雾测试见
   `scripts/check_mask_canvas.cjs`（测试环境需安装 Playwright，可指定 Chrome 路径）。
