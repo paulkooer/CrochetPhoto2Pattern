@@ -27,8 +27,18 @@ identical to the previously checked `0e44108`); browser-smoke first failed at th
 passed on a rerun of that job alone, and after all **10 checks** passed it was squash-merged as `98de584`.
 No independent review; Beta and G3/G4 are unchanged.
 
-2026-11-02 pattern format migration chain, on branch `refactor/result-migrations` based on `main` `a13efcd`
-(local pre-commit checks): backup import, share links, local history, project files and trial bundles upgrade
+2026-11-02 static result types, on branch `refactor/typed-result` based on `main` `0680738` (local pre-commit
+checks): add `ResultData`, `PatternParams`, `PartData` and `RoundData` static types; services, UI editors, the CLI
+and orchestrator use them, and read-only model functions accept `Mapping`. Results stay plain dicts at runtime;
+an attached-skirt reservation row missing `notes` now gets a validation message instead of `KeyError`.
+Full suite after the 2026-11-03 follow-up: **2503 passed, 2 skipped in 89.64s**; repository-wide Ruff and mypy
+(206 files) pass. An earlier local Chrome run passed **14 synthetic flows** and the mask-canvas check.
+No remote CI, independent review,
+authorized-photo evaluation or physical trial; Beta and G3/G4 are unchanged.
+
+2026-11-02 pattern format migration chain ([PR #36](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/36) passed
+all **10 checks** on head `3c4eb50` and was squash-merged as `0680738` with an identical tree; the following are its
+pre-merge local checks on branch `refactor/result-migrations` based on `main` `a13efcd`): backup import, share links, local history, project files and trial bundles upgrade
 the pattern through one migration chain; unversioned records are labelled `"1"`, and newer, unknown or
 non-string versions are refused. The format stays 1 and files are unchanged. Full suite: **2487 passed,
 2 skipped in 88.69s**; repository-wide Ruff and mypy (205 files) pass; local Chrome passes **14 synthetic

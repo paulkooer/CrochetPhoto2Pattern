@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Literal
+from typing import Any, Literal
 from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 from app.models.trial_draft import TrialDraftState, TrialObservationDraft
-from app.schemas import PatternResult, strip_photo_derived
+from app.schemas import PatternResult, ResultData, strip_photo_derived
 from app.services.result_logic import import_backup, regenerate_with_gauge
 from app.trials import (
     MAX_PATTERN_BYTES,
@@ -50,7 +51,7 @@ def _checked_bundle(source: bytes, record: TrialRecord,
     return TrialBundle(source, record, pattern_revision(normalized), draft)
 
 
-def create_trial_bundle(result: dict, *, trial_id: str, maker_id: str,
+def create_trial_bundle(result: Mapping[str, Any], *, trial_id: str, maker_id: str,
                         cohort: Literal["calibration", "validation"] = "calibration") -> TrialBundle:
     # 试钩包会发给第三方制作者——剔除照片衍生数据（缩略图 + 主体剪影），
     # 只携带图解本身。
@@ -82,7 +83,7 @@ def update_trial_bundle(bundle: TrialBundle, *, swatch: dict,
     return _checked_bundle(bundle.source, TrialRecord.model_validate(payload), draft)
 
 
-def trial_gauge_candidate(bundle: TrialBundle, result: dict) -> dict:
+def trial_gauge_candidate(bundle: TrialBundle, result: ResultData) -> ResultData:
     """Use only a saved measured swatch, and only against the trial's source."""
     checked = _checked_bundle(bundle.source, bundle.record, bundle.draft)
     if not checked.record.swatch.measured:

@@ -6,6 +6,7 @@ import streamlit as st
 
 from app.models.stitch_connection_diagram import connection_svg
 from app.models.stitch_connections import CONNECTION_PAGE_SIZE, round_connections
+from app.schemas import ResultData
 from app.ui.design_system import html_box
 from app.utils.project import pattern_revision
 
@@ -14,7 +15,7 @@ def _span(numbers: tuple[int, ...]) -> str:
     return str(numbers[0]) if len(numbers) == 1 else f"{numbers[0]}–{numbers[-1]}"
 
 
-def render_stitch_connections(result: dict, slot: str) -> None:
+def render_stitch_connections(result: ResultData, slot: str) -> None:
     rid = result.get("result_id") or slot
     prefix = f"edit_{rid}_connections_"
     with st.expander("🔗 逐针连接核对", expanded=False):
@@ -28,7 +29,7 @@ def render_stitch_connections(result: dict, slot: str) -> None:
             _render_window(result, prefix)
 
 
-def _render_window(result: dict, prefix: str) -> None:
+def _render_window(result: ResultData, prefix: str) -> None:
     from app.ui.result_renderer import md_safe
 
     parts = result.get("params", {}).get("parts", [])

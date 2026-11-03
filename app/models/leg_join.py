@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from app.schemas import MAX_ROUND_STITCHES
 
@@ -84,7 +86,7 @@ def decode_leg_join_plan(data: bytes) -> dict:
     return checked
 
 
-def compare_leg_join(plan: dict, parts: list[dict], left_index: int, right_index: int
+def compare_leg_join(plan: dict, parts: Sequence[Mapping[str, Any]], left_index: int, right_index: int
                      ) -> tuple[list[dict], list[str]]:
     """Compare explicit references with selected parts without mutating either."""
     if any(type(i) is not int or i < 0 or i >= len(parts) for i in (left_index, right_index)):
@@ -121,7 +123,8 @@ def compare_leg_join(plan: dict, parts: list[dict], left_index: int, right_index
     return rows, issues
 
 
-def leg_join_advisories(plan: dict, parts: list[dict], left_index: int, right_index: int) -> list[str]:
+def leg_join_advisories(plan: dict, parts: Sequence[Mapping[str, Any]], left_index: int,
+                        right_index: int) -> list[str]:
     """Flag later rounds and finish-related wording without inferring a physical opening."""
     if any(type(i) is not int or i < 0 or i >= len(parts) for i in (left_index, right_index)):
         raise ValueError("请选择当前图解中的左右腿部件")

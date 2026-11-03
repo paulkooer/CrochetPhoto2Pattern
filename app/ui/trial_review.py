@@ -2,12 +2,13 @@
 import streamlit as st
 
 from app.models.gauge import Gauge, gauge_from_result
+from app.schemas import ResultData
 from app.ui.edit_history import preview_edit
 from app.utils.project import pattern_revision
 from app.utils.trial_bundle import TrialBundle, trial_comparison_rows, trial_gauge_candidate
 
 
-def render_trial_review(bundle: TrialBundle, result: dict, slot: str) -> None:
+def render_trial_review(bundle: TrialBundle, result: ResultData, slot: str) -> None:
     from app.ui.result_renderer import md_safe
 
     st.markdown("**已保存的实测与原图解对照**")

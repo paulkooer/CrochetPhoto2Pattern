@@ -1,7 +1,8 @@
 """Explicit, checked references to reserved loops on another component."""
 from __future__ import annotations
 
-from typing import Literal
+from collections.abc import Mapping
+from typing import Any, Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
@@ -9,8 +10,9 @@ from app.models.instruction_checks import round_expression
 from app.models.parts import _ONE_PIECE_NAME
 from app.models.profile_shaping import strip_dome
 from app.models.stitch_notation import NotationError, format_stitch_expression, mentions_invisible_decrease
+from app.schemas import PartData, RoundData
 
-WAIST_POSITION_KEY = "skirt_waist_position"
+WAIST_POSITION_KEY: Final = "skirt_waist_position"
 
 
 def validate_waist_position(value: object) -> float:
@@ -66,7 +68,7 @@ def _all_loops(expression, loop: str) -> bool:
     return bool(expression.children) and all(_all_loops(child, loop) for child in expression.children)
 
 
-def attachment_issues(params: dict, *, check_notes: bool = True) -> tuple[list[str], list[str]]:
+def attachment_issues(params: Mapping[str, Any], *, check_notes: bool = True) -> tuple[list[str], list[str]]:
     """Legacy patterns remain readable; declared references are never guessed."""
     parts = {p.get("name"): p for p in params.get("parts", []) if isinstance(p, dict)}
     attached = params.get("skirt_style") == "attached" and "裙子" in parts
@@ -159,7 +161,7 @@ def attachment_issues(params: dict, *, check_notes: bool = True) -> tuple[list[s
     return issues, []
 
 
-def prepare_attached_skirt(parts: list[dict], *, body_rows: tuple[int, int] | None = None,
+def prepare_attached_skirt(parts: list[PartData], *, body_rows: tuple[int, int] | None = None,
                            assembly_plan: dict | None = None, target_row: int | None = None) -> dict:
     """Compile the generated skirt against actual body rounds, before validation."""
     from app.models.crochet_params import _change_note, bridge_rounds
@@ -198,15 +200,15 @@ def prepare_attached_skirt(parts: list[dict], *, body_rows: tuple[int, int] | No
     matching = [i for i in candidates if rounds[i]["stitches"] == waist]
     index = min(matching or candidates, key=lambda i: abs(i - desired))
     base, reserve = rounds[index:index + 2]
-    expression = round_expression(reserve["notes"])
-    if expression is None:
+    notes = reserve.get("notes")
+    expression = round_expression(notes)
+    if notes is None or expression is None:
         raise ValueError("身体预留圈缺少可识别的针法操作式")
-    if mentions_invisible_decrease(reserve.get("notes")):
+    if mentions_invisible_decrease(notes):
         raise ValueError("身体预留圈含隐形减针，无法自动改为 FLO 预留；请人工核对")
-    _, _, suffix = reserve["notes"].partition("；")
-    reserve["notes"] = "FLO(" + format_stitch_expression(expression) + ")；为裙子保留接合位，见装配说明"
-    if suffix:
-        reserve["notes"] += "；" + suffix
+    _, _, suffix = notes.partition("；")
+    reserved = "FLO(" + format_stitch_expression(expression) + ")；为裙子保留接合位，见装配说明"
+    reserve["notes"] = reserved + "；" + suffix if suffix else reserved
     old = skirt["rounds"]
     ruffle = bool(old[-1].get("allow_wide_jump"))
     hem = old[-2 if ruffle else -1]["stitches"]
@@ -222,12 +224,13 @@ def prepare_attached_skirt(parts: list[dict], *, body_rows: tuple[int, int] | No
         # Preserve photo colors at normalized heights and the ruffle's own color.
         source_index = (len(old) - 1 if ruffle and i == len(counts) - 1
                         else round(i * (old_main - 1) / max(1, new_main - 1)))
-        row = dict(old[source_index])
-        row.update(row=i + 1, stitches=n, increase=max(0, n - counts[i - 1]) if i else 0,
-                   decrease=max(0, counts[i - 1] - n) if i else 0,
-                   allow_wide_jump=bool(ruffle and i == len(counts) - 1),
-                   notes=(f"BLO({n}X)；接入预留针目，具体圈号见装配说明"
-                          if i == 0 else _change_note(counts[i - 1], n)))
+        row: RoundData = {
+            **old[source_index], "row": i + 1, "stitches": n,
+            "increase": max(0, n - counts[i - 1]) if i else 0,
+            "decrease": max(0, counts[i - 1] - n) if i else 0,
+            "allow_wide_jump": bool(ruffle and i == len(counts) - 1),
+            "notes": (f"BLO({n}X)；接入预留针目，具体圈号见装配说明"
+                      if i == 0 else _change_note(counts[i - 1], n))}
         if row["allow_wide_jump"]:
             row["notes"] = f"V×{hem}；波浪裙摆"
         rebuilt.append(row)

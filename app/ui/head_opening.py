@@ -2,12 +2,13 @@
 import streamlit as st
 
 from app.models.head_opening import HEAD_OPENING_KEY, has_declared_head_opening, head_opening_target
+from app.schemas import ResultData
 from app.services.result_logic import regenerate_with_head_opening
 from app.ui.edit_history import preview_edit
 from app.utils.counts import integer_count
 
 
-def render_head_opening(result: dict, slot: str) -> None:
+def render_head_opening(result: ResultData, slot: str) -> None:
     parts = result["params"]["parts"]
     head = next((p for p in parts if p["name"] == "头部"), None)
     if head is None:

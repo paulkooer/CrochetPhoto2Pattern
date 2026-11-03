@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Sequence
 
 from PIL import Image
 
-from ..schemas import PART_LABELS_ZH, PartKind
+from ..schemas import PART_LABELS_ZH, PartData, PartKind
 from .colors import nearest_yarn_batch
 from .subject import SubjectObservation
 
@@ -290,7 +291,7 @@ def round_color_plan(
     return colors, len(eligible - represented)
 
 
-def blocks_summary_text(round_colors: list[str | None], rows: list[int] | None = None) -> str:
+def blocks_summary_text(round_colors: Sequence[str | None], rows: list[int] | None = None) -> str:
     """逐圈颜色列表 → "R1–R4 浅肤色；R5–R10 深棕色" 摘要。"""
     segs: list[str] = []
     i = 0
@@ -311,7 +312,7 @@ _COLOR_CHANGE_RE = re.compile(
 _COLOR_SUMMARY_RE = re.compile(r" 配色（按钩织圈序，自[上下]而[上下]）：[^。]*。")
 
 
-def refresh_color_instructions(part: dict) -> None:
+def refresh_color_instructions(part: PartData) -> None:
     """Derive transitions and summaries from current yarns, retaining manual prose.
 
     Track generated fragments separately while keeping the composed notes readable

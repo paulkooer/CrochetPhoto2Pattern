@@ -13,7 +13,7 @@ from app.models.leg_join import (
     leg_join_plan,
 )
 from app.models.leg_join_diagram import leg_join_svg
-from app.schemas import MAX_ROUND_STITCHES
+from app.schemas import MAX_ROUND_STITCHES, ResultData
 
 _FIELDS = (("left_row", "左腿开口圈号"), ("left_stitches", "左腿开口针数"),
            ("left_marker", "左腿记号针"), ("right_row", "右腿开口圈号"),
@@ -78,7 +78,7 @@ def _apply_restore(slot: str) -> None:
     st.session_state[prefix + "notice"] = (True, "方案已恢复；请核对实际开口与连接方向。")
 
 
-def render_leg_join(slot: str, result: dict | None = None) -> None:
+def render_leg_join(slot: str, result: ResultData | None = None) -> None:
     with st.expander("🧮 锁针并腿方案（手动核对）", expanded=False):
         st.caption("用于两条已留有开口的腿：分别钩完两个开口的每一针，"
                    "连接锁针的两侧各钩一短针。本工具只计算这一种做法。")
@@ -141,7 +141,7 @@ def render_leg_join(slot: str, result: dict | None = None) -> None:
             _render_plan(plan, prefix, result)
 
 
-def _render_plan(plan: dict, prefix: str, result: dict | None) -> None:
+def _render_plan(plan: dict, prefix: str, result: ResultData | None) -> None:
     st.info(f"身体连接圈：{plan['left']['stitches']} + {plan['right']['stitches']} + "
             f"2 × {plan['chain_stitches']} = {plan['result_stitches']} 针。"
             "锁针的两侧各计一次，不把锁针本身另外算作成品针。")

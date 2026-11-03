@@ -1,7 +1,9 @@
 """Move an existing generated skirt join without guessing custom instructions."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
+from typing import Any, cast
 
 from app.models.crochet_params import _change_note, refresh_derived
 from app.models.instruction_checks import round_expression
@@ -15,11 +17,12 @@ from app.models.stitch_attachments import (
 )
 from app.models.stitch_notation import mentions_invisible_decrease
 from app.models.validator import require_valid_pattern
+from app.schemas import ResultData
 
 _RESERVATION = "为裙子保留接合位，见装配说明"
 
 
-def skirt_connection(params: dict) -> dict:
+def skirt_connection(params: Mapping[str, Any]) -> dict:
     require_valid_pattern(params)
     plan = LoopAttachmentPlan.model_validate(params.get("stitch_attachments", {}))
     for connection in plan.connections:
@@ -28,7 +31,7 @@ def skirt_connection(params: dict) -> dict:
     raise ValueError("当前图解没有精确接裙记录，请先生成挑针接裙图解")
 
 
-def waist_rows(params: dict) -> list[dict]:
+def waist_rows(params: Mapping[str, Any]) -> list[dict]:
     """Actual adjacent rows, restricted to the known body region in one-piece work."""
     connection = skirt_connection(params)
     if connection["target_part"] not in ("身体", _ONE_PIECE_NAME):
@@ -44,7 +47,7 @@ def waist_rows(params: dict) -> list[dict]:
     return rows[start:-1]
 
 
-def move_skirt_join(result: dict, target_row: int) -> dict:
+def move_skirt_join(result: ResultData, target_row: int) -> ResultData:
     """Keep equal-waist skirts intact; only rebuild recognized generated skirts."""
     if type(target_row) is not int:
         raise ValueError("基底圈号须为整数")
@@ -92,7 +95,9 @@ def move_skirt_join(result: dict, target_row: int) -> dict:
     generated = prepare_attached_skirt(params["parts"], target_row=target_row,
                                        assembly_plan=params.get("assembly_plan"))
     if not changed_waist:
-        skirt.clear()
+        # Restore in place, preserving aliases. TypedDict disallows clear because it
+        # temporarily removes required keys; update immediately restores them.
+        cast(dict, skirt).clear()
         skirt.update(original_skirt)
     else:
         from app.models.gauge import gauge_from_result
@@ -107,7 +112,7 @@ def move_skirt_join(result: dict, target_row: int) -> dict:
     return updated
 
 
-def unpin_skirt_waist(result: dict) -> dict:
+def unpin_skirt_waist(result: ResultData) -> ResultData:
     """Change the next regeneration's policy without altering current stitches."""
     updated = deepcopy(result)
     updated["params"].pop(WAIST_POSITION_KEY, None)
@@ -115,7 +120,7 @@ def unpin_skirt_waist(result: dict) -> dict:
     return updated
 
 
-def preserve_skirt_waist(current: dict, generated: dict) -> dict:
+def preserve_skirt_waist(current: ResultData, generated: ResultData) -> ResultData:
     """Reapply the saved relative candidate position after a full regeneration.
 
     Preserve the original fraction, not the rounded output row, so repeated

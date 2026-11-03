@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pydantic import (
@@ -106,7 +107,7 @@ def _swatch_note(spec: YarnSpec | None, independent: bool) -> str:
             if independent else "试片与线标适用于所有颜色")
 
 
-def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
+def yarn_requirements(parts: Sequence[Mapping[str, Any]], gauge: Gauge = DEFAULT_GAUGE,
                       yarn_spec: dict | None = None) -> tuple[list[dict], dict]:
     """Count every stitch exactly once; the summary is not another purchase item."""
     spec = YarnSpec.model_validate(yarn_spec) if yarn_spec is not None else None
@@ -161,7 +162,7 @@ def yarn_requirements(parts: list[dict], gauge: Gauge = DEFAULT_GAUGE,
     return rows, summary
 
 
-def _materials_and_summary(parts: list[dict[str, Any]], gauge: Gauge = DEFAULT_GAUGE,
+def _materials_and_summary(parts: Sequence[Mapping[str, Any]], gauge: Gauge = DEFAULT_GAUGE,
                            yarn_spec: dict | None = None) -> tuple[list[dict[str, Any]], dict]:
     """One purchasable yarn list, followed by accessories. No duplicate group totals."""
     materials, summary = yarn_requirements(parts, gauge, yarn_spec)
@@ -239,7 +240,7 @@ def _materials(parts: list[dict[str, Any]], part_names: set,
     return _materials_and_summary(parts, gauge, yarn_spec)[0]
 
 
-def material_summary_text(params: dict) -> str:
+def material_summary_text(params: Mapping[str, Any]) -> str:
     summary = params.get("material_summary")
     if not isinstance(summary, dict) or not summary:
         return ""

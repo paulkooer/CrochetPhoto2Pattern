@@ -15,7 +15,7 @@ from app.models.sizing import (
     PROPORTION_STYLES,
     styled_body_ratio,
 )
-from app.schemas import PART_NAMES, ImageAnalysis
+from app.schemas import PART_NAMES, ImageAnalysis, ResultData
 
 
 def _confirmed_draft(draft: PhotoDraft, body_reviewed: PhotoDraft, ratio: float,
@@ -81,7 +81,8 @@ def _render_preview(reviewed: PhotoDraft, analysis: ImageAnalysis, *, gauge, sty
     return render_stitch_preview(params, suggest)
 
 
-def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style, target_height: float) -> dict | None:
+def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style,
+                        target_height: float) -> ResultData | None:
     from app.ui.result_renderer import md_safe
 
     run_trace = None

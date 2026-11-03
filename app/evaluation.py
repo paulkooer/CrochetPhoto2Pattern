@@ -12,7 +12,7 @@ import json
 import platform
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, date, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.models.colors import YARN_COLORS
 from app.models.sizing import DEFAULT_PROPORTION_STYLE
-from app.schemas import PART_NAMES
+from app.schemas import PART_NAMES, ResultData
 from app.utils.images import MAX_UPLOAD_MB, load_image_bytes, load_image_file
 
 MANIFEST_NAME = "eval_manifest.json"
@@ -33,7 +33,7 @@ MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
 ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 
-EvaluationRunner = Callable[[Image.Image], dict[str, Any]]
+EvaluationRunner = Callable[[Image.Image], Mapping[str, Any]]
 
 
 class EvaluationDatasetError(ValueError):
@@ -303,7 +303,7 @@ def _default_local_runner() -> EvaluationRunner:
 
     orchestrator = PipelineOrchestrator()
 
-    def _run(image: Image.Image) -> dict[str, Any]:
+    def _run(image: Image.Image) -> ResultData:
         # 可钩性在报告里逐例统计；门禁抛错会把整例记为管线错误，丢掉其他指标。
         return orchestrator.run_full_pipeline(
             image,

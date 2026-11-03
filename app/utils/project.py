@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Literal
+from collections.abc import Mapping
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app import software_version
-from app.schemas import PatternResult, strip_photo_derived
+from app.schemas import PatternResult, ResultData, strip_photo_derived
 from app.services.progress_state import (
     ambiguous_legacy_progress,
     has_legacy_identity_collision,
@@ -43,19 +44,19 @@ def _revision_hash(data: dict) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def pattern_revision(result: dict) -> str:
+def pattern_revision(result: Mapping[str, Any]) -> str:
     # Session IDs, progress and personal notes are intentionally outside this hash.
     # 照片衍生数据（preview/mask_review）同样剔除：图解身份不应随照片缩略图而变。
     return _revision_hash(strip_photo_derived(PatternResult.from_result(result).to_backup()))
 
 
-def _legacy_pattern_revision(result: dict) -> str:
+def _legacy_pattern_revision(result: Mapping[str, Any]) -> str:
     # 剔除照片衍生数据之前保存的工程（同为 0.2.0b2，无法按版本号区分）把
     # preview/mask_review 计入了哈希；读取时仍须认可，否则照片结果的旧工程无法恢复进度。
     return _revision_hash(PatternResult.from_result(result).to_backup())
 
 
-def project_backup(result: dict, progress: dict[str, bool], notes: str = "") -> dict:
+def project_backup(result: ResultData, progress: dict[str, bool], notes: str = "") -> dict:
     from app.models.validator import require_valid_pattern
 
     require_valid_pattern(result["params"])
@@ -68,7 +69,7 @@ def project_backup(result: dict, progress: dict[str, bool], notes: str = "") -> 
     return {**data, "project_state": state.model_dump(exclude_none=True)}
 
 
-def _validate_progress(result: dict, progress: dict[str, bool]) -> None:
+def _validate_progress(result: ResultData, progress: dict[str, bool]) -> None:
     remaining = set(progress)
     if any(value is not True for value in progress.values()):
         raise ValueError("工程进度只允许记录已完成的圈次")
@@ -80,7 +81,7 @@ def _validate_progress(result: dict, progress: dict[str, bool]) -> None:
         raise ValueError("工程进度引用了不存在的部件、实体或圈次")
 
 
-def read_project_state(data: dict, restored: dict, *,
+def read_project_state(data: dict, restored: ResultData, *,
                        clear_legacy_ambiguity: bool = False) -> tuple[dict[str, bool], str]:
     if "project_state" not in data:
         return {}, ""  # Original pattern backups remain supported.

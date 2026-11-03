@@ -12,7 +12,7 @@ from PIL import Image
 
 from app import software_version
 
-from ..schemas import ImageAnalysis, PatternResult
+from ..schemas import ImageAnalysis, PatternParams, PatternResult, ResultData
 from .crochet_params import CrochetParamsGenerator
 from .crochetability import require_crochetable
 from .geometry import GeometryObservation, mock_geometry, observe_geometry
@@ -166,7 +166,7 @@ class PipelineOrchestrator:
         style=None,
         target_height_cm: float = 18,
         proportion_style: str = DEFAULT_PROPORTION_STYLE,
-    ) -> dict[str, Any]:
+    ) -> PatternParams:
         """The rounds generate_from_draft would produce, without colors or the gate.
 
         Colors never change stitch counts, so the review page can show exact
@@ -199,7 +199,7 @@ class PipelineOrchestrator:
         run_trace: RunTrace | None = None,
         enforce_crochetability: bool = True,
         proportion_style: str = DEFAULT_PROPORTION_STYLE,
-    ) -> dict[str, Any]:
+    ) -> ResultData:
         """Generate locally from reviewed data; never contacts a vision provider.
 
         Budget covers active stages only, so time spent by the user reviewing the
@@ -257,7 +257,7 @@ class PipelineOrchestrator:
             generator_version=software_version(),
             analysis=chosen.model_dump(),
             structure=structure,
-            params=params,
+            params=dict(params),
             usage=draft.usage,
             vision_meta=meta,
             gauge={"stitches_per_10cm": gauge.stitches_per_10cm, "rows_per_10cm": gauge.rows_per_10cm},
@@ -290,7 +290,7 @@ class PipelineOrchestrator:
         parts: list[str] | None = None,
         enforce_crochetability: bool = True,
         proportion_style: str = DEFAULT_PROPORTION_STYLE,
-    ) -> dict[str, Any]:
+    ) -> ResultData:
         # Keep the original public API and explicit mode validation.
         if vision_mode not in VISION_MODES:
             raise ValueError(f"vision_mode 必须是 {'/'.join(VISION_MODES)}，得到 {vision_mode!r}")

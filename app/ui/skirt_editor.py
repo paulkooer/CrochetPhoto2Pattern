@@ -4,10 +4,11 @@ import streamlit as st
 from app.models.attachment_diagram import attachment_svg
 from app.models.skirt_edit import move_skirt_join, skirt_connection, unpin_skirt_waist, waist_rows
 from app.models.stitch_attachments import WAIST_POSITION_KEY
+from app.schemas import ResultData
 from app.ui.edit_history import preview_edit
 
 
-def render_skirt_editor(result: dict, slot: str) -> None:
+def render_skirt_editor(result: ResultData, slot: str) -> None:
     from app.ui.result_renderer import md_safe
 
     params = result["params"]

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from app.schemas import ResultData
 from app.services.workspace import workspace
 
 
@@ -20,7 +21,7 @@ def title_key(rid: str) -> str:
     return f"hist_title_{rid}"
 
 
-def live_workspace(result: dict, slot: str, *, create: bool = True) -> dict:
+def live_workspace(result: ResultData, slot: str, *, create: bool = True) -> dict:
     """The tab's workspace for ``result`` with the current notes and title widget values."""
     ws = workspace(result, slot, st.session_state, create=create)
     for field, key in (("notes", notes_key(ws["result_id"])), ("title", title_key(ws["result_id"]))):

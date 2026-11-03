@@ -34,14 +34,14 @@ if "p" in _qp and "result" not in st.session_state:
 
     from app.services.result_logic import import_backup
     from app.utils.share import decode_result
-    _shared = decode_result(_qp["p"])
-    if _shared:
+    _decoded = decode_result(_qp["p"])
+    _shared = None
+    if _decoded:
         # V5：与备份导入同级的校验（坏 token 不进 session）
         try:
-            _shared = import_backup(_shared, _uuid.uuid4().hex[:12])
+            _shared = import_backup(_decoded, _uuid.uuid4().hex[:12])
         except Exception:
             st.error("分享链接内容无效或已损坏，无法载入")
-            _shared = None
     if _shared:
         _shared["result_id"] = _uuid.uuid4().hex[:12]
         st.session_state["result"] = _shared

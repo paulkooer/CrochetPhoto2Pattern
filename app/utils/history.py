@@ -16,7 +16,7 @@ import os
 import sqlite3
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import closing, contextmanager, suppress
 from pathlib import Path
 from typing import Any
@@ -107,7 +107,7 @@ def _connection() -> Iterator[sqlite3.Connection]:
         yield conn
 
 
-def _summary(result: dict[str, Any]) -> str:
+def _summary(result: Mapping[str, Any]) -> str:
     analysis = result.get("analysis") or {}
     params = result.get("params") or {}
     parts = params.get("parts") or []
@@ -117,7 +117,7 @@ def _summary(result: dict[str, Any]) -> str:
             f"{len(parts)} 部件")
 
 
-def save_result(result: dict[str, Any], title: str | None = None) -> str:
+def save_result(result: Mapping[str, Any], title: str | None = None) -> str:
     """保存完整结果，返回持久记录 ID；显示 ID 与历史 ID 分开。
 
     title（U26）：用户可命名的标题（None 时侧栏回退摘要）。

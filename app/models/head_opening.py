@@ -1,16 +1,17 @@
 """Explicit neck openings for newly generated, separate head constructions."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any
+from typing import Any, Final
 
 from app.schemas import MAX_ROUND_STITCHES
 from app.utils.counts import integer_count
 
-HEAD_OPENING_KEY = "head_opening_stitches"
+HEAD_OPENING_KEY: Final = "head_opening_stitches"
 
 
-def has_declared_head_opening(part: dict) -> bool:
+def has_declared_head_opening(part: Mapping[str, Any]) -> bool:
     """Recognize a terminal opening in authored legacy work without a mode flag."""
     from .assembly import _CLOSING_RE
 
@@ -77,7 +78,7 @@ def leave_head_open(rounds: list[dict], target: int, max_change: int) -> list[di
     return rows
 
 
-def head_opening_issues(params: dict) -> list[str]:
+def head_opening_issues(params: Mapping[str, Any]) -> list[str]:
     """Reject contradictory saved generation intent at every pattern boundary."""
     raw = params.get(HEAD_OPENING_KEY)
     if raw is None:

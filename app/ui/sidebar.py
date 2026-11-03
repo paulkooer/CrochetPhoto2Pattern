@@ -116,14 +116,14 @@ def render_sidebar() -> None:
                         try:
                             from app.services.result_logic import import_backup
 
-                            data = import_backup(data, uuid.uuid4().hex[:12])
-                            data["history_id"] = it["rid"]
+                            loaded = import_backup(data, uuid.uuid4().hex[:12])
+                            loaded["history_id"] = it["rid"]
                         except Exception as e:
                             st.error(f"该记录已损坏，无法载入（可点「删」清除）: {md_safe(e)}")
                         else:
                             if "result" in st.session_state:
                                 purge_result_state(st.session_state["result"])
-                            st.session_state["result"] = data
+                            st.session_state["result"] = loaded
                             st.rerun()
                 if c_h3.button("删", key=f"hist_del_{it['rid']}"):
                     history.delete_result(it["rid"])

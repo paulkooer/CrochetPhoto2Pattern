@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from dataclasses import asdict
 from typing import Any
 
-from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis, PartGauge
+from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis, PartGauge, PatternParams
 from .assembly import _openings_by_part, build_assembly, opening_rows_by_part
 from .color_design import (
     PART_SPAN,
@@ -421,7 +421,7 @@ def structure_connection_plan(structure: dict[str, Any]) -> dict[str, Any] | Non
     }
 
 
-def _gauge_from_params(params: dict) -> Gauge:
+def _gauge_from_params(params: Mapping[str, Any]) -> Gauge:
     """从 params 恢复生成时的 gauge（JSON 修正/备份导入路径的单一来源）。
 
     用户可能在 JSON 里把数值改坏：钳到与侧栏相同的区间（6–40 / 8–50 针数
@@ -440,7 +440,7 @@ def _shaping_meta(gauge: Gauge) -> dict[str, Any]:
     }
 
 
-def refresh_derived(params: dict) -> dict:
+def refresh_derived(params: PatternParams) -> PatternParams:
     """局部修正（JSON 编辑）后按编辑过的 parts 重算派生量。
 
     estimated_time_minutes / total_stitches / 材料克数都是 parts 的函数，
@@ -495,7 +495,7 @@ class CrochetParamsGenerator:
         spans: dict[str, Any] | None = None,
         head_opening_stitches: int | None = None,
         part_gauges: Mapping[str, Gauge] | None = None,
-    ) -> dict[str, Any]:
+    ) -> PatternParams:
         """Generate crochet parameters using structure data for dimensions.
 
         圈数（rows）一律由 len(rounds) 派生；圆柱/帽的标注高度按圈数反推，
@@ -910,7 +910,7 @@ class CrochetParamsGenerator:
         named = [c for c in colors if c is not None]
         if named:
             part.color = max(dict.fromkeys(named), key=colors.count)
-        composed = part.model_dump()
+        composed = part.to_data()
         refresh_color_instructions(composed)
         part.notes = composed["notes"]
         part.auto_color_summary = composed["auto_color_summary"]
@@ -923,7 +923,7 @@ class CrochetParamsGenerator:
                       gauge: Gauge = DEFAULT_GAUGE,
                       style: "ShapingStyle | None" = None,
                       structure: dict[str, Any] | None = None, *,
-                      body_rows: tuple[int, int] | None = None) -> dict[str, Any]:
+                      body_rows: tuple[int, int] | None = None) -> PatternParams:
         """Assemble the result dict: materials / assembly / time scale with parts.
 
         双态收敛出口：parts 以 CrochetPart 模型参与构造、配色与校验，
@@ -931,7 +931,7 @@ class CrochetParamsGenerator:
         历史形态一致，_part_* helper 只需处理 dict。
         """
         style = style or DEFAULT_STYLE
-        part_dicts = [p.model_dump() for p in parts]
+        part_dicts = [p.to_data() for p in parts]
         assembly_plan = structure_connection_plan(structure or {})
         stitch_attachments = None
         if style.skirt_style == "attached":
@@ -970,7 +970,7 @@ class CrochetParamsGenerator:
                 "生成的图解未通过自检: " + "；".join(validation["issues"]))
 
         materials, material_summary = _materials_and_summary(part_dicts, gauge)
-        result = {
+        result: PatternParams = {
             "materials": materials,
             "material_summary": material_summary,
             "parts": part_dicts,

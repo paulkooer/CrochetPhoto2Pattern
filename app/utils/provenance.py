@@ -1,10 +1,11 @@
 """Common source and verification labels for portable pattern exports."""
+from collections.abc import Mapping
 from typing import Any
 
 from app import software_version
 
 
-def provenance_lines(result: dict[str, Any] | None = None) -> list[str]:
+def provenance_lines(result: Mapping[str, Any] | None = None) -> list[str]:
     result = result or {}
     meta = result.get("vision_meta") or {}
     sizing = result.get("sizing") or {}

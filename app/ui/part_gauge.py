@@ -7,11 +7,12 @@ from app.models.gauge import (
     gauge_for_part,
     gauge_from_result,
 )
+from app.schemas import ResultData
 from app.services.result_logic import regenerate_with_part_gauge
 from app.ui.edit_history import preview_edit
 
 
-def render_part_gauge(result: dict, slot: str) -> None:
+def render_part_gauge(result: ResultData, slot: str) -> None:
     parts = [p for p in result["params"]["parts"] if p["name"] in INDEPENDENT_GAUGE_PARTS
              and not (p["name"] == "裙子" and result["params"].get("skirt_style") == "attached")]
     if not parts:

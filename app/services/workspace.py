@@ -10,12 +10,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping, MutableMapping
 
+from app.schemas import ResultData
+
 
 def workspace_key(slot: str) -> str:
     return f"workspace_{slot}"
 
 
-def new_workspace(result: dict, slot: str, *, notes: str = "", title: str | None = None,
+def new_workspace(result: ResultData, slot: str, *, notes: str = "", title: str | None = None,
                   recovery_notice: str | None = None) -> dict:
     return {
         "result_id": result.get("result_id") or slot,
@@ -34,7 +36,7 @@ def new_workspace(result: dict, slot: str, *, notes: str = "", title: str | None
     }
 
 
-def workspace(result: dict, slot: str, state: MutableMapping, *, create: bool = True) -> dict:
+def workspace(result: ResultData, slot: str, state: MutableMapping, *, create: bool = True) -> dict:
     """The tab's workspace for ``result``; one left by another result is replaced.
 
     With ``create=False`` a missing workspace is returned fresh but not stored,
@@ -49,7 +51,7 @@ def workspace(result: dict, slot: str, state: MutableMapping, *, create: bool = 
     return fresh
 
 
-def carried_workspace(current: Mapping, updated: dict, slot: str) -> dict:
+def carried_workspace(current: Mapping, updated: ResultData, slot: str) -> dict:
     """A workspace for ``updated``, an edit of ``current``'s result, keeping the user's own text."""
     return new_workspace(updated, slot, notes=current["notes"], title=current["title"],
                          recovery_notice=current["recovery_notice"])

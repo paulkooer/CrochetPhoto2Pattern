@@ -6,6 +6,7 @@ import pytest
 from app.models.crochet_params import CrochetParamsGenerator, refresh_derived
 from app.models.gauge import Gauge, ShapingStyle
 from app.models.instruction_checks import round_expression
+from app.models.stitch_attachments import prepare_attached_skirt
 from app.models.validator import require_valid_pattern, validate_pattern
 from app.schemas import PatternResult
 from app.services.result_logic import import_backup, regenerate_with_size
@@ -130,6 +131,22 @@ def test_missing_or_rewired_body_never_invents_a_skirt_connection():
     skirt["instances"][0]["attachments"] = []
     with pytest.raises(ValueError, match="结构连接"):
         CrochetParamsGenerator.generate_params(a, structure, style=ShapingStyle(skirt_style="attached"))
+
+
+@pytest.mark.parametrize("notes", ["missing", "none", "unparseable"])
+def test_prepare_attached_skirt_rejects_reservation_without_stitch_formula(notes):
+    params = _result()["params"]
+    connection = params["stitch_attachments"]["connections"][0]
+    body = next(p for p in params["parts"] if p["name"] == connection["target_part"])
+    reserve = next(r for r in body["rounds"] if r["row"] == connection["reservation_row"])
+    if notes == "missing":
+        del reserve["notes"]
+    else:
+        reserve["notes"] = None if notes == "none" else "自定义说明"
+    before = deepcopy(params["parts"])
+    with pytest.raises(ValueError, match="身体预留圈缺少可识别的针法操作式"):
+        prepare_attached_skirt(params["parts"], target_row=connection["target_row"])
+    assert params["parts"] == before
 
 
 def test_printed_connection_comes_from_current_references_and_pdf_matches(monkeypatch):

@@ -5,6 +5,7 @@ import json
 
 import streamlit as st
 
+from app.schemas import ResultData
 from app.services.progress_state import capture_progress
 from app.utils.backup import MAX_BACKUP_BYTES
 from app.utils.project import MAX_PROJECT_NOTES, project_backup
@@ -18,7 +19,7 @@ def _download_project(payload: str, completed: int, revision: str) -> None:
                        mime="application/json", key="download_project_snapshot")
 
 
-def render_project_save(result: dict, slot: str) -> None:
+def render_project_save(result: ResultData, slot: str) -> None:
     from app.ui.workspace import live_workspace, notes_key, seed_widget
 
     rid = result.get("result_id") or slot

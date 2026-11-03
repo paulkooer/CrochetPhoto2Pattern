@@ -15,7 +15,15 @@ import streamlit as st
 from app.models.colors import YARN_COLORS
 from app.models.gauge import gauge_for_part, gauge_from_result, has_independent_gauge, part_gauge_text
 from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STITCH_LEGEND_ZH
-from app.schemas import PART_NAMES, PatternResult, difficulty_label, strip_photo_derived
+from app.schemas import (
+    PART_NAMES,
+    PartData,
+    PatternResult,
+    ResultData,
+    RoundData,
+    difficulty_label,
+    strip_photo_derived,
+)
 from app.services import result_logic
 from app.services.result_logic import rebuild_params, result_profile
 from app.services.workspace import workspace
@@ -70,7 +78,7 @@ def _ratio_text(sizing: dict) -> str:
         return md_safe(raw)
 
 
-def _silhouette_verifications(result: dict) -> list[tuple[str, str]]:
+def _silhouette_verifications(result: ResultData) -> list[tuple[str, str]]:
     """照片驱动（type="profile"）部件 → (部件名, 侧影 SVG) 列表。
 
     params["parts"] 在双态收敛后是纯 dict 形态；旧的 getattr 过滤器永远
@@ -118,7 +126,7 @@ def _yarn_chip_html(name: str) -> str:
     )
 
 
-def purge_result_state(result: dict) -> None:
+def purge_result_state(result: ResultData) -> None:
     """Drop widget state namespaced to a result that is about to be replaced.
 
     result_id 每次生成都不同，若不清理，逐圈 checkbox 等几十个 key 会在
@@ -136,7 +144,7 @@ def purge_result_state(result: dict) -> None:
             del st.session_state[key]
 
 
-def _live_record(result: dict, slot: str) -> dict[str, bool]:
+def _live_record(result: ResultData, slot: str) -> dict[str, bool]:
     """The tab's completed rounds for ``result``; a record left by another result restarts empty."""
     from app.services.progress_state import progress_record_key, store_completed_rounds
 
@@ -146,7 +154,7 @@ def _live_record(result: dict, slot: str) -> dict[str, bool]:
     return store_completed_rounds(result, slot, {}, st.session_state)
 
 
-def _toggle_round(result: dict, slot: str, identity: str, key: str) -> None:
+def _toggle_round(result: ResultData, slot: str, identity: str, key: str) -> None:
     completed = _live_record(result, slot)
     if st.session_state.get(key):
         completed[identity] = True
@@ -154,7 +162,7 @@ def _toggle_round(result: dict, slot: str, identity: str, key: str) -> None:
         completed.pop(identity, None)
 
 
-def _set_rounds(result: dict, slot: str, entries: list[tuple[str, str]], value: bool) -> None:
+def _set_rounds(result: ResultData, slot: str, entries: list[tuple[str, str]], value: bool) -> None:
     """Bulk update the record and any checkbox already showing these rounds."""
     completed = _live_record(result, slot)
     for identity, key in entries:
@@ -166,7 +174,7 @@ def _set_rounds(result: dict, slot: str, entries: list[tuple[str, str]], value: 
             st.session_state[key] = value
 
 
-def _round_checkbox(label: str, result: dict, slot: str, identity: str, key: str,
+def _round_checkbox(label: str, result: ResultData, slot: str, identity: str, key: str,
                     completed: dict[str, bool]) -> None:
     # The record is the source of truth; a checkbox is created from it and writes back.
     if key not in st.session_state:
@@ -175,7 +183,7 @@ def _round_checkbox(label: str, result: dict, slot: str, identity: str, key: str
 
 
 @st.fragment
-def _render_paged_progress(result: dict, slot: str) -> None:
+def _render_paged_progress(result: ResultData, slot: str) -> None:
     """Bound widget creation; the record keeps progress for rounds on hidden pages."""
     from app.services.progress_state import PROGRESS_PAGE_SIZE, progress_entries
 
@@ -227,14 +235,14 @@ def _render_paged_progress(result: dict, slot: str) -> None:
 
 @st.fragment
 def _render_part_progress(
-    part: dict,
-    part_data: dict,
+    part: PartData,
+    part_data: PartData,
     part_key: str,
     entries_by_copy: list[list[tuple[str, str]]],
-    rounds_list: list[dict],
+    rounds_list: list[RoundData],
     quantity: int,
     n_rounds: int,
-    result: dict,
+    result: ResultData,
     slot: str,
 ) -> None:
     """单个部件的进度区（fragment）。
@@ -321,7 +329,7 @@ def _render_part_progress(
                 _round_checkbox(lbl, result, slot, identity, key, completed)
 
 
-def render_results(result: dict, slot: str) -> None:
+def render_results(result: ResultData, slot: str) -> None:
     """Render the result UI. `slot` is the st.session_state key holding `result`,
     so edits/regeneration write back to the tab that owns this result."""
     analysis = result["analysis"]
@@ -708,7 +716,7 @@ def render_results(result: dict, slot: str) -> None:
     from app.ui.edit_history import commit_edit, preview_edit
     from app.ui.pattern_editor import render_pattern_editor
 
-    def apply_edit(updated: dict, success: str) -> None:
+    def apply_edit(updated: ResultData, success: str) -> None:
         installed = commit_edit(slot, result, updated)
         if installed is not result:
             workspace(installed, slot, st.session_state)["success"] = success
@@ -966,7 +974,7 @@ def render_results(result: dict, slot: str) -> None:
                      disabled=not history.history_enabled() or not _v["ok"],
                      help="保存到部署主机的图解历史，可在侧栏随时载回"):
             try:
-                saved = dict(result)
+                saved = result.copy()
                 saved["params"] = rebuild_params(serializable_params)
                 saved["gauge"] = saved["params"].get("gauge")
                 _title = (live_workspace(result, slot)["title"] or "").strip() or None

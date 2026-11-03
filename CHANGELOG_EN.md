@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-02 Static result types
+
+- Add static types for session results in `app.schemas`: `ResultData`, `PatternParams`, `PartData` and `RoundData` (`TypedDict`). At runtime results remain plain dicts; the types are for mypy only. `tests/test_result_types.py` checks that their fields match `CrochetStitch`, `CrochetPart` and `RESULT_KEYS`, and that generators produce only declared keys.
+- The service layer (regeneration, import, progress, workspace, projects), edit history, result page and editors, CLI and orchestrator use these types. Read-only model functions (validation, exports, assembly, materials, preview) accept `Mapping[str, Any]`. Casts describe serialization and rebuilding boundaries, plus one temporary in-place skirt restore. `PatternResult` validates the top level only; rebuilding validates parts and pattern constraints, while other legacy parameter fields are only partly checked. `HEAD_OPENING_KEY` and `WAIST_POSITION_KEY` are `Final` so they work as typed keys.
+- Repository-wide mypy (206 files) stays at 0 errors. Behavior is unchanged, except that an attached-skirt reservation row without a `notes` field now gets the same message as a row without a stitch formula instead of a `KeyError`.
+
 ### Changed — 2026-11-02 Pattern format migration chain
 
 - Add a pattern-format migration chain (`app/services/migrations.py`). Backup import, share links, local history, project files and trial bundles all upgrade the pattern to the current format before validation and rebuilding. Records without a version field are upgraded to `schema_version="1"` and read exactly as before.
