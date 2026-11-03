@@ -16,6 +16,7 @@ from app.models.sizing import (
     styled_body_ratio,
 )
 from app.schemas import PART_NAMES, ImageAnalysis, ResultData
+from app.utils.provenance import CONFIRMED_SUBJECT_SCOPE
 
 
 def _confirmed_draft(draft: PhotoDraft, body_reviewed: PhotoDraft, ratio: float,
@@ -24,7 +25,7 @@ def _confirmed_draft(draft: PhotoDraft, body_reviewed: PhotoDraft, ratio: float,
     reviewed = copy(body_reviewed)
     reviewed.vision_meta = {**draft.vision_meta,
                             "head_ratio_source": "user_box" if head_box is not None else "user_review",
-                            "subject_scope_review": "single_representable_subject",
+                            "subject_scope_review": CONFIRMED_SUBJECT_SCOPE,
                             "requires_subject_review": False, "parts_source": "user_review"}
     reviewed.vision_meta["body_ratio"] = round(1 / ratio, 3)
     reviewed.vision_meta["original_head_to_height_ratio"] = (

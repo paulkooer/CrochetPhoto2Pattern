@@ -99,7 +99,18 @@ render_photo_review(st.session_state.draft, "box", gauge=DEFAULT,
     assert original.spans["头部"] == (0.05, 0.3)
     restored = import_backup(PatternResult.from_result(result).to_backup(), "box")
     assert tuple(restored["spans"]["头部"]) == (0.2, 0.5)
-    assert tuple(regenerate_with_size(restored, 9, 20)["spans"]["头部"]) == (0.2, 0.5)
+    resized = regenerate_with_size(restored, 9, 20)
+    assert tuple(resized["spans"]["头部"]) == (0.2, 0.5)
+    result_page = AppTest.from_string('''
+import streamlit as st
+from app.ui.result_renderer import render_results
+render_results(st.session_state.result, "result")
+''', default_timeout=30)
+    for current in (result, restored, resized):
+        result_page.session_state["result"] = current
+        result_page.run()
+        assert not result_page.exception
+        assert any("人工框选分段：头部" in item.value for item in result_page.caption)
 
 
 @pytest.mark.parametrize("note", ["下一圈共 18 针", "两圈总计 24 针", "如果共 18 针则重新计数",

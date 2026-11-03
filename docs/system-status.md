@@ -14,14 +14,23 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
-2026-11-03 static structure-data types and legacy result-page fix, on `refactor/typed-structure` based on
-`main` `a1b2902` (local pre-commit checks): structure, part, instance, position and attachment fields have
+2026-11-03 review-provenance fix, on `fix/review-provenance` based on `main` `a2a238b` (local pre-commit
+checks): unrecognized review markers no longer produce affirmative labels; malformed or mismatched head
+boxes do not claim manual selection, and original backup metadata remains intact. Export cache is now 15.
+Full suite: **2550 passed, 2 skipped in 105.47s**; Ruff and mypy (208 files) pass. Local Chrome passes
+**16 synthetic browser flows** and the separate canvas check. No remote CI at this pre-commit snapshot;
+no independent review, authorized-photo evaluation or physical trial. Beta and G3/G4 are unchanged.
+
+2026-11-03 static structure-data types and legacy result-page fix ([PR #40](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/40)
+passed all **10 checks** on head `5ad6bbe` and was squash-merged as `a2a238b` with an identical tree;
+the following are local pre-commit checks on `refactor/typed-structure` based on `main` `a1b2902`):
+structure, part, instance, position and attachment fields have
 static types that retain the legacy format's permissive metadata. A legacy custom `part_id` containing a
 dict or list no longer crashes result rendering. Full suite: **2516 passed, 2 skipped in 88.58s**; Ruff and
 mypy (207 files) pass. Five synthetic v2/legacy cases match the previous commit's structure, pattern,
 progress and resize outputs. Local Chrome passes **15 synthetic browser flows** and the separate canvas
-check, including legacy custom-ID import and re-export. No remote CI at this pre-commit snapshot; no
-independent review, authorized-photo evaluation or physical trial. Beta and G3/G4 are unchanged.
+check, including legacy custom-ID import and re-export. No independent review, authorized-photo evaluation
+or physical trial. Beta and G3/G4 are unchanged.
 
 2026-11-03 static analysis-data type ([PR #39](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/39)
 passed all **10 checks** on head `6f605c0` and was squash-merged as `a1b2902` with an identical tree;
@@ -925,8 +934,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Latest merged baseline: `a1b2902`** | PR #39 was squash-merged into `main` with the same tree as checked head `6f605c0`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 10 remote checks passed for PR #39 head** | Checked head `6f605c0`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
+| G1 Reproducible source | **Latest merged baseline: `a2a238b`** | PR #40 was squash-merged into `main` with the same tree as checked head `5ad6bbe`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 10 remote checks passed for PR #40 head** | Checked head `5ad6bbe`: Python 3.11–3.14, Docker, PDF, pose, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |
