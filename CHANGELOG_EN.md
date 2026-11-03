@@ -15,6 +15,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - Phones: the fixed app bar is paper-coloured so content no longer shows through it when scrolled; `client.toolbarMode = "minimal"` removes the Deploy button; the hero title no longer breaks mid-word.
 - The subject-mask canvas iframe now uses the token system: Python passes the `theme.py` ink/edge/font values as component args, and the fallbacks in `index.html` are guarded by `tests/test_theme_tokens.py`.
 - Part panels show the Chinese shape name instead of the internal enum.
+- Browser regression covers keyboard focus and selected tab/radio colors, repeated progress changes with an open full-width highlighted panel, the theme received by the mask canvas, and the title and header at a 390 px viewport.
 
 ### Changed — 2026-11-03 Emoji removed from UI chrome
 

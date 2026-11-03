@@ -40,7 +40,7 @@
 - hero 环标描线动画与 `prefers-reduced-motion` 降级；打印样式。
 - 结果页 1–5 的编号章节：内容确实是顺序（比例 → 结构 → 参数 → 装配 → 修正），编号有信息量。
 
-## 建议（本轮未改）
+## 建议及后续处理
 
 1. **侧栏信息架构**：标题"创作设置"下先出现两个"打开…"面板，再是驱动一切尺寸的密度。建议密度上移到最前，
    "打开备份图解 / 打开试钩包"合并为一个"打开已有工作"面板放底部，并减少分隔线造成的大段空白。
@@ -52,16 +52,16 @@
 5. **说明段落密度**：照片页 3 段、第 3 章 6 段 `st.caption`，首次使用有价值，之后是噪音；可收进"说明"折叠或用
    控件 help。
 6. **结构表的"位置 / 旋转"列**是开发者坐标串，对用户几乎不可读，建议默认只在"查看结构 JSON"里出现。
-7. **升级防线**：Streamlit 小版本会改 `data-testid` / baseweb 钩子而不报错。建议把本轮的 DOM 探测
-   （激活 Tab 背景色、选中 Radio 背景色、勾选后 `details[open]`）加进 `check_browser_workflow.cjs`，
-   让"记号扣"这类概念性样式失效时 CI 能发现。
+7. **升级防线（已补齐）**：`check_browser_workflow.cjs` 现检查 Tab 键盘焦点和选中颜色、Radio 选中颜色、
+   连续勾选后 `details[open]`、进度与整行高亮，以及 390 px 视口的标题和头栏；同时检查画布 iframe 实际接收的主题。
 
 ## 验证
 
 - `pytest`：全量 2546 passed / 2 skipped；受影响模块重跑 76 passed。`ruff check app tests scripts` 与
   `mypy app tests` 通过。
-- 浏览器：Tab/Radio 计算样式、勾选后面板状态、圈行宽度、1440/390 px 截图均在修后复核；
+- 首轮浏览器验证：Tab/Radio 计算样式、勾选后面板状态、圈行宽度、1440/390 px 截图均在修后复核；
   `scripts/check_browser_workflow.cjs` 同步了新标签（Tab 名、"重置进度"），并对隔离测试服务
   （`CROCHET_HISTORY_MODE=single_user` + 临时 DB）跑完 16 条流程：全部通过，report status `pass`，
   无页面错误、无外部请求。
+- 后续已将这些探测纳入自动回归；当前流程范围与运行方式见[浏览器回归](browser-regression.md)。
 - 本轮未做实物试钩，也不涉及识别准确率；仅界面与交互。

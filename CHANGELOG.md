@@ -15,6 +15,7 @@
 - 手机端：固定头栏改为纸色，滚动后不再透出正文；`client.toolbarMode = "minimal"` 去掉 Deploy 按钮；hero 标题不再被硬折行。
 - 主体修正画布（iframe）接入令牌系统：Python 把 `theme.py` 的墨色/边线/字体作为组件参数传入，`index.html` 的回退值由 `tests/test_theme_tokens.py` 守护。
 - 部件面板的形状显示中文名（球形/圆柱/…）而非内部枚举。
+- 浏览器回归覆盖 Tab 键盘焦点与选中配色、Radio 配色、连续勾选后的面板状态与整行高亮、画布实际接收的主题，以及 390 px 视口的标题和头栏。
 
 ### Changed — 2026-11-03 界面骨架去 emoji
 

@@ -86,7 +86,8 @@ def test_mask_canvas_fallbacks_mirror_tokens():
     html = (_REPO / "app/ui/mask_canvas/index.html").read_text(encoding="utf-8")
     for name, value in (("--ink", theme.INK), ("--ink-soft", theme.INK_SOFT),
                         ("--edge", theme.EDGE), ("--sheet", theme.SHEET),
-                        ("--paper", theme.PAPER), ("--rule", theme.RULE)):
+                        ("--paper", theme.PAPER), ("--rule", theme.RULE),
+                        ("--font", theme.FONT_SANS)):
         assert f"{name}:{value};" in html, name
     assert "http" not in html
 

@@ -110,8 +110,8 @@ async function headProgress(page, scope, rid, checked) {
   report.browser = browser.version();
   let lastPage;
   const record = name => {report.checks.push({name,status:'pass'}); console.log(`PASS ${name}`);};
-  async function context() {
-    const ctx = await browser.newContext({viewport:{width:1440,height:1100},acceptDownloads:true});
+  async function context(viewport = {width:1440,height:1100}) {
+    const ctx = await browser.newContext({viewport,acceptDownloads:true});
     await ctx.route('**/*', route => {
       const hostname = new URL(route.request().url()).hostname;
       if (['127.0.0.1','localhost','[::1]'].includes(hostname)) return route.continue();
@@ -128,7 +128,17 @@ async function headProgress(page, scope, rid, checked) {
     const photo = path.join(output, 'synthetic-doll.png');
     await page.locator('svg').screenshot({path:photo});
     await page.goto(baseURL);
-    await page.getByRole('tab', {name:'照片分析（本地）',exact:true}).click();
+    const photoTab = page.getByRole('tab', {name:'照片分析（本地）',exact:true});
+    const manualTab = page.getByRole('tab', {name:'手动输入',exact:true});
+    await photoTab.focus();
+    await photoTab.press('ArrowRight');
+    await expect(manualTab).toBeFocused();
+    await expect(manualTab).toHaveCSS('outline-width','2px');
+    await expect(manualTab).toHaveCSS('outline-color','rgb(29, 36, 64)');
+    await manualTab.press('ArrowLeft');
+    await expect(photoTab).toBeFocused();
+    await expect(photoTab).toHaveAttribute('aria-selected','true');
+    await photoTab.click();
     const photoPanel = page.getByRole('tabpanel', {name:'照片分析（本地）',exact:true});
     await key(photoPanel,'photo_uploader').locator('input[type="file"]').setInputFiles(photo);
     await key(photoPanel,'btn_photo').getByRole('button').waitFor({state:'visible'});
@@ -141,6 +151,14 @@ async function headProgress(page, scope, rid, checked) {
     await settle(page);
     const editor = page.frameLocator('iframe[title*="subject_mask_editor"]');
     await editor.locator('#canvas').waitFor({state:'visible'});
+    // The iframe receives theme values from Python, rather than relying only on its fallbacks.
+    const outerPalette = await page.evaluate(() => {
+      const css = getComputedStyle(document.documentElement);
+      return ['ink','edge','paper','sans'].map(name => css.getPropertyValue(`--${name}`).trim());
+    });
+    await expect.poll(() => editor.locator('html').evaluate(element =>
+      ['ink','edge','paper','font'].map(name => element.style.getPropertyValue(`--${name}`).trim())
+    )).toEqual(outerPalette);
     await page.evaluate(() => {
       window.__crochetMaskMessages = [];
       window.addEventListener('message', e => {
@@ -177,6 +195,10 @@ async function headProgress(page, scope, rid, checked) {
 
     await photoPanel.getByText('单个玩偶，所需部件可用下方列表表达',{exact:true}).click();
     await settle(page);
+    await expect(page.getByRole('tab',{name:'照片分析（本地）',exact:true}))
+      .toHaveCSS('background-color','rgb(255, 225, 77)');
+    await expect(photoPanel.getByText('单个玩偶，所需部件可用下方列表表达',{exact:true})
+      .locator('xpath=ancestor::label[1]')).toHaveCSS('background-color','rgb(255, 244, 184)');
     const ratio = photoPanel.locator('[class*="st-key-review_ratio_"] input');
     await ratio.fill('0.3');await ratio.press('Tab');await settle(page);
     const generate = photoPanel.getByRole('button',{name:'确认并生成图解',exact:true});
@@ -185,6 +207,33 @@ async function headProgress(page, scope, rid, checked) {
     let photoId = await resultId(photoPanel);
     await expect(photoPanel.getByText('✓ 比例与部件已经过人工确认；原始解析来源保留如下。',{exact:true})).toHaveCount(1);
     record('complete subject/proportion/parts review and generate');
+
+    // A fragment rerun must not close the part panel or shrink the marked row.
+    const sheet = key(photoPanel,`sheet_part_${photoId}_0`);
+    const rounds = sheet.locator('input[type="checkbox"]');
+    await reveal(rounds.first());
+    const partDetails = rounds.first().locator('xpath=ancestor::details[1]');
+    const progress = sheet.locator('[data-testid="stProgress"]');
+    for (let i=0;i<3;i++) {
+      const checkbox = rounds.nth(i);
+      await checkbox.locator('xpath=ancestor::label').click();
+      await expect(checkbox).toBeChecked();
+      await expect(progress).toContainText(`(${i+1}/`);
+      await expect(partDetails).toHaveAttribute('open','');
+    }
+    const firstRow = rounds.first().locator('xpath=ancestor::label');
+    const widths = await firstRow.evaluate(element => ({
+      row:element.getBoundingClientRect().width,
+      panel:element.closest('[data-testid="stExpanderDetails"]').getBoundingClientRect().width,
+    }));
+    assert(widths.row >= widths.panel * 0.9, `Marked row does not fill the panel: ${JSON.stringify(widths)}`);
+    await expect(firstRow).toHaveCSS('background-image',/rgb\(255,\s*244,\s*184\)/);
+    await page.screenshot({path:path.join(output,'pattern-sheet-progress.png')});
+    await sheet.getByRole('button',{name:'重置进度',exact:true}).click();
+    await expect(progress).toContainText('(0/');
+    await expect(partDetails).toHaveAttribute('open','');
+    await expect(rounds.first()).not.toBeChecked();
+    record('marker styles and repeated progress changes preserve the open, full-width part panel');
 
     const backupBytes = await download(page,key(photoPanel,`dl_backup_${photoId}`).getByRole('button'),path.join(output,'photo-backup.json'));
     const backup = JSON.parse(backupBytes);
@@ -640,6 +689,19 @@ async function headProgress(page, scope, rid, checked) {
       await collisionFresh.screenshot({path:path.join(output,'collision-progress-restored.png'),fullPage:true});
       record('legacy collision requires recovery, then separate copy progress survives a fresh project restore');
     }
+    const mobileContext = await context({width:390,height:844});
+    const mobile = lastPage = await mobileContext.newPage();
+    await mobile.goto(baseURL);
+    const mobileTitle = mobile.locator('h1.sheet-hero__title [data-heading-text]');
+    await expect(mobileTitle).toBeVisible();
+    assert.equal(await mobileTitle.evaluate(element => element.getClientRects().length),1,
+                 'Product title should fit on one line at a 390 px viewport.');
+    await expect(mobile.locator('[data-testid="stHeader"]')).toHaveCSS('background-color','rgb(246, 247, 244)');
+    await expect(mobile.getByRole('button',{name:'Deploy',exact:true})).toHaveCount(0);
+    await mobile.screenshot({path:path.join(output,'pattern-sheet-mobile.png')});
+    record('390 px viewport keeps the title on one line and the header opaque without Deploy');
+    await mobileContext.close();
+    lastPage = page;
     assert.deepEqual(report.page_errors,[]);
     report.status = 'pass';
     console.log(`PASS all ${report.checks.length} browser workflow checks; output ${output}`);
