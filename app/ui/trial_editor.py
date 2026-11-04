@@ -15,6 +15,7 @@ from app.utils.trial_bundle import (
     create_trial_bundle,
     decode_trial_bundle,
     encode_trial_bundle,
+    trial_source_photo_fields,
     update_trial_bundle,
 )
 from app.utils.trial_history import restore_trial_version, save_trial_version
@@ -33,12 +34,28 @@ def _replace_fields(slot: str, workspace: dict) -> None:
 def _install(slot: str, bundle: TrialBundle) -> None:
     # Validate/serialize first, so a failed import leaves the active trial intact.
     archive = encode_trial_bundle(bundle)
-    _replace_fields(slot, {"bundle": bundle, "archive": archive, "undo": [], "redo": []})
+    photo_fields = trial_source_photo_fields(bundle.source)
+    _replace_fields(slot, {"bundle": bundle, "archive": archive, "undo": [], "redo": [],
+                           "source_photo_fields": photo_fields})
     st.session_state.pop(f"trial_notice_{slot}", None)
 
 
 def _restore(slot: str, data: bytes) -> None:
     _install(slot, decode_trial_bundle(data))
+
+
+def _warn_retained_trial_photos(workspace: dict) -> None:
+    """Warn without rewriting a trial's evidence-bound source pattern."""
+    fields = workspace.get("source_photo_fields")
+    if fields is None:  # A workspace from a session started before this change.
+        fields = trial_source_photo_fields(workspace["bundle"].source)
+        workspace["source_photo_fields"] = fields
+    names = {"preview": "照片缩略图", "mask_review": "画笔修正掩码"}
+    if fields:
+        st.warning(f"此试钩包的原图解包含{'、'.join(names[field] for field in fields)}。"
+                   "为保持试钩记录与原图解的校验绑定，后续下载会原样携带这些数据，请在分享前核对。"
+                   "如需不含这些数据的新包，请先保存并下载旧试钩包，结束当前记录后以当前图解新建试钩；"
+                   "新包不会继承旧测量。")
 
 
 def render_trial_open() -> None:
@@ -50,6 +67,8 @@ def render_trial_open() -> None:
     with st.expander("打开试钩包", expanded=False):
         st.caption("恢复原图解与实测记录，在「照片分析（本地）」页继续。"
                    "会替换该页当前图解与试钩记录，需要保留时请先分别保存。")
+        if workspace := st.session_state.get("trial_workspace_result"):
+            _warn_retained_trial_photos(workspace)
         uploaded = st.file_uploader("选择试钩包 ZIP", type=["zip"], key="trial_open_file")
         if st.button("打开试钩及原图解", key="trial_open_apply", disabled=uploaded is None):
             try:
@@ -203,6 +222,8 @@ def render_trial_editor(result: ResultData, slot: str) -> None:
             return
         bundle = workspace["bundle"]
         record = bundle.record
+        st.caption("下载保留试钩绑定的原图解字节；旧包中已有的其他字段也会保留。")
+        _warn_retained_trial_photos(workspace)
         st.text(f"试钩 {record.trial_id} · 制作者 {record.maker_id} · "
                 f"{'校准样本' if record.cohort == 'calibration' else '独立验证样本'}")
         st.caption(f"原图解目标高度 {record.pattern.target_height_cm:g} cm；"

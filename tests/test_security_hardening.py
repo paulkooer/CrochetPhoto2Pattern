@@ -78,12 +78,19 @@ def _result_with_photo_data() -> dict:
     return result
 
 
-def test_share_token_excludes_photo_derived():
-    token = encode_result(_result_with_photo_data())
+def test_share_token_excludes_thumbnail_and_mask_but_keeps_analysis_summaries():
+    result = _result_with_photo_data()
+    result["geometry"]["used_for_generation"] = True
+    result["geometry"]["silhouette"] = {
+        "profile": [0.2] * 8, "flare": False, "source": "segmentation_pipeline", "confidence": None}
+    result["color_bands"] = [{"start": 0.0, "end": 1.0, "color": "蓝色"}]
+    token = encode_result(result)
     assert token is not None
     decoded = decode_result(token)
     assert decoded.get("preview") is None
     assert "mask_review" not in (decoded.get("geometry") or {})
+    assert decoded["geometry"]["silhouette"] == result["geometry"]["silhouette"]
+    assert decoded["color_bands"] == result["color_bands"]
 
 
 def test_project_backup_excludes_photo_derived():

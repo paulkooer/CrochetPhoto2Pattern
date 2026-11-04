@@ -71,6 +71,13 @@ draft. ZIP members are read with bounds in memory, never extracted to disk. Corr
 undefined extra members, path-bearing,
 non-finite or mismatched contents leave current work intact.
 
+New trial bundles omit the photo thumbnail and brush mask, but may retain photo analysis and
+silhouette summaries. Restored older or externally created bundles preserve the exact original
+`pattern.json` bytes to keep the trial binding, so old data and extra fields may remain in later
+downloads. The interface warns when a thumbnail or brush mask is present. To make a new bundle
+without those two fields, first save and download the existing trial, close it, and create a new trial from
+the current pattern. The new bundle does not inherit old measurements or their evidence binding.
+
 Partial observations stay outside completed evidence: `*.trial.json` remains `status="draft"`
 with `observation=null`, excluded from finished-item comparisons and calibration. Marking complete
 and saving validates the full record before moving observations into it and removing `draft.json`.
@@ -79,7 +86,7 @@ completed records still use the original two-file ZIP. The new version reads old
 a three-file draft bundle requires this version. Older CLI tools can still read its formal record
 and ignore the draft-status sample.
 
-Trial bundles omit crochet progress, project notes and undo history. Trial records are separate
+New trial bundles do not take crochet progress, project notes or undo history from the current project. Trial records are separate
 from ordinary pattern backups, projects and share links; save a crochet project separately to
 retain progress. Download before closing the session. Restoring a record does not independently
 verify the physical measurements or change generator constants.

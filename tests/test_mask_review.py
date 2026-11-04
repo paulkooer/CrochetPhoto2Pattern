@@ -1,8 +1,10 @@
 """Recover visible foreground without mutating recognition or losing provenance."""
+import json
 from copy import deepcopy
 
 import numpy as np
 import pytest
+import streamlit as st
 from PIL import Image, ImageDraw
 from streamlit.testing.v1 import AppTest
 
@@ -82,7 +84,7 @@ def test_correction_recovers_from_failed_segmentation_and_feeds_body_box(draft):
     assert reedited.geometry.body_region == selected.geometry.body_region
 
 
-def test_corrected_mask_survives_backup_and_resize_without_photo(draft):
+def test_corrected_mask_survives_unstripped_serialization_and_resize_without_photo(draft):
     result = PipelineOrchestrator.generate_from_draft(with_reviewed_mask(draft, payload(draft)))
     restored = import_backup(PatternResult.from_result(result).to_backup(), "mask")
     resized = regenerate_with_size(restored, 9, 22)
@@ -90,6 +92,52 @@ def test_corrected_mask_survives_backup_and_resize_without_photo(draft):
         assert output["geometry"]["mask_review"] == result["geometry"]["mask_review"]
         assert output["geometry"]["silhouette"] == result["geometry"]["silhouette"]
         assert output["color_bands"] == result["color_bands"]
+
+
+def test_downloaded_backup_omits_mask_but_retains_corrected_pattern(draft, monkeypatch):
+    result = PipelineOrchestrator.generate_from_draft(with_reviewed_mask(draft, payload(draft)))
+    result["result_id"] = "mask-download"
+    downloads = {}
+    original_download = st.download_button
+
+    def capture_download(label, data, *args, **kwargs):
+        if label == "备份完整结果":
+            downloads[label] = data
+        return original_download(label, data, *args, **kwargs)
+
+    monkeypatch.setattr(st, "download_button", capture_download)
+    at = AppTest.from_string('''
+import streamlit as st
+from app.ui.result_renderer import render_results
+render_results(st.session_state.result, "result")
+''', default_timeout=60)
+    at.session_state["result"] = result
+    at.run()
+    assert not at.exception
+    assert any("不保存画笔修正掩码" in caption.value for caption in at.caption)
+    backup = json.loads(downloads["备份完整结果"])
+    assert "preview" not in backup
+    assert "mask_review" not in backup["geometry"]
+    restored = import_backup(backup, "mask-restored")
+    resized = regenerate_with_size(restored, 9, 22)
+    assert any("补选／擦除" in line for line in provenance_lines(result))
+    for output in (restored, resized):
+        assert not output["geometry"].get("mask_review")
+        assert output["geometry"]["silhouette"] == result["geometry"]["silhouette"]
+        assert output["color_bands"] == result["color_bands"]
+        assert not any("补选／擦除" in line for line in provenance_lines(output))
+    assert result["geometry"]["mask_review"] is not None
+
+
+def test_enabled_history_retains_corrected_mask_on_the_application_host(draft):
+    from app.utils import history
+
+    result = PipelineOrchestrator.generate_from_draft(with_reviewed_mask(draft, payload(draft)))
+    result["result_id"] = "mask-history"
+    saved_id = history.save_result(result)
+    restored = history.load_result(saved_id)
+    assert restored["geometry"]["mask_review"] == result["geometry"]["mask_review"]
+    assert restored["preview"] == result["preview"]
 
 
 @pytest.mark.parametrize("change", [
