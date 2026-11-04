@@ -270,15 +270,20 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
                         "该份已跳过，请使用 Markdown/PDF 核对")
             continue
         # Legacy round colours may also be manually chosen; missing provenance
-        # cannot make an unconvertible colour faithful or safe to ignore.
+        # cannot make an unconvertible colour faithful or safe to ignore. Keep
+        # their historically available stitch-only export, but mark it partial.
+        color_faithful = True
         if not override:
             unresolved = next((color for rd in rounds
                                if (color := (rd.get("color") or part.get("color")))
                                and color not in ("skin", "body") and not _hex_of(color)), None)
             if unresolved:
-                report.fail(f"{name} 第 {copy + 1} 份颜色「{unresolved}」无法转换为色表或十六进制颜色；"
-                            "该份已跳过，请使用 Markdown/PDF 核对")
-                continue
+                prefix = f"{name} 第 {copy + 1} 份颜色「{unresolved}」无法转换为色表或十六进制颜色；"
+                if part.get("color_origin") == "manual":
+                    report.fail(prefix + "该份已跳过，请使用 Markdown/PDF 核对")
+                    continue
+                report.fail(prefix + "仅导出针法，颜色未忠实表达，请使用 Markdown/PDF 核对")
+                color_faithful = False
         if emitted_copies:
             lines.append("start_anew")
         emitted_copies += 1
@@ -303,7 +308,7 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
             report.inferred_rounds += int(inferred)
         # 只有忠实且完整翻译的实体才计入 exported_parts：构造语义不符（环起）
         # 或翻译提前中断（compiled 不全）的实体都不计入。
-        if faithful and len(compiled) == len(rounds) - 1:
+        if faithful and color_faithful and len(compiled) == len(rounds) - 1:
             report.exported_parts += 1
     if report.inferred_rounds > inferred_before:
         warnings.append(

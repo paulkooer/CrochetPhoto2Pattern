@@ -224,7 +224,8 @@ def test_legacy_custom_round_color_is_not_silently_exported():
     assert "color_origin" not in body
     report = export_parade_report(result)
     assert not report.complete
-    assert any("旧图解自定义色" in failure and "已跳过" in failure for failure in report.failures)
+    assert any("旧图解自定义色" in failure and "颜色未忠实表达" in failure
+               for failure in report.failures)
 
 
 def test_known_copy_override_can_export_when_other_copy_has_unknown_round_color():

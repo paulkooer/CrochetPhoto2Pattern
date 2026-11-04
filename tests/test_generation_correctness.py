@@ -82,7 +82,7 @@ def test_parade_marks_ring_start_incomplete():
 
 
 def test_parade_magic_ring_sphere_complete():
-    sphere = _part("头部", "sphere", _sphere_rounds(36), "肤色", magic_ring=True)
+    sphere = _part("头部", "sphere", _sphere_rounds(36), "浅肤色", magic_ring=True)
     report = export_parade_report({"params": {"parts": [sphere.model_dump()]}})
     assert report.complete is True
 
