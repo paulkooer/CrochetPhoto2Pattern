@@ -229,7 +229,7 @@ pattern** needs no re-checking; it does not mean the finished piece matches the 
 | Markdown | Yes | The part's "颜色" line and the round table's "配色" column; with `instance_colors`, each copy's colour is listed and "N 个相同部件" becomes "N 个同针法部件（配色见下）". |
 | PDF | Yes | Same part colour and round-table colour column as Markdown (PDF additionally shows each part's base colour). |
 | Material list | Yes | Grams/meters/balls per colour; with `instance_colors`, stitch counts are attributed per copy and summarised per copy colour. Still labelled as estimates without a yarn spec or measured swatch. |
-| CrochetPARADE DSL | Yes, within the subset this project has verified | Each copy emits its own `COLOR:` prefix plus per-round colour-change boundaries. Unconvertible manual colours or unsupported constructions are reported as incomplete instead of silently exporting the old colour. |
+| CrochetPARADE DSL | Yes, within the subset this project has verified | Each copy emits its own `COLOR:` prefix plus per-round colour-change boundaries. Unconvertible custom colours (including legacy colours with unrecorded origins) or unsupported constructions are reported as incomplete instead of silently exporting the old colour. |
 | 3D structure preview | No | Still one illustrative base colour per part; the interface **states plainly** that stripes and per-instance colours are not shown. |
 | Trial bundles | Yes | They embed a pattern backup with its colours; trial records remain separately versioned. |
 | Flat grid projects | Unchanged | They have their own grid and palette format. |

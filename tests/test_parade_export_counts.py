@@ -25,7 +25,8 @@ _RING_START_NOTE = "腰部环形起针36X成环（引拔连接，开口勿收口
 
 def _faithful(name: str = "头部", quantity: int = 1) -> dict:
     """魔法环起针、逐圈可译的部件。"""
-    return {"name": name, "quantity": quantity, "magic_ring": True, "color": "肤色",
+    # Use an actual palette entry so these cases isolate construction counts.
+    return {"name": name, "quantity": quantity, "magic_ring": True, "color": "浅肤色",
             "rounds": [{"row": 1, "stitches": 6, "notes": "魔法环起6针（X×6）"},
                        {"row": 2, "stitches": 6, "notes": "6X"}]}
 

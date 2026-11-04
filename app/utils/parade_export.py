@@ -269,7 +269,9 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
             report.fail(f"{name} 第 {copy + 1} 份颜色「{override}」无法转换为色表或十六进制颜色；"
                         "该份已跳过，请使用 Markdown/PDF 核对")
             continue
-        if not override and part.get("color_origin") == "manual":
+        # Legacy round colours may also be manually chosen; missing provenance
+        # cannot make an unconvertible colour faithful or safe to ignore.
+        if not override:
             unresolved = next((color for rd in rounds
                                if (color := (rd.get("color") or part.get("color")))
                                and color not in ("skin", "body") and not _hex_of(color)), None)

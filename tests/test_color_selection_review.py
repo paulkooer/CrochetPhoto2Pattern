@@ -215,3 +215,25 @@ def test_new_color_assignments_use_new_pattern_version():
     data = project_backup(result, {})
     assert data["schema_version"] == "2"
     assert _part(import_backup(data, "restored"), "手臂")["instance_colors"] == ["蓝色", None]
+
+
+def test_legacy_custom_round_color_is_not_silently_exported():
+    result = _result()
+    body = _part(result, "身体")
+    body["rounds"][1]["color"] = "旧图解自定义色"
+    assert "color_origin" not in body
+    report = export_parade_report(result)
+    assert not report.complete
+    assert any("旧图解自定义色" in failure and "已跳过" in failure for failure in report.failures)
+
+
+def test_known_copy_override_can_export_when_other_copy_has_unknown_round_color():
+    result = _result()
+    _part(result, "手臂")["rounds"][1]["color"] = "旧图解自定义色"
+    result = _instance(result, "蓝色")
+    report = export_parade_report(result)
+    assert not report.complete
+    assert any("手臂 第 2 份" in failure and "旧图解自定义色" in failure
+               for failure in report.failures)
+    assert report.exported_parts == report.requested_parts - 1
+    assert "COLOR: #0078d7" in report.text
