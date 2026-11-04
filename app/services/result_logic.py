@@ -29,6 +29,7 @@ from app.schemas import (
     MAX_PATTERN_PARTS,
     AnalysisData,
     ImageAnalysis,
+    PartData,
     PatternParams,
     PatternResult,
     ResultData,
@@ -328,7 +329,10 @@ def _finish_geometry_edit(current: ResultData, generated: ResultData, *,
         baseline = preserve_skirt_waist(current, {**current, "params": baseline_params})
     except (ValueError, PatternGenerationError):
         # Legacy/custom work may have valid authored stitches but no reproducible
-        # template. Retain the established full-regeneration behavior in that case.
+        # template. Never silently discard a user's explicit color assignment.
+        if any(p.get("color_origin") == "manual" or p.get("instance_colors")
+               for p in current["params"]["parts"]):
+            raise ValueError("当前图解无法安全重算并保留人工选色，请先备份并检查部件结构") from None
         return generated
     before = {p["name"]: p for p in baseline["params"]["parts"]}
     authored = {p["name"]: p for p in current["params"]["parts"]}
@@ -347,10 +351,60 @@ def _finish_geometry_edit(current: ResultData, generated: ResultData, *,
             and loop_context(current["params"], p["name"]) == loop_context(params, p["name"])) else p
         for p in params["parts"]
     ]
+    from app.services.color_identity import align_copy_colors, color_copy_ids
+
+    for index, new_part in enumerate(params["parts"]):
+        old_part = authored.get(new_part["name"])
+        if old_part is None:
+            continue
+        if old_part.get("color_origin") == "manual" and new_part != old_part:
+            params["parts"][index] = new_part = _carry_manual_part_colors(old_part, new_part)
+        if old_part.get("instance_colors"):
+            saved = align_copy_colors(old_part, color_copy_ids(current, old_part))
+            rebound = align_copy_colors(saved, color_copy_ids(generated, new_part))
+            new_part["instance_colors"] = rebound.get("instance_colors")
+            new_part["instance_color_ids"] = rebound.get("instance_color_ids")
     # Recheck joins against the combined parts and derive all totals/materials/
     # opening instructions from the content that will actually be installed.
     params = rebuild_params(params)
     return {**generated, "params": params}
+
+
+def _carry_manual_part_colors(old: PartData, new: PartData) -> PartData:
+    """Preserve authored colors when the regenerated construction can map them."""
+    old_rows, new_rows = old["rounds"], new["rounds"]
+    old_colors = [row.get("color") for row in old_rows]
+    new = deepcopy(new)
+    if old.get("color_section_mode") == "head_body":
+        from app.services.color_selection import one_piece_neck_index
+
+        old_neck, new_neck = one_piece_neck_index(old), one_piece_neck_index(new)
+        if old_neck is None or new_neck is None:
+            raise ValueError("一体件的颈部边界无法确认，不能安全重算分段配色")
+        head = {color or old.get("color") for color in old_colors[:old_neck + 1]}
+        body = {color or old.get("color") for color in old_colors[old_neck + 1:]}
+        if len(head) != 1 or len(body) != 1:
+            raise ValueError("一体件的分段含多种逐圈颜色，无法安全映射到新的圈数；请先统一各段配色")
+        mapped = [next(iter(head))] * (new_neck + 1) + [next(iter(body))] * (len(new_rows) - new_neck - 1)
+        new["color_section_mode"] = "head_body"
+    elif [row["row"] for row in old_rows] == [row["row"] for row in new_rows]:
+        mapped = old_colors
+    elif len(set(old_colors)) == 1:
+        mapped = old_colors[:1] * len(new_rows)
+    else:
+        raise ValueError(f"{old['name']} 的圈数变化后无法安全对应原有逐圈配色；"
+                         "请先统一颜色，或保留原尺寸并备份图解")
+    new["color"] = old.get("color", new.get("color", "body"))
+    new["color_origin"] = "manual"
+    for row, color in zip(new["rounds"], mapped, strict=True):
+        row["color"] = color
+    if new.get("name") == "头身（一体）" and len({color or new["color"] for color in mapped}) > 1:
+        from app.models.onepiece import ONE_PIECE_MONO_NOTE
+
+        note = new.get("notes")
+        if isinstance(note, str):
+            new["notes"] = note.replace(ONE_PIECE_MONO_NOTE, "") or None
+    return new
 
 
 def import_backup(data: Mapping[str, Any], result_id: str) -> ResultData:
@@ -376,6 +430,12 @@ def import_backup(data: Mapping[str, Any], result_id: str) -> ResultData:
         gauge = asdict(gauge_from_result(data))
         raw_params["gauge"] = gauge
     params = rebuild_params(raw_params)
+    from app.services.color_identity import align_copy_colors, color_copy_ids
+
+    restored = cast(ResultData, {**data, "analysis": analysis, "structure": structure, "params": params})
+    params["parts"] = [cast(PartData, align_copy_colors(part, color_copy_ids(restored, part)))
+                       for part in params["parts"]]
+    params = rebuild_params(params)
     return PatternResult.from_result({
         **data,
         "analysis": analysis,

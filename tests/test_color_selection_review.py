@@ -1,0 +1,217 @@
+"""Regression checks for color edits across construction and export boundaries."""
+
+from copy import deepcopy
+
+import pytest
+
+from app.services.color_selection import (
+    MODE_INHERIT,
+    MODE_KEEP_STRIPES,
+    MODE_UNIFORM,
+    apply_color_change,
+    color_change_preview,
+    color_origin_of,
+)
+from app.services.progress_state import color_only_change, progress_entries, retained_progress
+from app.services.result_logic import (
+    import_backup,
+    regenerate_with_gauge,
+    regenerate_with_size,
+    regenerate_with_structure,
+)
+from app.ui.pattern_editor import edit_yarn
+from app.utils.exporters import export_markdown
+from app.utils.parade_export import export_parade_report
+from app.utils.project import project_backup, read_project_state
+from tests.test_part_color_selection import _onepiece_result, _part, _result
+from tests.test_progress_continuity import _chain
+
+
+def _instance(result, color="蓝色", index=0):
+    return apply_color_change(result, part_name="手臂", color=color,
+                              instance_index=index, mode=MODE_UNIFORM)
+
+
+def test_keep_mode_preserves_even_explicit_colors_matching_the_old_base():
+    result = _result()
+    part = _part(result, "身体")
+    part["rounds"][0]["color"] = part["color"]  # Could be a previous manual choice.
+    part["rounds"][2]["color"] = "红色"
+    preview = color_change_preview(result, part_name="身体", color="蓝色", mode=MODE_KEEP_STRIPES)
+    updated = apply_color_change(result, part_name="身体", color="蓝色", mode=MODE_KEEP_STRIPES)
+    body = _part(updated, "身体")
+    assert body["color"] == "蓝色"
+    assert body["rounds"][0]["color"] == "body"
+    assert body["rounds"][1]["color"] is None
+    assert body["rounds"][2]["color"] == "红色"
+    assert {entry["圈号"] for entry in preview["kept"]} == {1, 3}
+    assert preview["affected"][0]["旧色"] == "body"
+
+
+def test_uniform_part_recolour_updates_preexisting_per_copy_overrides():
+    result = _instance(_result())
+    preview = color_change_preview(result, part_name="手臂", color="草绿色", mode=MODE_UNIFORM)
+    first = next(row for row in preview["affected"] if row["实体"] == 1)
+    second = next(row for row in preview["affected"] if row["实体"] == 2)
+    assert first["旧色"] == "蓝色" and second["旧色"] == "skin"
+    updated = apply_color_change(result, part_name="手臂", color="草绿色", mode=MODE_UNIFORM)
+    assert "instance_colors" not in _part(updated, "手臂")
+    assert "instance_color_ids" not in _part(updated, "手臂")
+    assert "COLOR: #0078d7" not in export_parade_report(updated).text
+
+
+def test_preview_shows_ball_counts_for_new_and_removed_colors():
+    result = edit_yarn(_result(), {"ball_weight_g": 50, "ball_length_m": 120})
+    preview = color_change_preview(result, part_name="身体", color="蓝色", mode=MODE_UNIFORM)
+    new_color = next(row for row in preview["materials"] if row["颜色"] == "蓝色")
+    assert new_color["团数"].startswith("0 → ") and "未提供" not in new_color["团数"]
+
+
+@pytest.mark.parametrize("change", ["size", "gauge"])
+def test_geometry_regeneration_preserves_manual_part_and_copy_colors(change):
+    result = apply_color_change(_result(), part_name="身体", color="蓝色", mode=MODE_UNIFORM)
+    result = _instance(result, "红色")
+    updated = (regenerate_with_size(result, 10, 20) if change == "size"
+               else regenerate_with_gauge(result, 16, 20))
+    assert _part(updated, "身体")["color"] == "蓝色"
+    assert _part(updated, "身体")["color_origin"] == "manual"
+    assert {row.get("color") or "蓝色" for row in _part(updated, "身体")["rounds"]} == {"蓝色"}
+    assert _part(updated, "手臂")["instance_colors"] == ["红色", None]
+    assert _part(updated, "手臂")["instance_color_ids"] == ["arms_left", "arms_right"]
+
+
+def test_resize_refuses_to_guess_how_to_remap_manual_stripes():
+    result = _result()
+    _part(result, "身体")["rounds"][2]["color"] = "红色"
+    result = apply_color_change(result, part_name="身体", color="蓝色", mode=MODE_KEEP_STRIPES)
+    original = deepcopy(result)
+    with pytest.raises(ValueError, match="无法安全对应原有逐圈配色"):
+        regenerate_with_size(result, 10, 20)
+    assert result == original
+
+
+def test_reordering_graph_instances_preserves_color_identity_and_project_progress():
+    result = _instance(_result())
+    structure = deepcopy(result["structure"])
+    arm = next(part for part in structure["parts"] if part["name"] == "手臂")
+    arm["instances"].reverse()
+    updated = regenerate_with_structure(result, structure)
+    assert _part(updated, "手臂")["instance_color_ids"] == ["arms_right", "arms_left"]
+    assert _part(updated, "手臂")["instance_colors"] == [None, "蓝色"]
+    progress = {identity: True for identity, _, _ in progress_entries(updated, "result")}
+    saved = project_backup(updated, progress, "备注")
+    restored = import_backup(saved, "restored")
+    assert _part(restored, "手臂")["instance_color_ids"] == ["arms_right", "arms_left"]
+    assert read_project_state(saved, restored) == (progress, "备注")
+
+
+def test_removing_an_independently_colored_copy_requires_clearing_its_color_first():
+    result = _instance(_result(), index=1)
+    structure = deepcopy(result["structure"])
+    arm = next(part for part in structure["parts"] if part["name"] == "手臂")
+    arm["count"] = 1
+    arm["instances"] = arm["instances"][:1]
+    with pytest.raises(ValueError, match="移除带独立颜色的实体"):
+        regenerate_with_structure(result, structure)
+    cleared = apply_color_change(result, part_name="手臂", mode=MODE_INHERIT, instance_index=1)
+    assert _part(regenerate_with_structure(cleared, structure), "手臂")["quantity"] == 1
+
+
+def test_single_copy_can_return_to_shared_round_colors():
+    striped = _result()
+    _part(striped, "手臂")["rounds"][1]["color"] = "红色"
+    result = _instance(striped)
+    preview = color_change_preview(result, part_name="手臂", mode=MODE_INHERIT, instance_index=0)
+    assert preview["affected"][0]["旧色"] == "蓝色"
+    assert preview["affected"][0]["新色"] == "skin"
+    assert preview["affected"][1]["新色"] == "红色"
+    assert "沿用逐圈配色" in export_markdown(result["params"], result=result)
+    updated = apply_color_change(result, part_name="手臂", mode=MODE_INHERIT, instance_index=0)
+    assert "instance_colors" not in _part(updated, "手臂")
+    assert "instance_color_ids" not in _part(updated, "手臂")
+
+
+def test_unstable_legacy_copy_identity_cannot_be_silently_assigned_a_color():
+    result = _result()
+    result["structure"] = {"parts": []}
+    with pytest.raises(ValueError, match="缺少稳定的实体身份"):
+        _instance(result)
+
+
+def test_legacy_color_origin_is_not_guessed():
+    part = _part(_result(), "身体")
+    part["color"] = "人工选过的颜色"
+    assert color_origin_of(part) == "unrecorded"
+
+
+@pytest.mark.parametrize("reserved", ["skin", "body"])
+def test_reserved_placeholders_cannot_be_chosen_as_real_yarn_colors(reserved):
+    with pytest.raises(ValueError, match="待选占位值"):
+        apply_color_change(_result(), part_name="身体", color=reserved, mode=MODE_UNIFORM)
+
+
+def test_one_piece_split_does_not_claim_monochrome():
+    result = apply_color_change(_onepiece_result(), part_name="头身（一体）",
+                                head_color="浅肤色", body_color="蓝色")
+    assert "配色为整段单色" not in (_part(result, "头身（一体）").get("notes") or "")
+
+
+@pytest.mark.parametrize("change", ["size", "gauge"])
+def test_one_piece_section_colors_follow_the_new_neck_boundary(change):
+    from app.services.color_selection import one_piece_neck_index
+
+    result = apply_color_change(_onepiece_result(), part_name="头身（一体）",
+                                head_color="浅肤色", body_color="蓝色")
+    updated = (regenerate_with_size(result, 10, 20) if change == "size"
+               else regenerate_with_gauge(result, 16, 20))
+    part = _part(updated, "头身（一体）")
+    neck = one_piece_neck_index(part)
+    assert neck is not None and part["color_section_mode"] == "head_body"
+    assert {row["color"] for row in part["rounds"][:neck + 1]} == {"浅肤色"}
+    assert {row["color"] for row in part["rounds"][neck + 1:]} == {"蓝色"}
+    assert "配色为整段单色" not in (part.get("notes") or "")
+
+
+def test_unrepresentable_custom_color_is_not_claimed_as_complete_parade_export():
+    result = _instance(_result(), "自定义测试色")
+    report = export_parade_report(result)
+    assert not report.complete
+    assert any("自定义测试色" in failure and "已跳过" in failure for failure in report.failures)
+    assert report.exported_parts < report.requested_parts
+
+
+def test_unrepresentable_color_is_reported_when_no_copy_can_be_exported():
+    result = _result()
+    result["params"]["parts"] = [_part(result, "身体")]
+    result = apply_color_change(result, part_name="身体", color="自定义测试色", mode=MODE_UNIFORM)
+    with pytest.raises(ValueError, match="自定义测试色.*已跳过"):
+        export_parade_report(result)
+
+
+def test_untrusted_auto_fragment_cannot_hide_a_construction_change():
+    result = _result()
+    updated = deepcopy(result)
+    row = _part(updated, "身体")["rounds"][1]
+    row["notes"] += "；改挑后半针"
+    row["auto_color_note"] = "改挑后半针"
+    row["color"] = "蓝色"
+    assert not color_only_change(result, updated)
+    progress = {identity: True for identity, _, _ in progress_entries(result, "result")}
+    assert retained_progress(result, updated, "result", progress) != progress
+
+
+def test_joined_part_copy_color_keeps_existing_conservative_progress_rule():
+    result = _chain((0, 1, 2))
+    updated = deepcopy(result)
+    _part(updated, "base")["instance_colors"] = ["红色"]
+    progress = {identity: True for identity, _, _ in progress_entries(result, "result")}
+    kept = retained_progress(result, updated, "result", progress)
+    assert all('"independent"' in identity for identity in kept)
+    assert kept
+
+
+def test_new_color_assignments_use_new_pattern_version():
+    result = _instance(_result())
+    data = project_backup(result, {})
+    assert data["schema_version"] == "2"
+    assert _part(import_backup(data, "restored"), "手臂")["instance_colors"] == ["蓝色", None]

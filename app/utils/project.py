@@ -9,7 +9,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app import software_version
-from app.schemas import PatternResult, ResultData, strip_photo_derived
+from app.schemas import SCHEMA_VERSION, PatternResult, ResultData, strip_photo_derived
 from app.services.progress_state import (
     ambiguous_legacy_progress,
     has_legacy_identity_collision,
@@ -44,16 +44,34 @@ def _revision_hash(data: dict) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _revision_backup(result: Mapping[str, Any], *, canonical: bool = True) -> dict:
+    """Hash v1/v2 under one identity: v2 only adds optional color fields."""
+    source_version = result.get("schema_version")
+    if source_version is not None and source_version != SCHEMA_VERSION:
+        from app.services.migrations import upgrade_result
+
+        backup = PatternResult.from_result(upgrade_result(result)).to_backup()
+        backup["schema_version"] = source_version
+    else:
+        backup = PatternResult.from_result(result).to_backup()
+    # The 1→2 migration changes only the envelope version. Retaining the v1
+    # canonical tag keeps old project progress bound to the unchanged pattern;
+    # new authored color fields still participate fully in the hash.
+    if canonical and backup.get("schema_version") in ("1", "2"):
+        backup["schema_version"] = "1"
+    return backup
+
+
 def pattern_revision(result: Mapping[str, Any]) -> str:
     # Session IDs, progress and personal notes are intentionally outside this hash.
     # 照片衍生数据（preview/mask_review）同样剔除：图解身份不应随照片缩略图而变。
-    return _revision_hash(strip_photo_derived(PatternResult.from_result(result).to_backup()))
+    return _revision_hash(strip_photo_derived(_revision_backup(result)))
 
 
 def _legacy_pattern_revision(result: Mapping[str, Any]) -> str:
     # 剔除照片衍生数据之前保存的工程（同为 0.2.0b2，无法按版本号区分）把
     # preview/mask_review 计入了哈希；读取时仍须认可，否则照片结果的旧工程无法恢复进度。
-    return _revision_hash(PatternResult.from_result(result).to_backup())
+    return _revision_hash(_revision_backup(result))
 
 
 def project_backup(result: ResultData, progress: dict[str, bool], notes: str = "") -> dict:
@@ -89,7 +107,16 @@ def read_project_state(data: dict, restored: ResultData, *,
         state = ProjectState.model_validate(data["project_state"])
     except ValidationError as exc:
         raise ValueError("工程记录格式无效，请核对工程版本、备注与进度") from exc
-    if state.pattern_revision not in (pattern_revision(data), _legacy_pattern_revision(data)):
+    revisions = {pattern_revision(data), _legacy_pattern_revision(data)}
+    source = _revision_backup(data, canonical=False)
+    revisions.update((_revision_hash(source), _revision_hash(strip_photo_derived(source))))
+    if "schema_version" not in data:
+        # Early unversioned project files were hashed by the version-1 writer,
+        # which supplied schema_version=1 while constructing its backup.
+        legacy = _revision_backup(data)
+        legacy["schema_version"] = "1"
+        revisions.update((_revision_hash(legacy), _revision_hash(strip_photo_derived(legacy))))
+    if state.pattern_revision not in revisions:
         raise ValueError("工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存")
     _validate_progress(restored, state.completed_rounds)
     ambiguous = (ambiguous_legacy_progress(restored, state.completed_rounds)

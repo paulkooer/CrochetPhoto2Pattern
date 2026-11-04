@@ -26,6 +26,7 @@ from .gauge import Gauge, gauge_for_part, has_independent_gauge
 from .parts import (
     _ONE_PIECE_NAME,
     _SKIN_PARTS,
+    _part_instance_colors,
     _part_name,
     _part_quantity,
     _part_rounds,
@@ -128,14 +129,27 @@ def yarn_requirements(parts: Sequence[Mapping[str, Any]], gauge: Gauge = DEFAULT
             per_stitch = spec.swatch_weight_g / (spec.swatch_stitches * spec.swatch_rows)
         bases.add("measured_swatch" if measured else "heuristic")
         meters_per_g = spec.ball_length_m / spec.ball_weight_g if spec else selected.meters_per_100g / 100
+        # 逐份选色的部件按份归属针数：同一圈可能同时消耗多种颜色，不能把
+        # 单份的颜色乘上全部数量（那会"改了一只却显示改了整对"）。
+        overrides = _part_instance_colors(part)
         for rd in _part_rounds(part):
-            color = rd.get("color") or part.get("color")
-            if not color or color in ("skin", "body"):
-                skin = color == "skin" or (not color and _part_name(part) in _SKIN_PARTS)
-                color = "肤色（待选色）" if skin else "主体色（待选色）"
-            rates = usage.setdefault(color, {})
+            base = rd.get("color") or part.get("color")
+            stitches = _round_stitches(rd)
+            tally: dict[str | None, int] = {}
+            if overrides is None:
+                tally[base] = _part_quantity(part)
+            else:
+                for override in overrides:
+                    effective = override or base
+                    tally[effective] = tally.get(effective, 0) + 1
             rate = (per_stitch, meters_per_g)
-            rates[rate] = rates.get(rate, 0) + _round_stitches(rd) * _part_quantity(part)
+            for effective, copies in tally.items():
+                color = effective
+                if not color or color in ("skin", "body"):
+                    skin = color == "skin" or (not color and _part_name(part) in _SKIN_PARTS)
+                    color = "肤色（待选色）" if skin else "主体色（待选色）"
+                rates = usage.setdefault(color, {})
+                rates[rate] = rates.get(rate, 0) + stitches * copies
     rows: list[dict[str, Any]] = []
     for color, rates in sorted(usage.items(), key=lambda pair: -sum(pair[1].values())):
         stitches = sum(rates.values())

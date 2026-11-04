@@ -322,7 +322,7 @@ def refresh_color_instructions(part: PartData) -> None:
     colors = [rd.get("color") or part.get("color") or "未指定" for rd in rounds]
     mapped = any(rd.get("color") for rd in rounds)
     for i, rd in enumerate(rounds):
-        if mapped:
+        if mapped and part.get("color_origin") != "manual":
             # Freeze inherited yarns before recomputing the part's dominant yarn;
             # repeated refreshes must not recolor previously unspecified rows.
             rd["color"] = colors[i]
@@ -345,7 +345,8 @@ def refresh_color_instructions(part: PartData) -> None:
     note = _COLOR_SUMMARY_RE.sub("", note)
     auto = None
     if mapped:
-        part["color"] = max(dict.fromkeys(colors), key=colors.count)
+        if part.get("color_origin") != "manual":
+            part["color"] = max(dict.fromkeys(colors), key=colors.count)
         if len(set(colors)) > 1:
             direction = "自下而上" if part["name"] in {"身体", "手臂", "腿部"} else "自上而下"
             auto = (f" 配色（按钩织圈序，{direction}）："

@@ -36,5 +36,23 @@ def _part_quantity(part: Mapping[str, Any]) -> int:
         return 1
 
 
+def _part_instance_colors(part: Mapping[str, Any]) -> list[str | None] | None:
+    """Per-copy colour overrides, aligned with ``_copy_instance_ids`` order.
+
+    Index ``i`` belongs to physical copy ``i``; ``None`` means that copy keeps the
+    round/part colour. Returns ``None`` when the part has no usable overrides —
+    including a list whose length disagrees with ``quantity``, which cannot be
+    attributed to copies safely (the edit boundary rejects it with a message).
+    """
+    raw = part.get("instance_colors")
+    if not isinstance(raw, list) or not raw:
+        return None
+    if len(raw) != _part_quantity(part):
+        return None
+    if not any(entry for entry in raw if isinstance(entry, str)):
+        return None
+    return [entry if isinstance(entry, str) and entry else None for entry in raw]
+
+
 def _round_stitches(rd: dict[str, Any]) -> int:
     return int(rd.get("stitches", 0))

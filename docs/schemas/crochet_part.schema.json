@@ -148,6 +148,32 @@
       "title": "Color",
       "type": "string"
     },
+    "color_origin": {
+      "anyOf": [
+        {
+          "const": "manual",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Color Origin"
+    },
+    "color_section_mode": {
+      "anyOf": [
+        {
+          "const": "head_body",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Color Section Mode"
+    },
     "diameter_cm": {
       "anyOf": [
         {
@@ -200,6 +226,45 @@
       ],
       "default": null,
       "title": "Height Cm"
+    },
+    "instance_color_ids": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Instance Color Ids"
+    },
+    "instance_colors": {
+      "anyOf": [
+        {
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxItems": 20,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Instance Colors"
     },
     "magic_ring": {
       "default": false,

@@ -13,6 +13,7 @@
 | Processing flow / 系统处理流程 | [flow.en.md](flow.en.md) | [flow.md](flow.md) |
 | Saved crochet projects and reserved-loop joins / 钩织工程与预留半针接合 | [User guide](../README.md#save-and-reopen-a-pattern) · [Schemas](schemas/project_state.schema.json) | [使用与格式](project-format.md) |
 | Editable grid projects and recoloring history / 平面网格工程与修色历史 | [Features](../README.md#features) | [使用与失败保护](project-format.md#平面网格工程与修色历史) |
+| Part-level yarn colour selection V1 / 部件级选色 V1 | [Specification and acceptance checklist](part-color-selection.en.md) | [规格与验收清单](part-color-selection.md) |
 | Public structure candidates / 公开结构候选 | [catalog](public-pattern-candidates-20261011.json) | [配色反例](color-layout-diagnostic-20261011.json) |
 | External rule references / 外部规则参考证据 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
 | Opus 5.5 whole-system review brief / Opus 5.5 全系统审核交待 | [Pinned review brief (Chinese)](audit-brief-opus-20261029.md) | [固定版本审核交待](audit-brief-opus-20261029.md) |

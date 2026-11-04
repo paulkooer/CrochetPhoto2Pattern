@@ -21,6 +21,15 @@ def display_color_name(color: object) -> object:
     return color
 
 
+def is_reserved_placeholder(color: object) -> bool:
+    """True for the internal ``skin``/``body`` placeholders.
+
+    They mean "no yarn chosen yet", so a colour picker must offer a real yarn
+    instead of pre-filling the internal value as if the user had picked it.
+    """
+    return isinstance(color, str) and color in _PLACEHOLDER_LABELS
+
+
 def display_generated_color_note(note: object, generated: object) -> object:
     """Translate known generated fragments only; retain all user-written text."""
     if not isinstance(note, str) or not isinstance(generated, str) or not generated:

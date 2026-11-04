@@ -25,12 +25,11 @@ def _all(result):
 
 
 @pytest.mark.parametrize("index", [0, 5, 19])
-@pytest.mark.parametrize("field,value", [("color", "红色"), ("notes", "6X；留线准备下一步")])
-def test_changes_keep_only_the_exact_prefix_across_physical_copies(index, field, value):
+def test_changes_keep_only_the_exact_prefix_across_physical_copies(index):
     result = _flat()
     updated = deepcopy(result)
     arm = next(p for p in updated["params"]["parts"] if p["name"] == "手臂")
-    arm["rounds"][index][field] = value
+    arm["rounds"][index]["notes"] = "6X；留线准备下一步"
     progress = _all(result)
     kept = retained_progress(result, updated, "result", progress)
     assert kept == {identity: True for identity in progress
@@ -39,6 +38,78 @@ def test_changes_keep_only_the_exact_prefix_across_physical_copies(index, field,
     assert impact["保留完成圈次"] == index * 2
     assert impact["清除完成圈次"] == (20 - index) * 2
     assert f"第 {index + 1} 圈" in impact["变化范围"]
+
+
+# ── 纯颜色修改保留全部已完成圈次（规格 §7）──────────────────────────────
+# 这是 2026-11-04 有意变更的契约：旧实现把颜色也算作"施工变化"，改一个圈的
+# 颜色就从该圈起清除完成记录。针数、针法与人工文字都没变时，已钩的圈次依然
+# 有效；界面另做"已钩出的旧颜色不会因为图解改色而改变"的提示。任何施工变化
+# 同时出现时，仍按下面的保守规则处理。
+
+@pytest.mark.parametrize("index", [0, 5, 19])
+def test_colour_only_change_keeps_every_completed_round(index):
+    result = _flat()
+    updated = deepcopy(result)
+    arm = next(p for p in updated["params"]["parts"] if p["name"] == "手臂")
+    arm["rounds"][index]["color"] = "红色"
+    progress = _all(result)
+    assert retained_progress(result, updated, "result", progress) == progress
+    impact = next(p for p in progress_impact(result, updated, "result", progress) if p["部件"] == "手臂")
+    assert impact == {"部件": "手臂", "变化范围": "原有圈次保持不变",
+                      "保留完成圈次": 40, "清除完成圈次": 0}
+
+
+def test_instance_colour_change_is_also_a_pure_colour_change():
+    """逐份选色只写 instance_colors，针法未变，因此同样保留已完成圈次。"""
+    result = _flat()
+    updated = deepcopy(result)
+    arm = next(p for p in updated["params"]["parts"] if p["name"] == "手臂")
+    arm["instance_colors"] = ["蓝色", None]
+    progress = _all(result)
+    assert retained_progress(result, updated, "result", progress) == progress
+
+
+def test_colour_change_that_also_moves_stitches_stays_conservative():
+    """颜色与针数同时变化＝施工变化：回到原有的首个受影响圈规则。"""
+    result = _flat()
+    updated = deepcopy(result)
+    arm = next(p for p in updated["params"]["parts"] if p["name"] == "手臂")
+    arm["rounds"][5]["color"] = "红色"
+    arm["rounds"][5].update(stitches=12, increase=6)
+    progress = _all(result)
+    kept = retained_progress(result, updated, "result", progress)
+    assert len([key for key in kept if json.loads(key)[0] == "手臂"]) == 5 * 2
+    impact = next(p for p in progress_impact(result, updated, "result", progress) if p["部件"] == "手臂")
+    assert impact["清除完成圈次"] == 15 * 2
+
+
+def test_colour_change_that_edits_manual_prose_stays_conservative():
+    """人工文字与颜色一起改时不是纯颜色修改，沿用保守规则。"""
+    result = _flat()
+    updated = deepcopy(result)
+    arm = next(p for p in updated["params"]["parts"] if p["name"] == "手臂")
+    arm["rounds"][5]["color"] = "红色"
+    arm["rounds"][5]["notes"] = "6X；这里改成先填棉"
+    progress = _all(result)
+    kept = retained_progress(result, updated, "result", progress)
+    assert len([key for key in kept if json.loads(key)[0] == "手臂"]) == 5 * 2
+
+
+def test_colour_only_detection_is_content_based_not_path_based():
+    """选色面板与 JSON 编辑共用同一判定：不因编辑入口不同而改变进度结果。"""
+    from app.services.progress_state import color_only_change
+
+    result = _flat()
+    recoloured = deepcopy(result)
+    next(p for p in recoloured["params"]["parts"] if p["name"] == "手臂")["rounds"][3]["color"] = "红色"
+    assert color_only_change(result, recoloured)
+    restitched = deepcopy(recoloured)
+    next(p for p in restitched["params"]["parts"] if p["name"] == "手臂")["rounds"][3]["stitches"] = 12
+    assert not color_only_change(result, restitched)
+    renamed = deepcopy(recoloured)
+    next(p for p in renamed["params"]["parts"] if p["name"] == "手臂")["rounds"][3]["row"] = 99
+    assert not color_only_change(result, renamed)
+    assert not color_only_change(result, deepcopy(result))
 
 
 @pytest.mark.parametrize("mode", ["append", "remove", "insert", "reorder"])
@@ -83,9 +154,11 @@ def test_preview_is_read_only_then_apply_undo_redo_keep_exact_progress_and_notes
     for key in ("chk_project_手臂_2", "chk_project_手臂_copy2_8"):
         at.checkbox(key=key).check().run()
     at.text_area(key="project_notes_project").input("暂停在右臂").run()
+    # A manual-prose edit (not a colour) keeps the exact-prefix rule this test
+    # exists to pin; the pure-colour retention rule has its own tests above.
     changed = deepcopy(result["params"])
     arm = next(p for p in changed["parts"] if p["name"] == "手臂")
-    arm["rounds"][5]["color"] = "红色"
+    arm["rounds"][5]["notes"] = "6X；留线准备下一步"
     at.text_area(key="json_edit_project").input(json.dumps(changed, ensure_ascii=False)).run()
     at.button(key="edit_project_json_preview").click().run()
     assert not at.exception

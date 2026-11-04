@@ -8,13 +8,116 @@ instead of migrating widget keys between result IDs.
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from typing import Any
 
 from app.schemas import PartData, ResultData, StructureData, StructureInstanceData
 
 MAX_INLINE_ROUNDS = 500
 PROGRESS_PAGE_SIZE = 50
+
+# Colour-bearing fields plus the totals derived from them. A change confined to
+# these cannot invalidate work already crocheted (见 docs/part-color-selection.md §7).
+_COLOR_FIELDS = ("color", "auto_color_summary", "color_origin", "color_section_mode",
+                 "instance_colors", "instance_color_ids")
+_DERIVED_TOTALS = ("materials", "material_summary", "total_stitches",
+                   "estimated_time_minutes", "time_estimate_basis")
+
+
+def _without_recorded_fragment(note: object, fragment: object, pattern: re.Pattern[str]) -> object:
+    """Remove only a recognized generated suffix, retaining all manual text."""
+    if not isinstance(note, str):
+        return note
+    if not isinstance(fragment, str) or not fragment or not pattern.fullmatch(fragment):
+        return note
+    before, found, after = note.rpartition(fragment)
+    if not found:
+        return note
+    if before.endswith("；") and not fragment.startswith(" "):
+        before = before[:-1]
+    return before + after
+
+
+def _strip_color_state(part: Mapping[str, Any]) -> dict[str, Any]:
+    """``part`` with colour evidence replaced; every real instruction survives."""
+    from app.models.color_design import _COLOR_CHANGE_RE, _COLOR_SUMMARY_RE, blocks_summary_text
+    from app.models.onepiece import ONE_PIECE_MONO_NOTE
+
+    stripped = {k: v for k, v in part.items() if k not in _COLOR_FIELDS}
+    rounds = part.get("rounds") or []
+    colors = [row.get("color") or part.get("color") or "未指定" for row in rounds]
+    direction = "自下而上" if part.get("name") in {"身体", "手臂", "腿部"} else "自上而下"
+    expected_summary = (f" 配色（按钩织圈序，{direction}）："
+                        f"{blocks_summary_text(colors, [row['row'] for row in rounds])}。")
+    summary = part.get("auto_color_summary")
+    note = _without_recorded_fragment(part.get("notes"), summary if summary == expected_summary else None,
+                                      _COLOR_SUMMARY_RE)
+    if part.get("name") == "头身（一体）" and isinstance(note, str):
+        note = note.replace(ONE_PIECE_MONO_NOTE, "")
+    stripped["notes"] = note
+    normalized_rounds = []
+    for index, rd in enumerate(rounds):
+        expected = (f"换线：{colors[index]}（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）"
+                    if index and colors[index] != colors[index - 1] else None)
+        fragment = rd.get("auto_color_note")
+        normalized_rounds.append({
+            **{k: v for k, v in rd.items() if k not in ("color", "auto_color_note")},
+            "notes": _without_recorded_fragment(rd.get("notes"), fragment if fragment == expected else None,
+                                                 _COLOR_CHANGE_RE),
+        })
+    stripped["rounds"] = normalized_rounds
+    return stripped
+
+
+def _identity_fingerprint(result: ResultData) -> dict[str, list[str]]:
+    """Per-part physical copy identity, so a reorder is not a colour-only change.
+
+    Reversing a part's instances leaves every round's stitches identical yet moves
+    which physical copy a completed record belongs to. That is a construction
+    change and must never be mistaken for recolouring.
+    """
+    structure: StructureData = result.get("structure") or {}
+    graph = {p["name"]: p for p in structure.get("parts", []) if isinstance(p, dict)}
+    fingerprint: dict[str, list[str]] = {}
+    for part in (result.get("params") or {}).get("parts") or []:
+        if not isinstance(part, Mapping):
+            continue
+        entry = graph.get(part.get("name"))
+        instances = (entry.get("instances") or []
+                     if entry is not None and structure.get("schema_version") == "2.0" else [])
+        fingerprint[str(part.get("name"))] = _copy_instance_ids(instances, part.get("quantity", 1))
+    return fingerprint
+
+
+def _pattern_shape(result: ResultData) -> dict[str, Any]:
+    params: dict[str, Any] = {k: v for k, v in (result.get("params") or {}).items()
+                              if k not in _DERIVED_TOTALS}
+    parts = params.get("parts") or []
+    params["parts"] = [_strip_color_state(p) for p in parts if isinstance(p, Mapping)]
+    params["_copy_identity"] = _identity_fingerprint(result)
+    return params
+
+
+def color_only_change(current: ResultData, updated: ResultData) -> bool:
+    """True when two patterns differ only in colour-bearing fields.
+
+    A verified pure recolouring keeps every completed round: stitches, techniques,
+    joins and hand-written instructions are identical, so nothing already worked
+    needs re-checking. Any other difference keeps the conservative rule.
+    """
+    stable_keys = ("analysis", "structure", "style", "gauge", "color_bands", "spans",
+                   "spans_measured", "geometry")
+    if any(current.get(key) != updated.get(key) for key in stable_keys):
+        return False
+    before = (current.get("params") or {}).get("parts") or []
+    after = (updated.get("params") or {}).get("parts") or []
+    def colors(parts):
+        return [({key: part.get(key) for key in _COLOR_FIELDS},
+                 [(row.get("color"), row.get("auto_color_note")) for row in part.get("rounds", [])])
+                for part in parts]
+    return colors(before) != colors(after) and _pattern_shape(current) == _pattern_shape(updated)
 
 
 def progress_record_key(slot: str) -> str:
@@ -171,10 +274,22 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
     old = {p["name"]: p for p in current["params"]["parts"]}
     new = {p["name"]: p for p in updated["params"]["parts"]}
     limits = dict.fromkeys(new, 0)
+    old_links = (current["params"].get("stitch_attachments") or {}).get("connections", [])
+    new_links = (updated["params"].get("stitch_attachments") or {}).get("connections", [])
+    # 跨部件预留半针接合下，一个部件的针目身份取决于「被接」的一方。这类部件即使
+    # 只改颜色也沿用下面的保守规则：这是既有测试钉住的契约，不随纯颜色修改放松。
+    joined = {name for connection in [*old_links, *new_links]
+              for name in (connection.get("source_part"), connection.get("target_part"))}
+    # 已验证的纯颜色修改：逐圈针法、人工文字、密度与接合都未变，只有颜色及由颜色
+    # 重新推导的自动片段不同。此时未涉及接合的部件整段保留完成圈次；界面另须提示
+    # 「已钩出的旧颜色不会因为图解改色而改变」。任何施工变化都会让 pure_colour 为假。
+    pure_colour = color_only_change(current, updated)
 
     def part_instructions(part):
         metadata = {k: v for k, v in part.items()
-                    if k not in ("quantity", "rounds", "color", "auto_color_summary", "gauge")}
+                    if k not in ("quantity", "rounds", "color", "auto_color_summary", "gauge",
+                                 "color_origin", "color_section_mode", "instance_colors",
+                                 "instance_color_ids")}
         summary = part.get("auto_color_summary") or ""
         metadata["notes"] = (part.get("notes") or "").replace(summary, "")
         return metadata
@@ -191,6 +306,11 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
         if (gauge_for_part(before, gauge_from_result(current))
                 != gauge_for_part(part, gauge_from_result(updated))):
             continue
+        if name in joined and before.get("instance_colors") != part.get("instance_colors"):
+            continue
+        if pure_colour and name not in joined:
+            limits[name] = len(part["rounds"])
+            continue
         for left, right in zip(before["rounds"], part["rounds"], strict=False):
             if round_instructions(left, before) != round_instructions(right, part):
                 break
@@ -205,8 +325,6 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
         return next((i for i, row in enumerate(rows)
                      if row["row"] == connection["reservation_row"]), 0)
 
-    old_links = (current["params"].get("stitch_attachments") or {}).get("connections", [])
-    new_links = (updated["params"].get("stitch_attachments") or {}).get("connections", [])
     def copies(result: ResultData, name: str) -> list[str]:
         part = next((p for p in result["params"]["parts"] if p["name"] == name), None)
         if part is None:

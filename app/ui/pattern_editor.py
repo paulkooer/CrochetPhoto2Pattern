@@ -234,10 +234,11 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
     rid = result.get("result_id") or slot
     render_history(slot, result)
     # Common corrections in order of use; raw JSON stays in the advanced panel below.
-    st.caption("常用修正按使用频率排列：先调整尺寸，再修改部件、逐圈针法与材料；"
+    st.caption("常用修正按使用频率排列：先调整尺寸，再修改部件、逐圈针法、材料与毛线颜色；"
                "之后是留口、独立密度、接裙、逐针连接与并腿等专项工具。"
                "直接编辑 JSON 收在下方「高级编辑」面板。修改前可先预览影响，应用后可撤销。")
     _render_quick_size(result, slot)
+    from app.ui.color_editor import render_color_editor
     from app.ui.head_opening import render_head_opening
     from app.ui.leg_join import render_leg_join
     from app.ui.part_gauge import render_part_gauge
@@ -489,6 +490,7 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
             _apply(slot, result, edit_yarn(result, None))
     # Special-purpose tools after the everyday editors: neck opening, independent
     # swatches, waist join, per-stitch connections and the leg-bridge calculator.
+    render_color_editor(result, slot)
     render_head_opening(result, slot)
     render_part_gauge(result, slot)
     render_skirt_editor(result, slot)

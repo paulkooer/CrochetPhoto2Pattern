@@ -37,9 +37,16 @@ def _label_unversioned(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
+def _upgrade_v1(data: dict[str, Any]) -> dict[str, Any]:
+    # Version 2 adds optional authored color assignments; old results carry no
+    # such assignments and must not acquire guessed provenance during import.
+    return data
+
+
 # Each stored version → (next version, step producing it).
 _STEPS: dict[str, tuple[str, Callable[[dict[str, Any]], dict[str, Any]]]] = {
     UNVERSIONED: ("1", _label_unversioned),
+    "1": ("2", _upgrade_v1),
 }
 
 
