@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-11-03. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-11-04. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -13,6 +13,23 @@ real-photo baseline and an independent physical-trial baseline are still missing
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
 ## Latest reproducible validation
+
+2026-11-04 pose dependency correction, on the local `fix/pose-opencv-resolution` working tree
+based on `main` `5bc01fe`: constrain MediaPipe's separate OpenCV contrib dependency to 4.x,
+matching the base headless range. Before the change, a clean, unlocked Python 3.12 install
+resolved contrib 5.0.0.93 alongside headless 4.x. Afterward, separate unlocked macOS Python
+3.11.15 and 3.12.13 environments both installed MediaPipe 1.2.2 and OpenCV contrib/headless
+4.14.0.94, passed `uv pip check`, a real cascade and `mp.Image` probe, and **42 focused tests**
+each. Full suite in the local Python 3.12 environment: **2561 passed, 2 skipped in 90.74s**;
+Ruff, mypy (211 files), `uv lock --check`, and wheel dependency-metadata checks pass. Existing
+locked package versions are unchanged. The new Linux unlocked-install CI jobs have not yet run
+on this working-tree snapshot. Constraining the major does not eliminate the two distributions'
+shared `cv2` namespace; see the README before installing the optional extra. No independent
+review, authorized-photo evaluation or physical trial was performed; Beta and G3/G4 are unchanged.
+
+2026-11-03 frontend information architecture: [PR #44](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/44)
+passed all **11 remote checks** on head `62e5405` and was squash-merged as `5bc01fe` with an
+identical tree. The following describes the local pre-commit checks.
 
 2026-11-03 frontend information-architecture merge preparation, on `fix/frontend-info-architecture`
 after incorporating `main` `9f686d1` (local pre-commit working tree): resolve the documentation overlap
@@ -992,7 +1009,7 @@ and locked dependency audit
 | Gate | Status | Pass condition |
 |---|---|---|
 | G1 Reproducible source | **Latest merged baseline: `9f686d1`** | PR #43 was squash-merged into `main` with the same tree as checked head `d2aecf7`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 11 remote checks passed for PR #43 head** | Checked head `d2aecf7`: Python 3.11–3.14, Docker, PDF, pose, Streamlit floor, mypy, dependency audit and browser smoke pass. Verify post-merge and later-commit results against their own SHAs |
+| G2 Supported-version automation | **All 11 remote checks passed for PR #44 head** | Checked head `62e5405`: Python 3.11–3.14, Docker, PDF, pose, Streamlit floor, mypy, dependency audit and browser smoke pass. Verify later-commit results against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

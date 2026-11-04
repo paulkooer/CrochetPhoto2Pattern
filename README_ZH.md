@@ -100,6 +100,12 @@ uv sync --locked              # 推荐：严格使用仓库锁定依赖
 Streamlit 的声明下限是 1.66.1，与锁文件锁定版本一致。抽查的 1.40.0、1.48.0 和 1.66.0
 无法与本项目解码上传图片所需的 Pillow 版本共存；本项目不支持更低版本。
 
+可选姿态功能仅在 Python 3.11–3.12 使用 `python -m pip install -e '.[pose]'` 安装，
+建议放在独立虚拟环境；Linux 还需 EGL/GLESv2。MediaPipe 依赖的
+`opencv-contrib-python` 与基础依赖 `opencv-python-headless` 共用 `cv2` 命名空间。
+两者虽都限制在 OpenCV 4.x，仍不能消除重叠；[OpenCV 官方建议只安装其中一个发行包](https://pypi.org/project/opencv-contrib-python/)。
+安装、升级或卸载其中一个可能破坏另一个；遇到问题可重建环境，不安装 pose 时系统会回退比例先验。
+
 ### 配置
 
 无需配置 API Key 或模型服务。需要可信单用户历史时，可复制 `.env.example` 为 `.env` 并配置历史选项。

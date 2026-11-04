@@ -72,9 +72,13 @@ dev = [
 # PDF 图解导出（可选，S4）：中文用 Adobe CID 字体，无需额外字体文件
 pdf = ["reportlab>=4.0"]
 # 姿态关键点实测 span（可选，S1）：1.0.1 移除 protobuf 依赖，避免旧版
-# protobuf<5 的高危 JSON 递归绕过；仍会带入 opencv-contrib，故保持可选。
-# 当前只在 3.11–3.12 的本地与 Linux extras CI 验证。
-pose = ["mediapipe>=1.0.1,<2; python_version < '3.13'"]
+# protobuf<5 的高危 JSON 递归绕过。MediaPipe 无版本约束地依赖 contrib；
+# 必须单独约束它，主依赖的 headless <5 不会约束另一个发行包。
+# 这两个包仍共享 cv2，请在隔离环境安装 pose；只验证 Python 3.11–3.12。
+pose = [
+    "mediapipe>=1.0.1,<2; python_version < '3.13'",
+    "opencv-contrib-python>=4.8,<5; python_version < '3.13'",
+]
 
 # 显式只打包 app：被忽略的本地目录（如含 .py 的 eval_outputs/）会让平铺布局的
 # 自动发现报“多个顶层包”而无法构建。

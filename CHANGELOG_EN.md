@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-04 OpenCV version for optional pose dependencies
+
+- Explicitly require `opencv-contrib-python>=4.8,<5` for the Python 3.11–3.12 `pose` extra. The base `opencv-python-headless<5` constraint cannot constrain the separate distribution required by MediaPipe. Unlocked installs can no longer resolve contrib 5.x; existing locked package versions remain unchanged.
+- Add declaration and lock checks, and exercise unlocked pose installs, OpenCV and MediaPipe in clean Python 3.11 and 3.12 CI environments. The two distributions still share `cv2` and do not follow OpenCV's recommendation to install only one; the READMEs explain the isolated-environment and recovery guidance.
+
 ### Changed — 2026-11-03 UI information architecture: sidebar and local corrections
 
 - The sidebar now reads creation settings (gauge → shaping) → "打开已有工作" (open backup, open trial bundle, my history). The gauge no longer sits below two import panels, the three dividers are down to one, and the sidebar's own divider margin is narrower. The two open entries keep their own panels, grouped by a subheading rather than nested: Streamlit 1.66 does allow nested expanders, but nesting only costs an extra click before the uploader.
