@@ -188,7 +188,7 @@ uv run streamlit run app/main.py
 ### Save and reopen a pattern
 
 Choose **备份完整结果** (back up the complete result) on a result page to save JSON.
-In a fresh session, expand **打开备份图解** in the sidebar, upload that file, and click
+In a fresh session, expand **打开备份图解** under **打开已有工作** in the sidebar, upload that file, and click
 **导入并打开图解**. The restored pattern appears in the local Photo tab without generating
 a seed pattern or enabling history. Uploads accept UTF-8 JSON up to 20 MiB; the paste
 option accepts up to 2 MiB. A parameters-only JSON download is not a complete backup.
@@ -338,9 +338,9 @@ physical crochetability.
 
 ## Physical-trial loop
 
-Use **🧪 实体试钩记录** on a result page to enter swatch/yarn details, measured dimensions,
+Use **实体试钩记录** on a result page to enter swatch/yarn details, measured dimensions,
 usage and scoped timing, then save and download a ZIP with its original pattern. Reopen it
-through the sidebar's **🧪 打开试钩包** without generating a seed result. Live pattern edits do
+through **打开试钩包** under the sidebar's **打开已有工作** without generating a seed result. Live pattern edits do
 not rebind existing measurements. Downloads reflect the last successful save; trial bundles
 and crochet projects are separate. Their `*.trial.json` files work with the CLI below.
 Save partial measurements as drafts and resume them later; required measurements are checked

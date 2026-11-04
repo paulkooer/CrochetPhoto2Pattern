@@ -150,6 +150,11 @@ hr {{
 [data-testid="stSidebar"] h3 {{
     font-size: 1rem;
 }}
+/* One rule separates the creation settings from the existing-work group; the
+   page-wide 1.75rem hr margin read as a blank band in the narrow column. */
+[data-testid="stSidebar"] hr {{
+    margin: 1.1rem 0;
+}}
 
 /* ── Binder tabs: the open one wears the marker ─────────────────────── */
 /* Streamlit ≥ 1.60 renders tabs as div[data-testid="stTab"][role="tab"]

@@ -13,8 +13,8 @@ bound:
 * `protobuf>=6.33.5,<8` overlaps with the `protobuf<7` cap in the sampled 1.45.0
   and 1.55.0 releases via 6.x; 1.56.0 allows 7.x by widening its cap to `<8`.
   The `<6` caps in 1.40.0 and 1.44.0 conflict with the project floor.
-* The UI calls `width="stretch"` on buttons, images and dataframes, and the pending
-  frontend-information-architecture branch adds `st.container(horizontal=True)`. Both
+* The UI calls `width="stretch"` on buttons, images and dataframes, and uses
+  `st.container(horizontal=True)` for button groups. Both
   first exist in 1.48.0; earlier releases take an int `width` and `use_container_width`
   only, which is why the 1.40 probe also failed at run time rather than at install time.
 
@@ -45,8 +45,7 @@ MIN_VERIFIED_FLOOR = Version("1.66.1")
 # Arguments the UI passes straight to Streamlit. `width` also changed meaning in
 # 1.48.0 (int → "stretch"/"content" strings), so the string default is part of the check.
 REQUIRED_API_ARGUMENTS = {
-    # The container call lands with the pending frontend-information-architecture
-    # branch (app/ui/design_system.py); the other three are used on main today.
+    # Button groups and the other three calls are used by the current UI.
     "container": ("horizontal", "width"),
     "button": ("width",),                   # tabs and editors pass width="stretch"
     "image": ("width",),                    # app/ui/tab_photo.py, app/ui/tab_grid.py

@@ -128,6 +128,14 @@ async function headProgress(page, scope, rid, checked) {
     const photo = path.join(output, 'synthetic-doll.png');
     await page.locator('svg').screenshot({path:photo});
     await page.goto(baseURL);
+    // Sidebar information architecture: the gauge comes first; the three ways to
+    // open existing work sit together under one heading.
+    const sidebarOutline = page.locator('[data-testid="stSidebar"]')
+      .locator('h3, [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"]');
+    await expect(sidebarOutline).toHaveText(['编织密度（小样）','塑形选项（进阶）','打开已有工作',
+                                             '打开备份图解','打开试钩包','我的图解（历史）']);
+    await page.locator('[data-testid="stSidebar"]').screenshot({path:path.join(output,'sidebar-information-architecture.png')});
+    record('sidebar lists the gauge first and groups the existing-work entries');
     const photoTab = page.getByRole('tab', {name:'照片分析（本地）',exact:true});
     const manualTab = page.getByRole('tab', {name:'手动输入',exact:true});
     await photoTab.focus();
@@ -624,6 +632,44 @@ async function headProgress(page, scope, rid, checked) {
     await samplePage.screenshot({path:path.join(output,'material-preview-redo.png'),fullPage:true});
     record('material preview/cancel/apply and unchanged material/size after undo retain redo, provenance, notes and progress');
 
+    // Chapter 5: both raw JSON editors share one panel that starts collapsed; the
+    // downloads stay outside it and keep serving the applied pattern while a draft
+    // is pending; the draft itself survives a full rerun started elsewhere.
+    await samplePanel.locator('h2.sheet-h',{hasText:'局部修正'}).scrollIntoViewIfNeeded();
+    await samplePage.screenshot({path:path.join(output,'local-corrections-collapsed.png')});
+    const jsonArea = key(samplePanel,`json_edit_${materialRedoId}`).locator('textarea');
+    const advancedPanel = jsonArea.locator('xpath=ancestor::details[1]');
+    await expect(advancedPanel.locator(':scope > summary')).toContainText('高级编辑（JSON）');
+    assert.equal(await advancedPanel.getAttribute('open'),null,'The advanced JSON panel must start collapsed.');
+    for (const name of [`dl_backup_${materialRedoId}`,`dl_json_${materialRedoId}`,`dl_md_${materialRedoId}`]) {
+      assert.equal(await key(samplePanel,name).locator('xpath=ancestor::details').count(),0,
+                   `${name} must stay outside every collapsible panel.`);
+    }
+    const appliedParams = JSON.parse(await jsonArea.inputValue());
+    const draft = structuredClone(appliedParams);
+    draft.parts[0].rounds[0].notes += '；核对张力';
+    const draftText = JSON.stringify(draft);
+    await fillKey(samplePage,samplePanel,`json_edit_${materialRedoId}`,draftText);
+    const draftNotice = samplePanel.getByText(/JSON 草稿/);
+    await expect(draftNotice).toHaveCount(2);
+    await samplePage.screenshot({path:path.join(output,'local-corrections-advanced.png')});
+    await clickKey(samplePage,samplePanel,`edit_${materialRedoId}_size_preview`);
+    await expect(samplePanel.getByText('修改影响预览 · 尚未应用',{exact:true})).toBeVisible();
+    await expect(jsonArea).toHaveValue(draftText);
+    await clickKey(samplePage,samplePanel,`edit_${materialRedoId}_preview_cancel`);
+    assert.equal(await resultId(samplePanel),materialRedoId);
+    await expect(jsonArea).toHaveValue(draftText);
+    await expect(draftNotice).toHaveCount(2);
+    const pendingDownload = JSON.parse(await download(samplePage,key(samplePanel,`dl_json_${materialRedoId}`).getByRole('button'),path.join(output,'draft-pending-download.json')));
+    assert.deepEqual(pendingDownload,appliedParams);
+    await clickKey(samplePage,samplePanel,`regen_${materialRedoId}`);
+    const draftId = await resultId(samplePanel,materialRedoId);
+    await expect(samplePanel.getByText(/已根据修正更新图解/)).toBeVisible();
+    await expect(samplePanel.getByText(/JSON 草稿/)).toHaveCount(0);
+    const appliedDraft = JSON.parse(await download(samplePage,key(samplePanel,`dl_json_${draftId}`).getByRole('button'),path.join(output,'draft-applied-download.json')));
+    assert.equal(appliedDraft.parts[0].rounds[0].notes,draft.parts[0].rounds[0].notes);
+    record('advanced JSON panel starts collapsed, keeps a draft through preview and cancel, and downloads stay applied until regeneration');
+
     // The legacy fixture saved one ambiguous head completion plus an unrelated hat completion.
     {
       const collisionContext = await context();
@@ -700,6 +746,20 @@ async function headProgress(page, scope, rid, checked) {
     await expect(mobile.getByRole('button',{name:'Deploy',exact:true})).toHaveCount(0);
     await mobile.screenshot({path:path.join(output,'pattern-sheet-mobile.png')});
     record('390 px viewport keeps the title on one line and the header opaque without Deploy');
+    // The sidebar starts collapsed on a phone; opened, it must slide fully in and
+    // show the same outline. Off-screen content already counts as "visible", so
+    // wait for the drawer's actual position before judging it.
+    await mobile.getByRole('button',{name:'Expand sidebar',exact:true}).click();
+    const mobileSidebar = mobile.locator('[data-testid="stSidebar"]');
+    await expect(mobileSidebar.locator('[data-testid="stSidebarCollapseButton"]')).toHaveCount(1);
+    await expect.poll(() => mobileSidebar.evaluate(element => {
+      const box = element.getBoundingClientRect();
+      return [Math.round(box.left), Math.round(box.width)];
+    })).toEqual([0, 300]);
+    await expect(mobileSidebar.locator('h3, [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"]'))
+      .toHaveText(['编织密度（小样）','塑形选项（进阶）','打开已有工作','打开备份图解','打开试钩包','我的图解（历史）']);
+    await mobile.screenshot({path:path.join(output,'pattern-sheet-mobile-sidebar.png')});
+    record('390 px viewport opens the sidebar drawer with the same gauge-first outline');
     await mobileContext.close();
     lastPage = page;
     assert.deepEqual(report.page_errors,[]);

@@ -1,4 +1,4 @@
-"""Sidebar: gauge, shaping and local history."""
+"""Sidebar: gauge and shaping first, then the ways to open existing work."""
 from __future__ import annotations
 
 import uuid
@@ -7,24 +7,85 @@ import streamlit as st
 
 from app.models.gauge import PRESET_LABELS
 
+# Credentials from the retired cloud-vision era; sessions may survive an app upgrade.
+_OBSOLETE_KEYS = ("openai_key", "anthropic_key", "openai_base_url", "anthropic_base_url",
+                  "openai_key_input", "anthropic_key_input",
+                  "openai_base_url_input", "anthropic_base_url_input")
+
+
+def _render_history() -> None:
+    """Body of the history panel.
+
+    A disabled history only ends this panel's body: the sidebar used to ``return``
+    from inside the expander, so anything rendered after it would have vanished
+    in the default (history disabled) deployment.
+    """
+    from app.ui.result_renderer import md_safe, purge_result_state
+    from app.utils import history
+
+    if not history.history_enabled():
+        st.caption("历史记录未启用；可下载完整备份，在自己的会话中恢复。")
+        return
+    _search = st.text_input("搜索历史", "", key="hist_search",
+                            placeholder="关键词（体型/部件…）")
+    try:
+        items = history.list_results(query=_search.strip() or None)
+    except Exception as e:  # DB 损坏不阻塞主功能
+        st.caption(f"历史读取失败: {md_safe(e)}")
+        items = []
+    if not items:
+        st.caption("暂无匹配的历史——生成图解后点「存入历史」即可跨会话保留")
+    for it in items:
+        c_h1, c_h2, c_h3 = st.columns([5, 1, 1])
+        # U8/K2：缩略图随行返回（无 N+1 全量读取）；
+        # U25 方案(b)：分享/导入路径无 preview → 占位标记
+        if it.get("preview"):
+            c_h1.image(it["preview"], width=64)
+        else:
+            c_h1.markdown("<div style='width:64px;height:44px;"
+                          "display:flex;align-items:center;"
+                          "justify-content:center;"
+                          "border:1px dashed var(--edge);"
+                          "border-radius:3px;'></div>",
+                          unsafe_allow_html=True)
+        _display = it.get("title") or it["summary"]
+        c_h1.caption(f"{history.format_time(it['created_at'])}\n\n{md_safe(_display)}")
+        if c_h2.button("载入", key=f"hist_load_{it['rid']}"):
+            data = history.load_result(it["rid"])
+            if data is None:
+                st.error("该记录已不存在")
+            else:
+                # V5：与备份导入同等待遇——历史记录可能是当初
+                # 存入的坏结果（JSON 修正改坏后存档），直接入库
+                # 会崩在渲染层；在此校验并给出 st.error + 删除出路。
+                # 不用 st.stop：那会让下方同行「删」按钮在本轮
+                # 永远渲染不出来，提示里的出路形同虚设。
+                try:
+                    from app.services.result_logic import import_backup
+
+                    loaded = import_backup(data, uuid.uuid4().hex[:12])
+                    loaded["history_id"] = it["rid"]
+                except Exception as e:
+                    st.error(f"该记录已损坏，无法载入（可点「删」清除）: {md_safe(e)}")
+                else:
+                    if "result" in st.session_state:
+                        purge_result_state(st.session_state["result"])
+                    st.session_state["result"] = loaded
+                    st.rerun()
+        if c_h3.button("删", key=f"hist_del_{it['rid']}"):
+            history.delete_result(it["rid"])
+            st.rerun()
+
 
 def render_sidebar() -> None:
     with st.sidebar:
         st.header("创作设置")
-        st.caption("先选择密度与塑形偏好，再开始生成你的专属钩织图解。")
-        # Remove obsolete credentials from sessions surviving an app upgrade.
-        for key in ("openai_key", "anthropic_key", "openai_base_url", "anthropic_base_url",
-                    "openai_key_input", "anthropic_key_input",
-                    "openai_base_url_input", "anthropic_base_url_input"):
+        for key in _OBSOLETE_KEYS:
             st.session_state.pop(key, None)
-        st.caption("本地视觉与人工确认，无需 API Key。")
-        from app.ui.backup_import import render_backup_import
+        st.caption("先选择密度与塑形偏好，再开始生成你的专属钩织图解。本地视觉与人工确认，无需 API Key。")
 
-        render_backup_import()
-        from app.ui.trial_editor import render_trial_open
-
-        render_trial_open()
-        st.divider()
+        # The gauge drives every size, grid ratio and material label: it comes first,
+        # so a new sheet starts without scrolling past import panels.
         st.subheader("编织密度（小样）")
         preset = st.select_slider(
             "密度预设",
@@ -47,7 +108,6 @@ def render_sidebar() -> None:
                 "10cm 行数", 8.0, 50.0, 16.0, 0.5, key="gauge_rw_input",
                 disabled=preset != "custom")
 
-        st.divider()
         with st.expander("塑形选项（进阶）", expanded=False):
             st.select_slider(
                 "头部球体", options=["ladder", "ideal", "egg"], value="ladder",
@@ -70,61 +130,18 @@ def render_sidebar() -> None:
             )
             st.checkbox("波浪裙摆（末圈每针放2针）", value=False, key="style_ruffle")
 
-        # ── 图解历史（S4）：SQLite 本机持久化，跨会话载回 ─────────────────
+        # ── Existing work: a backup or project file, a trial bundle, or this
+        # host's history. Three sibling panels under one heading: Streamlit 1.66
+        # does allow nested expanders, but a second click to reach an uploader
+        # buys nothing here, and the sidebar's own heading already groups them.
         st.divider()
+        st.subheader("打开已有工作")
+        from app.ui.backup_import import render_backup_import
+
+        render_backup_import()
+        from app.ui.trial_editor import render_trial_open
+
+        render_trial_open()
+        # 图解历史（S4）：SQLite 本机持久化，跨会话载回
         with st.expander("我的图解（历史）", expanded=False):
-            from app.ui.result_renderer import md_safe, purge_result_state
-            from app.utils import history
-
-            if not history.history_enabled():
-                st.caption("历史记录未启用；可下载完整备份，在自己的会话中恢复。")
-                return
-            _search = st.text_input("搜索历史", "", key="hist_search",
-                                    placeholder="关键词（体型/部件…）")
-            try:
-                items = history.list_results(query=_search.strip() or None)
-            except Exception as e:  # DB 损坏不阻塞主功能
-                st.caption(f"历史读取失败: {md_safe(e)}")
-                items = []
-            if not items:
-                st.caption("暂无匹配的历史——生成图解后点「存入历史」即可跨会话保留")
-            for it in items:
-                c_h1, c_h2, c_h3 = st.columns([5, 1, 1])
-                # U8/K2：缩略图随行返回（无 N+1 全量读取）；
-                # U25 方案(b)：分享/导入路径无 preview → 占位标记
-                if it.get("preview"):
-                    c_h1.image(it["preview"], width=64)
-                else:
-                    c_h1.markdown("<div style='width:64px;height:44px;"
-                                  "display:flex;align-items:center;"
-                                  "justify-content:center;"
-                                  "border:1px dashed var(--edge);"
-                                  "border-radius:3px;'></div>",
-                                  unsafe_allow_html=True)
-                _display = it.get("title") or it["summary"]
-                c_h1.caption(f"{history.format_time(it['created_at'])}\n\n{md_safe(_display)}")
-                if c_h2.button("载入", key=f"hist_load_{it['rid']}"):
-                    data = history.load_result(it["rid"])
-                    if data is None:
-                        st.error("该记录已不存在")
-                    else:
-                        # V5：与备份导入同等待遇——历史记录可能是当初
-                        # 存入的坏结果（JSON 修正改坏后存档），直接入库
-                        # 会崩在渲染层；在此校验并给出 st.error + 删除出路。
-                        # 不用 st.stop：那会让下方同行「删」按钮在本轮
-                        # 永远渲染不出来，提示里的出路形同虚设。
-                        try:
-                            from app.services.result_logic import import_backup
-
-                            loaded = import_backup(data, uuid.uuid4().hex[:12])
-                            loaded["history_id"] = it["rid"]
-                        except Exception as e:
-                            st.error(f"该记录已损坏，无法载入（可点「删」清除）: {md_safe(e)}")
-                        else:
-                            if "result" in st.session_state:
-                                purge_result_state(st.session_state["result"])
-                            st.session_state["result"] = loaded
-                            st.rerun()
-                if c_h3.button("删", key=f"hist_del_{it['rid']}"):
-                    history.delete_result(it["rid"])
-                    st.rerun()
+            _render_history()
