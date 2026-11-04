@@ -321,6 +321,17 @@ async function headProgress(page, scope, rid, checked) {
     await clickKey(page,manual,'btn_manual');
     let manualId = await resultId(manual);
     await headProgress(page,manual,manualId,true);
+    const headDetails = headCheck(manual,manualId).locator('xpath=ancestor::div[@data-testid="stExpanderDetails"]');
+    await expect(headDetails.getByText('肤色（待选色）',{exact:false}).first()).toBeVisible();
+    const manualMarkdown = await download(page,key(manual,`dl_md_${manualId}`).getByRole('button'),
+      path.join(output,'manual-placeholder-colors.md'));
+    assert(manualMarkdown.toString().includes('**颜色**：肤色（待选色）'));
+    assert(manualMarkdown.toString().includes('**颜色**：主体色（待选色）'));
+    const manualBackup = JSON.parse(await download(page,key(manual,`dl_backup_${manualId}`).getByRole('button'),
+      path.join(output,'manual-placeholder-colors.json')));
+    assert.equal(manualBackup.params.parts.find(p => p.name === '头部').color,'skin');
+    assert.equal(manualBackup.params.parts.find(p => p.name === '身体').color,'body');
+    record('placeholder colors are clear in the result and Markdown while backup values stay unchanged');
     const notes = 'browser-smoke: head R1 completed';
     await fillKey(page,manual,`project_notes_${manualId}`,notes);
     const material = manual.getByRole('button',{name:'更新材料估算',exact:true,includeHidden:true});
