@@ -20,6 +20,7 @@ from app.models.stitches import (
     STITCH_LEGEND_ZH,
 )
 from app.schemas import difficulty_label
+from app.utils.color_labels import display_color_name, display_generated_color_note
 
 _INVISIBLE = _re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
@@ -189,7 +190,7 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
         if quantity > 1:
             lines.append(f"- **制作数量**：{quantity} 个相同部件")
         lines.append(f"- **形状**：{_md_cell(pd.get('type', '—'))}")
-        lines.append(f"- **颜色**：{_md_cell(pd.get('color', '—'))}")
+        lines.append(f"- **颜色**：{_md_cell(display_color_name(pd.get('color', '—')))}")
         if caption := part_gauge_text(pd, g):
             lines.append(f"- **部件密度**：{caption}")
         if pd.get("diameter_cm"):
@@ -205,7 +206,8 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
         if pd.get("magic_ring"):
             lines.append("- ✨ 魔法环起针")
         if pd.get("notes"):
-            lines.append("\n> " + _md_cell(pd["notes"]))
+            shown_notes = display_generated_color_note(pd["notes"], pd.get("auto_color_summary"))
+            lines.append("\n> " + _md_cell(shown_notes))
         lines.append("")
 
         # Rounds table
@@ -239,11 +241,12 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
                         rep = format_stitch_expression(expression)
                 elif rep == "—" and not rd.get("notes") and prev_st is not None and st_n and (inc_n or dec_n):
                     rep = _repeat_notation(st_n, prev_st, inc_n, dec_n) or "—"
+                shown_notes = display_generated_color_note(rd.get("notes", ""), rd.get("auto_color_note"))
                 lines.append(
                     f"| {_md_cell(rd.get('row',''))} | {_md_cell(rd.get('stitches',''))} | "
                     f"{_md_cell(inc)} | {_md_cell(dec)} | {_md_cell(rep)} | "
-                    f"{_md_cell(rd.get('color') or '—')} | "
-                    f"{_md_cell(rd.get('notes', ''))} |")
+                    f"{_md_cell(display_color_name(rd.get('color') or '—'))} | "
+                    f"{_md_cell(shown_notes)} |")
                 prev_st = st_n or None
         lines.append("")
         lines.append("---")

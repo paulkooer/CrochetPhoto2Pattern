@@ -388,6 +388,8 @@ def render_pattern_editor(result: ResultData, slot: str) -> None:
                     "allow_wide_jump": None,
                 },
             )
+            st.caption("skin 和 body 分别表示待选肤色和主体色；可填写实际毛线色名。"
+                       "圈次颜色留空时沿用部件颜色。")
             st.caption(
                 "针数、加针和减针须满足相邻圈关系；不通过自检的修改不会覆盖当前图解。"
                 "更改针数时，未手改的原针法说明会自动更新；自定义说明请同步核对。"

@@ -111,6 +111,8 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Stitch-arithmetic and supported round-notation checks, an editor calculator for
   consumed/output stitches and increases/decreases, ring charts, progress tracking, per-color bills of
   materials, share links, SQLite history, JSON backup, Markdown, and optional PDF export.
+- Unselected skin/body yarn colors are labeled as awaiting selection. PDF lists each part's
+  base color; a blank round color inherits that part color. Backups retain the original values.
 - Explicit stitch order is preserved in Markdown, symbol strips and CrochetPARADE,
   including mixed shaping and nested repeats. Aggregate-only export counts inferred
   placement separately; prose-only placement hints and special techniques still need review.

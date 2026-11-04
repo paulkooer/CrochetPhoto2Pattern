@@ -20,6 +20,7 @@ from app.models.stitches import (
     STITCH_LEGEND_ZH,
 )
 from app.schemas import difficulty_label
+from app.utils.color_labels import display_color_name, display_generated_color_note
 
 
 def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = None,
@@ -152,6 +153,7 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
             f"🧶 {esc(pd.get('name', '?'))}{qty_label}"
             f"（{len(rounds)} 圈/个 · {esc(pd.get('type', '—'))}）",
             head))
+        story.append(Paragraph(f"部件颜色：{esc(display_color_name(pd.get('color') or '—'))}", small))
         dims = []
         if pd.get("diameter_cm"):
             dims.append(f"直径 {esc(pd['diameter_cm'])}cm")
@@ -168,7 +170,8 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
         if caption := part_gauge_text(pd, g):
             story.append(Paragraph(esc(caption), small))
         if pd.get("notes"):
-            story.append(Paragraph(esc(pd["notes"]), small))
+            shown_notes = display_generated_color_note(pd["notes"], pd.get("auto_color_summary"))
+            story.append(Paragraph(esc(shown_notes), small))
         if rounds:
             head_cells = [Paragraph(h, cell_head) for h in
                           ("圈", "针数", "加/减", "配色", "说明")]
@@ -177,15 +180,16 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
                 rd = r
                 inc = f"+{rd['increase']}" if rd.get("increase") else (
                     f"-{rd['decrease']}" if rd.get("decrease") else "—")
+                shown_notes = display_generated_color_note(rd.get("notes") or "", rd.get("auto_color_note"))
                 rows.append([
                     Paragraph(esc(rd.get("row", "")), cell),
                     Paragraph(esc(rd.get("stitches", "")), cell),
                     Paragraph(esc(inc), cell),
-                    Paragraph(esc(rd.get("color") or "—"), cell),
-                    Paragraph(esc(rd.get("notes") or ""), cell),
+                    Paragraph(esc(display_color_name(rd.get("color") or "—")), cell),
+                    Paragraph(esc(shown_notes), cell),
                 ])
-            rt = Table(rows, colWidths=[10 * mm, 14 * mm, 14 * mm, 22 * mm,
-                                        116 * mm], repeatRows=1)
+            rt = Table(rows, colWidths=[10 * mm, 14 * mm, 14 * mm, 32 * mm,
+                                        106 * mm], repeatRows=1)
             rt.setStyle(TableStyle([
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(theme.INK)),
                 ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor(theme.RULE)),

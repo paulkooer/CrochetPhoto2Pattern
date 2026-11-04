@@ -4,6 +4,10 @@
 两项新增结构的 JSON Schema 见 [project_state](schemas/project_state.schema.json) 和
 [loop_attachment_plan](schemas/loop_attachment_plan.schema.json)。
 
+2026-11-04 颜色展示：`skin` 和 `body` 在结果页、Markdown/PDF 显示为待选肤色与主体色，
+PDF 另列部件基础颜色；图解、工程、备份和材料统计的原始值不变。导出缓存升为 **16**，
+旧会话的打印结果需重新生成。
+
 ## 图解数据的一致性与兼容读取
 
 图解备份顶层版本仍为 `schema_version="1"`。以下字段均为可选新增项，旧备份可继续读取：

@@ -28,6 +28,7 @@ from app.services import result_logic
 from app.services.result_logic import rebuild_params, result_profile
 from app.services.workspace import workspace
 from app.ui.design_system import section_heading
+from app.utils.color_labels import display_color_name, display_generated_color_note
 from app.utils.exporters import export_markdown
 from app.utils.share import _BACKUP_KEYS
 
@@ -234,8 +235,10 @@ def _render_paged_progress(result: ResultData, slot: str) -> None:
         identity, key = entries[offset]
         copy, row = divmod(offset, len(part["rounds"]))
         rd = part["rounds"][row]
+        shown_notes = display_generated_color_note(rd.get("notes") or "", rd.get("auto_color_note"))
         _round_checkbox(f"第 {copy + 1} 个 · 第 {rd['row']} 圈 · {rd['stitches']} 针　"
-                        f"{md_safe(rd.get('color') or '')}　{md_safe(rd.get('notes') or '')}",
+                        f"{md_safe(display_color_name(rd.get('color') or ''))}　"
+                        f"{md_safe(shown_notes)}",
                         result, slot, identity, key, completed)
 
 
@@ -277,7 +280,7 @@ def _render_part_progress(
         shape = part_data.get("type")
         shape_text = _SHAPE_LABELS.get(shape, shape) if isinstance(shape, str) else "—"
         st.write(f"**形状**: {md_safe(shape_text)} | "
-                 f"**颜色**: {md_safe(part_data['color'])}")
+                 f"**颜色**: {md_safe(display_color_name(part_data['color']))}")
         if caption := part_gauge_text(part_data, gauge_from_result(result)):
             st.caption(caption)
         if quantity > 1:
@@ -309,7 +312,9 @@ def _render_part_progress(
                 except Exception as e:  # 可视化失败不影响主流程
                     st.caption(f"顶视图不可用: {md_safe(e)}")
         if part_data.get("notes"):
-            st.info(md_safe(part_data["notes"]))
+            shown_notes = display_generated_color_note(
+                part_data["notes"], part_data.get("auto_color_summary"))
+            st.info(md_safe(shown_notes))
         st.progress(
             pct, text=f"钩织进度 {pct}%  ({n_done}/{physical_rounds} 圈次)")
         st.markdown("**逐圈进度**：勾选已完成的圈")
@@ -328,8 +333,9 @@ def _render_part_progress(
                 change = f"（{inc_str}{dec_str}）" if (inc_str or dec_str) else ""
                 # notes/color 为模型或 JSON 编辑器可写字段；checkbox 标签会
                 # 渲染 Markdown，先经 md_safe 再拼进标签
-                notes_str = f"　{md_safe(rd['notes'])}" if rd.get("notes") else ""
-                color_str = f"　{md_safe(rd['color'])}" if rd.get("color") else ""
+                shown_notes = display_generated_color_note(rd.get("notes"), rd.get("auto_color_note"))
+                notes_str = f"　{md_safe(shown_notes)}" if rd.get("notes") else ""
+                color_str = f"　{md_safe(display_color_name(rd['color']))}" if rd.get("color") else ""
                 lbl = (f"**第 {rd.get('row', i + 1)} 圈**　"
                        f"{rd.get('stitches', '?')} 针"
                        f"{change}{color_str}{notes_str}")
@@ -568,7 +574,7 @@ def render_results(result: ResultData, slot: str) -> None:
             "尺寸": "，".join(dims) or "—",
             "位置 / 旋转": "；".join(poses) or "旧版未记录",
             "连接": "；".join(connections) or "独立部件 / 未记录",
-            "基准色": structure_part.get("color", "—"),
+            "基准色": display_color_name(structure_part.get("color", "—")),
         })
     if rows:
         st.dataframe(rows, hide_index=True, width="stretch")
@@ -586,6 +592,9 @@ def render_results(result: ResultData, slot: str) -> None:
                 # 静态等距 SVG——st.html 的净化器剥 <svg>/<script>，交互
                 # canvas 无可用脚本通道，与其他图形同走 markdown
                 st.markdown(html_box(_pv, 420), unsafe_allow_html=True)
+                if any(part.get("color") in ("skin", "body")
+                       for part in (result.get("params") or {}).get("parts", [])):
+                    st.caption("待选色使用示意颜色，请根据实际毛线选色。")
             else:
                 st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):

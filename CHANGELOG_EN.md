@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-04 Unselected yarn colors and PDF part colors
+
+- The result page, structure table, progress rows, Markdown and PDF display the internal `skin` and `body` placeholders as unselected skin and body yarn colors, including recorded automatic color-change notes and summaries. Handwritten notes, explicit colors and custom names remain unchanged; the 3D preview identifies placeholder colors as illustrative.
+- PDF now shows each part's base color so readers can interpret rounds with no color override; the round-table color column is wider. The round editor retains the original values and explains the placeholders. Pattern data, backups and material aggregation are unchanged; the export-cache version is now 16.
+
 ### Fixed — 2026-11-04 OpenCV version for optional pose dependencies
 
 - Explicitly require `opencv-contrib-python>=4.8,<5` for the Python 3.11–3.12 `pose` extra. The base `opencv-python-headless<5` constraint cannot constrain the separate distribution required by MediaPipe. Unlocked installs can no longer resolve contrib 5.x; existing locked package versions remain unchanged.

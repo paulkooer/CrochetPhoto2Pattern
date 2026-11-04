@@ -14,6 +14,18 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-04 placeholder-color display, on the local `fix/placeholder-color-labels` working tree
+based on `main` `dfa6876`: result/structure/progress views and Markdown/PDF show `skin`/`body`
+as unselected yarn colors, including recorded automatic color-change notes, and PDF identifies each part's base color. The original pattern and
+material aggregation stay unchanged; export cache is **16**. Full local Python 3.12 suite:
+**2576 passed, 2 skipped in 91.99s**; Ruff and mypy (213 files) pass. Local Chromium passed **22 synthetic
+browser flows** and the standalone canvas check, with no page errors or blocked external requests.
+This pre-commit snapshot has not run remote CI or physical trials.
+
+2026-11-04 optional pose dependency: [PR #45](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/45)
+passed all **13 checks** on head `7f5d50f` and was squash-merged as `dfa6876` with the same tree.
+Post-merge CI, browser, extras and dependency-security workflows also passed on `dfa6876`.
+
 2026-11-04 pose dependency correction, on the local `fix/pose-opencv-resolution` working tree
 based on `main` `5bc01fe`: constrain MediaPipe's separate OpenCV contrib dependency to 4.x,
 matching the base headless range. Before the change, a clean, unlocked Python 3.12 install
@@ -1008,8 +1020,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Latest merged baseline: `9f686d1`** | PR #43 was squash-merged into `main` with the same tree as checked head `d2aecf7`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 11 remote checks passed for PR #44 head** | Checked head `62e5405`: Python 3.11–3.14, Docker, PDF, pose, Streamlit floor, mypy, dependency audit and browser smoke pass. Verify later-commit results against their own SHAs |
+| G1 Reproducible source | **Latest merged baseline: `dfa6876`** | PR #45 was squash-merged into `main` with the same tree as checked head `7f5d50f`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 13 remote checks passed for PR #45 head** | Checked head `7f5d50f`: Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy, dependency audit and browser smoke pass; post-merge workflows pass on `dfa6876`. Verify later changes against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

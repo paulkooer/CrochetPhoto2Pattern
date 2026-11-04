@@ -14,6 +14,16 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+2026-11-04 待选颜色显示（基于 `main` `dfa6876` 的本地 `fix/placeholder-color-labels` 工作树）：
+结果、结构、进度及 Markdown/PDF 将 `skin`／`body` 显示为待选色，含已记录的自动换线说明；PDF 增加部件
+基础颜色。图解原值和材料聚合不变，导出缓存为 **16**。本地 Python 3.12 全量 **2576 passed、2 skipped，91.99s**；
+Ruff、mypy（213 文件）通过。本地 Chromium 的
+**22 条合成流程**及独立画布检查通过，无页面错误或被拦截的外部请求。该提交前快照尚无远端 CI、未做实体试钩。
+
+2026-11-04 姿态可选依赖（[PR #45](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/45)）：
+头提交 `7f5d50f` 的 **13 项检查全部通过**，squash 合入 `dfa6876` 且合并树相同；合并后 CI、
+浏览器、可选依赖及安全审计工作流也在 `dfa6876` 通过。
+
 2026-11-04 姿态依赖修正（基于 `main` `5bc01fe` 的本地 `fix/pose-opencv-resolution` 工作树）：
 MediaPipe 引入的 OpenCV contrib 单独限制为 4.x，与基础 headless 的范围一致。修正前在全新 Python 3.12
 无锁环境中解析出 contrib 5.0.0.93 与 headless 4.x；修正后，在独立的 macOS Python 3.11.15 和 3.12.13
@@ -847,8 +857,8 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **最近合并基线：`9f686d1`** | PR #43 已 squash 合入 `main`，合并树与受检头提交 `d2aecf7` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **PR #44 头提交的 11 项远端检查通过** | 受检头提交 `62e5405`：Python 3.11–3.14、Docker、PDF、pose、Streamlit 下限、mypy、依赖审计和浏览器冒烟均通过。后续提交的检查按各自 SHA 核对 |
+| G1 可复现源码 | **最近合并基线：`dfa6876`** | PR #45 已 squash 合入 `main`，合并树与受检头提交 `7f5d50f` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
+| G2 支持版本自动化 | **PR #45 头提交的 13 项远端检查通过** | 受检头提交 `7f5d50f`：Python 3.11–3.14、Docker、PDF、锁定及无锁 pose、Streamlit 下限、mypy、依赖审计和浏览器冒烟均通过；合并后工作流在 `dfa6876` 通过。后续提交按各自 SHA 核对 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛（含可钩率 100%，以及除声明不支持的构造外 Parade 100% 完整导出）。默认本地流程只交付固定模板部件，部件宏 F1 高于模板基线这一条仍需新的识别能力 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
