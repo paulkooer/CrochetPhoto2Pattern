@@ -8,6 +8,16 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-04 Photo data warnings for older trial bundles
+
+- New trial bundles still omit thumbnails and brush masks. Restored older bundles retain exact source bytes to preserve the trial's hash binding; the sidebar and trial panel warn when those bytes contain a thumbnail or mask, and explain that a new trial does not inherit old measurements.
+- Clarify that backups cannot restore the brush selection or retain its correction provenance, although the resulting pattern and silhouette summary remain. Other original fields can also remain in older trial bundles.
+
+### Fixed — 2026-11-04 Backup and colour-selection guidance after review
+
+- Correct both READMEs: backups, shares, projects and new trial bundles omit the brush mask and photo thumbnail but can still contain photo-derived analysis, silhouette and colour summaries. Saving to enabled single-user history keeps the mask and thumbnail on the application host. The result page explains share contents and the boundary for brush-corrected results.
+- The colour preview explains that explicit rounds matching the old base are kept, and warns when no effective round colour changes. Parts without stable copy identities offer whole-part guidance and explain the condition for new patterns. The READMEs describe both Parade export and strict completeness rates; unsupported constructions remain unchanged.
+
 ### Added — 2026-11-04 Part-level yarn colour selection V1
 
 - Result chapter 5 gains a "yarn colour" panel: colour a whole part, colour a single physical instance (only the left arm, say), or colour the head and body sections of a one-piece head-and-body separately. The data flow, data model, compatibility plan, interaction, exports and acceptance checklist are in the [part-level colour selection specification](docs/part-color-selection.en.md).
@@ -230,11 +240,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - Upgrade Pillow to 13.0.0 (uploads decode untrusted images), Streamlit to 1.66.1 (which no longer depends on GitPython) and certifi to 2026.10.23, clearing the known advisories in the lock. The Pillow lower bound is now 13.0.0.
 - Uploads are decoded only as JPEG/PNG, matching the uploader. The Docker production image starts with `--client.showErrorDetails=none`, so uncaught exceptions no longer show types, messages or tracebacks in the browser; local development keeps full tracebacks.
 
-### Security — 2026-10-29 Escaped external text and local-only photo data
+### Security — 2026-10-29 Escaped external text and host-only thumbnails and brush masks
 
 - Free text from share links and imported backups, such as part names, colors and notes, is escaped on result pages and in Markdown exports, so it can no longer render external images or disguised links. Markdown table cells additionally escape pipes and fold line breaks.
-- Share links, backups, project files and trial bundles omit photo-derived data (the 96 px `preview` thumbnail and the hand-corrected `mask_review` silhouette). In-session results and local history keep thumbnails, and history accepts only locally generated JPEG data URLs.
-- Pattern revision hashes exclude photo-derived data. Projects saved earlier with a thumbnail still restore their progress and notes and omit the thumbnail when saved again; the project format remains schema 1.
+- Share links, backups, project files and newly created trial bundles omit the 96 px `preview` thumbnail and the hand-corrected `mask_review` brush mask. In-session results and local history keep thumbnails, and history accepts only locally generated JPEG data URLs.
+- Pattern revision hashes exclude the photo thumbnail and brush mask. Projects saved earlier with a thumbnail still restore their progress and notes and omit the thumbnail when saved again; the project format remains schema 1.
 
 ### Fixed — 2026-10-29 Generation correctness and export consistency
 

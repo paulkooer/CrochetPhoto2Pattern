@@ -36,6 +36,18 @@ class TrialBundle:
     draft: TrialObservationDraft | None = None
 
 
+def trial_source_photo_fields(source: bytes) -> tuple[str, ...]:
+    """Identify retained image-derived fields without changing the bound source bytes."""
+    data = decode_backup_json(source)
+    fields = []
+    if data.get("preview"):
+        fields.append("preview")
+    geometry = data.get("geometry")
+    if isinstance(geometry, Mapping) and geometry.get("mask_review") is not None:
+        fields.append("mask_review")
+    return tuple(fields)
+
+
 def _checked_bundle(source: bytes, record: TrialRecord,
                     draft: TrialObservationDraft | None = None) -> TrialBundle:
     record = TrialRecord.model_validate(record.model_dump())
@@ -53,8 +65,7 @@ def _checked_bundle(source: bytes, record: TrialRecord,
 
 def create_trial_bundle(result: Mapping[str, Any], *, trial_id: str, maker_id: str,
                         cohort: Literal["calibration", "validation"] = "calibration") -> TrialBundle:
-    # 试钩包会发给第三方制作者——剔除照片衍生数据（缩略图 + 主体剪影），
-    # 只携带图解本身。
+    # 试钩包会发给第三方制作者：剔除缩略图与画笔掩码，其他分析摘要仍可能保留。
     backup = strip_photo_derived(PatternResult.from_result(result).to_backup())
     source = json.dumps(backup, ensure_ascii=False,
                         sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")

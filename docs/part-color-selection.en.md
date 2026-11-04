@@ -126,7 +126,9 @@ round listed in the preview.
   all travel through the same `PatternResult`/`rebuild_params` contract, so the fields
   round-trip with `params.parts[]`. Project progress binds to the pattern revision
   (`pattern_revision`); a manual colouring changes the pattern, so progress is judged by §7.
-  Photo-derived data is still stripped as before (`preview`, `geometry.mask_review`).
+  Backups, shares, projects and new trial bundles strip `preview` and `geometry.mask_review`;
+  enabled single-user history stores both on the application host. Restored old trial bundles
+  preserve the original pattern bytes and may still contain those fields.
 - **Export cache**: raised whenever exported content changes (including per-colour and
   per-copy colours). This round raises it from **17 to 18**, so Markdown/PDF/Parade from
   older sessions must be regenerated. The current value is
@@ -157,7 +159,9 @@ cancel, undo, redo.
 4. **Instance colouring** (when `quantity > 1` and stable IDs exist): choose the single-copy
    uniform option and the instance, or restore that copy to its part colours. Whole-part
    uniform recolouring clears copy overrides after an explicit notice. Without stable IDs,
-   new single-copy colouring is unavailable.
+   new single-copy colouring is unavailable, and the panel offers whole-part colouring.
+   A newly generated pattern can offer single-copy colouring if it has stable IDs; the
+   correspondence to old physical copies still needs review.
 5. **One-piece head-and-body sections**: when the part is `头身（一体）`, two colours are
    offered, one for the head section and one for the body section. The boundary comes from
    `ONE_PIECE_NECK_MARKER` in `app/models/parts.py` (the generator writes that marker into

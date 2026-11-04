@@ -39,8 +39,8 @@ def encode_result(result: dict[str, Any]) -> str | None:
     序列化走 PatternResult：pydantic 部件对象自动 dump，schema_version
     随 token 下发供未来版本识别。
     """
-    # 分享 token 剔除照片衍生数据（preview 缩略图 + geometry.mask_review
-    # 主体剪影）——分享链接会发给他人，只应携带图解。
+    # 分享 token 剔除 preview 缩略图和 geometry.mask_review 画笔掩码；
+    # 其他照片分析、轮廓与配色摘要仍可能随图解保留。
     payload = strip_photo_derived(PatternResult.from_result(result).to_backup())
     blob = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     if len(blob) > _MAX_DECOMPRESSED_BYTES:

@@ -78,7 +78,7 @@ def project_backup(result: ResultData, progress: dict[str, bool], notes: str = "
     from app.models.validator import require_valid_pattern
 
     require_valid_pattern(result["params"])
-    # 工程文件会下载到用户设备、也可能被转发——只携带图解，剔除照片衍生数据。
+    # 工程文件可能被转发：剔除缩略图与画笔掩码，其他分析摘要仍可能保留。
     data = strip_photo_derived(PatternResult.from_result(result).to_backup())
     state = ProjectState(pattern_revision=pattern_revision(data), saved_with_version=software_version(),
                          completed_rounds=progress, notes=notes,

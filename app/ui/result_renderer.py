@@ -859,9 +859,8 @@ def render_results(result: ResultData, slot: str) -> None:
     # ── 完整结果备份/导入（刷新会丢 session，备份 JSON 可跨会话恢复）───────
     # F24：备份键集走 _BACKUP_KEYS 与分享同构——旧版只写三键，导入后
     # 快速调尺寸会把一体件拆回分件、egg 退化 ladder（style/spans 全丢）
-    # 下载的备份也可能被转发分享（分享链接过大时本就建议改用它），因此剔除
-    # 照片衍生数据（preview 缩略图 + mask_review 主体剪影），与文档“只携带图解”
-    # 的声明一致。本机历史缩略图另走 history 列保存，不受影响。
+    # 下载的备份也可能被转发分享，因此剔除 preview 缩略图和 mask_review
+    # 画笔掩码；照片分析与轮廓摘要仍可能保留。单用户历史不走此导出路径。
     backup_json = json.dumps(strip_photo_derived(PatternResult.from_result({
         **result, "params": serializable_params,
     }).to_backup()), ensure_ascii=False)
@@ -873,8 +872,11 @@ def render_results(result: ResultData, slot: str) -> None:
             file_name="amigurumi_backup.json",
             mime="application/json",
             key=f"dl_backup_{result_key}",
-            help="含解析/结构/参数的完整结果，可稍后在任意会话导入恢复",
+            help="含解析、结构与参数，可稍后导入恢复图解；不含照片缩略图和人工修正掩码",
         )
+        if (result.get("geometry") or {}).get("mask_review"):
+            st.caption("备份、分享、工程文件及新建试钩包不保存画笔修正掩码；生成的图解与轮廓摘要仍会保存，"
+                       "但恢复后无法识别画笔修正来源。要重新修正选区须重新上传照片。")
         st.download_button(
             "下载 JSON",
             applied_params_json,
@@ -931,8 +933,8 @@ def render_results(result: ResultData, slot: str) -> None:
         if ws["share"] is not None and _share_token is None:
             st.info("图解超过分享链接大小上限，请使用「备份完整结果」文件分享。")
         elif _share_token is None:
-            st.caption("🔗 点「生成分享链接」得到可分享的 URL 参数；"
-                       "图解过大时会提示改用「备份完整结果」文件")
+            st.caption("🔗 点「生成分享链接」得到可分享的 URL 参数；链接包含图解和分析摘要，"
+                       "不含照片缩略图与画笔掩码。图解过大时请使用「备份完整结果」文件。")
         else:
             st.caption(f"🔗 分享链接（{len(_share_token)}/6000 字符，"
                        f"复制下面整行拼到本应用域名后打开即载入；"

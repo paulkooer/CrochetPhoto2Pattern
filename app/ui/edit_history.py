@@ -193,7 +193,7 @@ def _render_preview_detail(detail: dict | None) -> None:
         st.caption("受影响的圈次（旧色 → 新色）")
         st.table(detail["affected"])
     if detail.get("kept"):
-        st.caption("按「保留已有条纹」保留的圈（已指定颜色，不会被覆盖）")
+        st.caption("按「保留已有条纹」保留的圈（已有圈色或逐份配色，不会被覆盖）")
         st.table(detail["kept"])
     if materials := detail.get("materials"):
         st.caption("逐色材料用量（估算，含预留线尾）")

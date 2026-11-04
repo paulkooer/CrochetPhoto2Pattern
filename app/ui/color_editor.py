@@ -74,10 +74,14 @@ def _preview_detail(preview: dict) -> dict:
         captions.append(f"分段边界：第 {preview['neck_row']} 圈之后属于身体段"
                         "（来自图解中记录的「此处为颈部」标记）。")
     if preview.get("kept"):
-        captions.append("已指定颜色的圈按「保留已有条纹」保留，不会被覆盖。")
+        captions.append("表中圈次保留已有圈色或逐份配色。圈色来源无法可靠区分；"
+                        "即使与旧基础色相同，也不会被覆盖。")
     warnings = [
         "已钩出的旧颜色不会因为图解改色而改变；勾选记录不代表实物无需返工。",
     ]
+    if preview.get("kept") and not preview.get("affected"):
+        warnings.append("本次没有改变任何圈的实际颜色。若要覆盖全部逐圈和逐份配色，"
+                        "请选择「统一换色」。")
     if preview.get("mode") == MODE_UNIFORM and preview.get("scope") == "part":
         warnings.append("统一换色会覆盖该部件的全部逐圈颜色（含条纹与手改颜色）；"
                         "也会覆盖逐份配色；被覆盖的颜色只能靠撤销回到修改前。")
@@ -140,7 +144,8 @@ def render_color_editor(result: ResultData, slot: str) -> None:
             if part.get("instance_colors"):
                 scopes.append("仅所选实体（恢复部件配色）")
         elif quantity > 1:
-            st.caption("该部件缺少稳定的实体身份，只能对整个部件选色。")
+            st.caption("该部件缺少稳定的实体身份，不能单份选色，可选择整个部件选色。"
+                       "新生成图解如具有稳定身份，可单独选色；旧实体的对应关系仍需核对。")
         if is_one_piece and neck is not None:
             scopes.append("头部段与身体段分别选色")
         scope = st.radio("修改范围", scopes, key=f"{prefix}_scope", horizontal=False)
@@ -181,8 +186,9 @@ def render_color_editor(result: ResultData, slot: str) -> None:
                         MODE_KEEP_STRIPES: "设置基础色并保留已有条纹",
                         MODE_UNIFORM: "统一换色（覆盖逐圈颜色）",
                     }[value], key=f"{prefix}_mode")
-                st.caption("「保留已有条纹」只改未单独指定颜色的圈；已指定的圈与逐份配色"
-                           "保持不变并在预览中列出。「统一换色」会覆盖全部圈和逐份配色。")
+                st.caption("「保留已有条纹」只改继承部件基础色的圈；已记录的圈色"
+                           "即使与旧基础色相同也会保留，逐份配色也保持不变，预览会列出。"
+                           "「统一换色」会覆盖全部圈和逐份配色。")
 
         st.caption("纯颜色修改通常保留已完成圈次；涉及接合等情况仍可能清除，具体以预览为准。"
                    "已钩出的旧颜色不会因为图解改色而改变。3D 预览按部件主色示意，"

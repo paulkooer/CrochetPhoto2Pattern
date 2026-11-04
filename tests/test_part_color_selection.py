@@ -482,6 +482,48 @@ def test_colour_panel_offers_per_instance_scope_only_for_multi_copy_parts():
     assert any("实体顺序与逐圈进度记录一致" in c.value for c in at.caption)
 
 
+def test_colour_panel_explains_when_legacy_copies_cannot_be_selected_individually():
+    result = _result()
+    result["structure"] = {"parts": []}
+    at = AppTest.from_string(_COLOR_UI, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.selectbox(key=f"edit_{RID}_color_part").set_value(2).run()
+    assert not at.exception
+    assert at.radio(key=f"edit_{RID}_color2_scope").options == ["整个部件"]
+    assert any("缺少稳定的实体身份" in c.value and "整个部件选色" in c.value for c in at.caption)
+    assert any("旧实体的对应关系仍需核对" in c.value for c in at.caption)
+    at.selectbox(key=f"edit_{RID}_color2_pick").select("蓝色").run()
+    at.button(key=f"edit_{RID}_color2_preview").click().run()
+    assert not at.exception and not at.error
+    assert at.session_state["workspace_result"]["pending_preview"] is not None
+
+
+def test_colour_panel_explains_when_all_existing_round_colours_are_preserved():
+    result = _result()
+    body = _part(result, "身体")
+    body["color"] = "红色"
+    for rd in body["rounds"]:
+        rd["color"] = "红色"  # Explicit colours equal to the old base still stay unchanged.
+    at = AppTest.from_string(_COLOR_UI, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.selectbox(key=f"edit_{RID}_color_part").set_value(1).run()
+    at.selectbox(key=f"edit_{RID}_color1_pick").select("蓝色").run()
+    at.button(key=f"edit_{RID}_color1_preview").click().run()
+    assert not at.exception
+    pending = at.session_state["workspace_result"]["pending_preview"]
+    assert not pending["detail"]["affected"]
+    assert len(pending["detail"]["kept"]) == len(body["rounds"])
+    assert {row["颜色"] for row in pending["detail"]["kept"]} == {"红色"}
+    assert any("圈色来源无法可靠区分" in c.value for c in at.caption)
+    assert any("没有改变任何圈的实际颜色" in w.value for w in at.warning)
+    at.button(key=f"edit_{RID}_preview_apply").click().run()
+    updated = _part(at.session_state["result"], "身体")
+    assert updated["color"] == "蓝色"
+    assert {rd["color"] for rd in updated["rounds"]} == {"红色"}
+
+
 def test_colour_panel_labels_the_one_piece_sections_and_their_boundary():
     result = _onepiece_result()
     result["result_id"] = RID

@@ -14,6 +14,7 @@ from app.trials import (
     TrialDataError,
     analyze_trials,
     create_trial_draft,
+    create_trial_draft_from_bytes,
     decode_trial_json,
     load_trial_records,
 )
@@ -23,6 +24,7 @@ from app.utils.trial_bundle import (
     create_trial_bundle,
     decode_trial_bundle,
     encode_trial_bundle,
+    trial_source_photo_fields,
     update_trial_bundle,
 )
 from tests.test_app_smoke import _APP, _mock_result
@@ -57,6 +59,22 @@ def _zip(members):
 
 def _members(bundle):
     return [("pattern.json", bundle.source), ("trial-a.trial.json", bundle.record.model_dump_json())]
+
+
+def _legacy_photo_archive(*, preview: bool, mask: bool):
+    from app.schemas import PatternResult
+
+    result = _mock_result("legacy-photo")
+    if preview:
+        result["preview"] = "data:image/jpeg;base64,/9j/AAAA"
+    if mask:
+        result["geometry"]["used_for_generation"] = True
+        result["geometry"]["mask_review"] = {
+            "source": "user_brush", "image_token": "a" * 64,
+            "width": 2, "height": 1, "pixels": "10"}
+    source = json.dumps(PatternResult.from_result(result).to_backup(), ensure_ascii=False).encode()
+    record = create_trial_draft_from_bytes(source, trial_id="trial-a", maker_id="maker-a")
+    return _zip([("pattern.json", source), ("trial-a.trial.json", json.dumps(record))]), source
 
 
 def _click(at, label):
@@ -142,6 +160,75 @@ def test_reformatting_source_cannot_silently_rebind_a_trial():
     data = _zip([("pattern.json", bundle.source + b"\n"), _members(bundle)[1]])
     with pytest.raises(ValueError, match="不匹配"):
         decode_trial_bundle(data)
+
+
+@pytest.mark.parametrize("preview,mask,expected", [
+    (False, False, ()),
+    (True, False, ("preview",)),
+    (False, True, ("mask_review",)),
+    (True, True, ("preview", "mask_review")),
+])
+def test_existing_trial_reports_retained_photo_fields_without_rewriting_source(preview, mask, expected):
+    archive, source = _legacy_photo_archive(preview=preview, mask=mask)
+    bundle = decode_trial_bundle(archive)
+    assert trial_source_photo_fields(bundle.source) == expected
+    assert bundle.source == source
+    assert bundle.record.pattern.sha256 == hashlib.sha256(source).hexdigest()
+    updated = update_trial_bundle(bundle, swatch=bundle.record.swatch.model_dump(),
+                                  observation={"notes": "记录仍然绑定原图解"}, completed=False)
+    with ZipFile(BytesIO(encode_trial_bundle(updated))) as saved:
+        assert saved.read("pattern.json") == source
+    assert updated.draft.notes == "记录仍然绑定原图解"
+
+
+def test_trial_panel_warns_about_photo_fields_after_restoring_and_saving(monkeypatch):
+    archive, source = _legacy_photo_archive(preview=True, mask=True)
+    upload = [archive]
+    monkeypatch.setattr("app.ui.trial_editor.st.file_uploader", lambda *a, **k: BytesIO(upload[0]))
+    at = _app()
+    at.button(key="trial_restore_result").click().run()
+    assert not at.exception
+    warning = next(w.value for w in at.warning if "此试钩包的原图解包含" in w.value)
+    assert "照片缩略图" in warning and "画笔修正掩码" in warning
+    assert "保存并下载旧试钩包" in warning
+    assert "新包不会继承旧测量" in warning
+    token = at.session_state["trial_workspace_result"]["token"]
+    at.number_input(key=f"trial_fields_result_{token}_hook").set_value(4.0)
+    _click(at, "保存记录并更新下载")
+    assert not at.exception and not at.error
+    assert any("此试钩包的原图解包含" in w.value for w in at.warning)
+    saved = at.session_state["trial_workspace_result"]
+    assert saved["bundle"].source == source
+    assert saved["bundle"].record.swatch.hook_mm == 4.0
+    with ZipFile(BytesIO(saved["archive"])) as output:
+        assert output.read("pattern.json") == source
+    upload[0] = encode_trial_bundle(_draft())
+    at.button(key="trial_restore_result").click().run()
+    assert not at.exception
+    assert not any("此试钩包的原图解包含" in w.value for w in at.warning)
+
+
+def test_sidebar_warns_about_photo_fields_in_opened_trial(monkeypatch):
+    archive, source = _legacy_photo_archive(preview=True, mask=False)
+    monkeypatch.setattr("app.ui.trial_editor.st.file_uploader",
+                        lambda *a, **k: BytesIO(archive) if k.get("key") == "trial_open_file" else None)
+    at = AppTest.from_file(_APP, default_timeout=30).run()
+    at.button(key="trial_open_apply").click().run()
+    assert not at.exception
+    warning = next(w.value for w in at.sidebar.warning if "此试钩包的原图解包含" in w.value)
+    assert "照片缩略图" in warning and "画笔修正掩码" not in warning
+    assert at.session_state["trial_workspace_result"]["bundle"].source == source
+
+
+def test_new_trial_created_from_photo_result_omits_photo_fields():
+    from app.schemas import PatternResult
+
+    archive, _ = _legacy_photo_archive(preview=True, mask=True)
+    original = json.loads(decode_trial_bundle(archive).source)
+    bundle = create_trial_bundle(PatternResult.from_result(original).to_result_dict(),
+                                 trial_id="trial-new", maker_id="maker-a")
+    assert not trial_source_photo_fields(bundle.source)
+    assert "mask_review" not in json.loads(bundle.source)["geometry"]
 
 
 @pytest.mark.parametrize("damage", ["extra", "path", "filename", "no_trial", "bad_zip", "oversize_record"])

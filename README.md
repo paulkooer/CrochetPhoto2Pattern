@@ -36,11 +36,13 @@ crochet ([CrochetBench, ACL 2026](https://arxiv.org/abs/2511.09483)) shows model
 performance drops sharply when evaluation moves from surface-level similarity to
 executable correctness — models describe well but rarely produce workable instructions.
 This project therefore treats the pattern as a checkable artifact: every generated
-pattern passes an algebra/self-check gate before download, and the evaluation protocol
-reports a second-tier `parade_export_rate` — whether the result can be translated into
-the [CrochetPARADE](https://crochetparade.org) pattern language (independent
-structural analysis, 3D rendering, and stitch-tension checks; paste the exported DSL
-into their locally-run web app). This does not establish physical correctness of a generated object.
+pattern passes an algebra/self-check gate before download. The evaluation protocol reports
+two [CrochetPARADE](https://crochetparade.org) measures: `parade_export_rate` permits
+constructions the exporter declares unsupported, while `parade_complete_rate` counts only
+strictly complete exports. Open ring starts for separate skirts and cross-part reserved-loop
+joins remain unsupported, so the former passing does not imply a complete translation.
+The exported DSL can be pasted into their locally-run web app for structural analysis,
+3D rendering, and stitch-tension checks; these do not establish physical correctness.
 
 ## Features
 
@@ -70,9 +72,9 @@ Unknown part names remain available for review. Remove mistaken labels or select
   prior is not yet calibrated on authorized photos, and the head box remains adjustable.
 - **CrochetPARADE export:** translate the pattern into the
   [CrochetPARADE](https://crochetparade.org) DSL (result page / `--parade`) for
-  independent 3D rendering and stitch-tension analysis — a second-tier
-  executable-correctness check reported by the evaluation protocol
-  (`parade_export_rate`).
+  independent 3D rendering and stitch-tension analysis. Evaluation reports both
+  `parade_export_rate` (allowing declared exceptions) and the strict
+  `parade_complete_rate`.
 - Correct multiplicity accounting for paired arms, legs, and ears across stitches,
   materials, time estimates, exports, and progress.
 - Photo recognition pauses for review: crop the subject, inspect the outline/head box,
@@ -83,7 +85,9 @@ Unknown part names remain available for review. Remove mistaken labels or select
   body colors only inherit its vertical interval.
 - Enable the foreground brush to add missed regions or erase background directly
   on the photo. Each completed stroke updates geometry and colors; undo the last
-  20 strokes or restore automatic segmentation. Backups retain the corrected mask.
+  20 strokes or restore automatic segmentation. Backups retain the resulting pattern
+  and silhouette summary, but omit the brush mask; restoring a backup cannot recover the
+  selection or establish whether it was manually corrected.
   Part names still need review; hidden or cropped-out anatomy cannot be recovered.
 - Form-based part size/quantity/position/attachment editing and a per-round stitch table,
   plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
@@ -170,6 +174,7 @@ Optional pose landmarks may download model weights on first use; provide
 - Only use images you are authorized to process.
 - Pattern history is disabled by default. Only trusted single-user installations may
   set `CROCHET_HISTORY_MODE=single_user` to use the server's local SQLite database.
+  Saving to history also stores the brush mask and photo thumbnail on the application host.
   Shared/public deployments must keep `disabled`; history has no user authentication
   or ownership isolation. Existing databases are preserved. Share links embed compressed
   pattern data in the URL; opening one still sends the token to the host running the app,
@@ -204,8 +209,13 @@ completed rounds for each physical copy, notes and a pattern revision. Reopen th
 the same sidebar uploader. Save again after working: each file captures the state when Save
 was clicked. Edits report affected progress resets; undo restores progress. Ordinary pattern
 backups and share links omit personal notes/progress; undo history remains session-only.
-Backups, share links, project files and trial bundles also omit photo-derived data (the 96 px
-`preview` thumbnail and the hand-corrected `mask_review` silhouette).
+Backups, share links, project files and newly created trial bundles omit the 96 px photo thumbnail
+(`preview`) and the hand-corrected brush mask (`geometry.mask_review`). They can still
+contain photo-derived analysis, silhouette and colour summaries.
+Restored older trial bundles preserve their exact source bytes and may still contain those
+fields or other original data; the interface warns if the thumbnail or mask is present.
+Upload the photo again to make a new brush correction. If single-user history is enabled,
+choosing **存入历史** also saves the mask and thumbnail on the application host.
 Similarly named custom parts, including names ending in `copy2`, track each physical copy
 independently. Bulk completion and reset affect only the selected part and preserve project notes.
 For paginated patterns, **前往下一未完成圈** jumps to the selected part's first unchecked
