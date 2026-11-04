@@ -11,6 +11,10 @@
 > physical test crochets. Verify dimensions, tension, and assembly before publishing a
 > generated pattern. See [System Status and Release Gates](docs/system-status.md).
 
+This README describes the current `main` branch. The version badge reflects the package
+version in `pyproject.toml`; entries under [Unreleased](CHANGELOG_EN.md#unreleased) may not
+be included in a published release.
+
 Photo analysis now runs locally by default. Cloud LLM interfaces, credential settings, and SDK dependencies have been removed. Review proportions and parts before generating; `--local` remains compatible with older commands.
 
 Migration: remove provider key/Base URL arguments from library constructors and replace `vision_mode="ai"` with `"local"`. Historical patterns retain provenance and usage on import. Run `uv sync --locked` to update the installed dependency environment.
@@ -35,8 +39,10 @@ described as validated outcomes.
 crochet ([CrochetBench, ACL 2026](https://arxiv.org/abs/2511.09483)) shows model
 performance drops sharply when evaluation moves from surface-level similarity to
 executable correctness — models describe well but rarely produce workable instructions.
-This project therefore treats the pattern as a checkable artifact: every generated
-pattern passes an algebra/self-check gate before download. The evaluation protocol reports
+This project therefore treats the pattern as a checkable artifact: the result page runs
+an algebra/self-check and blocks Markdown, PDF and CrochetPARADE exports when it fails.
+The backup and parameter JSON downloads remain available and do not imply a passing check.
+The evaluation protocol reports
 two [CrochetPARADE](https://crochetparade.org) measures: `parade_export_rate` permits
 constructions the exporter declares unsupported, while `parade_complete_rate` counts only
 strictly complete exports. Open ring starts for separate skirts and cross-part reserved-loop
@@ -93,6 +99,11 @@ Unknown part names remain available for review. Remove mistaken labels or select
   plus session undo/redo (up to 12 snapshots / 8 MB) and before/after comparisons.
   Canonically unchanged submissions retain the current result and redo history. Reapplying
   the same dimensions also retains sizing provenance when structure and analysis agree.
+- **Part-level yarn colour selection:** choose colours for a whole part, one physical copy,
+  or the head and body sections of a one-piece part. Preview affected rounds and materials,
+  then apply or cancel; whole-part choices can preserve existing stripes or replace all
+  colours. Single-copy selection requires stable instance IDs, and the 3D preview shows only
+  each part's base colour. See the [colour selection guide](docs/part-color-selection.en.md).
 - One per-color yarn purchase list with a separate subtotal; optional ball labels and
   weighed swatches refine grams, metres, and whole-ball counts for parts matching the
   swatch's recorded gauge. Other gauges retain heuristic estimates. Estimates include a

@@ -14,6 +14,15 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-04 photo-data boundaries and colour guidance: [PR #49](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/49)
+passed all **13 checks** on head `a68a412` and was squash-merged as `48b23f6` with the same
+tree. Post-merge CI, browser and extras workflows passed. Local Python 3.12 full suite:
+**2661 passed, 2 skipped in 99.53s**; Ruff and mypy (219 files) passed. A subsequent focused
+test also verified that the old-bundle warning clears after opening a clean bundle. On the clean
+head, local Chromium passed **25 synthetic browser flows** plus the standalone canvas check,
+with no page errors or blocked external requests. These checks do not establish real-photo
+accuracy, finished dimensions or physical crochetability; Beta and G3/G4 remain unchanged.
+
 2026-11-04 reviewed colour integration at code commit `8d0c1ab`, based on `main` `59f8737`:
 full local Python 3.12 suite **2650 passed, 2 skipped in 92.59s**, including **510** export and
 compatibility checks; Ruff and mypy (219 files) pass. A clean worktree at that exact commit
