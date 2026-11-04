@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 权威状态快照：2026-11-03。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 权威状态快照：2026-11-04。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 
@@ -13,6 +13,18 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 描述为“已验证尺寸、材料、工时或成品可钩性”的生产版本。
 
 ## 最近一次可复现验证
+
+2026-11-04 姿态依赖修正（基于 `main` `5bc01fe` 的本地 `fix/pose-opencv-resolution` 工作树）：
+MediaPipe 引入的 OpenCV contrib 单独限制为 4.x，与基础 headless 的范围一致。修正前在全新 Python 3.12
+无锁环境中解析出 contrib 5.0.0.93 与 headless 4.x；修正后，在独立的 macOS Python 3.11.15 和 3.12.13
+无锁环境中均安装 MediaPipe 1.2.2、OpenCV contrib/headless 4.14.0.94，通过 `uv pip check`、真实级联分类器
+及 `mp.Image` 检查，各通过 **42 项针对性测试**。本地 Python 3.12 全量 **2561 passed、2 skipped，90.74s**；
+Ruff、mypy（211 文件）、`uv lock --check` 和 wheel 依赖元数据检查通过；锁文件已有包版本不变。本工作树新增的
+Linux 无锁安装 CI 尚未运行。限制大版本不能消除两个发行包的 `cv2` 命名空间重叠，安装前请看 README；
+未做独立复核、授权照片评测或实体试钩，Beta 与 G3/G4 不变。
+
+2026-11-03 前端信息架构（[PR #44](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/44)）：
+头提交 `62e5405` 的 **11 项远端检查全部通过**后 squash 合入 `5bc01fe`，合并树相同。以下为提交前本地验证。
 
 2026-11-03 前端信息架构合并准备（`fix/frontend-info-architecture` 合入 `main` `9f686d1` 后的提交前工作树）：
 解决文档重叠，移除声明下限 1.66.1 以下才会使用的旧版按钮容器回退。全量 **2559 passed、2 skipped，91.63s**；
@@ -836,7 +848,7 @@ PDF/pose extras
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
 | G1 可复现源码 | **最近合并基线：`9f686d1`** | PR #43 已 squash 合入 `main`，合并树与受检头提交 `d2aecf7` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **PR #43 头提交的 11 项远端检查通过** | 受检头提交 `d2aecf7`：Python 3.11–3.14、Docker、PDF、pose、Streamlit 下限、mypy、依赖审计和浏览器冒烟均通过。合并后及后续提交的检查按各自 SHA 核对 |
+| G2 支持版本自动化 | **PR #44 头提交的 11 项远端检查通过** | 受检头提交 `62e5405`：Python 3.11–3.14、Docker、PDF、pose、Streamlit 下限、mypy、依赖审计和浏览器冒烟均通过。后续提交的检查按各自 SHA 核对 |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛（含可钩率 100%，以及除声明不支持的构造外 Parade 100% 完整导出）。默认本地流程只交付固定模板部件，部件宏 F1 高于模板基线这一条仍需新的识别能力 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |

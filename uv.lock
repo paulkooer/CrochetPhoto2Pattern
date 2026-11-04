@@ -654,6 +654,7 @@ pdf = [
 ]
 pose = [
     { name = "mediapipe", marker = "python_full_version < '3.13'" },
+    { name = "opencv-contrib-python", marker = "python_full_version < '3.13'" },
 ]
 
 [package.metadata]
@@ -663,6 +664,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11" },
     { name = "numpy", specifier = ">=1.24" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.3" },
+    { name = "opencv-contrib-python", marker = "python_full_version < '3.13' and extra == 'pose'", specifier = ">=4.8,<5" },
     { name = "opencv-python-headless", specifier = ">=4.8,<5" },
     { name = "packaging", marker = "extra == 'dev'", specifier = ">=24.0" },
     { name = "pillow", specifier = ">=13.0.0" },

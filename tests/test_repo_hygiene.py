@@ -171,14 +171,21 @@ def test_supported_python_matches_ci_and_lock():
 def test_ci_consumes_lock_file_for_core_and_optional_dependencies():
     for relative in ("ci.yml", "extras.yml"):
         workflow = (_REPO / ".github/workflows" / relative).read_text(encoding="utf-8")
-        assert "uv sync --locked" in workflow
-        assert "uv run --locked" in workflow
-        assert "pip install -e" not in workflow
+        # 核心/可选依赖的常规测试仍使用锁文件；pose-unlocked 是额外的
+        # 无锁安装验证，专门防止 PyPI 解析到未受约束的 OpenCV 大版本。
+        locked_jobs = workflow.split("\n  pose-unlocked:\n", 1)[0]
+        assert "uv sync --locked" in locked_jobs
+        assert "uv run --locked" in locked_jobs
+        assert "pip install -e" not in locked_jobs
 
     extras = (_REPO / ".github" / "workflows" / "extras.yml").read_text(
         encoding="utf-8"
     )
     assert 'UV_PYTHON: "3.11"' in extras
+    assert '\n  pose-unlocked:\n' in extras
+    unlocked = extras.split("\n  pose-unlocked:\n", 1)[1]
+    assert 'python: ["3.11", "3.12"]' in unlocked
+    assert "uv pip install -e '.[pose]'" in unlocked
 
     security = (_REPO / ".github" / "workflows" / "security.yml").read_text(
         encoding="utf-8"
@@ -227,10 +234,7 @@ def test_production_image_flags_and_ci_container_smoke():
 def test_pose_extra_avoids_vulnerable_protobuf_and_unverified_python_versions():
     pyproject = (_REPO / "pyproject.toml").read_text(encoding="utf-8")
     lock = (_REPO / "uv.lock").read_text(encoding="utf-8")
-    assert (
-        'pose = ["mediapipe>=1.0.1,<2; python_version < \'3.13\'"]'
-        in pyproject
-    )
+    assert '"mediapipe>=1.0.1,<2; python_version < \'3.13\'"' in pyproject
     assert '"protobuf>=6.33.5,<8"' in pyproject
     assert '"numpy>=2.3; python_version >= \'3.13\'"' in pyproject
     assert not re.search(r'name = "protobuf"\nversion = "[0-5]\.', lock)

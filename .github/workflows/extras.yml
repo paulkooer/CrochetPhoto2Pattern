@@ -46,3 +46,54 @@ jobs:
 
       - name: Test
         run: uv run --locked --extra dev --extra "${{ matrix.extra }}" pytest -q
+
+  pose-unlocked:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "${{ matrix.python }}"
+          enable-cache: true
+
+      - name: Install pose native runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgles2 libgl1 libglib2.0-0
+
+      # Install from project metadata, not uv.lock. The previous declaration
+      # allowed MediaPipe's contrib dependency to resolve to OpenCV 5.x.
+      - name: Install unlocked pose extra
+        run: |
+          uv venv --python "${{ matrix.python }}"
+          uv pip install -e '.[pose]' 'pytest>=7.0' 'packaging>=24.0'
+          uv pip check
+
+      - name: Exercise OpenCV and MediaPipe
+        run: |
+          .venv/bin/python - <<'PY'
+          from importlib.metadata import version
+          from pathlib import Path
+
+          import cv2
+          import mediapipe as mp
+          import numpy as np
+          from packaging.version import Version
+
+          for name in ("opencv-contrib-python", "opencv-python-headless"):
+              assert Version(version(name)).major == 4, (name, version(name))
+          assert Version(cv2.__version__).major == 4, cv2.__version__
+          cascade = Path(cv2.data.haarcascades) / "haarcascade_frontalface_default.xml"
+          assert not cv2.CascadeClassifier(str(cascade)).empty()
+          image = mp.Image(image_format=mp.ImageFormat.SRGB,
+                           data=np.zeros((8, 12, 3), dtype=np.uint8))
+          assert (image.width, image.height) == (12, 8)
+          assert mp.tasks.vision.PoseLandmarker
+          PY
+          .venv/bin/python -m pytest -q tests/test_pose_dependency_resolution.py \
+            tests/test_pose_spans.py tests/test_local_vision.py tests/test_subject_observation.py

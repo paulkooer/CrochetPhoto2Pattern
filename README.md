@@ -303,6 +303,13 @@ On Linux, install the packages that provide `libEGL.so.1` and `libGLESv2.so.2` (
 example `libegl1` and `libgles2` on Ubuntu) before using pose landmarks. The application
 falls back to template spans when either native library is unavailable.
 
+Install the optional pose extra in a separate virtual environment. MediaPipe requires
+`opencv-contrib-python`, while the base application requires `opencv-python-headless`;
+both packages share the `cv2` namespace. Both are constrained to OpenCV 4.x, but this
+does **not** remove the overlap: [OpenCV recommends installing only one distribution](https://pypi.org/project/opencv-contrib-python/).
+Installing, upgrading or removing either package can therefore break the other. If that
+happens, recreate the environment; omit the pose extra to use the normal fallback.
+
 ### Docker
 
 ```bash
