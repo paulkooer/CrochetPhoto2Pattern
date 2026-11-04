@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Documentation — 2026-11-04 Bilingual project overview
+
+- Document part-level colour selection, legacy identity and 3D preview limits; clarify which exports are blocked by a failed self-check and how the current `main` branch relates to the version badge. Record PR #49's local and remote validation in both system-status pages.
+
 ### Fixed — 2026-11-04 Photo data warnings for older trial bundles
 
 - New trial bundles still omit thumbnails and brush masks. Restored older bundles retain exact source bytes to preserve the trial's hash binding; the sidebar and trial panel warn when those bytes contain a thumbnail or mask, and explain that a new trial does not inherit old measurements.
