@@ -681,6 +681,119 @@ async function headProgress(page, scope, rid, checked) {
     assert.equal(appliedDraft.parts[0].rounds[0].notes,draft.parts[0].rounds[0].notes);
     record('advanced JSON panel starts collapsed, keeps a draft through preview and cancel, and downloads stay applied until regeneration');
 
+    // Part-level colour selection: preview lists the affected rounds and the
+    // "yarn already worked keeps its colour" notice, cancel is read-only, and
+    // apply/undo/redo keep the stitches and the completed rounds.
+    {
+      const colorPanel = samplePanel;
+      // appliedDraft is the params object downloaded from the JSON editor.
+      const headIndex = appliedDraft.parts.findIndex(part=>part.name==='头部');
+      const armIndex = appliedDraft.parts.findIndex(part=>part.name==='手臂');
+      assert(headIndex >= 0 && armIndex >= 0, 'the synthetic pattern should carry a head and an arm part');
+      await colorPanel.locator('h2.sheet-h',{hasText:'局部修正'}).scrollIntoViewIfNeeded();
+      await headProgress(samplePage,colorPanel,draftId,true);
+      await clickKey(samplePage,colorPanel,`edit_${draftId}_color${headIndex}_preview`);
+      await expect(colorPanel.getByText('修改影响预览 · 尚未应用',{exact:true})).toBeVisible();
+      await expect(colorPanel.getByText('受影响的圈次（旧色 → 新色）',{exact:true})).toBeVisible();
+      await expect(colorPanel.getByText(/已钩出的旧颜色不会因为图解改色而改变/).first()).toBeVisible();
+      assert.equal(await resultId(colorPanel),draftId);
+      const colorPreview = JSON.parse(await download(samplePage,key(colorPanel,`dl_backup_${draftId}`).getByRole('button'),path.join(output,'color-preview-before.json')));
+      assert.deepEqual(colorPreview.params,appliedDraft);
+      await samplePage.screenshot({path:path.join(output,'color-preview.png'),fullPage:true});
+      await clickKey(samplePage,colorPanel,`edit_${draftId}_preview_cancel`);
+      assert.equal(await resultId(colorPanel),draftId);
+      assert.deepEqual(JSON.parse(await download(samplePage,key(colorPanel,`dl_json_${draftId}`).getByRole('button'),path.join(output,'color-cancel.json'))),appliedDraft);
+
+      await clickKey(samplePage,colorPanel,`edit_${draftId}_color${headIndex}_preview`);
+      await clickKey(samplePage,colorPanel,`edit_${draftId}_preview_apply`);
+      const colorId = await resultId(colorPanel,draftId);
+      const coloured = JSON.parse(await download(samplePage,key(colorPanel,`dl_backup_${colorId}`).getByRole('button'),path.join(output,'color-applied.json')));
+      const colouredHead = coloured.params.parts[headIndex];
+      assert.equal(colouredHead.color_origin,'manual');
+      assert.notEqual(colouredHead.color,appliedDraft.parts[headIndex].color);
+      assert.deepEqual(coloured.params.parts.map(part=>part.rounds.map(round=>round.stitches)),
+                       appliedDraft.parts.map(part=>part.rounds.map(round=>round.stitches)));
+      assert(JSON.stringify(coloured).includes('"color_origin"'));
+      await expect(headCheck(colorPanel,colorId)).toBeChecked();
+      await samplePage.screenshot({path:path.join(output,'color-applied.png'),fullPage:true});
+
+      await clickKey(samplePage,colorPanel,`edit_${colorId}_undo`);
+      const colorUndoId = await resultId(colorPanel,colorId);
+      const colourUndone = JSON.parse(await download(samplePage,key(colorPanel,`dl_backup_${colorUndoId}`).getByRole('button'),path.join(output,'color-undo.json')));
+      assert.deepEqual(colourUndone.params,appliedDraft);
+      await clickKey(samplePage,colorPanel,`edit_${colorUndoId}_redo`);
+      const colorRedoId = await resultId(colorPanel,colorUndoId);
+      const colourRedone = JSON.parse(await download(samplePage,key(colorPanel,`dl_backup_${colorRedoId}`).getByRole('button'),path.join(output,'color-redo.json')));
+      assert.deepEqual(colourRedone.params,coloured.params);
+      await expect(headCheck(colorPanel,colorRedoId)).toBeChecked();
+      record('colour panel previews the affected rounds and the worked-yarn notice, cancel is read-only, and apply/undo/redo keep stitches and completed rounds');
+
+      // Per-copy colour: applied through the JSON editor so the flow reuses existing
+      // idioms, then verified in Markdown, the DSL download and a backup restore.
+      const perCopy = structuredClone(colourRedone.params);
+      const armPart = perCopy.parts[armIndex];
+      assert(armPart.quantity >= 2, 'the synthetic pattern should carry a paired arm part');
+      armPart.instance_colors = ['蓝色',...Array(armPart.quantity-1).fill(null)];
+      await fillKey(samplePage,colorPanel,`json_edit_${colorRedoId}`,JSON.stringify(perCopy));
+      await clickKey(samplePage,colorPanel,`regen_${colorRedoId}`);
+      const perCopyId = await resultId(colorPanel,colorRedoId);
+      const perCopyFile = path.join(output,'color-per-copy.json');
+      const perCopyBackup = JSON.parse(await download(samplePage,key(colorPanel,`dl_backup_${perCopyId}`).getByRole('button'),perCopyFile));
+      assert.deepEqual(perCopyBackup.params.parts[armIndex].instance_colors,armPart.instance_colors);
+      const colourMarkdown = (await download(samplePage,key(colorPanel,`dl_md_${perCopyId}`).getByRole('button'),path.join(output,'color-per-copy.md'))).toString();
+      assert(colourMarkdown.includes('逐份配色') && colourMarkdown.includes('同针法部件') && colourMarkdown.includes('蓝色'));
+      // The per-copy DSL text is asserted in tests/test_part_color_selection.py
+      // (test_instance_colour_reaches_markdown_pdf_and_the_dsl); this flow keeps to
+      // the panel, its exports that the brief lists, and the round-trip.
+      await samplePage.screenshot({path:path.join(output,'color-per-copy.png'),fullPage:true});
+
+      // A project file carries progress as well as the pattern, so restoring it
+      // also proves the new colour fields survive the round-trip.
+      await clickKey(samplePage,colorPanel,`project_save_${perCopyId}`);
+      const colourProject = path.join(output,'color-project.json');
+      await download(samplePage,samplePage.getByRole('dialog').getByRole('button',{name:'下载工程 JSON',exact:true}),colourProject);
+      const colourContext = await context();
+      const colourPage = lastPage = await colourContext.newPage();
+      await colourPage.goto(baseURL);
+      const colourSidebar = colourPage.locator('[data-testid="stSidebar"]');
+      await key(colourSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(colourProject);
+      await clickKey(colourPage,colourSidebar,'open_backup_apply');
+      const colourRestorePanel = colourPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
+      const colourRestoreId = await resultId(colourRestorePanel);
+      const colourRestored = JSON.parse(await download(colourPage,key(colourRestorePanel,`dl_backup_${colourRestoreId}`).getByRole('button'),path.join(output,'color-restored.json')));
+      assert.deepEqual(colourRestored.params.parts[armIndex].instance_colors,armPart.instance_colors);
+      assert.equal(colourRestored.params.parts[headIndex].color_origin,'manual');
+      await expect(headCheck(colourRestorePanel,colourRestoreId)).toBeChecked();
+      await colourContext.close();
+      lastPage = page;
+      record('per-copy colour reaches the Markdown export and survives a project restore with progress');
+
+      // The panel must stay usable on a phone: no horizontal page overflow.
+      const narrowContext = await context({width:390,height:844});
+      const narrowPage = lastPage = await narrowContext.newPage();
+      await narrowPage.goto(baseURL);
+      await narrowPage.getByRole('button',{name:'Expand sidebar',exact:true}).click();
+      const narrowSidebar = narrowPage.locator('[data-testid="stSidebar"]');
+      await key(narrowSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(perCopyFile);
+      await clickKey(narrowPage,narrowSidebar,'open_backup_apply');
+      const narrowPanel = narrowPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
+      const narrowId = await resultId(narrowPanel);
+      // The drawer has to be closed again before touching the main column: an open
+      // drawer overlays tap targets on a phone-sized viewport.
+      await narrowPage.locator('[data-testid="stSidebarCollapseButton"]').click();
+      await settle(narrowPage);
+      const narrowPart = key(narrowPanel,`edit_${narrowId}_color_part`);
+      await reveal(narrowPart);
+      await narrowPart.scrollIntoViewIfNeeded();
+      await expect(narrowPart).toBeVisible();
+      const overflow = await narrowPage.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+      assert(overflow <= 1,`the colour panel must not overflow a 390 px viewport (overflow ${overflow}px)`);
+      await narrowPage.screenshot({path:path.join(output,'color-narrow.png'),fullPage:true});
+      await narrowContext.close();
+      lastPage = page;
+      record('colour panel renders inside a 390 px viewport without horizontal overflow');
+    }
+
     // The legacy fixture saved one ambiguous head completion plus an unrelated hat completion.
     {
       const collisionContext = await context();

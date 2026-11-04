@@ -8,6 +8,17 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-11-04 Part-level yarn colour selection V1
+
+- Result chapter 5 gains a "yarn colour" panel: colour a whole part, colour a single physical instance (only the left arm, say), or colour the head and body sections of a one-piece head-and-body separately. The data flow, data model, compatibility plan, interaction, exports and acceptance checklist are in the [part-level colour selection specification](docs/part-color-selection.en.md).
+- "Set the base colour and keep existing stripes" changes inherited rounds while retaining all explicit round colours. "Recolour uniformly" replaces all rounds and copy overrides after a per-copy, per-round preview. A part choice records `color_origin="manual"`; a per-copy choice records the colour and stable instance ID so reordering preserves attribution. Missing legacy origin is not guessed; photo evidence is unchanged.
+- The material list attributes stitches per copy, so recolouring one copy counts that colour for one copy only. Markdown/PDF list per-copy colours and state that the round colour-change steps describe the shared pattern; the CrochetPARADE export emits a whole-copy `COLOR:` for an individually coloured copy and no per-round colour boundaries for it. The 3D preview still shows one base colour per part and now says plainly that it shows neither stripes nor per-copy colours.
+- Progress rule change: verified pure colour changes preserve completed rounds; reserved-loop joins and instance reordering remain conservative, and construction edits clear affected progress as before. Every preview warns that yarn already worked keeps its original colour. Resizing or gauge regeneration retains safely mappable manual colours and rejects ambiguous mappings rather than losing them silently.
+- Adds a [specification](docs/part-color-selection.en.md) and four proposed evaluation metrics; whole-image Top-3 does not establish part-level colour accuracy. Report "not evaluated" when the required real data is missing.
+- Pattern backup format is now **2**: old patterns and projects migrate, while older applications explicitly reject new files instead of silently dropping colour choices. Project-state and trial-record formats remain independently versioned.
+- Export cache is now **18**, so Markdown/PDF/Parade from older sessions must be regenerated; `docs/schemas/crochet_part.schema.json` is regenerated with the model.
+- Not implemented: per-round colour origins, in-round changes, per-colour swatches or yarn densities, and per-round/per-copy 3D colours. Parade reports unconvertible custom colours as incomplete; ring starts and reserved half-stitch joins remain unsupported (specification §12).
+
 ### Fixed — 2026-11-04 Parade complete-part count
 
 - An open-start skirt tube still produces an incomplete DSL approximation with a warning, but no longer counts as a faithfully complete exported part. The emitted-round count still counts generated DSL rounds, and repeated copies register the unsupported construction once. Evaluation thresholds and strict completeness remain unchanged; the export cache is now 17.

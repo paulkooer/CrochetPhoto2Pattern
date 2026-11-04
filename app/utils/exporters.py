@@ -8,6 +8,7 @@ from typing import Any
 
 from app import PRODUCT_NAME
 from app.models.instruction_checks import round_expression
+from app.models.parts import _part_instance_colors
 from app.models.stitch_notation import (
     NotationError,
     format_stitch_expression,
@@ -187,10 +188,21 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
         lines.append(
             f"## 🧶 {_md_cell(pd.get('name', '?'))}{qty_label} ({round_label})")
         lines.append("")
+        # 逐份选色：多份实体不再是"相同部件"，必须按份列出颜色，否则读者会
+        # 按单一颜色钩出两份（规格 §8）。
+        instance_colors = _part_instance_colors(pd)
         if quantity > 1:
-            lines.append(f"- **制作数量**：{quantity} 个相同部件")
+            lines.append(f"- **制作数量**：{quantity} 个相同部件" if instance_colors is None
+                         else f"- **制作数量**：{quantity} 个同针法部件（逐份配色见下）")
         lines.append(f"- **形状**：{_md_cell(pd.get('type', '—'))}")
         lines.append(f"- **颜色**：{_md_cell(display_color_name(pd.get('color', '—')))}")
+        if instance_colors is not None:
+            lines.append("- **逐份配色**：" + "；".join(
+                f"第 {index + 1} 份 "
+                f"{_md_cell(display_color_name(color) if color else '沿用逐圈配色')}"
+                for index, color in enumerate(instance_colors)))
+            lines.append("\n> 圈次说明里的换线步骤描述这份部件的共用针法；已单独改色的份"
+                         "整份使用自己的颜色，不再按这些换线步骤换色。")
         if caption := part_gauge_text(pd, g):
             lines.append(f"- **部件密度**：{caption}")
         if pd.get("diameter_cm"):

@@ -595,6 +595,18 @@ def render_results(result: ResultData, slot: str) -> None:
                 if any(part.get("color") in ("skin", "body")
                        for part in (result.get("params") or {}).get("parts", [])):
                     st.caption("待选色使用示意颜色，请根据实际毛线选色。")
+                from app.models.parts import _part_instance_colors
+
+                _params_parts = (result.get("params") or {}).get("parts", [])
+                _striped = any(
+                    any((rd.get("color") or part.get("color")) != part.get("color")
+                        for rd in (part.get("rounds") or []))
+                    for part in _params_parts)
+                _per_copy = any(_part_instance_colors(part) is not None
+                                for part in _params_parts)
+                if _striped or _per_copy:
+                    st.caption("3D 预览按部件主色示意：不显示逐圈条纹，也不显示各份实体"
+                               "各自的颜色；请以逐圈图解与材料清单为准。")
             else:
                 st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):

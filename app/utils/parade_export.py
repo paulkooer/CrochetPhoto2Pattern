@@ -31,6 +31,7 @@ from typing import Any
 
 from app.models.colors import YARN_COLORS
 from app.models.instruction_checks import instruction_issues, round_expression
+from app.models.parts import _part_instance_colors
 from app.models.stitch_notation import NotationError, StitchExpression, mentions_invisible_decrease
 from app.schemas import MAX_ROUND_STITCHES
 from app.utils.counts import integer_count as _integer_count
@@ -255,19 +256,48 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
             f"{name}: 首圈非魔法环（{n_first} 针环起），按 ring+sc{n_first}inc 导出，"
             "起针语义不符（闭合环 vs 开口），已标记为不完整；请对照原说明核对引拔/开口处理")
     # 魔法环行 + 首圈（首圈全部针目放入环：scNinc）
+    # 逐份选色：某份实体整份使用自己的颜色，该份不再输出逐圈换色边界——与
+    # 材料清单和 Markdown 的「该份整份使用此色」同一口径。
+    overrides = _part_instance_colors(part)
+    emitted_copies = 0
     for copy in range(quantity):
-        if copy:
+        override = overrides[copy] if overrides is not None and copy < len(overrides) else None
+        override_hex = _hex_of(override)
+        # A custom name has no known RGB. Reusing the shared part color would
+        # silently produce the wrong copy, so refuse that copy instead of guessing.
+        if override and not override_hex:
+            report.fail(f"{name} 第 {copy + 1} 份颜色「{override}」无法转换为色表或十六进制颜色；"
+                        "该份已跳过，请使用 Markdown/PDF 核对")
+            continue
+        # Legacy round colours may also be manually chosen; missing provenance
+        # cannot make an unconvertible colour faithful or safe to ignore. Keep
+        # their historically available stitch-only export, but mark it partial.
+        color_faithful = True
+        if not override:
+            unresolved = next((color for rd in rounds
+                               if (color := (rd.get("color") or part.get("color")))
+                               and color not in ("skin", "body") and not _hex_of(color)), None)
+            if unresolved:
+                prefix = f"{name} 第 {copy + 1} 份颜色「{unresolved}」无法转换为色表或十六进制颜色；"
+                if part.get("color_origin") == "manual":
+                    report.fail(prefix + "该份已跳过，请使用 Markdown/PDF 核对")
+                    continue
+                report.fail(prefix + "仅导出针法，颜色未忠实表达，请使用 Markdown/PDF 核对")
+                color_faithful = False
+        if emitted_copies:
             lines.append("start_anew")
-        if hex_color:
+        emitted_copies += 1
+        copy_hex = override_hex or hex_color
+        if copy_hex:
             # 每份实体都重置为部件色——多份拷贝不能继承上一份的结尾色
             #（条纹部件 ×N 时尤其重要）
-            lines.append(f"COLOR: {hex_color}")
-        last_color = hex_color
+            lines.append(f"COLOR: {copy_hex}")
+        last_color = copy_hex
         lines.append("ring")
         lines.append(f"sc{n_first}inc")
         report.exported_rounds += 1
         for rd, line, inferred in compiled:
-            color_hex = _hex_of(rd.get("color"))
+            color_hex = None if override_hex else _hex_of(rd.get("color"))
             # 仅在换色边界输出指令（连续同色圈不重复）——条纹件（如
             # Supergurumi 蜜蜂 55 圈 6 条条纹）从逐圈重复降为每边界一条
             if color_hex and color_hex != last_color:
@@ -278,7 +308,7 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
             report.inferred_rounds += int(inferred)
         # 只有忠实且完整翻译的实体才计入 exported_parts：构造语义不符（环起）
         # 或翻译提前中断（compiled 不全）的实体都不计入。
-        if faithful and len(compiled) == len(rounds) - 1:
+        if faithful and color_faithful and len(compiled) == len(rounds) - 1:
             report.exported_parts += 1
     if report.inferred_rounds > inferred_before:
         warnings.append(
@@ -392,7 +422,8 @@ def export_parade_report(result: Mapping[str, Any]) -> ParadeExportReport:
             body.append("start_anew")
         body.extend(lines)
     if not exported_any:
-        raise ValueError("所有部件的圈形态均超出可译子集，未能导出")
+        reason = (report.failures or report.warnings or ["所有部件均超出可译子集"])[0]
+        raise ValueError(f"未能导出：{reason[:240]}")
 
     text = _HEADER
     if warnings:

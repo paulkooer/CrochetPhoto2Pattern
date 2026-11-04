@@ -155,9 +155,39 @@ uv run pytest -q tests/test_eval_real.py
 - `parade_syntax_rate`: rate passing this project's emitter-level syntax check. A truncated
   prefix may pass, so this cannot replace complete export rate. Each case's `parade_export`
   includes completeness, exported/requested rounds, fully exported/requested physical
-  parts, and warnings; counts include every copy of paired parts. Emitted rounds
-  include warned approximations, while the complete-part count includes only
-  faithful, fully translated copies.
+  parts, and warnings; counts include every copy of paired parts.
+  `exported_rounds` counts the rounds actually written into the DSL (including parts that
+  are not faithfully expressed), while `exported_parts` counts only faithful, complete
+  exports. The 2026-11-04 fix corrects a counting error: a declared unsupported
+  construction (such as a separate skirt tube's ring start) used to be counted as a
+  completely exported part, reporting 3/3 for three parts. Thresholds and the
+  `unsupported_constructions` convention are unchanged.
+
+### Part-level colour metrics (V1)
+
+These are future measures defined in the [part-level colour selection specification](part-color-selection.en.md)
+§9. Part-level ground truth and real user activity have not yet been collected; report
+"not evaluated" whenever the required evidence is missing.
+
+- `part_color_match_rate`: share of individually annotated parts or instances whose predicted
+  colours match their corresponding human labels; missing or wrongly matched predictions fail.
+  Denominator: parts or instances with comparable ground truth. Exclude and count missing
+  labels; report "not evaluated" if all are missing. Report automatic and manually corrected
+  results separately. Whole-image `dominant_colors` and Top-3 cannot substitute for part-level
+  labels; new authorized annotations are needed.
+- `manual_recolor_rate`: share of observable parts or instances recoloured at least once by a
+  user in real sessions. Denominator: observable parts or instances in those sessions. Report
+  "not evaluated" without real sessions or reconstructable actions. A missing `color_origin`
+  is not proof of no edit, and a saved pattern alone cannot establish every past action; V1
+  collects no telemetry.
+- `color_correction_seconds`: actual elapsed time from seeing the generated colours to applying
+  the final choice. Denominator: real user sessions that completed a colour choice.
+  **Not collected in V1**; reported as "not evaluated" without real data. Any future collection
+  must be local, clearly disclosed and explicitly opted into, never enabled by default.
+- `color_consistency_rate`: share of parts and colour entries that agree on per-round colours
+  and per-colour totals across the page, Markdown, PDF and the material list for one result.
+  Denominator: parts and colour entries compared; a case missing one carrier is excluded and
+  the reason recorded. Source: automated consistency assertions and browser-regression evidence.
 
 The 2026-10-04 fix prevents truncated exports from counting as successful. Earlier
 syntax-only reports must be rerun before claiming 100% complete export. These checks

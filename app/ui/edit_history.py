@@ -14,6 +14,7 @@ from app.schemas import ResultData
 from app.services.progress_state import (
     ambiguous_legacy_progress,
     capture_progress,
+    color_only_change,
     install_progress,
     progress_impact,
     retained_progress,
@@ -161,8 +162,14 @@ def restore_edit(slot: str, current: ResultData, direction: str) -> ResultData:
     return _install(slot, current, updated, history, progress)
 
 
-def preview_edit(slot: str, current: ResultData, candidate: ResultData) -> None:
-    """An optional review path; apply exactly this candidate against its source."""
+def preview_edit(slot: str, current: ResultData, candidate: ResultData,
+                 detail: dict | None = None) -> None:
+    """An optional review path; apply exactly this candidate against its source.
+
+    ``detail`` lets an editor supply its own impact tables (affected rounds, kept
+    stripes, per-colour material use); the preview renders them verbatim so the
+    review shows what the editor actually proposes to change.
+    """
     from app.utils.project import pattern_revision
 
     live = st.session_state.get(slot)
@@ -171,8 +178,28 @@ def preview_edit(slot: str, current: ResultData, candidate: ResultData) -> None:
         st.warning("当前图解已变化，请关闭预览后重新生成修改方案。")
         return
     workspace(current, slot, st.session_state)["pending_preview"] = {
-        "source": deepcopy(current), "candidate": deepcopy(candidate)}
+        "source": deepcopy(current), "candidate": deepcopy(candidate),
+        "detail": deepcopy(detail) if detail else None}
     st.rerun()
+
+
+def _render_preview_detail(detail: dict | None) -> None:
+    """Editor-supplied impact tables for a pending edit, when one was given."""
+    if not detail:
+        return
+    for caption in detail.get("captions", []):
+        st.caption(caption)
+    if detail.get("affected"):
+        st.caption("受影响的圈次（旧色 → 新色）")
+        st.table(detail["affected"])
+    if detail.get("kept"):
+        st.caption("按「保留已有条纹」保留的圈（已指定颜色，不会被覆盖）")
+        st.table(detail["kept"])
+    if materials := detail.get("materials"):
+        st.caption("逐色材料用量（估算，含预留线尾）")
+        st.table(materials)
+    for warning in detail.get("warnings", []):
+        st.warning(warning)
 
 
 def render_edit_preview(slot: str, current: ResultData) -> None:
@@ -191,6 +218,13 @@ def render_edit_preview(slot: str, current: ResultData) -> None:
         candidate = pending["candidate"]
         progress = capture_progress(current, slot, st.session_state)
         st.table(progress_impact(current, candidate, slot, progress))
+        pure_color = current != candidate and color_only_change(current, candidate)
+        if pure_color:
+            # 纯颜色修改保留全部已完成圈次，但实物不会跟着变：这条提示与具体编辑器
+            # 无关，选色面板与 JSON 编辑两条路径都必须看到。
+            st.warning("本次只改动颜色：进度影响见上表。已钩出的旧颜色不会因为图解"
+                       "改色而改变，请按实物决定是否重钩。")
+        _render_preview_detail(pending.get("detail"))
         before, after = metrics(current), metrics(candidate)
         changes = [{"项目": name, "修改前": str(before[name]), "修改后": str(after[name])}
                    for name in before if before[name] != after[name]]
@@ -202,7 +236,7 @@ def render_edit_preview(slot: str, current: ResultData) -> None:
         if concerns := [f for f in crochetability_findings(candidate["params"]) if f.level != "note"]:
             st.warning("应用后的可钩性提示：" + "；".join(md_safe(f.message) for f in concerns) + "。")
         st.caption("此预览记录点击时的修改方案；继续改动输入或勾选后请重新预览。应用时使用最新进度。"
-                   "只保留首次变化之前的圈次；各部件有效密度、整体信息或依赖接合变化时重新核对。"
+                   "进度按上表处理；各部件有效密度、整体信息或依赖接合变化时需重新核对。"
                    "勾选记录不代表实物无需返工。")
         # Commit before the full render, so old progress fragments cannot leave
         # stale widgets behind when the new pattern changes their layout.

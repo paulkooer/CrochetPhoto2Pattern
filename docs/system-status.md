@@ -14,6 +14,50 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-04 reviewed colour integration at code commit `8d0c1ab`, based on `main` `59f8737`:
+full local Python 3.12 suite **2650 passed, 2 skipped in 92.59s**, including **510** export and
+compatibility checks; Ruff and mypy (219 files) pass. A clean worktree at that exact commit
+passed **25** local Chromium synthetic flows; the browser report recorded no page errors or
+blocked external requests. The standalone canvas check also passed during this review. The two skips are the missing authorized-photo
+directory and optional MediaPipe. [PR #48](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/48)
+tracks integration and its commit-bound remote checks. These software checks do not establish
+recognition accuracy, real-world sizing or physical crochetability; Beta and G3/G4 are unchanged.
+
+2026-11-04 independent colour-selection review on `fix/part-color-review`: the review fixed
+preview bypass, whole-part versus per-copy overrides, misleading legacy colour provenance,
+loss of authored colours during regeneration, copy identity on reorder, unrepresentable Parade
+colours and old-project compatibility. Pattern backup schema is now **2**, with migration from
+older patterns; older applications reject new files instead of silently discarding choices.
+Local Python 3.12 full suite: **2648 passed, 2 skipped in 103.38s**; Ruff, mypy (219 files),
+offline lock check and Node syntax pass. Local Chromium passed **25 synthetic browser flows**
+and the standalone canvas check; a subsequent focused suite passed **133 tests**. These are
+local review-worktree checks, not remote CI or evidence of recognition accuracy or crochetability.
+The Beta status and G3/G4 remain unchanged.
+
+2026-11-04 CrochetPARADE count: [PR #47](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/47)
+passed all **13 checks** on `c8039b9` and was squash-merged as `59f8737` with the same tree;
+post-merge CI, browser and extras workflows passed. The unsupported ring-start and cross-part
+join export gaps remain unresolved.
+
+2026-11-04 part-level yarn colour selection V1 and the CrochetPARADE complete-part count, on the
+local `feat/part-color-selection` working tree based on `main` `cffecc0`: the result page can colour
+a whole part, a single physical copy or the head/body sections of a one-piece pattern. A verified
+pure colour change now keeps every completed round, while reserved-loop joins and instance
+reordering keep the conservative rule, and every preview states that yarn already worked keeps its
+colour. Two optional fields (`parts[].color_origin`, `parts[].instance_colors`) carry the choices and
+photo evidence is not rewritten. `export_parade_report` no longer counts a declared unsupported
+construction (a ring start) as a completely exported part, so the head/body/separate-skirt case
+reports 2/3 instead of 3/3 while the emitted rounds and the declared gap stay unchanged. Export cache
+is **18**. Full local Python 3.12 suite: **2626 passed, 2 skipped in 96.50s**; Ruff and mypy
+(`app tests`, 217 files) pass and `uv lock --check` is clean. Local Chromium passed **25 synthetic
+browser flows** (including the colour panel's preview, cancel, apply, undo/redo, per-copy Markdown,
+project restore and a 390 px viewport) and the standalone canvas check, with no page errors.
+Specification: [part-level colour selection](part-color-selection.md). This pre-commit snapshot has
+not run remote CI, and no independent review, authorized-photo evaluation or physical trial was
+performed; Beta and G3/G4 are unchanged. Known gaps: no per-round colour origin, no in-round
+recolouring, 3D shows base colours only, and CrochetPARADE ring starts and reserved-loop joins remain
+unimplemented (see specification §12).
+
 2026-11-04 Parade complete-part count, local pre-commit working tree based on `main` `cffecc0`:
 an unsupported open-start part no longer counts as a faithfully complete export. Emitted
 round counts and policy-v3 thresholds are unchanged. Full local Python 3.12 suite: **2584
@@ -1031,8 +1075,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Latest merged baseline: `cffecc0`** | PR #46 was squash-merged into `main` with the same tree as checked head `445e3a1`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 13 remote checks passed for PR #46 head** | Checked head `445e3a1`: Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy, dependency audit and browser smoke pass; post-merge CI, browser and extras pass on `cffecc0`. Verify later changes against their own SHAs |
+| G1 Reproducible source | **Parade-count baseline: `59f8737`** | PR #47 was squash-merged into `main` with the same tree as checked head `c8039b9`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 13 remote checks passed for PR #47 head** | Checked head `c8039b9`: Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy, dependency audit and browser smoke pass; post-merge CI, browser and extras pass on `59f8737`. Verify later changes against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

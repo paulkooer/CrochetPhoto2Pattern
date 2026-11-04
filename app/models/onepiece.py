@@ -14,6 +14,8 @@ from .gauge import Gauge, next_shaping_stitch_count
 from .parts import _ONE_PIECE_NAME, ONE_PIECE_NECK_MARKER
 from .profile_shaping import strip_dome
 
+ONE_PIECE_MONO_NOTE = "配色为整段单色（一体件分段换线建议自行规划）。"
+
 
 def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
                     sections: dict[str, tuple[int, int]] | None = None) -> list[CrochetPart]:
@@ -117,7 +119,7 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
         notes=(
             f"头身一体钩（最大 {max(merged_sts)} 针）：头顶起针钩至颈部后"
             f"不断线直接向下钩身体，末端收口；第 {eye_round} 圈安装安全眼。"
-            "钩完头部先填充再继续。配色为整段单色（一体件分段换线建议自行规划）。"
+            "钩完头部先填充再继续。" + ONE_PIECE_MONO_NOTE
         ),
     )
     return [merged] + [p for p in parts if p.name not in ("头部", "身体")]

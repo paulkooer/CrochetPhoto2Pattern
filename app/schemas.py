@@ -172,12 +172,33 @@ class CrochetPart(BaseModel):
     opening_row: IntegerCount | None = Field(default=None, gt=0)
     magic_ring: bool = False
     gauge: PartGauge | None = None
+    # 部件基础色由用户显式选择时记为 "manual"；旧记录缺失时来源未知。
+    # 只标记部件级来源，不猜测逐圈来源（见
+    # docs/part-color-selection.md §4.1）。
+    color_origin: Literal["manual"] | None = None
+    # Explicit head/body section intent, used to remap colors after resizing.
+    color_section_mode: Literal["head_body"] | None = None
+    # 按份颜色覆盖：第 i 项对应第 i 份实体（顺序与 progress_state 的
+    # _copy_instance_ids 一致），None 表示该份沿用圈色/部件色。长度必须等于
+    # quantity；不满足时在重建边界拒绝，不静默截断也不猜测归属。
+    instance_colors: list[str | None] | None = Field(default=None, max_length=20)
+    # Stable graph/copy identities for the parallel color list. This prevents
+    # reordering graph instances from silently assigning a color to another copy.
+    instance_color_ids: list[str] | None = Field(default=None, max_length=20)
 
     @model_serializer(mode="wrap")
-    def _serialize_optional_gauge(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+    def _serialize_optional_fields(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
         data = handler(self)
         if self.gauge is None:
             data.pop("gauge", None)  # Keep old uniform-pattern revisions unchanged.
+        if self.color_origin is None:
+            data.pop("color_origin", None)  # Absent means the origin was not recorded.
+        if self.color_section_mode is None:
+            data.pop("color_section_mode", None)
+        if self.instance_colors is None or not any(self.instance_colors):
+            # A part whose copies share one colour carries no per-copy overrides.
+            data.pop("instance_colors", None)
+            data.pop("instance_color_ids", None)
         return data
 
     @model_validator(mode="after")
@@ -186,6 +207,19 @@ class CrochetPart(BaseModel):
             raise ValueError("连接开口必须引用部件中存在的圈号")
         if self.gauge is not None and self.name not in INDEPENDENT_GAUGE_PARTS:
             raise ValueError("独立密度目前仅支持帽子和独立裙筒")
+        if self.instance_colors is not None and len(self.instance_colors) != self.quantity:
+            raise ValueError(
+                f"逐份颜色数量（{len(self.instance_colors)}）必须与部件数量（{self.quantity}）一致；"
+                "请按当前数量重新选择，不要用旧列表推断缺失的份")
+        if self.instance_color_ids is not None:
+            if self.instance_colors is None or len(self.instance_color_ids) != self.quantity:
+                raise ValueError("逐份颜色身份必须与颜色列表及部件数量一致")
+            if any(not identity for identity in self.instance_color_ids) or (
+                    len(set(self.instance_color_ids)) != len(self.instance_color_ids)):
+                raise ValueError("逐份颜色的实体身份不能为空或重复")
+        if self.color_section_mode is not None and (
+                self.name != "头身（一体）" or self.color_origin != "manual"):
+            raise ValueError("头身分段配色只能用于已人工选色的一体件")
         return self
 
     @field_validator("rounds")
@@ -321,7 +355,7 @@ class VisionOutput(BaseModel):
 # result 顶层键集此前在 orchestrator、CLI 两个分支、手动输入、结果页调尺寸、
 # 备份导入共 6 处手写，靠 _BACKUP_KEYS + test_key_sets 维持一致。现在统一为
 # pydantic 模型：share/history 的键集从本模块派生，备份文件携带 schema_version。
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
 
 # 备份/分享/历史 blob 的顶层键集（= 会话内 result dict 的运行时键集）。
 # result_id/history_id/title 是会话/存储层字段，不随备份导出；schema_version 由
@@ -375,6 +409,10 @@ class PatternResult(BaseModel):
             dict(data), ensure_ascii=False,
             default=lambda o: (o.model_dump()
                                if hasattr(o, "model_dump") else str(o))))
+        if "schema_version" in plain and plain["schema_version"] != SCHEMA_VERSION:
+            from app.services.migrations import upgrade_result
+
+            plain = upgrade_result(plain)
         return cls.model_validate(plain)
 
     def to_result_dict(self) -> "ResultData":
@@ -511,6 +549,10 @@ class PartData(TypedDict, total=False):
     opening_row: int | None
     magic_ring: bool
     gauge: dict[str, float]
+    color_origin: Literal["manual"] | None
+    color_section_mode: Literal["head_body"] | None
+    instance_colors: list[str | None] | None
+    instance_color_ids: list[str] | None
 
 
 class PatternParams(TypedDict, total=False):

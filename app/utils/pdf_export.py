@@ -154,6 +154,15 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
             f"（{len(rounds)} 圈/个 · {esc(pd.get('type', '—'))}）",
             head))
         story.append(Paragraph(f"部件颜色：{esc(display_color_name(pd.get('color') or '—'))}", small))
+        from app.models.parts import _part_instance_colors
+
+        instance_colors = _part_instance_colors(pd)
+        if instance_colors is not None:
+            story.append(Paragraph("逐份配色：" + "；".join(
+                f"第 {index + 1} 份 {esc(display_color_name(color) if color else '沿用逐圈配色')}"
+                for index, color in enumerate(instance_colors)), small))
+            story.append(Paragraph(
+                "圈次说明里的换线步骤描述共用针法；已单独改色的份整份使用自己的颜色。", small))
         dims = []
         if pd.get("diameter_cm"):
             dims.append(f"直径 {esc(pd['diameter_cm'])}cm")
