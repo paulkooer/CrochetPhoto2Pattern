@@ -14,6 +14,15 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-04 reviewed colour integration at code commit `8d0c1ab`, based on `main` `59f8737`:
+full local Python 3.12 suite **2650 passed, 2 skipped in 92.59s**, including **510** export and
+compatibility checks; Ruff and mypy (219 files) pass. A clean worktree at that exact commit
+passed **25** local Chromium synthetic flows; the browser report recorded no page errors or
+blocked external requests. The standalone canvas check also passed during this review. The two skips are the missing authorized-photo
+directory and optional MediaPipe. [PR #48](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/48)
+tracks integration and its commit-bound remote checks. These software checks do not establish
+recognition accuracy, real-world sizing or physical crochetability; Beta and G3/G4 are unchanged.
+
 2026-11-04 independent colour-selection review on `fix/part-color-review`: the review fixed
 preview bypass, whole-part versus per-copy overrides, misleading legacy colour provenance,
 loss of authored colours during regeneration, copy identity on reorder, unrepresentable Parade
