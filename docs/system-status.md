@@ -14,6 +14,17 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-04 Parade complete-part count, local pre-commit working tree based on `main` `cffecc0`:
+an unsupported open-start part no longer counts as a faithfully complete export. Emitted
+round counts and policy-v3 thresholds are unchanged. Full local Python 3.12 suite: **2584
+passed, 2 skipped in 93.21s**; Ruff, mypy (214 files) and 113 focused tests pass. This snapshot
+has not run remote CI, real-photo evaluation or physical trials.
+
+2026-11-04 placeholder-color display: [PR #46](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/46)
+passed all **13 checks** on head `445e3a1` and was squash-merged as `cffecc0` with the same tree.
+Post-merge CI, browser and extras workflows passed on `cffecc0`. The following local results
+describe the pre-commit snapshot used to prepare that PR.
+
 2026-11-04 placeholder-color display, on the local `fix/placeholder-color-labels` working tree
 based on `main` `dfa6876`: result/structure/progress views and Markdown/PDF show `skin`/`body`
 as unselected yarn colors, including recorded automatic color-change notes, and PDF identifies each part's base color. The original pattern and
@@ -1020,8 +1031,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Latest merged baseline: `dfa6876`** | PR #45 was squash-merged into `main` with the same tree as checked head `7f5d50f`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 13 remote checks passed for PR #45 head** | Checked head `7f5d50f`: Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy, dependency audit and browser smoke pass; post-merge workflows pass on `dfa6876`. Verify later changes against their own SHAs |
+| G1 Reproducible source | **Latest merged baseline: `cffecc0`** | PR #46 was squash-merged into `main` with the same tree as checked head `445e3a1`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **All 13 remote checks passed for PR #46 head** | Checked head `445e3a1`: Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy, dependency audit and browser smoke pass; post-merge CI, browser and extras pass on `cffecc0`. Verify later changes against their own SHAs |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

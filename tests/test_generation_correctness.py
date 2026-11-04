@@ -76,6 +76,9 @@ def test_parade_marks_ring_start_incomplete():
     report = export_parade_report({"params": {"parts": [ring_skirt.model_dump()]}})
     assert report.complete is False
     assert any("首圈非魔法环" in w for w in report.warnings)
+    # 语义不符的起针不计入完整导出实体数（圈次仍生成，见 test_parade_export_counts）
+    assert (report.exported_parts, report.requested_parts) == (0, 1)
+    assert report.unsupported_constructions == [{"part": "裙子", "construction": "ring_start"}]
 
 
 def test_parade_magic_ring_sphere_complete():

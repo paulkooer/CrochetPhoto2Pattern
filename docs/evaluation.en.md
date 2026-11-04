@@ -155,7 +155,9 @@ uv run pytest -q tests/test_eval_real.py
 - `parade_syntax_rate`: rate passing this project's emitter-level syntax check. A truncated
   prefix may pass, so this cannot replace complete export rate. Each case's `parade_export`
   includes completeness, exported/requested rounds, fully exported/requested physical
-  parts, and warnings; counts include every copy of paired parts.
+  parts, and warnings; counts include every copy of paired parts. Emitted rounds
+  include warned approximations, while the complete-part count includes only
+  faithful, fully translated copies.
 
 The 2026-10-04 fix prevents truncated exports from counting as successful. Earlier
 syntax-only reports must be rerun before claiming 100% complete export. These checks

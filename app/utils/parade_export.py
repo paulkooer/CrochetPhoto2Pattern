@@ -152,8 +152,15 @@ class ParadeExportReport:
     text: str = ""
     complete: bool = True
     requested_parts: int = 0  # Physical copies, not logical part definitions.
-    exported_parts: int = 0  # Only completely exported copies.
+    # Only copies that are faithful AND complete. A copy whose construction the
+    # exporter cannot express (e.g. an open ring start emitted as a magic ring)
+    # still contributes DSL rounds, but is not a complete export.
+    exported_parts: int = 0
     requested_rounds: int = 0
+    # DSL rounds actually generated, including rounds of parts that are not
+    # faithful. Deliberately separate from ``exported_parts``: "how many rounds
+    # did we emit" and "how much of the pattern is faithfully represented" are
+    # different questions, and this counter must never be read as fidelity.
     exported_rounds: int = 0
     inferred_rounds: int = 0  # Physical rounds using uniform aggregate fallback.
     warnings: list[str] = field(default_factory=list)
@@ -236,6 +243,18 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
             break
         compiled.append((rd, line, inferred))
         previous = int(rd["stitches"])
+    # F-10：环形/锁针起针（如独立裙筒腰部开口）按魔法环 scNinc 导出会把开口
+    # 圆筒变成闭合圆片——语义不符。按部件判定一次：多份实体共享同一份图解，
+    # 构造缺口只有一个，逐份重复只会让告警与统计虚增。标记为不完整（严格完整率
+    # 不计入），并登记为导出器声明不支持的构造，评测单独统计而不当作导出失败。
+    # 这些圈次仍会写进 DSL 文本：exported_rounds 有它们，exported_parts 没有。
+    faithful = bool(part.get("magic_ring", False))
+    if not faithful:
+        report.unsupported(
+            name, "ring_start",
+            f"{name}: 首圈非魔法环（{n_first} 针环起），按 ring+sc{n_first}inc 导出，"
+            "起针语义不符（闭合环 vs 开口），已标记为不完整；请对照原说明核对引拔/开口处理")
+    # 魔法环行 + 首圈（首圈全部针目放入环：scNinc）
     for copy in range(quantity):
         if copy:
             lines.append("start_anew")
@@ -244,15 +263,6 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
             #（条纹部件 ×N 时尤其重要）
             lines.append(f"COLOR: {hex_color}")
         last_color = hex_color
-        # 魔法环行 + 首圈（首圈全部针目放入环：scNinc）
-        if not part.get("magic_ring", False):
-            # F-10：环形/锁针起针（如独立裙筒腰部开口）按魔法环 scNinc 导出会
-            # 把开口圆筒变成闭合圆片——语义不符。标记为不完整（严格完整率不计入），
-            # 并登记为导出器声明不支持的构造，评测单独统计而不当作导出失败。
-            report.unsupported(
-                name, "ring_start",
-                f"{name}: 首圈非魔法环（{n_first} 针环起），按 ring+sc{n_first}inc 导出，"
-                "起针语义不符（闭合环 vs 开口），已标记为不完整；请对照原说明核对引拔/开口处理")
         lines.append("ring")
         lines.append(f"sc{n_first}inc")
         report.exported_rounds += 1
@@ -266,7 +276,9 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
             lines.append(line)  # All operations in a round must share ONE line.
             report.exported_rounds += 1
             report.inferred_rounds += int(inferred)
-        if len(compiled) == len(rounds) - 1:
+        # 只有忠实且完整翻译的实体才计入 exported_parts：构造语义不符（环起）
+        # 或翻译提前中断（compiled 不全）的实体都不计入。
+        if faithful and len(compiled) == len(rounds) - 1:
             report.exported_parts += 1
     if report.inferred_rounds > inferred_before:
         warnings.append(

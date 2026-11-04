@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-04 Parade complete-part count
+
+- An open-start skirt tube still produces an incomplete DSL approximation with a warning, but no longer counts as a faithfully complete exported part. The emitted-round count still counts generated DSL rounds, and repeated copies register the unsupported construction once. Evaluation thresholds and strict completeness remain unchanged; the export cache is now 17.
+
 ### Fixed — 2026-11-04 Unselected yarn colors and PDF part colors
 
 - The result page, structure table, progress rows, Markdown and PDF display the internal `skin` and `body` placeholders as unselected skin and body yarn colors, including recorded automatic color-change notes and summaries. Handwritten notes, explicit colors and custom names remain unchanged; the 3D preview identifies placeholder colors as illustrative.

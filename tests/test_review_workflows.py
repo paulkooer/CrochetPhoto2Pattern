@@ -156,7 +156,7 @@ def test_partial_parade_counts_physical_copies():
 
 def test_parade_counts_skipped_parts_in_requested_totals():
     report = export_parade_report({"params": {"parts": [
-        {"name": "valid", "rounds": [{"stitches": 6}]},
+        {"name": "valid", "magic_ring": True, "rounds": [{"stitches": 6}]},
         {"name": "empty", "quantity": 2, "rounds": []},
         {"name": "bad-start", "rounds": [{"stitches": 0}]},
     ]}})
