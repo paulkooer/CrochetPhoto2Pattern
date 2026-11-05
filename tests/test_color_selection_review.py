@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import pytest
 
+from app.schemas import PatternResult
 from app.services.color_selection import (
     MODE_INHERIT,
     MODE_KEEP_STRIPES,
@@ -15,6 +16,7 @@ from app.services.color_selection import (
 from app.services.progress_state import color_only_change, progress_entries, retained_progress
 from app.services.result_logic import (
     import_backup,
+    rebuild_params,
     regenerate_with_gauge,
     regenerate_with_size,
     regenerate_with_structure,
@@ -198,6 +200,101 @@ def test_untrusted_auto_fragment_cannot_hide_a_construction_change():
     assert not color_only_change(result, updated)
     progress = {identity: True for identity, _, _ in progress_entries(result, "result")}
     assert retained_progress(result, updated, "result", progress) != progress
+
+
+@pytest.mark.parametrize("operation", ["rebuild", "recolour", "import"])
+def test_untrusted_auto_markers_do_not_erase_maker_notes(operation):
+    result = _result()
+    part = _part(result, "身体")
+    part["notes"] = "手缝纽扣"
+    part["auto_color_summary"] = "手缝纽扣"
+    row = part["rounds"][1]
+    row["notes"] += "；保留长线尾"
+    row["auto_color_note"] = "保留长线尾"
+    original = deepcopy(result)
+
+    if operation == "rebuild":
+        updated = deepcopy(result)
+        updated["params"] = rebuild_params(result["params"])
+    elif operation == "recolour":
+        updated = apply_color_change(result, part_name="身体", color="蓝色", mode=MODE_UNIFORM)
+    else:
+        updated = import_backup(PatternResult.from_result(result).to_backup(), "restored")
+
+    assert _part(updated, "身体")["notes"] == "手缝纽扣"
+    assert "保留长线尾" in _part(updated, "身体")["rounds"][1]["notes"]
+    assert result == original
+
+
+def test_untrusted_part_summary_cannot_hide_a_part_wide_instruction_change():
+    result = _result()
+    part = _part(result, "身体")
+    part["notes"] = part["auto_color_summary"] = "手缝纽扣"
+    updated = deepcopy(result)
+    changed = _part(updated, "身体")
+    changed["notes"] = changed["auto_color_summary"] = "必须缝上扣子"
+    progress = {identity: True for identity, _, p in progress_entries(result, "result")
+                if p["name"] == "身体"}
+
+    assert not color_only_change(result, updated)
+    assert not retained_progress(result, updated, "result", progress)
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_repeated_generated_phrases_preserve_the_extra_maker_copy(legacy):
+    result = _result()
+    _part(result, "身体")["rounds"][1]["color"] = "红色"
+    result["params"] = rebuild_params(result["params"])
+    part = _part(result, "身体")
+    row = part["rounds"][1]
+    transition, summary = row["auto_color_note"], part["auto_color_summary"]
+    row["notes"] += "；" + transition
+    part["notes"] = (part["notes"] or "") + summary
+    if legacy:
+        row.pop("auto_color_note")
+        part.pop("auto_color_summary")
+
+    result["params"] = rebuild_params(result["params"])
+    result["params"] = rebuild_params(result["params"])
+    updated = apply_color_change(result, part_name="身体", color="蓝色", mode=MODE_UNIFORM)
+    assert _part(updated, "身体")["notes"].count(summary) == 1
+    assert _part(updated, "身体")["rounds"][1]["notes"].count(transition) == 1
+
+
+def test_generated_fragments_support_custom_color_names_with_punctuation():
+    result = _result()
+    _part(result, "身体")["rounds"][2]["color"] = "蓝；绿"
+    striped = apply_color_change(result, part_name="身体", color="浅。粉（嫩）",
+                                 mode=MODE_KEEP_STRIPES)
+    part = _part(striped, "身体")
+    summary = part["auto_color_summary"]
+    assert part["notes"].count(summary) == 1
+    transitions = [(index, row["auto_color_note"]) for index, row in enumerate(part["rounds"])
+                   if row["auto_color_note"]]
+    assert transitions
+    assert all(part["rounds"][index]["notes"].count(note) == 1 for index, note in transitions)
+
+    updated = apply_color_change(striped, part_name="身体", color="白色", mode=MODE_UNIFORM)
+    body = _part(updated, "身体")
+    assert summary not in (body["notes"] or "")
+    assert all(note not in (body["rounds"][index]["notes"] or "") for index, note in transitions)
+    progress = {identity: True for identity, _, _ in progress_entries(striped, "result")}
+    assert color_only_change(striped, updated)
+    assert retained_progress(striped, updated, "result", progress) == progress
+
+
+@pytest.mark.parametrize("empty_note", [None, ""])
+def test_adding_a_color_transition_to_an_empty_note_preserves_progress(empty_note):
+    result = _result()
+    _part(result, "身体")["rounds"][2]["notes"] = empty_note
+    updated = deepcopy(result)
+    _part(updated, "身体")["rounds"][2]["color"] = "红色"
+    updated["params"] = rebuild_params(updated["params"])
+    progress = {identity: True for identity, _, _ in progress_entries(result, "result")}
+
+    assert "换线：红色" in _part(updated, "身体")["rounds"][2]["notes"]
+    assert color_only_change(result, updated)
+    assert retained_progress(result, updated, "result", progress) == progress
 
 
 def test_joined_part_copy_color_keeps_existing_conservative_progress_rule():

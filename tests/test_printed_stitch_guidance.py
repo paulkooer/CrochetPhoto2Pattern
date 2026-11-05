@@ -93,8 +93,10 @@ render_results(st.session_state.result, "result")
     assert not built
     at.button(key="pdf_gen_printed-guidance").click().run()
     assert not at.exception and len(built) == 1
-    assert at.session_state["workspace_result"]["pdf"] == {
-        "format": EXPORT_CACHE_VERSION, "bytes": b"%PDF-updated-guidance"}
+    pdf = at.session_state["workspace_result"]["pdf"]
+    assert pdf["format"] == EXPORT_CACHE_VERSION
+    assert pdf["bytes"] == b"%PDF-updated-guidance"
+    assert len(pdf["fingerprint"]) == 64
     at.run()
     assert len(built) == 1
     assert any(button.label == "下载 PDF" for button in at.get("download_button"))

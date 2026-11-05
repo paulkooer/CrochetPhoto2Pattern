@@ -121,6 +121,11 @@ round listed in the preview.
   `docs/schemas/crochet_part.schema.json` drift test.
 - **Older backups read in**: their quantities and existing round colours are retained;
   nothing is guessed and no origin is back-filled.
+- **Legacy generated colour instructions**: when an automatic-fragment field is absent,
+  migration replaces the last fragment matching the historical fixed format. Hand-written
+  text in exactly that format cannot be reliably distinguished and needs manual review.
+  An explicit `null` in a newer record does not trigger this inference, and malformed markers
+  do not cause hand-written text to be removed.
 - **Validation**: `instance_colors` must have exactly `quantity` entries; otherwise
   `rebuild_params` rejects at the boundary (no silent truncation) naming the part and the
   length. Copy IDs must also have matching length and be unique. New per-copy selection
@@ -202,7 +207,8 @@ following must hold:
   `parts[].color_section_mode` and `parts[].color_origin` may differ;
 - per-round `auto_color_note`, the part's `auto_color_summary`, and the part of `notes` that
   is **exactly** those recorded automatic fragments may differ (they are re-derived from the
-  colours);
+  colours). A fragment is ignored only when it agrees with the current round colours and row
+  numbers; other text remains part of the construction instructions;
 - everything else must be identical: `name`, `type`, `quantity`, each round's row, stitches,
   increase, decrease, `region`, `height_range_cm`, `allow_wide_jump`, the hand-written part
   of `notes`, `opening_row`, `magic_ring`, `gauge`, `params.gauge`, `stitch_attachments` and

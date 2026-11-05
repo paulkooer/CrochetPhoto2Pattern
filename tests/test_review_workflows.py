@@ -67,18 +67,20 @@ def test_import_rejects_bad_metadata_without_mutation(result, field, value):
     assert result == original
 
 
-def test_invalid_edit_retains_current_result_and_cached_exports(result):
+def test_invalid_edit_retains_current_result_and_cached_exports(result, monkeypatch):
     import json
 
     from app.services.workspace import new_workspace
-    from app.ui.export_cache import EXPORT_CACHE_VERSION
-
     at = AppTest.from_string(_RENDER, default_timeout=30)
     at.session_state["audit_result"] = result
-    cached = {"pdf": {"format": EXPORT_CACHE_VERSION, "bytes": b"cached-pdf"},
-              "share": {"token": "cached-token"}}
+    cached = {"share": {"token": "cached-token"}}
     at.session_state["workspace_audit_result"] = {**new_workspace(result, "audit_result"), **cached}
     at.run()
+    with monkeypatch.context() as patch:
+        patch.setattr("app.utils.pdf_export.export_pdf", lambda *args, **kwargs: b"cached-pdf")
+        at.button(key="pdf_gen_review-result").click().run()
+    cached["pdf"] = deepcopy(at.session_state["workspace_audit_result"]["pdf"])
+    assert cached["pdf"] is not None
     invalid = deepcopy(result["params"])
     invalid["parts"][0]["rounds"][1]["stitches"] = 13
     at.text_area(key="json_edit_review-result").input(json.dumps(invalid))

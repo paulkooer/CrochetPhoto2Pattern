@@ -8,7 +8,6 @@ instead of migrating widget keys between result IDs.
 from __future__ import annotations
 
 import json
-import re
 from collections import Counter
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import Any
@@ -26,34 +25,45 @@ _DERIVED_TOTALS = ("materials", "material_summary", "total_stitches",
                    "estimated_time_minutes", "time_estimate_basis")
 
 
-def _without_recorded_fragment(note: object, fragment: object, pattern: re.Pattern[str]) -> object:
-    """Remove only a recognized generated suffix, retaining all manual text."""
+def _without_recorded_fragment(note: object, fragment: object) -> object:
+    """Remove one previously verified generated fragment, retaining manual text."""
     if not isinstance(note, str):
         return note
-    if not isinstance(fragment, str) or not fragment or not pattern.fullmatch(fragment):
+    if not note:
+        return None
+    if not isinstance(fragment, str) or not fragment:
         return note
     before, found, after = note.rpartition(fragment)
     if not found:
         return note
     if before.endswith("；") and not fragment.startswith(" "):
         before = before[:-1]
-    return before + after
+    return before + after or None
+
+
+def _part_note_without_color_summary(part: Mapping[str, Any]) -> object:
+    """Ignore a summary only when it matches this part's actual round colors."""
+    from app.models.color_design import blocks_summary_text
+
+    rounds = part.get("rounds") or []
+    colors = [row.get("color") or part.get("color") or "未指定" for row in rounds]
+    direction = "自下而上" if part.get("name") in {"身体", "手臂", "腿部"} else "自上而下"
+    expected = (f" 配色（按钩织圈序，{direction}）："
+                f"{blocks_summary_text(colors, [row['row'] for row in rounds])}。")
+    summary = part.get("auto_color_summary")
+    if not any(row.get("color") for row in rounds) or len(set(colors)) <= 1:
+        summary = None
+    return _without_recorded_fragment(part.get("notes"), summary if summary == expected else None)
 
 
 def _strip_color_state(part: Mapping[str, Any]) -> dict[str, Any]:
     """``part`` with colour evidence replaced; every real instruction survives."""
-    from app.models.color_design import _COLOR_CHANGE_RE, _COLOR_SUMMARY_RE, blocks_summary_text
     from app.models.onepiece import ONE_PIECE_MONO_NOTE
 
     stripped = {k: v for k, v in part.items() if k not in _COLOR_FIELDS}
     rounds = part.get("rounds") or []
     colors = [row.get("color") or part.get("color") or "未指定" for row in rounds]
-    direction = "自下而上" if part.get("name") in {"身体", "手臂", "腿部"} else "自上而下"
-    expected_summary = (f" 配色（按钩织圈序，{direction}）："
-                        f"{blocks_summary_text(colors, [row['row'] for row in rounds])}。")
-    summary = part.get("auto_color_summary")
-    note = _without_recorded_fragment(part.get("notes"), summary if summary == expected_summary else None,
-                                      _COLOR_SUMMARY_RE)
+    note = _part_note_without_color_summary(part)
     if part.get("name") == "头身（一体）" and isinstance(note, str):
         note = note.replace(ONE_PIECE_MONO_NOTE, "")
     stripped["notes"] = note
@@ -64,8 +74,7 @@ def _strip_color_state(part: Mapping[str, Any]) -> dict[str, Any]:
         fragment = rd.get("auto_color_note")
         normalized_rounds.append({
             **{k: v for k, v in rd.items() if k not in ("color", "auto_color_note")},
-            "notes": _without_recorded_fragment(rd.get("notes"), fragment if fragment == expected else None,
-                                                 _COLOR_CHANGE_RE),
+            "notes": _without_recorded_fragment(rd.get("notes"), fragment if fragment == expected else None),
         })
     stripped["rounds"] = normalized_rounds
     return stripped
@@ -290,8 +299,7 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
                     if k not in ("quantity", "rounds", "color", "auto_color_summary", "gauge",
                                  "color_origin", "color_section_mode", "instance_colors",
                                  "instance_color_ids")}
-        summary = part.get("auto_color_summary") or ""
-        metadata["notes"] = (part.get("notes") or "").replace(summary, "")
+        metadata["notes"] = _part_note_without_color_summary(part) or ""
         return metadata
 
     def round_instructions(rd, part):

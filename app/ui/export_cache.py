@@ -14,16 +14,21 @@ MAX_EXPORT_CACHE_BYTES = 2 << 20
 EXPORT_CACHE_VERSION = 18
 
 
+def export_fingerprint(source: dict) -> str:
+    """Identify the exact inputs and export semantics of a cached snapshot."""
+    return hashlib.sha256(json.dumps(
+        {"cache_version": EXPORT_CACHE_VERSION, "source": source},
+        ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode()).hexdigest()
+
+
 def cached_export(cache: dict, name: str, source: dict, build: Callable[[], T]) -> T:
     """Reuse only matching content; cache successful exports within a byte cap.
 
     The cap counts serialized UTF-8 values, not total Python heap usage. An
     oversized output is still downloadable, but is not retained here.
     """
-    fingerprint = hashlib.sha256(json.dumps(
-        {"cache_version": EXPORT_CACHE_VERSION, "source": source},
-        ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
-    ).encode()).hexdigest()
+    fingerprint = export_fingerprint(source)
     entry = cache.get(name)
     if entry is not None and entry["fingerprint"] == fingerprint:
         return deepcopy(entry["value"])

@@ -310,6 +310,37 @@ def blocks_summary_text(round_colors: Sequence[str | None], rows: list[int] | No
 _COLOR_CHANGE_RE = re.compile(
     r"；?换线：[^（；\n]+（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）")
 _COLOR_SUMMARY_RE = re.compile(r" 配色（按钩织圈序，自[上下]而[上下]）：[^。]*。")
+# Recorded fragments are checked as whole strings, so color names may contain
+# punctuation. Keep the legacy searches above conservative within free text.
+_RECORDED_COLOR_CHANGE_RE = re.compile(
+    r"换线：[\s\S]+（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）")
+_RECORDED_COLOR_SUMMARY_RE = re.compile(
+    r" 配色（按钩织圈序，自(?:上而下|下而上)）：[\s\S]+。")
+
+
+def _remove_generated_color_text(note: str, fragment: str | None, *,
+                                 recorded: bool, legacy_pattern: re.Pattern[str],
+                                 recorded_pattern: re.Pattern[str]) -> str:
+    """Remove one attributable generated fragment, preserving all other prose.
+
+    An absent field identifies a pre-marker backup. An explicit null means a
+    current record has no generated fragment; it must not be guessed again on
+    subsequent refreshes. Imported marker values are untrusted user data.
+    """
+    if not recorded:
+        matches = list(legacy_pattern.finditer(note))
+        if not matches:
+            return note
+        match = matches[-1]
+        return note[:match.start()] + note[match.end():]
+    if not isinstance(fragment, str) or not recorded_pattern.fullmatch(fragment):
+        return note
+    before, found, after = note.rpartition(fragment)
+    if not found:
+        return note
+    if before.endswith("；") and not fragment.startswith(" ") and not fragment.startswith("；"):
+        before = before[:-1]
+    return before + after
 
 
 def refresh_color_instructions(part: PartData) -> None:
@@ -327,10 +358,9 @@ def refresh_color_instructions(part: PartData) -> None:
             # repeated refreshes must not recolor previously unspecified rows.
             rd["color"] = colors[i]
         note = rd.get("notes") or ""
-        auto = rd.get("auto_color_note")
-        if auto:
-            note = note.replace("；" + auto, "").removeprefix(auto)
-        note = _COLOR_CHANGE_RE.sub("", note)
+        note = _remove_generated_color_text(
+            note, rd.get("auto_color_note"), recorded="auto_color_note" in rd,
+            legacy_pattern=_COLOR_CHANGE_RE, recorded_pattern=_RECORDED_COLOR_CHANGE_RE)
         auto = None
         if mapped and i and colors[i] != colors[i - 1]:
             auto = (f"换线：{colors[i]}（前一针最后一次挂线改用新色；"
@@ -339,10 +369,9 @@ def refresh_color_instructions(part: PartData) -> None:
         rd["notes"] = note or None
         rd["auto_color_note"] = auto
     note = part.get("notes") or ""
-    auto = part.get("auto_color_summary")
-    if auto:
-        note = note.replace(auto, "")
-    note = _COLOR_SUMMARY_RE.sub("", note)
+    note = _remove_generated_color_text(
+        note, part.get("auto_color_summary"), recorded="auto_color_summary" in part,
+        legacy_pattern=_COLOR_SUMMARY_RE, recorded_pattern=_RECORDED_COLOR_SUMMARY_RE)
     auto = None
     if mapped:
         if part.get("color_origin") != "manual":
