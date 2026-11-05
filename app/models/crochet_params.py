@@ -2,7 +2,15 @@ from collections.abc import Mapping
 from dataclasses import asdict
 from typing import Any
 
-from ..schemas import CrochetPart, CrochetStitch, ImageAnalysis, PartGauge, PatternParams, StructureData
+from ..schemas import (
+    CrochetPart,
+    CrochetStitch,
+    ImageAnalysis,
+    PartData,
+    PartGauge,
+    PatternParams,
+    StructureData,
+)
 from .assembly import _openings_by_part, build_assembly, opening_rows_by_part
 from .color_design import (
     PART_SPAN,
@@ -440,7 +448,7 @@ def _shaping_meta(gauge: Gauge) -> dict[str, Any]:
     }
 
 
-def refresh_derived(params: PatternParams) -> PatternParams:
+def refresh_derived(params: PatternParams, *, previous_parts: list[PartData] | None = None) -> PatternParams:
     """局部修正（JSON 编辑）后按编辑过的 parts 重算派生量。
 
     estimated_time_minutes / total_stitches / 材料克数都是 parts 的函数，
@@ -449,8 +457,9 @@ def refresh_derived(params: PatternParams) -> PatternParams:
     parts = params.get("parts", [])
     if params.get(HEAD_OPENING_KEY) is not None:
         params[HEAD_OPENING_KEY] = head_opening_target(params[HEAD_OPENING_KEY])
+    previous = {part["name"]: part for part in previous_parts or []}
     for part in parts:
-        refresh_color_instructions(part)
+        refresh_color_instructions(part, previous=previous.get(part["name"]))
     total_stitches = sum(
         _round_stitches(rd) * _part_quantity(p)
         for p in parts for rd in _part_rounds(p))

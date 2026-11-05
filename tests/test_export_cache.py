@@ -149,6 +149,50 @@ def test_pdf_is_discarded_when_its_pattern_or_provenance_changes(monkeypatch):
     assert not any(button.label == "下载 PDF" for button in at.get("download_button"))
 
 
+def test_share_link_is_discarded_when_the_shared_pattern_changes():
+    from app.utils.share import decode_result
+
+    result = run(build_parser().parse_args(["--mock"]))
+    result["result_id"] = "share-snapshot-cache"
+    result["geometry"] = {"mask_review": {"pixels": "first"}}
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.button(key="share_share-snapshot-cache").click().run()
+    assert not at.exception
+    token = at.session_state["workspace_result"]["share"]["token"]
+    assert token and decode_result(token)
+
+    edited = deepcopy(result)
+    edited["params"]["parts"][0]["notes"] += "；缝纽扣"
+    at.session_state["result"] = edited
+    at.run()
+    assert not at.exception
+    assert at.session_state["workspace_result"]["share"] is None
+    at.button(key="share_share-snapshot-cache").click().run()
+    assert not at.exception
+    token = at.session_state["workspace_result"]["share"]["token"]
+    decoded = decode_result(token)
+    assert decoded and "缝纽扣" in decoded["params"]["parts"][0]["notes"]
+    assert "mask_review" not in decoded["geometry"]
+
+    # The link never contains mask pixels, so changing only those pixels does
+    # not change what the recipient would receive.
+    edited = deepcopy(edited)
+    edited["geometry"]["mask_review"]["pixels"] = "second"
+    at.session_state["result"] = edited
+    at.run()
+    assert not at.exception
+    assert at.session_state["workspace_result"]["share"]["token"] == token
+
+    edited = deepcopy(edited)
+    edited["generator_version"] = "new-generator-version"
+    at.session_state["result"] = edited
+    at.run()
+    assert not at.exception
+    assert at.session_state["workspace_result"]["share"] is None
+
+
 def test_failed_refresh_cannot_reuse_old_value_and_can_retry():
     from app.ui.export_cache import cached_export
 

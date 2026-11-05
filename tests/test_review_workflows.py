@@ -73,14 +73,15 @@ def test_invalid_edit_retains_current_result_and_cached_exports(result, monkeypa
     from app.services.workspace import new_workspace
     at = AppTest.from_string(_RENDER, default_timeout=30)
     at.session_state["audit_result"] = result
-    cached = {"share": {"token": "cached-token"}}
-    at.session_state["workspace_audit_result"] = {**new_workspace(result, "audit_result"), **cached}
+    at.session_state["workspace_audit_result"] = new_workspace(result, "audit_result")
     at.run()
     with monkeypatch.context() as patch:
         patch.setattr("app.utils.pdf_export.export_pdf", lambda *args, **kwargs: b"cached-pdf")
         at.button(key="pdf_gen_review-result").click().run()
-    cached["pdf"] = deepcopy(at.session_state["workspace_audit_result"]["pdf"])
+    at.button(key="share_review-result").click().run()
+    cached = {key: deepcopy(at.session_state["workspace_audit_result"][key]) for key in ("pdf", "share")}
     assert cached["pdf"] is not None
+    assert cached["share"] is not None
     invalid = deepcopy(result["params"])
     invalid["parts"][0]["rounds"][1]["stitches"] = 13
     at.text_area(key="json_edit_review-result").input(json.dumps(invalid))

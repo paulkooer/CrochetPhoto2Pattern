@@ -63,7 +63,7 @@ def edit_rounds(result: ResultData, index: int, rounds: list[RoundData]) -> Resu
         raise ValueError("逐圈表格只支持修改现有圈；增删圈请使用高级 JSON")
     updated = deepcopy(result)
     updated["params"]["parts"][index]["rounds"] = rounds
-    updated["params"] = rebuild_params(updated["params"], check_notes=False)
+    updated["params"] = rebuild_params(updated["params"], check_notes=False, previous=result["params"])
     part = updated["params"]["parts"][index]
     original = result["params"]["parts"][index]["rounds"]
     from app.models.crochet_params import _change_note, _positioned_change_note

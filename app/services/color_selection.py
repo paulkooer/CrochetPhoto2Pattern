@@ -181,7 +181,7 @@ def _recolored_result(result: ResultData, *, part_name: str, color: str, mode: s
         updated = _recolored_part(part, color, mode, instance_index)
         if instance_index is not None:
             updated["instance_color_ids"] = color_copy_ids(candidate, part)
-    refresh_color_instructions(updated)
+    refresh_color_instructions(updated, previous=part)
     params["parts"][index] = updated
     candidate["params"] = rebuild_params(params)
     return candidate

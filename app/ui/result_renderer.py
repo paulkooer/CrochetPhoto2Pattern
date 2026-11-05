@@ -30,7 +30,6 @@ from app.services.workspace import workspace
 from app.ui.design_system import section_heading
 from app.utils.color_labels import display_color_name, display_generated_color_note
 from app.utils.exporters import export_markdown
-from app.utils.share import _BACKUP_KEYS
 
 _RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
 
@@ -789,7 +788,7 @@ def render_results(result: ResultData, slot: str) -> None:
             try:
                 corrected = json.loads(correction_json)
                 candidate = deepcopy(result)
-                candidate["params"] = rebuild_params(corrected)
+                candidate["params"] = rebuild_params(corrected, previous=result["params"])
                 candidate["gauge"] = candidate["params"].get("gauge")
                 if preview_json:
                     preview_edit(slot, result, candidate)
@@ -863,13 +862,14 @@ def render_results(result: ResultData, slot: str) -> None:
         st.caption("「高级编辑」中有尚未应用的 JSON 草稿；以下下载、分享和存入历史使用当前已应用的图解。")
 
     # ── 完整结果备份/导入（刷新会丢 session，备份 JSON 可跨会话恢复）───────
-    # F24：备份键集走 _BACKUP_KEYS 与分享同构——旧版只写三键，导入后
+    # F24：备份与分享使用同一结果契约——旧版只写三键，导入后
     # 快速调尺寸会把一体件拆回分件、egg 退化 ladder（style/spans 全丢）
     # 下载的备份也可能被转发分享，因此剔除 preview 缩略图和 mask_review
     # 画笔掩码；照片分析与轮廓摘要仍可能保留。单用户历史不走此导出路径。
-    backup_json = json.dumps(strip_photo_derived(PatternResult.from_result({
+    backup_data = strip_photo_derived(PatternResult.from_result({
         **result, "params": serializable_params,
-    }).to_backup()), ensure_ascii=False)
+    }).to_backup())
+    backup_json = json.dumps(backup_data, ensure_ascii=False)
     col_bk1, col_bk2, col_bk3 = st.columns(3)
     with col_bk1:
         st.download_button(
@@ -934,15 +934,21 @@ def render_results(result: ResultData, slot: str) -> None:
                       key=title_key(result_key),
                       placeholder="给这份图解起个名字", label_visibility="collapsed")
         # F23：分享入口。token 计算含全量 JSON + zlib，按需生成并缓存进
-        # 工作区——不再每次 rerun 都压缩；编辑图解后需重新生成。
+        # 工作区——不再每次 rerun 都压缩；共享数据变化后须重新生成。
         from app.utils.share import encode_result
-        if st.button("生成分享链接", key=f"share_{result_key}"):
-            ws["share"] = {"token": encode_result({
-                **{k: result.get(k) for k in _BACKUP_KEYS
-                   if k not in ("params", "preview")},
-                "params": serializable_params})}
+        try:
+            share_fingerprint = export_fingerprint(backup_data)
+        except (TypeError, ValueError):
+            share_fingerprint = None
+        if (ws["share"] is not None
+                and (share_fingerprint is None or ws["share"].get("fingerprint") != share_fingerprint)):
+            ws["share"] = None
+        if st.button("生成分享链接", key=f"share_{result_key}", disabled=share_fingerprint is None):
+            ws["share"] = {"fingerprint": share_fingerprint, "token": encode_result(backup_data)}
         _share_token = ws["share"]["token"] if ws["share"] is not None else None
-        if ws["share"] is not None and _share_token is None:
+        if share_fingerprint is None:
+            st.info("图解包含无法分享的数据，请先检查并修正。")
+        elif ws["share"] is not None and _share_token is None:
             st.info("图解超过分享链接大小上限，请使用「备份完整结果」文件分享。")
         elif _share_token is None:
             st.caption("🔗 点「生成分享链接」得到可分享的 URL 参数；链接包含图解和分析摘要，"

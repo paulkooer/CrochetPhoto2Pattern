@@ -156,7 +156,8 @@ def test_manual_regenerate_applies_edited_json():
     )
 
 
-@pytest.mark.parametrize("invalid", ["bool_count", "duplicate_parts", "empty_rounds", "infinite_size"])
+@pytest.mark.parametrize("invalid", ["bool_count", "duplicate_parts", "empty_rounds", "infinite_size",
+                                      "ambiguous_auto_marker"])
 @pytest.mark.parametrize("route", ["edit", "import"])
 def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, route, monkeypatch):
     import json
@@ -170,20 +171,24 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
         edited["parts"].append(deepcopy(edited["parts"][0]))
     elif invalid == "infinite_size":
         edited["parts"][0]["diameter_cm"] = float("inf")
+    elif invalid == "ambiguous_auto_marker":
+        marker = " 配色（按钩织圈序，自上而下）：R1 skin。手缝纽扣。"
+        edited["parts"][0]["notes"] = edited["parts"][0]["auto_color_summary"] = marker
     else:
         edited["parts"][0]["rounds"] = []
     from app.services.workspace import new_workspace
 
     at = AppTest.from_file(_APP, default_timeout=30)
     at.session_state["result"] = deepcopy(original)
-    cached = {"share": {"token": "existing-share"}}
-    at.session_state["workspace_result"] = {**new_workspace(original, "result"), **cached}
+    at.session_state["workspace_result"] = new_workspace(original, "result")
     at.run()
     with monkeypatch.context() as patch:
         patch.setattr("app.utils.pdf_export.export_pdf", lambda *args, **kwargs: b"existing-pdf")
         at.button(key="pdf_gen_reject-edit").click().run()
-    cached["pdf"] = deepcopy(at.session_state["workspace_result"]["pdf"])
+    at.button(key="share_reject-edit").click().run()
+    cached = {key: deepcopy(at.session_state["workspace_result"][key]) for key in ("pdf", "share")}
     assert cached["pdf"] is not None
+    assert cached["share"] is not None
     if route == "edit":
         at.text_area(key="json_edit_reject-edit").set_value(json.dumps(edited)).run()
         at.button(key="regen_reject-edit").click().run()
@@ -195,6 +200,8 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
         error = "导入失败"
     assert not at.exception
     assert any(error in str(item.value) for item in at.error)
+    if invalid == "ambiguous_auto_marker":
+        assert any("自动配色说明" in str(item.value) for item in at.error)
     assert at.session_state["result"] == original
     workspace = at.session_state["workspace_result"]
     assert {key: workspace[key] for key in cached} == cached
