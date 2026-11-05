@@ -1,6 +1,9 @@
 # Physical Trial Records and Calibration
 
-[简体中文](physical-trials.md) | **English** | [Documentation index](README.md)
+[Simplified Chinese](physical-trials.md) | **English** | [Documentation index](README.md)
+
+**Language:** The application interface is currently in Simplified Chinese. Interface
+names in this guide are English translations, not the labels shown in the application.
 
 The trial tooling turns “size may need adjustment” into traceable evidence. It never
 modifies production constants automatically. Raw records and reports belong in the
@@ -17,15 +20,15 @@ automatically into qualifying trials. See [online evidence scope](SOURCES.en.md)
 
 ### Record and restore in the web UI
 
-Expand **实体试钩记录** on a result page, enter a trial ID, stable anonymous maker ID and
-cohort, then choose **以当前图解新建试钩**. The original pattern snapshot stays fixed while
+Expand **Physical trial record** on a result page, enter a trial ID, stable anonymous maker ID and
+cohort, then choose **Create a trial from the current pattern**. The original pattern snapshot stays fixed while
 you enter measurements.
 
 1. Enter the measured swatch, hook and yarn details, save, and download the draft ZIP.
    Initial gauge values come from the pattern; replace them with actual measurements before
-   checking **已实际测量小样**.
+   checking **Swatch has been measured**.
 2. Enter dimensions, usage, timing and notes in stages, leaving unmeasured values blank and
-   saving as a draft. Once finished, check **标记为完成（需填写必填测量）** and provide the
+   saving as a draft. Once finished, check **Mark complete (required measurements needed)** and provide the
    completion date, height, yarn grams and active minutes. Timing defaults to the full project;
    select the round-only scope only when that
    matches the measured operations. Declare any pattern changes, one per line. Saving shows
@@ -34,7 +37,7 @@ you enter measurements.
    invalid inputs do not replace it. Saving a completed record as a draft retains its measurements
    for further work. Fields stay visible when completion status changes; blank dates are not
    silently replaced with today's date.
-4. In a fresh session, use **打开试钩包** under the sidebar's **打开已有工作** to reopen the ZIP without generating
+4. In a fresh session, use **Open trial bundle** under the sidebar's **Open existing work** to reopen the ZIP without generating
    another pattern. This replaces the Photo result and its active trial, leaving the Manual
    result alone. The restore control inside a result's trial panel replaces only that trial,
    preserving the current pattern.
@@ -46,7 +49,7 @@ at a time, with independent Photo and Manual workspaces.
 
 ### Undo or redo saved records
 
-After saving, use **↶ 撤销保存** or **↷ 重做保存** to restore swatches, yarn, measurements and
+After saving, use **Undo save** or **Redo save** to restore swatches, yarn, measurements and
 draft/completed status. The form, comparison table and download switch together, preserving the
 current pattern, crochet progress and project notes. Unsaved changes or invalid fields block
 undo/redo while retaining your input; save first, or restore the fields to their saved values.
@@ -104,7 +107,7 @@ Drafts with a saved measured swatch and completed trials can both drive density 
 1. Enter measured stitches/rows per 10 cm, confirm the swatch was measured, and save the record.
 2. The current pattern must match the trial's original source and its density must differ.
    Reopen the original trial bundle from the sidebar if necessary.
-3. Choose **预览按实测密度重算** and inspect the density, stitch/material totals and progress
+3. Choose **Preview recalculation using measured gauge** and inspect the density, stitch/material totals and progress
    impact under local edits, then apply or cancel. Preview again after changing inputs or records.
 4. Save the updated pattern. Download and close the old trial before starting a trial of the new pattern.
 

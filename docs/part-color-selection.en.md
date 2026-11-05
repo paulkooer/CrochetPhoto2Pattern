@@ -1,6 +1,10 @@
 # Part-level yarn colour selection V1: specification and acceptance checklist
 
-**English** | [简体中文](part-color-selection.md) | [Documentation index](README.md)
+**English** | [Simplified Chinese](part-color-selection.md) | [Documentation index](README.md)
+
+**Language:** The application interface and exported pattern labels are currently in
+Simplified Chinese. Interface names in this guide are English translations, not the labels
+shown in the application.
 
 This document is the V1 specification for part-level yarn colour selection: the data flow,
 the compatibility plan, the interaction and the acceptance checklist are written first, and
@@ -139,13 +143,13 @@ round listed in the preview.
 
 ## 6. Interaction
 
-Entry point: result page chapter 5 ("局部修正") → the "毛线选色" (yarn colour) panel, at the
+Entry point: result page chapter 5 (**Local corrections**) → the **Yarn colour selection** panel, at the
 same level as the neck-opening, independent-swatch, skirt-join and other special-purpose
 tools. Every submission goes through the existing `edit_history`: preview the impact, apply,
 cancel, undo, redo.
 
 1. **Choose a part**: a dropdown listing every part, labelled with its name and current base
-   colour (placeholders are shown as "肤色（待选色）" and so on via
+   colour (placeholders are shown as unselected skin or body colours via
    `app/utils/color_labels.py`).
 2. **Choose a colour**: the colour-table dropdown (`YARN_COLORS` in
    `app/models/colors.py`) or a "custom" text input, which preserves a user's own name just
@@ -162,7 +166,8 @@ cancel, undo, redo.
    new single-copy colouring is unavailable, and the panel offers whole-part colouring.
    A newly generated pattern can offer single-copy colouring if it has stable IDs; the
    correspondence to old physical copies still needs review.
-5. **One-piece head-and-body sections**: when the part is `头身（一体）`, two colours are
+5. **One-piece head-and-body sections**: when the part name matches
+   `app.models.parts._ONE_PIECE_NAME`, two colours are
    offered, one for the head section and one for the body section. The boundary comes from
    `ONE_PIECE_NECK_MARKER` in `app/models/parts.py` (the generator writes that marker into
    the notes of exactly one round, and `crochetability` and `skirt_edit` already parse it the
@@ -230,7 +235,7 @@ pattern** needs no re-checking; it does not mean the finished piece matches the 
 
 | Carrier | Reflects the colour change | Notes and limits |
 | --- | --- | --- |
-| Markdown | Yes | The part's "颜色" line and the round table's "配色" column; with `instance_colors`, each copy's colour is listed and "N 个相同部件" becomes "N 个同针法部件（配色见下）". |
+| Markdown | Yes | The part colour line and round-table colour column are updated; with `instance_colors`, each copy's colour is listed and the quantity note makes clear that copies share the same stitches but can have different colours. |
 | PDF | Yes | Same part colour and round-table colour column as Markdown (PDF additionally shows each part's base colour). |
 | Material list | Yes | Grams/meters/balls per colour; with `instance_colors`, stitch counts are attributed per copy and summarised per copy colour. Still labelled as estimates without a yarn spec or measured swatch. |
 | CrochetPARADE DSL | Yes, within the subset this project has verified | Each copy emits its own `COLOR:` prefix plus per-round colour-change boundaries. Unconvertible custom colours (including legacy colours with unrecorded origins) or unsupported constructions are reported as incomplete instead of silently exporting the old colour. |
