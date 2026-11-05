@@ -76,8 +76,10 @@ def _legacy_pattern_revision(result: Mapping[str, Any]) -> str:
 
 def project_backup(result: ResultData, progress: dict[str, bool], notes: str = "") -> dict:
     from app.models.validator import require_valid_pattern
+    from app.services.color_identity import require_aligned_copy_colors
 
     require_valid_pattern(result["params"])
+    require_aligned_copy_colors(result)
     # 工程文件可能被转发：剔除缩略图与画笔掩码，其他分析摘要仍可能保留。
     data = strip_photo_derived(PatternResult.from_result(result).to_backup())
     state = ProjectState(pattern_revision=pattern_revision(data), saved_with_version=software_version(),

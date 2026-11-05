@@ -166,9 +166,15 @@ def _recolored_part(part: Mapping[str, Any], color: str, mode: str,
 def _recolored_result(result: ResultData, *, part_name: str, color: str, mode: str,
                       instance_index: int | None, head_color: str | None = None,
                       body_color: str | None = None) -> ResultData:
-    from app.services.color_identity import align_copy_colors, color_copy_ids, has_stable_copy_ids
+    from app.services.color_identity import (
+        align_copy_colors,
+        color_copy_ids,
+        has_stable_copy_ids,
+        require_aligned_copy_colors,
+    )
     from app.services.result_logic import rebuild_params
 
+    require_aligned_copy_colors(result)
     candidate = deepcopy(result)
     params = candidate["params"]
     index = part_index(params, part_name)
@@ -183,7 +189,7 @@ def _recolored_result(result: ResultData, *, part_name: str, color: str, mode: s
             updated["instance_color_ids"] = color_copy_ids(candidate, part)
     refresh_color_instructions(updated, previous=part)
     params["parts"][index] = updated
-    candidate["params"] = rebuild_params(params)
+    candidate["params"] = rebuild_params(params, structure=candidate["structure"])
     return candidate
 
 

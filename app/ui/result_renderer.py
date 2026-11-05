@@ -362,6 +362,12 @@ def render_results(result: ResultData, slot: str) -> None:
     )
     if notice := workspace(result, slot, st.session_state)["recovery_notice"]:
         st.warning(notice)
+    from app.services.color_identity import require_aligned_copy_colors
+
+    try:
+        require_aligned_copy_colors(result)
+    except ValueError as exc:
+        st.warning(f"逐份配色待修正：{md_safe(exc)}。修正前请保留原备份。")
 
     # Section 1: Analysis
     section_heading(1, "人物与比例")
@@ -788,12 +794,21 @@ def render_results(result: ResultData, slot: str) -> None:
             try:
                 corrected = json.loads(correction_json)
                 candidate = deepcopy(result)
-                candidate["params"] = rebuild_params(corrected, previous=result["params"])
+                candidate["params"] = rebuild_params(
+                    corrected, previous=result["params"], structure=result["structure"])
                 candidate["gauge"] = candidate["params"].get("gauge")
+                from app.services.color_identity import copy_color_alignment_rows
+
+                alignment = copy_color_alignment_rows(corrected, candidate["params"])
+                for row in alignment:
+                    row["对齐后颜色"] = display_color_name(row["对齐后颜色"])
                 if preview_json:
-                    preview_edit(slot, result, candidate)
+                    preview_edit(slot, result, candidate,
+                                 detail={"copy_color_alignment": alignment} if alignment else None)
                 else:
-                    apply_edit_with_notice(slot, result, candidate, "✅ 已根据修正更新图解，向上查看结果！")
+                    message = ("✅ 已更新图解并按实体 ID 对齐逐份颜色，请核对各份配色。" if alignment
+                               else "✅ 已根据修正更新图解，向上查看结果！")
+                    apply_edit_with_notice(slot, result, candidate, message)
             except Exception as e:
                 st.error(f"解析/应用失败: {md_safe(e)}")
 
@@ -944,7 +959,13 @@ def render_results(result: ResultData, slot: str) -> None:
                 and (share_fingerprint is None or ws["share"].get("fingerprint") != share_fingerprint)):
             ws["share"] = None
         if st.button("生成分享链接", key=f"share_{result_key}", disabled=share_fingerprint is None):
-            ws["share"] = {"fingerprint": share_fingerprint, "token": encode_result(backup_data)}
+            try:
+                token = encode_result(backup_data)
+            except ValueError as exc:
+                ws["share"] = None
+                st.error(f"分享链接生成失败：{md_safe(exc)}")
+            else:
+                ws["share"] = {"fingerprint": share_fingerprint, "token": token}
         _share_token = ws["share"]["token"] if ws["share"] is not None else None
         if share_fingerprint is None:
             st.info("图解包含无法分享的数据，请先检查并修正。")
@@ -967,7 +988,8 @@ def render_results(result: ResultData, slot: str) -> None:
                      help="保存到部署主机的图解历史，可在侧栏随时载回"):
             try:
                 saved = result.copy()
-                saved["params"] = rebuild_params(serializable_params)
+                require_aligned_copy_colors(result)
+                saved["params"] = rebuild_params(serializable_params, structure=result["structure"])
                 saved["gauge"] = saved["params"].get("gauge")
                 _title = (live_workspace(result, slot)["title"] or "").strip() or None
                 saved_id = history.save_result(saved, title=_title)
