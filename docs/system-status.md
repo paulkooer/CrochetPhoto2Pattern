@@ -14,6 +14,21 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-05 result-page information architecture on `fix/result-information-architecture` at
+commit `9302b36`, based on `main` `196c21e`: chapter 1 keeps the metrics, ratio and recommended
+colours on the reading path and folds provenance, mask/silhouette notes, pose priors, legacy
+usage and the local colour-block table into a collapsed "sources and limitations" panel
+(alerts stay visible outside it); chapter 3 folds five always-on guidance captions into the
+stitch reference; the structure table drops the developer "position / rotation" column and the
+coordinate legend moves into the structure JSON; the advanced JSON editors mount only after an
+explicit enable click; and the photo page drops the planned multi-angle placeholder. Local
+Python 3.12 full suite: **2715 passed, 2 skipped in 116.17s**; Ruff and mypy (219 files) pass.
+The clean worktree at that commit passed **27 local Chromium synthetic flows** plus the
+standalone canvas check (`report.json` status `pass`, no page errors, no blocked external
+requests; evidence under the git-ignored `eval_outputs/result_ia_browser_clean_20261105/`).
+These are local worktree checks, not remote CI; no independent review, authorized-photo
+evaluation or physical trial was performed; Beta and G3/G4 are unchanged.
+
 2026-11-04 photo-data boundaries and colour guidance: [PR #49](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/49)
 passed all **13 checks** on head `a68a412` and was squash-merged as `48b23f6` with the same
 tree. Post-merge CI, browser and extras workflows passed. Local Python 3.12 full suite:

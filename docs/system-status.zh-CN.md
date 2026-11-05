@@ -14,6 +14,15 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+2026-11-05 结果页信息架构，`fix/result-information-architecture` 提交 `9302b36`（基于 `main` `196c21e`）：
+第 1 章保留指标、头身比与推荐色，把解析来源、掩码/轮廓说明、姿态先验、旧版用量与照片局部色块表收进
+默认折叠的「来源与限制」（警告仍在面板外）；第 3 章五段常驻说明收进「针法速查」；结构表移除开发者
+「位置 / 旋转」列，坐标说明移入结构 JSON；高级 JSON 编辑器改为显式启用后挂载；照片页移除「多角度照片
+（规划中）」占位。本地 Python 3.12 全量 **2715 passed、2 skipped，116.17s**；Ruff 与 mypy（219 文件）
+通过。该提交的干净工作树在本地 Chromium 通过 **27 条合成流程**及独立画布检查（`report.json` status
+`pass`，无页面错误、无被拦截的外部请求；证据在 Git 忽略的 `eval_outputs/result_ia_browser_clean_20261105/`）。
+以上为本机工作树验证，非远端 CI；未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+
 2026-11-04 照片数据边界与选色提示（[PR #49](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/49)）：
 头提交 `a68a412` 的 **13 项检查全部通过**，squash 合入 `48b23f6` 且合并树相同；合并后的 CI、
 浏览器和 extras 工作流通过。本地 Python 3.12 全量 **2661 passed、2 skipped，99.53s**；Ruff、
