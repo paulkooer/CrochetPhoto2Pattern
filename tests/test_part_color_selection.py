@@ -394,6 +394,107 @@ def test_all_copies_share_one_colour_again_after_a_whole_part_recolour():
 
 # ── 结果页面板 ───────────────────────────────────────────────────────────
 
+def test_advanced_json_aligns_copy_colors_before_preview_and_backup():
+    result = apply_color_change(_result(), part_name="手臂", color="蓝色",
+                                instance_index=0, mode=MODE_UNIFORM)
+    corrected = deepcopy(result["params"])
+    arm = next(part for part in corrected["parts"] if part["name"] == "手臂")
+    arm["instance_color_ids"].reverse()
+    at = AppTest.from_string(_FULL_UI, default_timeout=60)
+    at.session_state["result"] = result
+    at.run()
+    at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
+    at.button(key=f"edit_{RID}_json_preview").click().run()
+    assert not at.exception
+    candidate = at.session_state["workspace_result"]["pending_preview"]["candidate"]
+    preview_arm = _part(candidate, "手臂")
+    assert preview_arm["instance_color_ids"] == ["arms_left", "arms_right"]
+    assert preview_arm["instance_colors"] == [None, "蓝色"]
+    assert any("arms_right" in str(table.value) and "蓝色" in str(table.value) for table in at.table)
+    assert "第 1 份 沿用逐圈配色；第 2 份 蓝色" in export_markdown(candidate["params"], result=candidate)
+
+    at.button(key=f"edit_{RID}_preview_apply").click().run()
+    assert not at.exception
+    updated = at.session_state["result"]
+    restored = import_backup(PatternResult.from_result(updated).to_backup(), "restored")
+    assert _part(restored, "手臂")["instance_colors"] == _part(updated, "手臂")["instance_colors"]
+    assert _part(restored, "手臂")["instance_color_ids"] == _part(updated, "手臂")["instance_color_ids"]
+    progress = _all_progress(updated)
+    project = project_backup(updated, progress, "逐份配色")
+    project_result = import_backup(project, "project-restored")
+    assert read_project_state(project, project_result) == (progress, "逐份配色")
+    assert _part(project_result, "手臂")["instance_colors"] == [None, "蓝色"]
+
+
+@pytest.mark.parametrize("preview", [True, False])
+def test_advanced_json_rejects_a_color_bound_to_a_missing_copy_without_losing_work(preview):
+    result = apply_color_change(_result(), part_name="手臂", color="蓝色",
+                                instance_index=0, mode=MODE_UNIFORM)
+    corrected = deepcopy(result["params"])
+    arm = next(part for part in corrected["parts"] if part["name"] == "手臂")
+    arm["instance_color_ids"][0] = "missing_copy"
+    at = AppTest.from_string(_FULL_UI, default_timeout=60)
+    at.session_state["result"] = result
+    at.run()
+    at.checkbox(key=f"chk_{RID}_手臂_0").check().run()
+    at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
+    key = f"edit_{RID}_json_preview" if preview else f"regen_{RID}"
+    at.button(key=key).click().run()
+    assert not at.exception
+    assert any("移除带独立颜色的实体" in item.value for item in at.error)
+    assert at.session_state["result"] == result
+    assert at.checkbox(key=f"chk_{RID}_手臂_0").value
+    assert at.session_state["workspace_result"]["pending_preview"] is None
+
+
+def test_direct_json_apply_reports_that_copy_colors_were_aligned():
+    result = apply_color_change(_result(), part_name="手臂", color="蓝色",
+                                instance_index=0, mode=MODE_UNIFORM)
+    corrected = deepcopy(result["params"])
+    next(part for part in corrected["parts"] if part["name"] == "手臂")["instance_color_ids"].reverse()
+    at = AppTest.from_string(_FULL_UI, default_timeout=60)
+    at.session_state["result"] = result
+    at.run()
+    at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
+    at.button(key=f"regen_{RID}").click().run()
+    assert not at.exception
+    assert _part(at.session_state["result"], "手臂")["instance_colors"] == [None, "蓝色"]
+    assert any("按实体 ID 对齐逐份颜色" in item.value for item in at.success)
+    assert any("已钩出的旧颜色不会因为图解改色而改变" in item.value for item in at.warning)
+    rid = at.session_state["result"]["result_id"]
+    at.button(key=f"edit_{rid}_undo").click().run()
+    assert any("已钩出的旧颜色不会因为图解改色而改变" in item.value for item in at.warning)
+
+
+def test_existing_misaligned_session_warns_and_can_be_repaired_without_losing_progress():
+    result = apply_color_change(_result(), part_name="手臂", color="蓝色",
+                                instance_index=0, mode=MODE_UNIFORM)
+    _part(result, "手臂")["instance_color_ids"].reverse()
+    original = deepcopy(result)
+    at = AppTest.from_string(_FULL_UI, default_timeout=60)
+    at.session_state["result"] = result
+    at.run()
+    assert any("逐份配色待修正" in item.value for item in at.warning)
+    assert any(button.label == "备份完整结果" for button in at.get("download_button"))
+    at.checkbox(key=f"chk_{RID}_手臂_0").check().run()
+    at.button(key=f"share_{RID}").click().run()
+    assert any("分享链接生成失败" in item.value for item in at.error)
+    at.button(key=f"project_save_{RID}").click().run()
+    assert any("工程保存失败" in item.value for item in at.error)
+    assert at.session_state["result"] == original
+    assert at.checkbox(key=f"chk_{RID}_手臂_0").value
+
+    at.button(key=f"edit_{RID}_json_preview").click().run()
+    pending = at.session_state["workspace_result"]["pending_preview"]["candidate"]
+    assert _part(pending, "手臂")["instance_colors"] == [None, "蓝色"]
+    assert any("arms_right" in str(table.value) and "蓝色" in str(table.value) for table in at.table)
+    at.button(key=f"edit_{RID}_preview_apply").click().run()
+    assert not at.exception
+    updated = at.session_state["result"]
+    assert _part(updated, "手臂")["instance_colors"] == [None, "蓝色"]
+    assert at.checkbox(key=f"chk_{updated['result_id']}_手臂_0").value
+
+
 def test_advanced_json_color_edit_refreshes_verified_previous_notes():
     result = apply_color_change(_striped(_result()), part_name="身体", color="蓝色",
                                 mode=MODE_KEEP_STRIPES)

@@ -123,8 +123,10 @@ def _install(slot: str, current: ResultData, updated: ResultData, history: dict,
 
 
 def commit_edit(slot: str, current: ResultData, updated: ResultData) -> ResultData:
+    from app.services.color_identity import require_aligned_copy_colors
     from app.utils.project import pattern_revision
 
+    require_aligned_copy_colors(updated)
     if pattern_revision(current) == pattern_revision(updated):
         ws = workspace(current, slot, st.session_state)
         ws["pending_preview"] = None
@@ -137,6 +139,7 @@ def commit_edit(slot: str, current: ResultData, updated: ResultData) -> ResultDa
     history["redo"].clear()
     history["legacy_ambiguous_count"] = 0
     history["unmapped_progress"] = 0
+    history["color_only_notice"] = color_only_change(current, updated)
     retained = retained_progress(current, updated, slot, progress)
     history["cleared_progress"] = len(progress) - len(retained)
     return _install(slot, current, updated, history, retained)
@@ -152,6 +155,7 @@ def restore_edit(slot: str, current: ResultData, direction: str) -> ResultData:
     history["cleared_progress"] = 0
     # In-process sessions may still contain snapshots made before this update.
     updated = snapshot.get("result", snapshot)
+    history["color_only_notice"] = color_only_change(current, updated)
     progress = snapshot.get("progress", {})
     ambiguous = (ambiguous_legacy_progress(updated, progress)
                  if snapshot.get("progress_identity_version") != "2" else set())
@@ -177,8 +181,10 @@ def preview_edit(slot: str, current: ResultData, candidate: ResultData,
     stripes, per-colour material use); the preview renders them verbatim so the
     review shows what the editor actually proposes to change.
     """
+    from app.services.color_identity import require_aligned_copy_colors
     from app.utils.project import pattern_revision
 
+    require_aligned_copy_colors(candidate)
     live = st.session_state.get(slot)
     if (live is None or live.get("result_id") != current.get("result_id")
             or pattern_revision(live) != pattern_revision(current)):
@@ -202,6 +208,9 @@ def _render_preview_detail(detail: dict | None) -> None:
     if detail.get("kept"):
         st.caption("按「保留已有条纹」保留的圈（已有圈色或逐份配色，不会被覆盖）")
         st.table(detail["kept"])
+    if alignment := detail.get("copy_color_alignment"):
+        st.caption("按实体 ID 对齐后的逐份颜色")
+        st.table(alignment)
     if materials := detail.get("materials"):
         st.caption("逐色材料用量（估算，含预留线尾）")
         st.table(materials)
@@ -304,6 +313,8 @@ def render_history(slot: str, result: ResultData) -> None:
     if count := history.get("unmapped_progress"):
         st.warning(f"有 {count} 个当前完成圈次涉及施工变化，已恢复目标图解的进度快照；"
                    "请按实物核对。")
+    if history.get("color_only_notice"):
+        st.warning("已钩出的旧颜色不会因为图解改色而改变，请按实物决定是否重钩。")
     with st.expander("最近一次修改前后对比"):
         if history["comparison"]:
             before, after = history["comparison"]["修改前"], history["comparison"]["修改后"]

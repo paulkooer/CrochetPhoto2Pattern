@@ -59,11 +59,15 @@ def edit_structure_part(
 
 
 def edit_rounds(result: ResultData, index: int, rounds: list[RoundData]) -> ResultData:
+    from app.services.color_identity import require_aligned_copy_colors
+
+    require_aligned_copy_colors(result)
     if len(rounds) != len(result["params"]["parts"][index]["rounds"]):
         raise ValueError("逐圈表格只支持修改现有圈；增删圈请使用高级 JSON")
     updated = deepcopy(result)
     updated["params"]["parts"][index]["rounds"] = rounds
-    updated["params"] = rebuild_params(updated["params"], check_notes=False, previous=result["params"])
+    updated["params"] = rebuild_params(updated["params"], check_notes=False,
+                                       previous=result["params"], structure=result["structure"])
     part = updated["params"]["parts"][index]
     original = result["params"]["parts"][index]["rounds"]
     from app.models.crochet_params import _change_note, _positioned_change_note

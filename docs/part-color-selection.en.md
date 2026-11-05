@@ -135,6 +135,12 @@ round listed in the preview.
   length. Copy IDs must also have matching length and be unique. New per-copy selection
   requires stable graph IDs. Clear a copy's override before removing that copy. Legacy data
   without IDs can only be aligned to its current order; historical attribution is unverified.
+- **Advanced JSON editing**: before preview or apply, per-copy colours are aligned with the
+  structure's instance IDs. A coloured ID that no longer exists is rejected, leaving the
+  current pattern and progress intact. If alignment changes the displayed order, the preview
+  lists the final colour for each copy and direct apply prompts a review. Existing sessions
+  with misaligned colours receive a warning and cannot create a project or share link until
+  corrected; a full backup remains available to preserve the original data.
 - **Carrier coverage**: backups, share tokens, local history, project files and trial bundles
   all travel through the same `PatternResult`/`rebuild_params` contract, so the fields
   round-trip with `params.parts[]`. Project progress binds to the pattern revision

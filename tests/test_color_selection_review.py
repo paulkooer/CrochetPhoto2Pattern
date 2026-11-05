@@ -107,6 +107,42 @@ def test_reordering_graph_instances_preserves_color_identity_and_project_progres
     assert read_project_state(saved, restored) == (progress, "备注")
 
 
+@pytest.mark.parametrize("carrier", ["project", "share"])
+@pytest.mark.parametrize("problem", ["order", "missing"])
+def test_cannot_export_misaligned_copy_colors_as_a_recoverable_pattern(carrier, problem):
+    from app.utils.share import encode_result
+
+    result = _instance(_result())
+    part = _part(result, "手臂")
+    if problem == "order":
+        part["instance_color_ids"].reverse()
+    else:
+        part["instance_color_ids"][0] = "missing_copy"
+    original = deepcopy(result)
+    with pytest.raises(ValueError, match="手臂.*逐份|手臂.*实体"):
+        if carrier == "project":
+            project_backup(result, {}, "保持备注")
+        else:
+            encode_result(result)
+    assert result == original
+
+
+@pytest.mark.parametrize("operation", ["colour", "rounds", "resize"])
+def test_other_edits_do_not_silently_rebind_an_existing_misaligned_copy(operation):
+    result = _instance(_result())
+    _part(result, "手臂")["instance_color_ids"].reverse()
+    original = deepcopy(result)
+    with pytest.raises(ValueError, match="手臂.*逐份颜色"):
+        if operation == "colour":
+            apply_color_change(result, part_name="身体", color="蓝色", mode=MODE_UNIFORM)
+        elif operation == "rounds":
+            index = next(i for i, part in enumerate(result["params"]["parts"]) if part["name"] == "身体")
+            edit_rounds(result, index, deepcopy(_part(result, "身体")["rounds"]))
+        else:
+            regenerate_with_size(result, 10, 20)
+    assert result == original
+
+
 def test_removing_an_independently_colored_copy_requires_clearing_its_color_first():
     result = _instance(_result(), index=1)
     structure = deepcopy(result["structure"])

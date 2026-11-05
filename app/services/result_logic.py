@@ -106,11 +106,13 @@ def saved_part_gauges(result: ResultData, structure: StructureData | None = None
 
 
 def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bool = True,
-                   previous: PatternParams | None = None) -> PatternParams:
+                   previous: PatternParams | None = None,
+                   structure: StructureData | None = None) -> PatternParams:
     """把用户 JSON 中的 parts 重建为 CrochetPart 并重算派生量（regen/导入共用）。
 
     CrochetPart 只作校验器：重建后立即 dump 回 dict——params["parts"]
     的内存形态与落盘/分享/历史形态一致（双态收敛，见 _build_result）。
+    提供 structure 时，逐份颜色在计算材料与提交前按实体 ID 校验和对齐。
     """
     from app.schemas import CrochetPart
 
@@ -140,6 +142,12 @@ def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bo
             if isinstance(source, dict) and "auto_color_note" not in source:
                 row.pop("auto_color_note", None)
         rebuilt_parts.append(part_data)
+    if structure is not None:
+        from app.services.color_identity import align_copy_colors, color_copy_ids
+
+        context = cast(ResultData, {"structure": structure})
+        rebuilt_parts = [cast(PartData, align_copy_colors(part, color_copy_ids(context, part)))
+                         for part in rebuilt_parts]
     # Parts passed CrochetPart; other params retain their legacy, partly validated shape.
     rebuilt = cast(PatternParams, {**corrected, "parts": rebuilt_parts})
     from app.models.validator import require_valid_pattern
@@ -262,8 +270,10 @@ def regenerate_with_head_opening(result: ResultData, stitches: int | None) -> Re
 def regenerate_with_part_gauge(result: ResultData, name: str, gauge: Gauge | None) -> ResultData:
     """Change an independent garment's swatch while retaining other authored work."""
     from app.models.validator import require_valid_pattern
+    from app.services.color_identity import require_aligned_copy_colors
 
     require_valid_pattern(result["params"])
+    require_aligned_copy_colors(result)
     if name not in INDEPENDENT_GAUGE_PARTS:
         raise ValueError("独立密度目前仅支持帽子和独立裙筒")
     current = next((p for p in result["params"]["parts"] if p["name"] == name), None)
@@ -282,7 +292,7 @@ def regenerate_with_part_gauge(result: ResultData, name: str, gauge: Gauge | Non
             chosen.pop("gauge", None)
         else:
             chosen["gauge"] = asdict(gauge)
-        updated["params"] = rebuild_params(updated["params"])
+        updated["params"] = rebuild_params(updated["params"], structure=updated["structure"])
         return updated
     structure = normalize_structure(result["structure"])
     overrides = saved_part_gauges(result, structure)
@@ -326,7 +336,9 @@ def _finish_geometry_edit(current: ResultData, generated: ResultData, *,
     work; it does not avoid template generation or predict physical fit.
     """
     from app.models.skirt_edit import preserve_skirt_waist
+    from app.services.color_identity import require_aligned_copy_colors
 
+    require_aligned_copy_colors(current)
     generated = preserve_skirt_waist(current, generated)
     try:
         baseline_params = CrochetParamsGenerator.generate_params(
@@ -375,7 +387,7 @@ def _finish_geometry_edit(current: ResultData, generated: ResultData, *,
             new_part["instance_color_ids"] = rebound.get("instance_color_ids")
     # Recheck joins against the combined parts and derive all totals/materials/
     # opening instructions from the content that will actually be installed.
-    params = rebuild_params(params)
+    params = rebuild_params(params, structure=generated["structure"])
     return {**generated, "params": params}
 
 
