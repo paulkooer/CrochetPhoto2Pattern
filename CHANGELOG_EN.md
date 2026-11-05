@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Documentation — 2026-11-05 English interface descriptions
+
+- Translate interface references in the English README and the colour-selection and physical-trial guides. Clarify that the application interface, CLI help and generated patterns currently use Chinese; the CLI example now uses default parts, and links to Chinese guides are labelled.
+
 ### Documentation — 2026-11-04 Bilingual project overview
 
 - Document part-level colour selection, legacy identity and 3D preview limits; clarify which exports are blocked by a failed self-check and how the current `main` branch relates to the version badge. Record PR #49's local and remote validation in both system-status pages.
