@@ -131,6 +131,7 @@ def test_manual_regenerate_applies_edited_json():
     workspace["share"] = {"token": "cached-old-pattern"}
 
     import json as _json
+    at.button(key=f"json_open_{rid}").click().run()
     at.text_area(key=f"json_edit_{rid}").set_value(
         _json.dumps(edited, ensure_ascii=False, default=str)
     ).run()
@@ -190,6 +191,7 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
     assert cached["pdf"] is not None
     assert cached["share"] is not None
     if route == "edit":
+        at.button(key="json_open_reject-edit").click().run()
         at.text_area(key="json_edit_reject-edit").set_value(json.dumps(edited)).run()
         at.button(key="regen_reject-edit").click().run()
         error = "解析/应用失败"
@@ -595,6 +597,7 @@ def test_structure_json_edit_regenerates_locally():
                          if part["name"] == "手臂")
     arm_structure["length_cm"] = 8.0
 
+    at.button(key="json_open_structure-edit-1").click().run()
     at.text_area(key="struct_edit_structure-edit-1").set_value(
         _json.dumps(edited, ensure_ascii=False)).run()
     at.button(key="struct_go_structure-edit-1").click().run()
@@ -621,6 +624,7 @@ def test_structure_json_edit_rejects_count_instance_mismatch():
     arms = next(part for part in edited["parts"] if part["name"] == "手臂")
     arms["count"] = 1
 
+    at.button(key="json_open_structure-edit-bad").click().run()
     at.text_area(key="struct_edit_structure-edit-bad").set_value(
         _json.dumps(edited, ensure_ascii=False)).run()
     at.button(key="struct_go_structure-edit-bad").click().run()

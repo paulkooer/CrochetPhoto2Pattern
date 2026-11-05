@@ -68,6 +68,7 @@ def test_invalid_json_edit_preserves_live_pattern_progress_and_notes_then_allows
     at.session_state["result"] = current
     at.run()
     at.checkbox(key="chk_swatch_头部_0").check().run()
+    at.button(key="json_open_swatch").click().run()
     at.text_area(key="project_notes_swatch").input("先核对线标").run()
     params = deepcopy(current["params"])
     params["yarn_spec"] = {**SPEC, "ball_weight_g": 1e-320}

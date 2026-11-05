@@ -213,8 +213,23 @@ async function headProgress(page, scope, rid, checked) {
     assert.equal(await generate.isEnabled(),true);
     await generate.click();await settle(page);
     let photoId = await resultId(photoPanel);
-    await expect(photoPanel.getByText('✓ 比例与部件已经过人工确认；原始解析来源保留如下。',{exact:true})).toHaveCount(1);
     record('complete subject/proportion/parts review and generate');
+
+    // 2026-11-05 information architecture: provenance folds into a collapsed
+    // sources panel; the structure table drops the developer coordinate column
+    // and the coordinate legend moves into "查看结构 JSON".
+    const sourcesPanel = photoPanel.locator('details').filter({hasText:'来源与限制'}).first();
+    assert.equal(await sourcesPanel.getAttribute('open'),null,'The sources panel must start collapsed.');
+    await sourcesPanel.locator(':scope > summary').click();
+    await settle(page);
+    await expect(photoPanel.getByText('✓ 比例与部件已经过人工确认；原始解析来源保留如下。',{exact:true})).toBeVisible();
+    await expect(photoPanel.getByText('位置 / 旋转',{exact:true})).toHaveCount(0);
+    await expect(photoPanel.getByText('连接来自结构模板推断，并非单张照片的三维测量；坐标、位置和旋转细节见「查看结构 JSON」。',{exact:true})).toBeVisible();
+    const structureJsonPanel = photoPanel.locator('details').filter({hasText:'查看结构 JSON'}).first();
+    await structureJsonPanel.locator(':scope > summary').click();
+    await settle(page);
+    await expect(photoPanel.getByText(/结构 v2 坐标：/)).toBeVisible();
+    record('result page folds sources by default and moves coordinates into the structure JSON');
 
     // A fragment rerun must not close the part panel or shrink the marked row.
     const sheet = key(photoPanel,`sheet_part_${photoId}_0`);
@@ -301,6 +316,9 @@ async function headProgress(page, scope, rid, checked) {
     await expect(reviewWarning).toBeVisible();
     await expect(uncertainPanel.getByText('✓ 比例与部件已经过人工确认；原始解析来源保留如下。',
                                          {exact:true})).toHaveCount(0);
+    const uncertainSources = uncertainPanel.locator('details').filter({hasText:'来源与限制'}).first();
+    await uncertainSources.locator(':scope > summary').click();
+    await settle(uncertainPage);
     await expect(uncertainPanel.getByText('头部框记录无效或与分段不一致，无法确认人工框选来源。',
                                          {exact:true})).toBeVisible();
     const uncertainMarkdown = await download(uncertainPage,key(uncertainPanel,`dl_md_${uncertainId}`)
@@ -648,10 +666,18 @@ async function headProgress(page, scope, rid, checked) {
     // is pending; the draft itself survives a full rerun started elsewhere.
     await samplePanel.locator('h2.sheet-h',{hasText:'局部修正'}).scrollIntoViewIfNeeded();
     await samplePage.screenshot({path:path.join(output,'local-corrections-collapsed.png')});
-    const jsonArea = key(samplePanel,`json_edit_${materialRedoId}`).locator('textarea');
-    const advancedPanel = jsonArea.locator('xpath=ancestor::details[1]');
+    const advancedPanel = samplePanel.locator('details').filter({hasText:'高级编辑（JSON）'}).first();
     await expect(advancedPanel.locator(':scope > summary')).toContainText('高级编辑（JSON）');
     assert.equal(await advancedPanel.getAttribute('open'),null,'The advanced JSON panel must start collapsed.');
+    // 2026-11-05 mount latch: no editor textareas exist until the enable button
+    // is clicked; the click mounts both editors in the same run.
+    await advancedPanel.locator(':scope > summary').click();
+    await settle(samplePage);
+    await expect(advancedPanel.locator('textarea')).toHaveCount(0);
+    record('advanced JSON editors stay unmounted until the enable button is clicked');
+    await clickKey(samplePage,samplePanel,`json_open_${materialRedoId}`);
+    await expect(advancedPanel.locator('textarea')).toHaveCount(2);
+    const jsonArea = key(samplePanel,`json_edit_${materialRedoId}`).locator('textarea');
     for (const name of [`dl_backup_${materialRedoId}`,`dl_json_${materialRedoId}`,`dl_md_${materialRedoId}`]) {
       assert.equal(await key(samplePanel,name).locator('xpath=ancestor::details').count(),0,
                    `${name} must stay outside every collapsible panel.`);

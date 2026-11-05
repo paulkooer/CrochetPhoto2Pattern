@@ -48,6 +48,7 @@ def test_unchanged_edits_keep_id_redo_latest_progress_notes_and_storage_binding(
     at=start()
     undo_to_base(at)
     before_id=rid(at)
+    at.button(key=f"json_open_{before_id}").click().run()
     at.checkbox(key=f"chk_{before_id}_头部_0").check().run()
     at.text_area(key=f"project_notes_{before_id}").input("撤销后继续的进度").run()
     at.text_input(key=f"hist_title_{before_id}").input("尚未保存的名称").run()
@@ -95,6 +96,7 @@ def test_actual_changes_still_regenerate_and_report_success(entry):
     at=start()
     undo_to_base(at)
     before_id=rid(at)
+    at.button(key=f"json_open_{before_id}").click().run()
     if entry=="size":
         at.slider(key=f"sz_height_{before_id}").set_value(40.0)
         at.button(key=f"sz_go_{before_id}").click().run()
@@ -195,6 +197,7 @@ def test_instruction_changes_with_identical_metrics_are_not_treated_as_unchanged
     undo_to_base(at)
     before=deepcopy(at.session_state["result"])
     before_id=rid(at)
+    at.button(key=f"json_open_{before_id}").click().run()
     params=deepcopy(before["params"])
     params["parts"][0]["rounds"][0]["notes"]+="；这里放记号扣"
     candidate={**before,"params":params}

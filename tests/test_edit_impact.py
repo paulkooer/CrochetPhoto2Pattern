@@ -266,6 +266,7 @@ def test_mixed_json_preview_warns_about_yarn_and_shows_copy_progress_impact():
     next(part for part in updated["parts"] if part["name"] == "手臂")["instance_colors"] = ["蓝色", None]
     body = next(part for part in updated["parts"] if part["name"] == "身体")
     body["notes"] = (body.get("notes") or "") + "；手工缝合说明"
+    at.button(key="json_open_project").click().run()
     at.text_area(key="json_edit_project").input(json.dumps(updated, ensure_ascii=False)).run()
     at.button(key="edit_project_json_preview").click().run()
 
@@ -289,6 +290,7 @@ def test_direct_mixed_json_apply_warns_about_already_worked_yarn():
     next(part for part in updated["parts"] if part["name"] == "手臂")["instance_colors"] = ["蓝色", None]
     body = next(part for part in updated["parts"] if part["name"] == "身体")
     body["notes"] = (body.get("notes") or "") + "；手工缝合说明"
+    at.button(key="json_open_project").click().run()
     at.text_area(key="json_edit_project").input(json.dumps(updated, ensure_ascii=False)).run()
     at.button(key="regen_project").click().run()
     assert not at.exception
@@ -403,6 +405,7 @@ def test_preview_is_read_only_then_apply_undo_redo_keep_exact_progress_and_notes
     changed = deepcopy(result["params"])
     arm = next(p for p in changed["parts"] if p["name"] == "手臂")
     arm["rounds"][5]["notes"] = "6X；留线准备下一步"
+    at.button(key="json_open_project").click().run()
     at.text_area(key="json_edit_project").input(json.dumps(changed, ensure_ascii=False)).run()
     at.button(key="edit_project_json_preview").click().run()
     assert not at.exception
@@ -447,6 +450,7 @@ def test_cancel_preview_keeps_the_pattern_progress_and_notes():
     seed_progress(at.session_state, result, {"chk_project_手臂_0"})
     at.session_state["project_notes_project"] = "保留此备注"
     at.run()
+    at.button(key="json_open_project").click().run()
     at.button(key="edit_project_json_preview").click().run()
     at.button(key="edit_project_preview_cancel").click().run()
     assert not at.exception and at.session_state["result"] == result

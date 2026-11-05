@@ -403,6 +403,7 @@ def test_advanced_json_aligns_copy_colors_before_preview_and_backup():
     at = AppTest.from_string(_FULL_UI, default_timeout=60)
     at.session_state["result"] = result
     at.run()
+    at.button(key=f"json_open_{RID}").click().run()
     at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
     at.button(key=f"edit_{RID}_json_preview").click().run()
     assert not at.exception
@@ -436,6 +437,7 @@ def test_advanced_json_rejects_a_color_bound_to_a_missing_copy_without_losing_wo
     at = AppTest.from_string(_FULL_UI, default_timeout=60)
     at.session_state["result"] = result
     at.run()
+    at.button(key=f"json_open_{RID}").click().run()
     at.checkbox(key=f"chk_{RID}_手臂_0").check().run()
     at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
     key = f"edit_{RID}_json_preview" if preview else f"regen_{RID}"
@@ -455,6 +457,7 @@ def test_direct_json_apply_reports_that_copy_colors_were_aligned():
     at = AppTest.from_string(_FULL_UI, default_timeout=60)
     at.session_state["result"] = result
     at.run()
+    at.button(key=f"json_open_{RID}").click().run()
     at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
     at.button(key=f"regen_{RID}").click().run()
     assert not at.exception
@@ -475,6 +478,7 @@ def test_existing_misaligned_session_warns_and_can_be_repaired_without_losing_pr
     at.session_state["result"] = result
     at.run()
     assert any("逐份配色待修正" in item.value for item in at.warning)
+    at.button(key=f"json_open_{RID}").click().run()
     assert any(button.label == "备份完整结果" for button in at.get("download_button"))
     at.checkbox(key=f"chk_{RID}_手臂_0").check().run()
     at.button(key=f"share_{RID}").click().run()
@@ -505,6 +509,7 @@ def test_advanced_json_color_edit_refreshes_verified_previous_notes():
     at = AppTest.from_string(_FULL_UI, default_timeout=60)
     at.session_state["result"] = result
     at.run()
+    at.button(key=f"json_open_{RID}").click().run()
     at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
     at.button(key=f"regen_{RID}").click().run()
     assert not at.exception
