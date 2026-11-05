@@ -21,7 +21,7 @@ from app.services.result_logic import (
     regenerate_with_size,
     regenerate_with_structure,
 )
-from app.ui.pattern_editor import edit_yarn
+from app.ui.pattern_editor import edit_rounds, edit_yarn
 from app.utils.exporters import export_markdown
 from app.utils.parade_export import export_parade_report
 from app.utils.project import project_backup, read_project_state
@@ -238,6 +238,79 @@ def test_untrusted_part_summary_cannot_hide_a_part_wide_instruction_change():
 
     assert not color_only_change(result, updated)
     assert not retained_progress(result, updated, "result", progress)
+
+
+@pytest.mark.parametrize("marker_kind", ["summary", "round"])
+@pytest.mark.parametrize("operation", ["rebuild", "recolour", "import", "project"])
+def test_generated_looking_untrusted_markers_never_erase_instructions(marker_kind, operation):
+    result = _result()
+    part = _part(result, "身体")
+    if marker_kind == "summary":
+        marker = " 配色（按钩织圈序，自下而上）：R1–R15 body。手缝纽扣。"
+        part["notes"] = part["auto_color_summary"] = marker
+    else:
+        marker = "换线：保留长线尾（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）"
+        part["rounds"][1]["notes"] = marker
+        part["rounds"][1]["auto_color_note"] = marker
+    original = deepcopy(result)
+
+    with pytest.raises(ValueError, match="身体.*自动配色说明"):
+        if operation == "rebuild":
+            rebuild_params(result["params"])
+        elif operation == "recolour":
+            apply_color_change(result, part_name="身体", color="蓝色", mode=MODE_UNIFORM)
+        elif operation == "import":
+            import_backup(PatternResult.from_result(result).to_backup(), "restored")
+        else:
+            progress = {identity: True for identity, _, p in progress_entries(result, "result")
+                        if p["name"] == "身体"}
+            project = project_backup(result, progress, "制作笔记")
+            import_backup(project, "restored")
+    assert result == original
+
+
+def test_verified_previous_markers_refresh_after_editing_a_round_color():
+    result = _result()
+    _part(result, "身体")["rounds"][2]["color"] = "红色"
+    result = apply_color_change(result, part_name="身体", color="蓝色", mode=MODE_KEEP_STRIPES)
+    index = next(i for i, part in enumerate(result["params"]["parts"]) if part["name"] == "身体")
+    original = _part(result, "身体")
+    old_summary = original["auto_color_summary"]
+    old_transition = original["rounds"][2]["auto_color_note"]
+    rounds = deepcopy(original["rounds"])
+    rounds[2]["color"] = "绿色"
+    updated = edit_rounds(result, index, rounds)
+    body = _part(updated, "身体")
+
+    assert old_summary not in body["notes"]
+    assert "绿色" in body["auto_color_summary"]
+    assert old_transition not in body["rounds"][2]["notes"]
+    assert "换线：绿色" in body["rounds"][2]["auto_color_note"]
+    assert color_only_change(result, updated)
+
+
+@pytest.mark.parametrize("marker_kind", ["summary", "round"])
+def test_color_edit_cannot_reclassify_an_old_manual_note_as_generated(marker_kind):
+    from app.models.color_design import _expected_color_texts
+
+    result = _result()
+    body = _part(result, "身体")
+    index = next(i for i, part in enumerate(result["params"]["parts"]) if part["name"] == "身体")
+    candidate = deepcopy(body)
+    candidate["rounds"][2]["color"] = "红色"
+    summary, transitions = _expected_color_texts(candidate)
+    if marker_kind == "summary":
+        body["notes"] = body["auto_color_summary"] = summary
+    else:
+        row = body["rounds"][2]
+        row["notes"] = row["auto_color_note"] = transitions[row["row"]]
+    original = deepcopy(result)
+    rounds = deepcopy(body["rounds"])
+    rounds[2]["color"] = "红色"
+
+    with pytest.raises(ValueError, match="身体.*自动配色说明"):
+        edit_rounds(result, index, rounds)
+    assert result == original
 
 
 @pytest.mark.parametrize("legacy", [False, True])

@@ -93,8 +93,9 @@ _render_paged_progress(st.session_state.result, "result")
 
 def test_markdown_labels_placeholders_and_preserves_custom_color_escaping():
     result = _result()
+    previous = deepcopy(result["params"]["parts"][0])
     result["params"]["parts"][0]["rounds"][3]["color"] = "蓝|<b>绿</b>"
-    refresh_color_instructions(result["params"]["parts"][0])
+    refresh_color_instructions(result["params"]["parts"][0], previous=previous)
     original = deepcopy(result)
     markdown = export_markdown(result["params"], result=result)
 
@@ -114,8 +115,9 @@ def test_pdf_reports_part_and_round_colors_without_mutating_the_pattern(monkeypa
     from app.utils.pdf_export import export_pdf
 
     result = _result()
+    previous = deepcopy(result["params"]["parts"][0])
     result["params"]["parts"][0]["rounds"][3]["color"] = "蓝<b>绿</b>"
-    refresh_color_instructions(result["params"]["parts"][0])
+    refresh_color_instructions(result["params"]["parts"][0], previous=previous)
     original = deepcopy(result)
     texts = []
     paragraph = platypus.Paragraph

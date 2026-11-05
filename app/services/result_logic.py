@@ -105,7 +105,8 @@ def saved_part_gauges(result: ResultData, structure: StructureData | None = None
             if p.get("gauge") is not None and p["name"] in names}
 
 
-def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bool = True) -> PatternParams:
+def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bool = True,
+                   previous: PatternParams | None = None) -> PatternParams:
     """把用户 JSON 中的 parts 重建为 CrochetPart 并重算派生量（regen/导入共用）。
 
     CrochetPart 只作校验器：重建后立即 dump 回 dict——params["parts"]
@@ -145,7 +146,7 @@ def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bo
 
     require_valid_pattern(rebuilt, check_notes=check_notes)
     # 时长/总针数/材料克数是 parts 的派生量，必须随编辑重算。
-    refresh_derived(rebuilt)
+    refresh_derived(rebuilt, previous_parts=previous.get("parts") if previous is not None else None)
     return rebuilt
 
 
@@ -383,6 +384,7 @@ def _carry_manual_part_colors(old: PartData, new: PartData) -> PartData:
     old_rows, new_rows = old["rounds"], new["rounds"]
     old_colors = [row.get("color") for row in old_rows]
     new = deepcopy(new)
+    generated = deepcopy(new)
     if old.get("color_section_mode") == "head_body":
         from app.services.color_selection import one_piece_neck_index
 
@@ -412,6 +414,9 @@ def _carry_manual_part_colors(old: PartData, new: PartData) -> PartData:
         note = new.get("notes")
         if isinstance(note, str):
             new["notes"] = note.replace(ONE_PIECE_MONO_NOTE, "") or None
+    from app.models.color_design import refresh_color_instructions
+
+    refresh_color_instructions(new, previous=generated)
     return new
 
 

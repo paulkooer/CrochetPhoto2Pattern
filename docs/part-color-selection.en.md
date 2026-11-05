@@ -125,7 +125,11 @@ round listed in the preview.
   migration replaces the last fragment matching the historical fixed format. Hand-written
   text in exactly that format cannot be reliably distinguished and needs manual review.
   An explicit `null` in a newer record does not trigger this inference, and malformed markers
-  do not cause hand-written text to be removed.
+  do not cause hand-written text to be removed. On import, a recorded generated-looking
+  fragment must match the current colours; during editing it must match a verified pre-edit
+  record. Otherwise rebuilding or importing stops with the affected part and round. Review
+  and correct the note, then set the corresponding automatic-fragment field to `null` before
+  retrying.
 - **Validation**: `instance_colors` must have exactly `quantity` entries; otherwise
   `rebuild_params` rejects at the boundary (no silent truncation) naming the part and the
   length. Copy IDs must also have matching length and be unique. New per-copy selection
@@ -141,7 +145,9 @@ round listed in the preview.
 - **Export cache**: raised whenever exported content changes (including per-colour and
   per-copy colours). This round raises it from **17 to 18**, so Markdown/PDF/Parade from
   older sessions must be regenerated. The current value is
-  `EXPORT_CACHE_VERSION` in `app/ui/export_cache.py`.
+  `EXPORT_CACHE_VERSION` in `app/ui/export_cache.py`. Share links are invalidated when
+  their shared data changes; brush-mask pixels are excluded from the cache check as well as
+  from the shared data.
 - **Project revisions**: migration from version 1 to 2 preserves old pattern semantics and
   accepts their original revision hashes. `project_state` and trial records remain separately
   versioned and unchanged.

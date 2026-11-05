@@ -394,6 +394,25 @@ def test_all_copies_share_one_colour_again_after_a_whole_part_recolour():
 
 # ── 结果页面板 ───────────────────────────────────────────────────────────
 
+def test_advanced_json_color_edit_refreshes_verified_previous_notes():
+    result = apply_color_change(_striped(_result()), part_name="身体", color="蓝色",
+                                mode=MODE_KEEP_STRIPES)
+    corrected = deepcopy(result["params"])
+    body = next(part for part in corrected["parts"] if part["name"] == "身体")
+    old_transition = body["rounds"][2]["auto_color_note"]
+    body["rounds"][2]["color"] = "绿色"
+    at = AppTest.from_string(_FULL_UI, default_timeout=60)
+    at.session_state["result"] = result
+    at.run()
+    at.text_area(key=f"json_edit_{RID}").set_value(json.dumps(corrected, ensure_ascii=False)).run()
+    at.button(key=f"regen_{RID}").click().run()
+    assert not at.exception
+    updated = _part(at.session_state["result"], "身体")
+    assert updated["rounds"][2]["color"] == "绿色"
+    assert "换线：绿色" in updated["rounds"][2]["auto_color_note"]
+    assert old_transition not in updated["rounds"][2]["notes"]
+
+
 def test_colour_panel_renders_and_previews_without_touching_the_pattern():
     result = _result()
     at = AppTest.from_string(_COLOR_UI, default_timeout=30)

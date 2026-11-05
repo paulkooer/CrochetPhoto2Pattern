@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from PIL import Image
 
@@ -320,7 +321,8 @@ _RECORDED_COLOR_SUMMARY_RE = re.compile(
 
 def _remove_generated_color_text(note: str, fragment: str | None, *,
                                  recorded: bool, legacy_pattern: re.Pattern[str],
-                                 recorded_pattern: re.Pattern[str]) -> str:
+                                 recorded_pattern: re.Pattern[str],
+                                 expected: str | None, location: str) -> str:
     """Remove one attributable generated fragment, preserving all other prose.
 
     An absent field identifies a pre-marker backup. An explicit null means a
@@ -335,6 +337,12 @@ def _remove_generated_color_text(note: str, fragment: str | None, *,
         return note[:match.start()] + note[match.end():]
     if not isinstance(fragment, str) or not recorded_pattern.fullmatch(fragment):
         return note
+    if fragment not in note:
+        return note
+    if fragment != expected:
+        raise ValueError(
+            f"{location}的自动配色说明与颜色或圈号不一致，无法确认哪些文字是手写的；"
+            "请先核对并修正该说明，再将相应的 auto_color_note 或 auto_color_summary 设为 null")
     before, found, after = note.rpartition(fragment)
     if not found:
         return note
@@ -343,43 +351,77 @@ def _remove_generated_color_text(note: str, fragment: str | None, *,
     return before + after
 
 
-def refresh_color_instructions(part: PartData) -> None:
+def _expected_color_texts(part: Mapping[str, Any]) -> tuple[str | None, dict[int, str | None]]:
+    """Compute the only generated fragments justified by this part's colors."""
+    rounds = part.get("rounds") or []
+    colors = [rd.get("color") or part.get("color") or "未指定" for rd in rounds]
+    mapped = any(rd.get("color") for rd in rounds)
+    transitions = {
+        rd["row"]: (f"换线：{colors[index]}（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）"
+                    if mapped and index and colors[index] != colors[index - 1] else None)
+        for index, rd in enumerate(rounds)
+    }
+    summary = None
+    if mapped and len(set(colors)) > 1:
+        direction = "自下而上" if part["name"] in {"身体", "手臂", "腿部"} else "自上而下"
+        summary = (f" 配色（按钩织圈序，{direction}）："
+                   f"{blocks_summary_text(colors, [rd['row'] for rd in rounds])}。")
+    return summary, transitions
+
+
+def refresh_color_instructions(part: PartData, *, previous: Mapping[str, Any] | None = None) -> None:
     """Derive transitions and summaries from current yarns, retaining manual prose.
 
     Track generated fragments separately while keeping the composed notes readable
     by older consumers. Legacy backups are migrated using exact known phrases.
+    When editing an existing part's colors, pass its unmodified previous state to
+    identify old fragments; ambiguous recorded text is rejected without mutation.
     """
     rounds = part["rounds"]
     colors = [rd.get("color") or part.get("color") or "未指定" for rd in rounds]
     mapped = any(rd.get("color") for rd in rounds)
+    summary, transitions = _expected_color_texts(part)
+    previous_summary: str | None = None
+    previous_transitions: dict[int, str | None] = {}
+    has_previous = previous is not None and previous.get("name") == part["name"]
+    if has_previous and previous is not None:
+        old_summary, old_transitions = _expected_color_texts(previous)
+        if previous.get("auto_color_summary") == old_summary:
+            previous_summary = old_summary
+        for old in previous.get("rounds") or []:
+            expected = old_transitions.get(old["row"])
+            if old.get("auto_color_note") == expected:
+                previous_transitions[old["row"]] = expected
+
+    # Validate and prepare every change before mutating the part, so a doubtful
+    # marker cannot erase any instructions or leave a half-refreshed part.
+    notes = [
+        _remove_generated_color_text(
+            rd.get("notes") or "", rd.get("auto_color_note"), recorded="auto_color_note" in rd,
+            legacy_pattern=_COLOR_CHANGE_RE, recorded_pattern=_RECORDED_COLOR_CHANGE_RE,
+            expected=(previous_transitions.get(rd["row"]) if has_previous else transitions[rd["row"]]),
+            location=f"「{part['name']}」第 {rd['row']} 圈")
+        for rd in rounds
+    ]
+    note = _remove_generated_color_text(
+        part.get("notes") or "", part.get("auto_color_summary"), recorded="auto_color_summary" in part,
+        legacy_pattern=_COLOR_SUMMARY_RE, recorded_pattern=_RECORDED_COLOR_SUMMARY_RE,
+        expected=previous_summary if has_previous else summary, location=f"「{part['name']}」")
     for i, rd in enumerate(rounds):
         if mapped and part.get("color_origin") != "manual":
             # Freeze inherited yarns before recomputing the part's dominant yarn;
             # repeated refreshes must not recolor previously unspecified rows.
             rd["color"] = colors[i]
-        note = rd.get("notes") or ""
-        note = _remove_generated_color_text(
-            note, rd.get("auto_color_note"), recorded="auto_color_note" in rd,
-            legacy_pattern=_COLOR_CHANGE_RE, recorded_pattern=_RECORDED_COLOR_CHANGE_RE)
-        auto = None
-        if mapped and i and colors[i] != colors[i - 1]:
-            auto = (f"换线：{colors[i]}（前一针最后一次挂线改用新色；"
-                    "螺旋圈仍可能出现台阶）")
-            note = f"{note}；{auto}" if note else auto
-        rd["notes"] = note or None
+        row_note = notes[i]
+        auto = transitions[rd["row"]]
+        if auto:
+            row_note = f"{row_note}；{auto}" if row_note else auto
+        rd["notes"] = row_note or None
         rd["auto_color_note"] = auto
-    note = part.get("notes") or ""
-    note = _remove_generated_color_text(
-        note, part.get("auto_color_summary"), recorded="auto_color_summary" in part,
-        legacy_pattern=_COLOR_SUMMARY_RE, recorded_pattern=_RECORDED_COLOR_SUMMARY_RE)
-    auto = None
     if mapped:
         if part.get("color_origin") != "manual":
             part["color"] = max(dict.fromkeys(colors), key=colors.count)
-        if len(set(colors)) > 1:
-            direction = "自下而上" if part["name"] in {"身体", "手臂", "腿部"} else "自上而下"
-            auto = (f" 配色（按钩织圈序，{direction}）："
-                    f"{blocks_summary_text(colors, [rd['row'] for rd in rounds])}。")
-            note += auto
+        if summary:
+            note += summary
     part["notes"] = note or None
-    part["auto_color_summary"] = auto
+    part["auto_color_summary"] = summary
