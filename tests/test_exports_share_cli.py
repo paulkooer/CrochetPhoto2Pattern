@@ -208,7 +208,8 @@ def test_cli_local_vision_with_image(tmp_path):
                    "--out", str(out), "--quiet"])
     assert rc == 0
     d = json.loads(out.read_text(encoding="utf-8"))
-    assert d["vision_meta"]["source"] in ("default", "opencv-face")
+    assert d["vision_meta"]["source"] in ("default", "opencv-face", "silhouette-head")
+    assert [part["name"] for part in d["params"]["parts"]] == ["头部", "身体", "手臂", "腿部"]
     assert d["params"]["total_stitches"] > 0
     assert d["analysis"]["height_cm"] == 30.0
     assert d["sizing"]["source"] == "cli_target"

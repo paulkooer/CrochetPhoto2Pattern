@@ -9,9 +9,12 @@ from app.models.geometry import (
     GeometryObservation,
     SilhouetteObservation,
     _mask_width_profile,
+    ear_hint_from_mask,
+    head_box_from_mask,
     mock_geometry,
     observe_geometry,
     silhouette_profile,
+    tail_hint_from_mask,
 )
 from app.models.image_parser import ImageParser
 from app.models.orchestrator import PipelineOrchestrator
@@ -134,3 +137,63 @@ def test_segmented_and_fallback_paths_measure_same_uneroded_widths(monkeypatch, 
 def test_empty_and_tiny_width_profiles_are_unavailable():
     assert _mask_width_profile(np.zeros((80, 100), dtype=bool), 40) is None
     assert _mask_width_profile(np.ones((10, 100), dtype=bool), 40) is None
+
+
+def test_separated_top_component_becomes_the_head_box():
+    mask = np.zeros((80, 40), dtype=bool)
+    mask[4:19, 12:28] = True
+    mask[24:70, 14:26] = True
+    box = head_box_from_mask(mask)
+    assert box is not None
+    x, y, width, height = box
+    assert x == 12 and y == 4 and width == 16 and 14 <= height <= 16
+
+
+def test_straight_column_is_not_called_a_head():
+    mask = np.zeros((80, 40), dtype=bool)
+    mask[5:70, 10:30] = True
+    assert head_box_from_mask(mask) is None
+
+
+def test_neck_pinch_limits_the_head_box():
+    mask = np.zeros((80, 48), dtype=bool)
+    mask[4:21, 8:32] = True
+    mask[21:25, 16:24] = True
+    mask[25:71, 12:28] = True
+    box = head_box_from_mask(mask)
+    assert box is not None
+    _x, y, width, height = box
+    assert y == 4 and width == 24 and height <= 21
+
+
+def test_ear_hint_needs_symmetric_upper_bulges_or_two_lobes():
+    plain = np.zeros((60, 50), dtype=bool)
+    plain[12:40, 18:36] = True
+    assert ear_hint_from_mask(plain, (18, 12, 18, 28)) is False
+    # A circle is widest at the equator. That taper is not an ear.
+    circle = np.zeros((40, 40), dtype=bool)
+    for row, inset in enumerate((8, 4, 2, 1, 0, 0, 1, 2, 4, 8)):
+        circle[8 + row, 8 + inset:32 - inset] = True
+    assert ear_hint_from_mask(circle, (8, 8, 24, 10)) is False
+    bulged = plain.copy()
+    bulged[14:24, 8:42] = True
+    assert ear_hint_from_mask(bulged, (18, 12, 18, 28)) is True
+    lobes = np.zeros((50, 40), dtype=bool)
+    lobes[2:8, 6:12] = True
+    lobes[2:8, 28:34] = True
+    lobes[8:30, 12:28] = True
+    assert ear_hint_from_mask(lobes, (12, 8, 16, 22)) is True
+
+
+def test_tail_hint_is_a_short_one_sided_bump_not_legs_or_a_hem():
+    body = np.zeros((80, 50), dtype=bool)
+    body[8:64, 15:35] = True
+    tail = body.copy()
+    tail[52:60, 15:44] = True
+    assert tail_hint_from_mask(tail) is True
+    hem = body.copy()
+    hem[52:60, 6:44] = True
+    assert tail_hint_from_mask(hem) is False
+    leg = body.copy()
+    leg[50:70, 36:46] = True
+    assert tail_hint_from_mask(leg) is False

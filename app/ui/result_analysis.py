@@ -217,6 +217,7 @@ def render_analysis(result: ResultData) -> None:
                 "anthropic": "🤖 Anthropic Vision（AI 语义解析）",
                 "openai": "🤖 OpenAI Vision（AI 语义解析）",
                 "opencv-face": "🧮 本地视觉估算（人脸检测）",
+                "silhouette-head": "🧮 本地视觉估算（轮廓头部候选）",
                 "default": "🧮 本地默认估算",
             }.get(source, f"解析来源：{md_safe(source)}")
             body_ratio = vmeta.get("body_ratio")

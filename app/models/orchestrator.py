@@ -109,6 +109,8 @@ class PipelineOrchestrator:
                 geometry = observe_geometry(image, subject=subject)
         if source == "default":
             trace.fallbacks.append("没有通过检查的头部候选框；比例来自默认模板，请人工确认")
+        elif source == "silhouette-head":
+            trace.fallbacks.append("头部候选来自主体轮廓而非人脸检测；比例和部件仍需人工确认")
         if source != "mock" and geometry.silhouette is None:
             trace.fallbacks.append("主体分割不可用；形状回退模板")
         if source != "mock" and geometry.silhouette is not None and subject.segmentation is None:

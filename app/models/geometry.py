@@ -320,6 +320,286 @@ def has_bottom_flare(profile: list[float]) -> bool:
     return (sum(lower) / len(lower)) > 1.25 * (sum(middle) / len(middle))
 
 
+def _median(values: list[int]) -> int:
+    ordered = sorted(values)
+    return ordered[len(ordered) // 2]
+
+
+def _foreground_runs(mask: Any) -> list[list[tuple[int, int]]]:
+    """Inclusive-exclusive foreground runs for each row, left to right."""
+    import numpy as np
+
+    rows: list[list[tuple[int, int]]] = []
+    for row in np.asarray(mask, dtype=bool):
+        edges = np.diff(np.pad(row.astype(np.int8), (1, 1)))
+        starts = np.flatnonzero(edges == 1)
+        ends = np.flatnonzero(edges == -1)
+        rows.append([(int(start), int(end)) for start, end in zip(starts, ends, strict=True)])
+    return rows
+
+
+def _defined_runs(
+    longest: list[tuple[int, int, int] | None], indexes: list[int],
+) -> list[tuple[int, int, int]]:
+    found: list[tuple[int, int, int]] = []
+    for row in indexes:
+        item = longest[row]
+        if item is not None:
+            found.append(item)
+    return found
+
+
+def _longest_run(runs: list[tuple[int, int]]) -> tuple[int, int, int] | None:
+    if not runs:
+        return None
+    start, end = max(runs, key=lambda item: item[1] - item[0])
+    return start, end, end - start
+
+
+def scale_box(
+    box: tuple[int, int, int, int],
+    src_size: tuple[int, int],
+    dst_size: tuple[int, int],
+) -> tuple[int, int, int, int]:
+    """Scale an ``x, y, w, h`` box between ``(width, height)`` sizes."""
+    x, y, width, height = box
+    src_w, src_h = src_size
+    dst_w, dst_h = dst_size
+    if src_w <= 0 or src_h <= 0:
+        return box
+    sx, sy = dst_w / src_w, dst_h / src_h
+    return (
+        int(round(x * sx)),
+        int(round(y * sy)),
+        max(1, int(round(width * sx))),
+        max(1, int(round(height * sy))),
+    )
+
+
+def head_box_from_mask(mask: Any) -> tuple[int, int, int, int] | None:
+    """Head box from the top of a foreground mask, in mask pixels.
+
+    Prefer a top component separated by at least one empty row. Otherwise
+    accept a neck pinch in the upper half. A nearly straight column returns
+    None: guessing a fraction of a rectangle is not a head measurement.
+    Ears that share the head's pixels stay inside this box; they are not a
+    separate component. This does not measure ear length.
+    """
+    rows = _foreground_runs(mask)
+    if len(rows) < 12:
+        return None
+    width = int(mask.shape[1]) if getattr(mask, "ndim", 0) == 2 else 0
+    if width < 8:
+        return None
+    longest = [_longest_run(runs) for runs in rows]
+    peak = max((item[2] for item in longest if item), default=0)
+    if peak < 4 or peak / width < 0.05:
+        return None
+    occupied = [index for index, item in enumerate(longest) if item and item[2] > 0.08 * peak]
+    if len(occupied) < 12:
+        return None
+    subject_top, subject_bottom = occupied[0], occupied[-1]
+    subject_h = subject_bottom - subject_top + 1
+    if subject_h < 12:
+        return None
+
+    groups: list[list[int]] = [[occupied[0]]]
+    for previous, row in zip(occupied, occupied[1:], strict=False):
+        if row - previous > 1:
+            groups.append([row])
+        else:
+            groups[-1].append(row)
+
+    def box_of(chosen: list[int]) -> tuple[int, int, int, int] | None:
+        chosen_runs = _defined_runs(longest, chosen)
+        if len(chosen_runs) < 4:
+            return None
+        starts = [item[0] for item in chosen_runs]
+        ends = [item[1] for item in chosen_runs]
+        left, right = min(starts), max(ends)
+        top, bottom = chosen[0], chosen[-1] + 1
+        box_w, box_h = right - left, bottom - top
+        if box_w < 4 or box_h < 4:
+            return None
+        if not 0.08 <= box_h / subject_h <= 0.50:
+            return None
+        center = top + box_h / 2
+        if center < subject_top or center > subject_top + subject_h / 2:
+            return None
+        outside_rows = [row for row in occupied if row < chosen[0] or row > chosen[-1]]
+        outside = [item[2] for item in _defined_runs(longest, outside_rows)]
+        body_peak = max(outside) if outside else peak
+        # Compare the typical row width, not the bbox. Side ears widen the box
+        # without making the head itself several times the body.
+        core = _median([item[2] for item in chosen_runs])
+        if body_peak <= 0 or not 0.28 <= core / body_peak <= 2.2:
+            return None
+        if subject_h / max(box_w, box_h) > 8:
+            return None
+        return left, top, box_w, box_h
+
+    if len(groups) >= 2 and groups[0][-1] < subject_top + subject_h * 0.55:
+        separated = box_of(groups[0])
+        if separated is not None:
+            return separated
+
+    widths = [item[2] for item in _defined_runs(longest, occupied)]
+    count = len(widths)
+
+    def smoothed(index: int) -> int:
+        window = widths[max(0, index - 1):min(count, index + 2)]
+        return _median(window)
+
+    smooth = [smoothed(index) for index in range(count)]
+    for index in range(max(2, int(count * 0.12)), int(count * 0.55)):
+        if smooth[index] > smooth[index - 2] or smooth[index] > smooth[min(count - 1, index + 2)]:
+            continue
+        head_peak = max(smooth[:index])
+        if head_peak <= 0 or smooth[index] > 0.82 * head_peak:
+            continue
+        below = smooth[index:min(count, index + max(3, int(count * 0.15)))]
+        if not below or max(below) < smooth[index] * 1.08:
+            continue
+        pinched = box_of(occupied[:index])
+        if pinched is not None:
+            return pinched
+    return None
+
+
+def ear_hint_from_mask(mask: Any, head_box: tuple[int, int, int, int]) -> bool:
+    """True when the upper head has a symmetric side bulge or two side lobes.
+
+    Sewn ears usually share a component with the head, so this does not split
+    connected components and does not measure ear length or generate a tube.
+    Unmerged PR #15 explores that measurement separately; this hint does not
+    depend on it. A plain round head returns False.
+    """
+    rows = _foreground_runs(mask)
+    height = len(rows)
+    width = int(mask.shape[1]) if getattr(mask, "ndim", 0) == 2 else 0
+    x, y, box_w, box_h = head_box
+    x0, y0 = max(0, x), max(0, y)
+    x1, y1 = min(width, x + box_w), min(height, y + box_h)
+    if x1 - x0 < 6 or y1 - y0 < 6:
+        return False
+    center = (x0 + x1) / 2
+
+    def closest(row_index: int) -> tuple[int, int] | None:
+        best: tuple[int, int] | None = None
+        best_distance = 1e9
+        for start, end in rows[row_index]:
+            distance = abs((start + end) / 2 - center)
+            if distance < best_distance:
+                best_distance = distance
+                best = (start, end)
+        if best is None or best_distance > box_w * 0.75:
+            return None
+        return best
+
+    def band(start_row: int, end_row: int) -> tuple[int, int, int] | None:
+        lefts: list[int] = []
+        rights: list[int] = []
+        for row_index in range(max(0, start_row), min(height, end_row)):
+            run = closest(row_index)
+            if run is None or run[1] - run[0] < box_w * 0.25:
+                continue
+            lefts.append(run[0])
+            rights.append(run[1])
+        if len(lefts) < 2:
+            return None
+        left, right = _median(lefts), _median(rights)
+        return left, right, right - left
+
+    # Compare the upper sides with the face equator. A round head is widest
+    # at the equator, so "upper wider than the chin" is not an ear.
+    crown = band(y0, y0 + max(2, int((y1 - y0) * 0.40)))
+    face = band(y0 + int((y1 - y0) * 0.35), y0 + int((y1 - y0) * 0.75))
+    if crown and face:
+        crown_left, crown_right, crown_width = crown
+        face_left, face_right, face_width = face
+        left_extra = face_left - crown_left
+        right_extra = crown_right - face_right
+        minimum = max(2, int(0.08 * max(face_width, 1)))
+        if (left_extra >= minimum and right_extra >= minimum
+                and 0.5 <= left_extra / max(right_extra, 1) <= 2.0
+                and crown_width >= face_width * 1.12):
+            return True
+
+    lobe_rows = 0
+    scanned = 0
+    for row_index in range(max(0, y0 - int(box_h * 0.35)), min(height, y0 + int(box_h * 0.25))):
+        lobes = [
+            (start, end) for start, end in rows[row_index]
+            if max(2, int(0.12 * box_w)) <= end - start <= 0.75 * box_w
+        ]
+        if not lobes:
+            continue
+        scanned += 1
+        if len(lobes) != 2:
+            continue
+        (left_start, left_end), (right_start, right_end) = lobes
+        gap = right_start - left_end
+        left_center = (left_start + left_end) / 2
+        right_center = (right_start + right_end) / 2
+        width_ratio = (left_end - left_start) / max(1, right_end - right_start)
+        symmetric = abs((left_center + right_center) / 2 - center) <= 0.2 * box_w
+        balanced = abs((center - left_center) - (right_center - center)) <= 0.35 * box_w
+        if gap >= 0.12 * box_w and symmetric and balanced and 0.5 <= width_ratio <= 2.0:
+            lobe_rows += 1
+    return scanned >= 3 and lobe_rows >= 3 and lobe_rows / scanned >= 0.3
+
+
+def tail_hint_from_mask(mask: Any) -> bool:
+    """True for a short one-sided lower bump that still covers the torso.
+
+    A detached leg, a pair of legs, or a hem that widens on both sides is not
+    a tail. A single front photo cannot tell back from side; callers must
+    leave the part unchecked.
+    """
+    rows = _foreground_runs(mask)
+    width = int(mask.shape[1]) if getattr(mask, "ndim", 0) == 2 else 0
+    if width < 8 or len(rows) < 12:
+        return False
+    longest = [_longest_run(runs) for runs in rows]
+    peak = max((item[2] for item in longest if item), default=0)
+    if peak < 4:
+        return False
+    occupied = [index for index, item in enumerate(longest) if item and item[2] > 0.08 * peak]
+    if len(occupied) < 12:
+        return False
+    middle = occupied[int(len(occupied) * 0.35):int(len(occupied) * 0.65)]
+    if len(middle) < 3:
+        return False
+    torso_runs = _defined_runs(longest, middle)
+    torso_left = _median([item[0] for item in torso_runs])
+    torso_right = _median([item[1] for item in torso_runs])
+    torso_width = torso_right - torso_left
+    if torso_width < 6:
+        return False
+    hits: list[str] = []
+    for row in occupied[int(len(occupied) * 0.75):]:
+        item = longest[row]
+        if item is None:
+            continue
+        start, end, _run_width = item
+        covers = start <= torso_left + 0.15 * torso_width and end >= torso_right - 0.15 * torso_width
+        if not covers:
+            continue
+        left_extra = torso_left - start
+        right_extra = end - torso_right
+        minimum = max(2, 0.12 * torso_width)
+        maximum = 0.45 * torso_width
+        slack = 0.08 * torso_width
+        left_hit = minimum <= left_extra <= maximum and right_extra <= slack
+        right_hit = minimum <= right_extra <= maximum and left_extra <= slack
+        if left_hit == right_hit:
+            continue
+        hits.append("left" if left_hit else "right")
+    if len(hits) < 3 or len(set(hits)) != 1:
+        return False
+    return 0.06 <= len(hits) / len(occupied) <= 0.22
+
+
 def observe_geometry(image: Image.Image, *, subject: SubjectObservation | None = None) -> GeometryObservation:
     """Build the provider-neutral geometry observation used by shaping."""
     profile = silhouette_profile(image, subject=subject)

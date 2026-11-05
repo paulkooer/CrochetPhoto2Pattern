@@ -87,7 +87,9 @@ readiness separately from `summary.passed` quality metrics.
 > faithful chain-ring start lands, these parts should export completely again.
 >
 > The default local runner always delivers the fixed head/body/arms/legs template and never
-> delivers a skirt automatically. The macro-F1-above-template floor and flare-positive recall
+> delivers a skirt automatically. The review page may show a contour head, ears, a hem flare
+> or a one-sided lower bump as hints, but it does not preselect them or write them into
+> `analysis.parts` before confirmation. The macro-F1-above-template floor and flare-positive recall
 > therefore keep G3 blocked until photo analysis recognizes parts beyond the template. That is
 > the intended visual-benefit bar, not a calculation error.
 
