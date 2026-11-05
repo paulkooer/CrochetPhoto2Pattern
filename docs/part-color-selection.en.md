@@ -206,10 +206,11 @@ cancel, undo, redo.
 
 ## 7. Progress rule
 
-**Default (the existing conservative rule is unchanged)**: `progress_state.progress_limits`
-compares a part's full instructions (colours included) and each round's instructions
-(colours included, falling back to the part colour); completed records are cleared from the
-first affected round onward, and joins and assembly dependencies propagate as before.
+**Default conservative rule**: compare part and round construction instructions, then compare
+the effective yarn for each physical copy by its instance ID. Completion records are cleared
+from that copy's first affected round onward. A per-copy colour overrides the round and base
+colours, so other copies whose yarn has not changed keep their valid progress. Join and assembly
+dependencies still propagate as before.
 
 **The new V1 exception applies only to a verified pure colour change**: when two patterns are
 identical apart from colour-bearing fields, every completed round is retained. All of the
@@ -227,6 +228,8 @@ following must hold:
   `assembly_plan`, as well as each part's physical copy order (the structure instance IDs).
 
 Any change to stitches, techniques, joins or other construction keeps the conservative rule.
+When an edit also changes per-copy or shared colours, each copy's effective yarn is compared
+separately so an unaffected copy does not lose its progress.
 
 During undo or redo, unchanged work keeps its latest checks and unchecks. Affected work
 returns to the destination pattern's progress snapshot. The interface reports how many
@@ -240,18 +243,19 @@ currently completed rounds cannot be safely transferred; check the physical work
   parts that take part in no join; joined parts still go through the per-round comparison and
   the join dependency propagation.
 - **A change of instance order or count** is not a pure colour change: not a single stitch
-  count need differ, yet the physical copy a completed record belongs to has moved. The test
-  includes each part's physical copy order, so reordering structure instances still clears the
-  affected parts' records.
+  count need differ, yet the physical copy a completed record belongs to may have moved.
+  Progress follows stable instance IDs where they can be matched; unmatched copies and work
+  affected by join dependencies still require review.
 
 **Why the rule is not relaxed globally**: comparing colours is precisely what prevents the
 false impression that a recoloured pattern still matches finished work, and existing tests
 pin the conservative invalidation of joined parts. Relaxing only for a provable pure colour
 change retains completed rounds without letting any construction change slip through.
 
-**Duty to warn**: whether or not progress is retained, the interface must say that yarn
-already worked keeps its original colour. Retaining progress only means the **rest of the
-pattern** needs no re-checking; it does not mean the finished piece matches the pattern.
+**Duty to warn**: when the effective yarn changes on an existing copy, the preview and the
+result after applying must say that yarn already worked keeps its original colour, whether or
+not progress is retained. Retaining progress only means the **rest of the pattern** needs no
+re-checking; it does not mean the finished piece matches the pattern.
 
 ## 8. Exports and consistency
 

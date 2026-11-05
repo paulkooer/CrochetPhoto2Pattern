@@ -15,6 +15,7 @@ from app.services.progress_state import (
     ambiguous_legacy_progress,
     capture_progress,
     color_only_change,
+    has_color_change,
     install_progress,
     progress_impact,
     reconcile_restored_progress,
@@ -139,7 +140,7 @@ def commit_edit(slot: str, current: ResultData, updated: ResultData) -> ResultDa
     history["redo"].clear()
     history["legacy_ambiguous_count"] = 0
     history["unmapped_progress"] = 0
-    history["color_only_notice"] = color_only_change(current, updated)
+    history["color_change_notice"] = has_color_change(current, updated)
     retained = retained_progress(current, updated, slot, progress)
     history["cleared_progress"] = len(progress) - len(retained)
     return _install(slot, current, updated, history, retained)
@@ -155,7 +156,7 @@ def restore_edit(slot: str, current: ResultData, direction: str) -> ResultData:
     history["cleared_progress"] = 0
     # In-process sessions may still contain snapshots made before this update.
     updated = snapshot.get("result", snapshot)
-    history["color_only_notice"] = color_only_change(current, updated)
+    history["color_change_notice"] = has_color_change(current, updated)
     progress = snapshot.get("progress", {})
     ambiguous = (ambiguous_legacy_progress(updated, progress)
                  if snapshot.get("progress_identity_version") != "2" else set())
@@ -235,11 +236,15 @@ def render_edit_preview(slot: str, current: ResultData) -> None:
         progress = capture_progress(current, slot, st.session_state)
         st.table(progress_impact(current, candidate, slot, progress))
         pure_color = current != candidate and color_only_change(current, candidate)
-        if pure_color:
+        changed_color = has_color_change(current, candidate)
+        if pure_color and changed_color:
             # 纯颜色修改保留全部已完成圈次，但实物不会跟着变：这条提示与具体编辑器
             # 无关，选色面板与 JSON 编辑两条路径都必须看到。
             st.warning("本次只改动颜色：进度影响见上表。已钩出的旧颜色不会因为图解"
                        "改色而改变，请按实物决定是否重钩。")
+        elif changed_color:
+            st.warning("本次同时调整了颜色及其他内容：已钩出的旧颜色不会因为图解改色而改变，"
+                       "请按实物核对。")
         _render_preview_detail(pending.get("detail"))
         before, after = metrics(current), metrics(candidate)
         changes = [{"项目": name, "修改前": str(before[name]), "修改后": str(after[name])}
@@ -313,7 +318,7 @@ def render_history(slot: str, result: ResultData) -> None:
     if count := history.get("unmapped_progress"):
         st.warning(f"有 {count} 个当前完成圈次涉及施工变化，已恢复目标图解的进度快照；"
                    "请按实物核对。")
-    if history.get("color_only_notice"):
+    if history.get("color_change_notice", history.get("color_only_notice")):
         st.warning("已钩出的旧颜色不会因为图解改色而改变，请按实物决定是否重钩。")
     with st.expander("最近一次修改前后对比"):
         if history["comparison"]:

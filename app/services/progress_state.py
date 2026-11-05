@@ -238,6 +238,61 @@ def _copy_roles(result: ResultData) -> dict[str, dict[str, tuple[str, str | int]
     return roles
 
 
+def _copy_color_changes(current: ResultData, updated: ResultData) -> dict[str, dict[str, int]]:
+    """First changed effective yarn, keyed by destination part and copy ID."""
+    from app.models.parts import _part_instance_colors
+
+    old_parts = {part["name"]: part for part in current["params"]["parts"]}
+    old_roles, new_roles = _copy_roles(current), _copy_roles(updated)
+    changes: dict[str, dict[str, int]] = {}
+    for part in updated["params"]["parts"]:
+        name = part["name"]
+        before = old_parts.get(name)
+        if before is None:
+            continue
+        old_colors = _part_instance_colors(before)
+        new_colors = _part_instance_colors(part)
+        old_by_role = {role: index for index, role in enumerate(old_roles.get(name, {}).values())}
+        old_rows = {row["row"]: row for row in before["rounds"]}
+        first_difference: dict[tuple[str | None, str | None], int | None] = {}
+        for new_index, (copy_id, role) in enumerate(new_roles.get(name, {}).items()):
+            old_index = old_by_role.get(role)
+            if old_index is None:
+                continue
+            old_override = old_colors[old_index] if old_colors is not None else None
+            new_override = new_colors[new_index] if new_colors is not None else None
+            if old_override and old_override == new_override:
+                continue
+            pair = old_override, new_override
+            if pair not in first_difference:
+                first_difference[pair] = None
+                for row_index, row in enumerate(part["rounds"]):
+                    old_row = old_rows.get(row["row"])
+                    if old_row is None:
+                        continue
+                    old_color = old_override or old_row.get("color") or before.get("color") or "未指定"
+                    new_color = new_override or row.get("color") or part.get("color") or "未指定"
+                    if old_color != new_color:
+                        first_difference[pair] = row_index
+                        break
+            first = first_difference[pair]
+            if first is not None:
+                changes.setdefault(name, {})[copy_id] = first
+    return changes
+
+
+def has_color_change(current: ResultData, updated: ResultData) -> bool:
+    """Whether an existing physical copy changes yarn on an existing round."""
+    return bool(_copy_color_changes(current, updated))
+
+
+def _copy_color_progress_limits(current: ResultData, updated: ResultData) -> dict[str, dict[str, int]]:
+    # Only the established pure-colour exception keeps changed-yarn progress.
+    if color_only_change(current, updated):
+        return {}
+    return _copy_color_changes(current, updated)
+
+
 def progress_entries(result: ResultData, slot: str, *,
                      part_index: int | None = None) -> Iterator[tuple[str, str, PartData]]:
     """Yield semantic identity, widget key and part for each physical round.
@@ -273,10 +328,10 @@ def capture_progress(result: ResultData, slot: str, state: Mapping) -> dict[str,
 
 
 def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
-    """Count the unchanged leading rounds, before propagating join dependencies.
+    """Count unchanged leading construction rounds and propagate join dependencies.
 
-    Compare full instructions (including colors and finishing notes), not just
-    counts. Unknown part-wide changes conservatively invalidate the whole part.
+    Independent copies' effective yarns are compared separately. Joined parts
+    keep the existing conservative colour and dependency checks here.
     """
     from app.models.gauge import gauge_for_part, gauge_from_result
 
@@ -302,9 +357,19 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
         metadata["notes"] = _part_note_without_color_summary(part) or ""
         return metadata
 
-    def round_instructions(rd, part):
+    def round_instructions(rd, part, previous, *, joined_part):
         instruction = {k: v for k, v in rd.items() if k != "auto_color_note"}
-        instruction["color"] = rd.get("color") or part.get("color")
+        if joined_part:
+            instruction["color"] = rd.get("color") or part.get("color")
+            return instruction
+        instruction.pop("color", None)
+        color = rd.get("color") or part.get("color") or "未指定"
+        previous_color = (previous.get("color") or part.get("color") or "未指定") if previous else None
+        expected = (f"换线：{color}（前一针最后一次挂线改用新色；螺旋圈仍可能出现台阶）"
+                    if previous is not None and color != previous_color else None)
+        marker = rd.get("auto_color_note")
+        instruction["notes"] = _without_recorded_fragment(
+            rd.get("notes"), marker if marker == expected else None)
         return instruction
 
     for name, part in new.items():
@@ -319,8 +384,11 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
         if pure_colour and name not in joined:
             limits[name] = len(part["rounds"])
             continue
-        for left, right in zip(before["rounds"], part["rounds"], strict=False):
-            if round_instructions(left, before) != round_instructions(right, part):
+        for index, (left, right) in enumerate(zip(before["rounds"], part["rounds"], strict=False)):
+            old_previous = before["rounds"][index - 1] if index else None
+            new_previous = part["rounds"][index - 1] if index else None
+            if (round_instructions(left, before, old_previous, joined_part=name in joined)
+                    != round_instructions(right, part, new_previous, joined_part=name in joined)):
                 break
             limits[name] += 1
 
@@ -371,9 +439,13 @@ def progress_limits(current: ResultData, updated: ResultData) -> dict[str, int]:
 
 
 def _retained_progress(current: ResultData, updated: ResultData, progress: dict,
-                       limits: dict[str, int]) -> tuple[dict[str, bool], dict[str, int]]:
-    eligible = {p["name"]: {r["row"] for r in p["rounds"][:limits[p["name"]]]}
+                       limits: dict[str, int], *,
+                       copy_limits: dict[str, dict[str, int]] | None = None
+                       ) -> tuple[dict[str, bool], dict[str, int]]:
+    eligible = {p["name"]: {r["row"]: index for index, r in enumerate(p["rounds"][:limits[p["name"]]])}
                 for p in updated["params"]["parts"]}
+    if copy_limits is None:
+        copy_limits = _copy_color_progress_limits(current, updated)
     old_roles = _copy_roles(current)
     new_roles = _copy_roles(updated)
     next_ids = {}
@@ -398,7 +470,9 @@ def _retained_progress(current: ResultData, updated: ResultData, progress: dict,
             continue
         name, copy_id, row = parsed
         next_copy = next_ids.get(name, {}).get(copy_id)
-        if next_copy is not None and row in eligible.get(name, set()):
+        index = eligible.get(name, {}).get(row)
+        copy_limit = copy_limits.get(name, {}).get(next_copy) if next_copy is not None else None
+        if next_copy is not None and index is not None and (copy_limit is None or index < copy_limit):
             next_identity = identity if next_copy == copy_id else json.dumps([name, next_copy, row],
                                                                             ensure_ascii=False)
             retained[next_identity] = True
@@ -421,9 +495,12 @@ def reconcile_restored_progress(current: ResultData, restored: ResultData,
     """
     forward = progress_limits(current, restored)
     backward = progress_limits(restored, current)
-    live_at_destination = _retained_progress(current, restored, live, forward)[0]
-    saved_at_current = _retained_progress(restored, current, saved, backward)[0]
-    unchanged_saved = _retained_progress(current, restored, saved_at_current, forward)[0]
+    forward_copies = _copy_color_progress_limits(current, restored)
+    backward_copies = _copy_color_progress_limits(restored, current)
+    live_at_destination = _retained_progress(current, restored, live, forward, copy_limits=forward_copies)[0]
+    saved_at_current = _retained_progress(restored, current, saved, backward, copy_limits=backward_copies)[0]
+    unchanged_saved = _retained_progress(
+        current, restored, saved_at_current, forward, copy_limits=forward_copies)[0]
     progress = {**{key: done for key, done in saved.items() if key not in unchanged_saved},
                 **live_at_destination}
     return progress, len(live) - len(live_at_destination)
@@ -432,7 +509,8 @@ def reconcile_restored_progress(current: ResultData, restored: ResultData,
 def progress_impact(current: ResultData, updated: ResultData, slot: str, progress: dict) -> list[dict]:
     """Human-readable changes, with counts per logical part across its copies."""
     limits = progress_limits(current, updated)
-    _, kept = _retained_progress(current, updated, progress, limits)
+    copy_limits = _copy_color_progress_limits(current, updated)
+    _, kept = _retained_progress(current, updated, progress, limits, copy_limits=copy_limits)
     old_parts = {p["name"]: p for p in current["params"]["parts"]}
     new_parts = {p["name"]: p for p in updated["params"]["parts"]}
     done: dict[str, int] = {}
@@ -441,6 +519,7 @@ def progress_impact(current: ResultData, updated: ResultData, slot: str, progres
             name = json.loads(identity)[0]
             done[name] = done.get(name, 0) + 1
     summary = []
+    new_roles = _copy_roles(updated)
     for name in dict.fromkeys([*old_parts, *new_parts]):
         part = new_parts.get(name)
         before = old_parts.get(name)
@@ -455,6 +534,14 @@ def progress_impact(current: ResultData, updated: ResultData, slot: str, progres
             scope = "末尾圈次已删除；前段保持不变"
         else:
             scope = "原有圈次保持不变"
+        if part is not None:
+            copy_details = [f"第 {index} 份从第 {part['rounds'][copy_limit]['row']} 圈起重新核对"
+                            for index, copy_id in enumerate(new_roles.get(name, {}), 1)
+                            if (copy_limit := copy_limits.get(name, {}).get(copy_id)) is not None
+                            and copy_limit < limit]
+            if copy_details:
+                details = "；".join(copy_details)
+                scope = details if scope == "原有圈次保持不变" else f"{scope}；{details}"
         summary.append({"部件": name, "变化范围": scope,
                         "保留完成圈次": kept.get(name, 0),
                         "清除完成圈次": done.get(name, 0) - kept.get(name, 0)})
