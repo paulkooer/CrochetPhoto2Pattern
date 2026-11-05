@@ -5,7 +5,12 @@ from copy import deepcopy
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from app.services.progress_state import progress_entries, progress_impact, retained_progress
+from app.services.progress_state import (
+    progress_entries,
+    progress_impact,
+    reconcile_restored_progress,
+    retained_progress,
+)
 from app.services.result_logic import import_backup
 from app.utils.project import project_backup, read_project_state
 from tests.progress_helpers import seed_progress
@@ -144,6 +149,23 @@ def test_part_wide_changes_remain_conservative_but_material_estimates_keep_progr
     updated["params"]["parts"][0]["notes"] = "先填充再继续"
     kept = retained_progress(result, updated, "result", progress)
     assert all(json.loads(k)[0] != updated["params"]["parts"][0]["name"] for k in kept)
+
+
+def test_undo_only_carries_new_progress_for_rounds_with_unchanged_construction():
+    restored = _flat()
+    current = deepcopy(restored)
+    next(part for part in current["params"]["parts"] if part["name"] == "手臂")["rounds"][5]["notes"] = (
+        "6X；在此圈更换工艺")
+    arm = [identity for identity, _, part in progress_entries(restored, "result")
+           if part["name"] == "手臂"]
+    by_row = {json.loads(identity)[2]: identity for identity in arm[:20]}
+    saved = {by_row[3]: True, by_row[9]: True}
+    live = {by_row[2]: True, by_row[6]: True}
+
+    # Row 3 was unchecked after the edit; row 9 was invalidated by it.
+    # Row 6 belongs to the changed construction and cannot be transferred back.
+    assert reconcile_restored_progress(current, restored, live, saved) == (
+        {by_row[2]: True, by_row[9]: True}, 1)
 
 
 def test_preview_is_read_only_then_apply_undo_redo_keep_exact_progress_and_notes():

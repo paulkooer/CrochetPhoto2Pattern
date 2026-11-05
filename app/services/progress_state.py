@@ -411,6 +411,24 @@ def retained_progress(current: ResultData, updated: ResultData, slot: str, progr
     return _retained_progress(current, updated, progress, progress_limits(current, updated))[0]
 
 
+def reconcile_restored_progress(current: ResultData, restored: ResultData,
+                                live: dict[str, bool], saved: dict[str, bool]) -> tuple[dict[str, bool], int]:
+    """Carry recent checks and unchecks across unchanged work during undo/redo.
+
+    For affected rounds, restore the destination snapshot instead of assuming
+    that work made under a different construction belongs to the old pattern.
+    Map only recorded entries, not every possible physical round.
+    """
+    forward = progress_limits(current, restored)
+    backward = progress_limits(restored, current)
+    live_at_destination = _retained_progress(current, restored, live, forward)[0]
+    saved_at_current = _retained_progress(restored, current, saved, backward)[0]
+    unchanged_saved = _retained_progress(current, restored, saved_at_current, forward)[0]
+    progress = {**{key: done for key, done in saved.items() if key not in unchanged_saved},
+                **live_at_destination}
+    return progress, len(live) - len(live_at_destination)
+
+
 def progress_impact(current: ResultData, updated: ResultData, slot: str, progress: dict) -> list[dict]:
     """Human-readable changes, with counts per logical part across its copies."""
     limits = progress_limits(current, updated)

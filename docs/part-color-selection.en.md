@@ -222,6 +222,10 @@ following must hold:
 
 Any change to stitches, techniques, joins or other construction keeps the conservative rule.
 
+During undo or redo, unchanged work keeps its latest checks and unchecks. Affected work
+returns to the destination pattern's progress snapshot. The interface reports how many
+currently completed rounds cannot be safely transferred; check the physical work after restoring it.
+
 **Two deliberately conservative exceptions**:
 
 - Parts involved in a **cross-part reserved half-stitch join** keep the existing conservative
