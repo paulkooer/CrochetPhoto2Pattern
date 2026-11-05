@@ -63,6 +63,92 @@ def test_repeated_render_reuses_exports_but_content_and_provenance_edits_invalid
     assert calls == {"markdown": 4, "parade": 3}
 
 
+def test_markdown_cache_tracks_geometry_provenance_without_hashing_mask_pixels(monkeypatch):
+    from app.ui import result_renderer
+
+    outputs = []
+    markdown = result_renderer.export_markdown
+
+    def capture(*args, **kwargs):
+        value = markdown(*args, **kwargs)
+        outputs.append(value)
+        return value
+
+    monkeypatch.setattr(result_renderer, "export_markdown", capture)
+    result = run(build_parser().parse_args(["--mock"]))
+    result["result_id"] = "geometry-provenance-cache"
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    assert not at.exception and len(outputs) == 1
+    assert "身体轮廓来源：用户框选区域" not in outputs[-1]
+    assert "主体掩码已由用户补选" not in outputs[-1]
+
+    result = deepcopy(result)
+    result["geometry"] = {"body_region": {"box": [0.2, 0.2, 0.8, 0.8]}}
+    at.session_state["result"] = result
+    at.run()
+    assert not at.exception and len(outputs) == 2
+    assert "身体轮廓来源：用户框选区域" in outputs[-1]
+
+    result = deepcopy(result)
+    result["geometry"]["mask_review"] = {"pixels": "first"}
+    at.session_state["result"] = result
+    at.run()
+    assert not at.exception and len(outputs) == 3
+    assert "主体掩码已由用户补选" in outputs[-1]
+
+    # Export text depends on whether a mask exists, not the private bitmap.
+    result = deepcopy(result)
+    result["geometry"]["mask_review"]["pixels"] = "second"
+    at.session_state["result"] = result
+    at.run()
+    assert not at.exception and len(outputs) == 3
+
+    result = deepcopy(result)
+    result["geometry"].pop("mask_review")
+    at.session_state["result"] = result
+    at.run()
+    assert not at.exception and len(outputs) == 4
+    assert "主体掩码已由用户补选" not in outputs[-1]
+
+
+def test_pdf_is_discarded_when_its_pattern_or_provenance_changes(monkeypatch):
+    builds = []
+
+    def pdf(*args, **kwargs):
+        builds.append(True)
+        return b"%PDF-snapshot"
+
+    monkeypatch.setattr("app.utils.pdf_export.export_pdf", pdf)
+    result = run(build_parser().parse_args(["--mock"]))
+    result["result_id"] = "pdf-snapshot-cache"
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.button(key="pdf_gen_pdf-snapshot-cache").click().run()
+    assert not at.exception and len(builds) == 1
+    assert any(button.label == "下载 PDF" for button in at.get("download_button"))
+
+    edited = deepcopy(result)
+    edited["params"]["parts"][0]["notes"] += "；制作备注"
+    at.session_state["result"] = edited
+    at.run()
+    assert not at.exception
+    assert at.session_state["workspace_result"]["pdf"] is None
+    assert not any(button.label == "下载 PDF" for button in at.get("download_button"))
+    at.button(key="pdf_gen_pdf-snapshot-cache").click().run()
+    assert not at.exception and len(builds) == 2
+
+    edited = deepcopy(edited)
+    edited["geometry"] = {"body_region": {"box": [0.2, 0.2, 0.8, 0.8]}}
+    at.session_state["result"] = edited
+    at.run()
+    assert not at.exception
+    assert at.session_state["workspace_result"]["pdf"] is None
+    assert not any(button.label == "下载 PDF" for button in at.get("download_button"))
+
+
 def test_failed_refresh_cannot_reuse_old_value_and_can_retry():
     from app.ui.export_cache import cached_export
 

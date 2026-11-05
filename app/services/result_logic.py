@@ -130,7 +130,15 @@ def rebuild_params(corrected: dict[str, Any] | PatternParams, *, check_notes: bo
         if part.name in names:
             raise ValueError(f"部件名称不能重复: {part.name}")
         names.add(part.name)
-        rebuilt_parts.append(part.to_data())
+        part_data = part.to_data()
+        # Keep absent legacy markers distinct from explicit nulls until the first
+        # refresh. Pydantic otherwise fills both with null and loses provenance.
+        if "auto_color_summary" not in part_input:
+            part_data.pop("auto_color_summary", None)
+        for source, row in zip(part_input["rounds"], part_data["rounds"], strict=True):
+            if isinstance(source, dict) and "auto_color_note" not in source:
+                row.pop("auto_color_note", None)
+        rebuilt_parts.append(part_data)
     # Parts passed CrochetPart; other params retain their legacy, partly validated shape.
     rebuilt = cast(PatternParams, {**corrected, "parts": rebuilt_parts})
     from app.models.validator import require_valid_pattern

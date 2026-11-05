@@ -828,7 +828,7 @@ def render_results(result: ResultData, slot: str) -> None:
                 st.error(f"结构校验或重生成失败: {md_safe(e)}")
 
     from app.models.runtime import timed_export
-    from app.ui.export_cache import EXPORT_CACHE_VERSION, cached_export, parade_payload
+    from app.ui.export_cache import EXPORT_CACHE_VERSION, cached_export, export_fingerprint, parade_payload
     export_record = ws["export_trace"]
     export_cache = ws["export_cache"]
     # Bind portable text to all inputs its exporter consumes, including source
@@ -837,12 +837,18 @@ def render_results(result: ResultData, slot: str) -> None:
     markdown_source = {
         "params": serializable_params, "analysis": analysis,
         "vision_meta": result.get("vision_meta"), "sizing": result.get("sizing"),
+        # Provenance text depends on the presence of these records, not their
+        # potentially large, photo-derived contents.
+        "geometry_provenance": {"body_region": bool(geometry.get("body_region")),
+                                "mask_review": bool(geometry.get("mask_review"))},
         "generator_version": result.get("generator_version"), "export_version": software_version(),
     }
     md_content = ""
     md_ready = False
+    pdf_fingerprint = None
     if _v["ok"]:
         try:
+            pdf_fingerprint = export_fingerprint(markdown_source)
             md_content = cached_export(
                 export_cache, "markdown", markdown_source,
                 lambda: timed_export(
@@ -893,15 +899,21 @@ def render_results(result: ResultData, slot: str) -> None:
             disabled=not md_ready,
         )
     with col_bk2:
-        # A live session must regenerate PDFs after printable guidance changes.
-        if ws["pdf"] is not None and ws["pdf"]["format"] != EXPORT_CACHE_VERSION:
+        # A PDF is a snapshot: discard it whenever its inputs or format change,
+        # even if the result identifier itself stayed the same.
+        if (ws["pdf"] is not None
+                and (pdf_fingerprint is None
+                     or ws["pdf"].get("format") != EXPORT_CACHE_VERSION
+                     or ws["pdf"].get("fingerprint") != pdf_fingerprint)):
             ws["pdf"] = None
         # PDF（S4）：点"生成"才构建（避免每次 rerun 都渲染 PDF），
         # 字节缓存进工作区后出现下载按钮
-        if st.button("生成 PDF 图解", key=f"pdf_gen_{result_key}", disabled=not _v["ok"]):
+        if st.button("生成 PDF 图解", key=f"pdf_gen_{result_key}",
+                     disabled=not _v["ok"] or pdf_fingerprint is None):
             try:
                 from app.utils.pdf_export import export_pdf
-                ws["pdf"] = {"format": EXPORT_CACHE_VERSION, "bytes": timed_export(
+                ws["pdf"] = {"format": EXPORT_CACHE_VERSION, "fingerprint": pdf_fingerprint,
+                             "bytes": timed_export(
                     export_record, "pdf", lambda: export_pdf(params, analysis, result=result))}
             except ImportError:
                 st.caption("PDF 导出需安装 reportlab："

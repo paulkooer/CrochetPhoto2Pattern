@@ -158,11 +158,9 @@ def test_manual_regenerate_applies_edited_json():
 
 @pytest.mark.parametrize("invalid", ["bool_count", "duplicate_parts", "empty_rounds", "infinite_size"])
 @pytest.mark.parametrize("route", ["edit", "import"])
-def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, route):
+def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, route, monkeypatch):
     import json
     from copy import deepcopy
-
-    from app.ui.export_cache import EXPORT_CACHE_VERSION
 
     original = _mock_result("reject-edit")
     edited = deepcopy(original["params"])
@@ -178,10 +176,14 @@ def test_invalid_json_edit_keeps_current_result_and_cached_artifacts(invalid, ro
 
     at = AppTest.from_file(_APP, default_timeout=30)
     at.session_state["result"] = deepcopy(original)
-    cached = {"pdf": {"format": EXPORT_CACHE_VERSION, "bytes": b"existing-pdf"},
-              "share": {"token": "existing-share"}}
+    cached = {"share": {"token": "existing-share"}}
     at.session_state["workspace_result"] = {**new_workspace(original, "result"), **cached}
     at.run()
+    with monkeypatch.context() as patch:
+        patch.setattr("app.utils.pdf_export.export_pdf", lambda *args, **kwargs: b"existing-pdf")
+        at.button(key="pdf_gen_reject-edit").click().run()
+    cached["pdf"] = deepcopy(at.session_state["workspace_result"]["pdf"])
+    assert cached["pdf"] is not None
     if route == "edit":
         at.text_area(key="json_edit_reject-edit").set_value(json.dumps(edited)).run()
         at.button(key="regen_reject-edit").click().run()

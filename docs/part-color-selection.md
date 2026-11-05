@@ -96,6 +96,9 @@
   因此新字段必须进模型，并由
   `docs/schemas/crochet_part.schema.json` 漂移测试守护。
 - **旧备份读入**：沿用其部件数量和已有圈色，不猜测、不自动补写来源。
+- **旧版自动配色说明**：缺少自动片段字段时，迁移会识别并替换最后一段符合历史固定
+  格式的说明；若手写文字与该格式完全相同，无法可靠区分其来源，应人工核对迁移结果。
+  新记录中显式为 `null` 的字段不会触发这种推断；格式不匹配的标记不会删除手写文字。
 - **校验**：`instance_colors` 长度必须等于 `quantity`；不满足时在 `rebuild_params`
   边界拒绝（不静默截断），实体 ID 的长度和唯一性也会校验。单份选色需要稳定的图
   实例 ID；删除已单独选色的实体前须先恢复其部件配色。旧的无 ID 数据只能沿当前份序
@@ -157,7 +160,8 @@
   `parts[].instance_color_ids`、`parts[].color_section_mode` 和 `parts[].color_origin`
   可以不同；
 - 逐圈 `auto_color_note`、部件 `auto_color_summary`，以及 `notes` 中**等于**
-  这些已记录自动片段的那一段，可以不同（它们是由颜色重新推导的）；
+  这些已记录自动片段的那一段，可以不同（它们是由颜色重新推导的）；只有与当前
+  逐圈颜色及圈号一致的片段才会被忽略，不一致的文字按施工说明保留；
 - 其余一切必须完全相同：`name`、`type`、`quantity`、`rounds` 的圈号/针数/加减针/
   `region`/`height_range_cm`/`allow_wide_jump`、`notes` 中的人工文字、`opening_row`、
   `magic_ring`、`gauge`、`params.gauge`、`stitch_attachments` 与 `assembly_plan`；
