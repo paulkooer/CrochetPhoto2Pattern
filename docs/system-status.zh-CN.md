@@ -33,6 +33,19 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 外部请求；证据在 Git 忽略的 `eval_outputs/split_browser_clean_20261106/`）。以上为本机
 工作树验证，非远端 CI；未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
 
+2026-11-05 确认页的轮廓头部与部件提示，`fix/review-contour-suggestions` 提交 `acda1ae`
+（基于 `main` `196c21e`）：无人脸或人脸候选被拒绝时，主体轮廓顶部能分开的头部成为待确认
+候选（`silhouette-head`）；近乎直筒的轮廓仍用默认 9 cm 头径和 18 cm 身高。耳朵、下摆展开
+和一侧下部突出只在确认页提示，默认不勾选，未确认前不写入 `analysis.parts`。耳朵按头部两侧
+上部相对脸部赤道的对称变宽，或头顶两叶轮廓判断，不用连通域拆耳，也不测量耳长。命令行仍交付
+头部、身体、手臂、腿部，并保留 `requires_subject_review`。本地 Python 3.12 全量
+**2722 passed、2 skipped，129.59s**；Ruff 与 mypy（219 文件）通过。该提交的干净工作树在
+本地 Chromium 通过 **25 条合成流程**及独立画布检查（`report.json` status `pass`，无页面
+错误、无被拦截的外部请求；证据在 Git 忽略的
+`eval_outputs/contour_hints_browser_clean_20261105/`）。以上为本机工作树验证，非远端 CI；
+未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。未合并的 PR #15 仍是独立的耳长
+测量实验，不是本改动的依赖。
+
 2026-11-05 结果页信息架构，`fix/result-information-architecture` 提交 `9302b36`（基于 `main` `196c21e`）：
 第 1 章保留指标、头身比与推荐色，把解析来源、掩码/轮廓说明、姿态先验、旧版用量与照片局部色块表收进
 默认折叠的「来源与限制」（警告仍在面板外）；第 3 章五段常驻说明收进「针法速查」；结构表移除开发者
