@@ -13,6 +13,7 @@ from app.services.progress_state import (
     install_progress,
     progress_entries,
     progress_impact,
+    reconcile_restored_progress,
     retained_progress,
 )
 from app.services.result_logic import import_backup, rebuild_params
@@ -138,6 +139,23 @@ def test_changing_a_graph_id_never_moves_progress_to_another_copy(new_graph_id):
     impact = next(row for row in progress_impact(current, updated, "result", second_only)
                   if row["部件"] == "头部")
     assert impact["保留完成圈次"] == 1 and impact["清除完成圈次"] == 0
+
+
+def test_undo_carries_latest_fallback_progress_without_confusing_graph_ids():
+    restored = collision_result()
+    current = deepcopy(restored)
+    head = next(part for part in current["structure"]["parts"] if part["name"] == "头部")
+    head["instances"][0]["instance_id"] = "copy2_"
+    old = [identity for identity, _, part in progress_entries(restored, "result")
+           if part["name"] == "头部" and json.loads(identity)[2] == 1]
+    new = [identity for identity, _, part in progress_entries(current, "result")
+           if part["name"] == "头部" and json.loads(identity)[2] == 1]
+
+    # The graph copy changed identity; the extra copy still has the same role,
+    # even though its fallback ID changes to avoid a collision.
+    saved = {old[0]: True, old[1]: True}
+    assert reconcile_restored_progress(current, restored, {new[0]: True}, saved) == ({old[0]: True}, 1)
+    assert reconcile_restored_progress(current, restored, {new[1]: True}, {}) == ({old[1]: True}, 0)
 
 
 def test_retained_progress_ignores_unknown_and_noncanonical_identities():

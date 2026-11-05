@@ -17,6 +17,7 @@ from app.services.progress_state import (
     color_only_change,
     install_progress,
     progress_impact,
+    reconcile_restored_progress,
     retained_progress,
 )
 from app.services.workspace import carried_workspace, workspace, workspace_key
@@ -135,6 +136,7 @@ def commit_edit(slot: str, current: ResultData, updated: ResultData) -> ResultDa
                             "progress_identity_version": "2"})
     history["redo"].clear()
     history["legacy_ambiguous_count"] = 0
+    history["unmapped_progress"] = 0
     retained = retained_progress(current, updated, slot, progress)
     history["cleared_progress"] = len(progress) - len(retained)
     return _install(slot, current, updated, history, retained)
@@ -154,9 +156,14 @@ def restore_edit(slot: str, current: ResultData, direction: str) -> ResultData:
     ambiguous = (ambiguous_legacy_progress(updated, progress)
                  if snapshot.get("progress_identity_version") != "2" else set())
     history["legacy_ambiguous_count"] = len(ambiguous)
+    history["unmapped_progress"] = 0
     progress = {key: value for key, value in progress.items() if key not in ambiguous}
+    live_progress = capture_progress(current, slot, st.session_state)
+    if snapshot.get("progress_identity_version") == "2":
+        progress, history["unmapped_progress"] = reconcile_restored_progress(
+            current, updated, live_progress, progress)
     history["redo" if direction == "undo" else "undo"].append({
-        "result": deepcopy(current), "progress": capture_progress(current, slot, st.session_state),
+        "result": deepcopy(current), "progress": live_progress,
         "progress_identity_version": "2",
     })
     return _install(slot, current, updated, history, progress)
@@ -285,7 +292,8 @@ def render_history(slot: str, result: ResultData) -> None:
                   on_click=_restore_before_render, args=(slot, "redo"))
     st.caption("保留本会话最近的修改（最多 12 份、合计 8 MB）；重新导入或生成会开启新的记录。")
     st.caption("材料估算修改保留进度；逐圈修改保留首次变化前的圈次，有效密度或整体变化的部件重新核对。"
-               "依赖接合件同时重新核对；撤销可恢复。")
+               "依赖接合件同时重新核对。撤销或重做时，未受影响的圈保留最新勾选，"
+               "受影响的圈恢复对应快照。")
     progress_notice = st.empty()
     if history.get("cleared_progress"):
         progress_notice.warning(f"本次修改清除了 {history['cleared_progress']} 个受影响的已完成圈次；"
@@ -293,6 +301,9 @@ def render_history(slot: str, result: ResultData) -> None:
     if count := history.get("legacy_ambiguous_count"):
         st.warning(f"旧撤销记录中有 {count} 个完成圈次无法区分属于哪份实体，已暂不标记；"
                    "请按实物核对后重新勾选。")
+    if count := history.get("unmapped_progress"):
+        st.warning(f"有 {count} 个当前完成圈次涉及施工变化，已恢复目标图解的进度快照；"
+                   "请按实物核对。")
     with st.expander("最近一次修改前后对比"):
         if history["comparison"]:
             before, after = history["comparison"]["修改前"], history["comparison"]["修改后"]

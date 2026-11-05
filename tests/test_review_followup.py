@@ -41,6 +41,80 @@ def test_yarn_edit_undo_redo_retains_progress(result):
         assert sum(c.value for c in at.checkbox if c.key.startswith("chk_")) == 1
 
 
+def test_undo_and_redo_keep_new_checks_and_unchecks_after_a_yarn_edit(result):
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.checkbox(key="chk_followup_头部_0").check().run()
+    next(button for button in at.button if button.label == "更新材料估算").click().run()
+    rid = at.session_state["result"]["result_id"]
+    assert rid != "followup"
+    at.checkbox(key=f"chk_{rid}_头部_0").uncheck().run()
+    at.checkbox(key=f"chk_{rid}_手臂_0").check().run()
+
+    at.button(key=f"edit_{rid}_undo").click().run()
+    assert not at.exception
+    rid = at.session_state["result"]["result_id"]
+    assert not at.checkbox(key=f"chk_{rid}_头部_0").value
+    assert at.checkbox(key=f"chk_{rid}_手臂_0").value
+    at.checkbox(key=f"chk_{rid}_手臂_1").check().run()
+
+    at.button(key=f"edit_{rid}_redo").click().run()
+    assert not at.exception
+    rid = at.session_state["result"]["result_id"]
+    assert not at.checkbox(key=f"chk_{rid}_头部_0").value
+    assert at.checkbox(key=f"chk_{rid}_手臂_0").value
+    assert at.checkbox(key=f"chk_{rid}_手臂_1").value
+    from app.services.progress_state import capture_progress
+    from app.utils.project import project_backup, read_project_state
+
+    current = at.session_state["result"]
+    progress = capture_progress(current, "result", at.session_state.to_dict())
+    project = project_backup(current, progress, "继续钩织")
+    assert read_project_state(project, import_backup(project, "restored")) == (progress, "继续钩织")
+
+
+def test_undo_restores_changed_part_but_keeps_new_progress_for_unchanged_parts(result):
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.checkbox(key="chk_followup_头部_0").check().run()
+    at.checkbox(key="chk_followup_手臂_0").check().run()
+    at.number_input(key="edit_followup_part0_diameter_cm").set_value(11)
+    next(button for button in at.button if button.label == "应用部件修改").click().run()
+    rid = at.session_state["result"]["result_id"]
+    assert not at.checkbox(key=f"chk_{rid}_头部_0").value
+    at.checkbox(key=f"chk_{rid}_手臂_0").uncheck().run()
+    at.checkbox(key=f"chk_{rid}_手臂_1").check().run()
+
+    at.button(key=f"edit_{rid}_undo").click().run()
+    assert not at.exception
+    rid = at.session_state["result"]["result_id"]
+    assert at.checkbox(key=f"chk_{rid}_头部_0").value
+    assert not at.checkbox(key=f"chk_{rid}_手臂_0").value
+    assert at.checkbox(key=f"chk_{rid}_手臂_1").value
+
+
+def test_undo_warns_when_new_work_belongs_to_a_changed_construction(result):
+    at = AppTest.from_string(RENDER, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.number_input(key="edit_followup_part0_diameter_cm").set_value(11)
+    next(button for button in at.button if button.label == "应用部件修改").click().run()
+    rid = at.session_state["result"]["result_id"]
+    at.checkbox(key=f"chk_{rid}_头部_0").check().run()
+    at.button(key=f"edit_{rid}_undo").click().run()
+    assert not at.exception
+    rid = at.session_state["result"]["result_id"]
+    assert not at.checkbox(key=f"chk_{rid}_头部_0").value
+    assert any("1 个当前完成圈次涉及施工变化" in item.value for item in at.warning)
+
+    at.button(key=f"edit_{rid}_redo").click().run()
+    assert not at.exception
+    rid = at.session_state["result"]["result_id"]
+    assert at.checkbox(key=f"chk_{rid}_头部_0").value
+
+
 def test_structure_edit_only_invalidates_changed_part_and_undo_restores(result):
     at = AppTest.from_string(RENDER, default_timeout=30)
     at.session_state["result"] = result
