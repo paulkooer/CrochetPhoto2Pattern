@@ -14,6 +14,15 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+2026-11-06 三维预览按份着色，`fix/preview3d-instance-colors` 提交 `1790f4f`（基于 `main`
+`196c21e`）：结构预览按 `instance_colors` 给每一份实体上色。存在等长的 `instance_color_ids`
+时，每一份使用自己标识上的颜色；没有这些标识时，颜色按列表顺序对应。空槽或毛线色表之外的名称
+沿用部件主色。逐圈条纹仍不绘制。备份格式与导出缓存不变。本地 Python 3.12 全量 **2720 passed、
+2 skipped，114.77s**；Ruff 与 mypy（219 文件）通过。该提交的干净工作树在本地 Chromium 通过
+**25 条合成流程**（`report.json` status `pass`，无页面错误、无被拦截的外部请求；证据在 Git
+忽略的 `eval_outputs/preview3d_browser_clean_20261106/`）。以上为本机工作树验证，非远端 CI；
+未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
+
 2026-11-06 结果页按章节拆分，`fix/split-result-renderer` 提交 `6fa5846`（基于
 `fix/result-information-architecture` 的 `0defe62`）：结果页拆到 `result_analysis`、
 `result_structure`、`result_progress`、`result_assembly`。`result_renderer` 只编排同样的

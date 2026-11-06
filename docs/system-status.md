@@ -14,6 +14,19 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+2026-11-06 per-copy 3D preview colours on `fix/preview3d-instance-colors` at commit
+`1790f4f`, based on `main` `196c21e`: the structure preview paints each physical copy
+from `instance_colors`. When `instance_color_ids` is present and the same length, each
+copy uses the colour stored for its ID. Without those IDs, colours follow list order.
+A blank slot or a name outside the yarn table keeps the part colour. Round stripes are
+still not drawn. Backup format and the export cache are unchanged. Local Python 3.12
+full suite: **2720 passed, 2 skipped in 114.77s**; Ruff and mypy (219 files) pass. The
+clean worktree at that commit passed **25 local Chromium synthetic flows** (`report.json`
+status `pass`, no page errors, no blocked external requests; evidence under the
+git-ignored `eval_outputs/preview3d_browser_clean_20261106/`). These are local worktree
+checks, not remote CI; no independent review, authorized-photo evaluation or physical
+trial was performed. Beta and G3/G4 are unchanged.
+
 2026-11-06 result-page renderer split on `fix/split-result-renderer` at commit `6fa5846`,
 based on `fix/result-information-architecture` `0defe62`: the result page is split by
 chapter into `result_analysis`, `result_structure`, `result_progress` and

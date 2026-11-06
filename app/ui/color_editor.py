@@ -191,8 +191,8 @@ def render_color_editor(result: ResultData, slot: str) -> None:
                            "「统一换色」会覆盖全部圈和逐份配色。")
 
         st.caption("纯颜色修改通常保留已完成圈次；涉及接合等情况仍可能清除，具体以预览为准。"
-                   "已钩出的旧颜色不会因为图解改色而改变。3D 预览按部件主色示意，"
-                   "不显示逐圈条纹或各份实体的颜色。")
+                   "已钩出的旧颜色不会因为图解改色而改变。3D 预览按各份当前颜色示意"
+                   "（未单独选色的份用部件主色），不显示逐圈条纹。")
         preview_clicked = st.button("预览选色影响", key=f"{prefix}_preview")
         if not preview_clicked:
             return

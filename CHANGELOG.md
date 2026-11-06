@@ -8,6 +8,10 @@
 
 ## Unreleased
 
+### Changed — 2026-11-06 3D 预览按份上色
+
+- 3D 结构预览按 `instance_colors` 给每份实体上色。有 `instance_color_ids` 时按实体 ID 取色，不按被打乱的列表顺序。未单独选色、或名称不在色表中的份，沿用部件主色。逐圈条纹仍不画。备份格式与导出缓存不变。
+
 ### Changed — 2026-11-06 结果页渲染拆分
 
 - 结果页按章节拆到 `result_analysis`、`result_structure`、`result_progress`、`result_assembly`。`result_renderer` 只负责编排，并继续导出 `md_safe`、`purge_result_state`、`render_results`。页面、控件 key、备份和进度语义不变。
