@@ -29,14 +29,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.models.colors import YARN_COLORS
+from app.models.colors import present_color
 from app.models.instruction_checks import instruction_issues, round_expression
 from app.models.parts import _part_instance_colors
 from app.models.stitch_notation import NotationError, StitchExpression, mentions_invisible_decrease
 from app.schemas import MAX_ROUND_STITCHES
 from app.utils.counts import integer_count as _integer_count
-
-_HEX_BY_NAME = {name: f"#{r:02x}{g:02x}{b:02x}" for (r, g, b), name in YARN_COLORS}
 
 # 翻译器支持的针法词表与 token 白名单（emitter-level lint 用；
 # 超出即拒译而非瞎猜——词表来自官方手册的核对于集）
@@ -57,12 +55,21 @@ _HEADER = (
 )
 
 
-def _hex_of(color: str | None) -> str | None:
-    if not isinstance(color, str) or not color:
+def _hex_of(color: str | None, displays: Mapping[str, str] | None = None) -> str | None:
+    """可导出的 hex。待选占位和没有显示色的自定义名返回 None，不写成已选线。"""
+    return present_color(color, displays).export_hex
+
+
+def _swatch_comment(color: object, displays: Mapping[str, str] | None) -> str | None:
+    """自定义名称的显示色注释。hex 只是屏幕示意，注释写明它不是品牌色号。"""
+    if not isinstance(color, str) or not isinstance(displays, Mapping) or color not in displays:
         return None
-    if re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", color):
-        return "#" + "".join(channel * 2 for channel in color[1:]) if len(color) == 4 else color
-    return _HEX_BY_NAME.get(color)
+    presented = present_color(color, displays)
+    if not presented.is_custom or presented.export_hex is None:
+        return None
+    if any(ord(char) < 32 or char == "#" for char in color):
+        return None
+    return f"# display swatch for {color} — screen colour only, not a yarn brand code"
 
 
 def _aggregate_round_tokens(prev_stitches: int, rd: dict[str, Any]) -> list[str] | None:
@@ -181,7 +188,8 @@ class ParadeExportReport:
         self.warnings.append(message)
 
 
-def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: bool = False) -> list[str]:
+def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: bool = False,
+                displays: Mapping[str, str] | None = None) -> list[str]:
     """单个部件 → DSL 行；数量 >1 的部件按 start_anew 重复输出。
 
     ``joined``：该部件接入其他部件的预留半针（如挑针接裙），首圈没有可译基底。
@@ -229,7 +237,11 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
         else:
             report.fail(message)
         return []
-    hex_color = _hex_of(first.get("color")) or _hex_of(part.get("color"))
+    # 开场 COLOR 优先用首圈颜色，首圈不可导出时才用部件基础色。免责声明必须
+    # 指向同一个来源，不能固定写基础色。
+    first_color = first.get("color")
+    opening_color = first_color if _hex_of(first_color, displays) else part.get("color")
+    hex_color = _hex_of(opening_color, displays)
 
     lines: list[str] = []
     inferred_before = report.inferred_rounds
@@ -262,7 +274,7 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
     emitted_copies = 0
     for copy in range(quantity):
         override = overrides[copy] if overrides is not None and copy < len(overrides) else None
-        override_hex = _hex_of(override)
+        override_hex = _hex_of(override, displays)
         # A custom name has no known RGB. Reusing the shared part color would
         # silently produce the wrong copy, so refuse that copy instead of guessing.
         if override and not override_hex:
@@ -276,7 +288,7 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
         if not override:
             unresolved = next((color for rd in rounds
                                if (color := (rd.get("color") or part.get("color")))
-                               and color not in ("skin", "body") and not _hex_of(color)), None)
+                               and color not in ("skin", "body") and not _hex_of(color, displays)), None)
             if unresolved:
                 prefix = f"{name} 第 {copy + 1} 份颜色「{unresolved}」无法转换为色表或十六进制颜色；"
                 if part.get("color_origin") == "manual":
@@ -291,16 +303,23 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
         if copy_hex:
             # 每份实体都重置为部件色——多份拷贝不能继承上一份的结尾色
             #（条纹部件 ×N 时尤其重要）
+            comment = _swatch_comment(override if override_hex else opening_color, displays)
+            if comment:
+                lines.append(comment)
             lines.append(f"COLOR: {copy_hex}")
         last_color = copy_hex
         lines.append("ring")
         lines.append(f"sc{n_first}inc")
         report.exported_rounds += 1
         for rd, line, inferred in compiled:
-            color_hex = None if override_hex else _hex_of(rd.get("color"))
+            round_color = rd.get("color")
+            color_hex = None if override_hex else _hex_of(round_color, displays)
             # 仅在换色边界输出指令（连续同色圈不重复）——条纹件（如
             # Supergurumi 蜜蜂 55 圈 6 条条纹）从逐圈重复降为每边界一条
             if color_hex and color_hex != last_color:
+                comment = _swatch_comment(round_color, displays)
+                if comment:
+                    lines.append(comment)
                 lines.append(f"COLOR: {color_hex}")
                 last_color = color_hex
             lines.append(line)  # All operations in a round must share ONE line.
@@ -413,7 +432,9 @@ def export_parade_report(result: Mapping[str, Any]) -> ParadeExportReport:
         if not isinstance(part, dict):
             report.fail("部件格式无效，该部件已跳过")
             continue
-        lines = _part_lines(part, report, joined=part.get("name") in joined)
+        raw_displays = params.get("display_colors")
+        displays = raw_displays if isinstance(raw_displays, Mapping) else None
+        lines = _part_lines(part, report, joined=part.get("name") in joined, displays=displays)
         if not lines:
             continue
         exported_any = True

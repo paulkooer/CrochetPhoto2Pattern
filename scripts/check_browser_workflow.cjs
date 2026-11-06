@@ -60,6 +60,66 @@ async function fillKey(page, scope, name, value) {
   await settle(page);
 }
 
+async function chooseSelect(page, scope, name, label) {
+  const holder = key(scope, name);
+  await holder.waitFor({state:'attached'});
+  await reveal(holder);
+  const input = holder.locator('input').first();
+  await input.scrollIntoViewIfNeeded();
+  const option = page.getByRole('option', {name: label, exact: true});
+  // Above 25 options the menu is virtual. fill() leaves the filter text in the
+  // box and the menu closes before that row exists, so the text is not a
+  // selection. Real keystrokes mount the focused match. Enter commits only the
+  // focused option; ArrowDown moves off it. The custom-name field appears only
+  // after Streamlit accepts「自定义颜色名…」.
+  const custom = label === '自定义颜色名…'
+    ? key(scope, name.replace(/_pick$/, '_custom')).locator('input')
+    : null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await input.click();
+    await input.fill(label);
+    if (await option.count() === 0) {
+      await holder.getByRole('button', {name: 'Open', exact: true}).click();
+    }
+    if (await option.count() === 0) {
+      await input.click();
+      await input.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+      await input.pressSequentially(label, {delay: 15});
+    }
+    try {
+      await expect(option).toBeVisible({timeout: 2500});
+      await expect(option).toHaveAttribute('data-focused', 'true', {timeout: 2500});
+    } catch {
+      await page.keyboard.press('Escape');
+      continue;
+    }
+    await input.press('Enter');
+    await input.blur().catch(() => {});
+    await settle(page);
+    if (custom) {
+      if (await custom.count()) return;
+      continue;
+    }
+    if (await input.inputValue() === label) return;
+  }
+  throw new Error(`could not select ${label}`);
+}
+
+async function setSwatch(page, scope, name, hex) {
+  const holder = key(scope, name);
+  await holder.waitFor({state:'attached'});
+  await reveal(holder);
+  await holder.getByRole('button', {name: /color picker/}).click();
+  const dialog = page.getByRole('dialog', {name: /color picker/});
+  await dialog.waitFor({state:'visible'});
+  const input = dialog.locator('input').first();
+  await input.click({clickCount: 3});
+  await input.fill(hex.replace('#', ''));
+  await input.press('Enter');
+  await page.keyboard.press('Escape');
+  await settle(page);
+}
+
 async function resultId(scope, previousId) {
   const holder = scope.locator('[class*="st-key-hist_save_"]').first();
   await holder.waitFor({state:'attached'});
@@ -224,7 +284,7 @@ async function headProgress(page, scope, rid, checked) {
     await settle(page);
     await expect(photoPanel.getByText('✓ 比例与部件已经过人工确认；原始解析来源保留如下。',{exact:true})).toBeVisible();
     await expect(photoPanel.getByText('位置 / 旋转',{exact:true})).toHaveCount(0);
-    await expect(photoPanel.getByText('连接来自结构模板推断，并非单张照片的三维测量；坐标、位置和旋转细节见「查看结构 JSON」。',{exact:true})).toBeVisible();
+    await expect(photoPanel.getByText('当前基础色是图解正在使用的颜色。原始结构色是照片或模板最初记录的颜色，手工改色不会改写它。连接来自结构模板推断，并非单张照片的三维测量；坐标、位置和旋转细节见「查看结构 JSON」。',{exact:true})).toBeVisible();
     const structureJsonPanel = photoPanel.locator('details').filter({hasText:'查看结构 JSON'}).first();
     await structureJsonPanel.locator(':scope > summary').click();
     await settle(page);
@@ -818,6 +878,80 @@ async function headProgress(page, scope, rid, checked) {
       await narrowContext.close();
       lastPage = page;
       record('colour panel renders inside a 390 px viewport without horizontal overflow');
+
+      // Custom name plus a display hex. The picker is a screen swatch, not a yarn code.
+      // Undo, redo and a fresh project restore must keep the name and the hex together.
+      // The project-save dialog from the previous flow stays open on this page.
+      const leftoverDialog = samplePage.getByTestId('stDialog');
+      if (await leftoverDialog.count()) {
+        await leftoverDialog.getByRole('button', {name: 'Close', exact: true}).click();
+        await settle(samplePage);
+      }
+      await colorPanel.locator('h2.sheet-h',{hasText:'局部修正'}).scrollIntoViewIfNeeded();
+      await chooseSelect(samplePage, colorPanel, `edit_${perCopyId}_color${headIndex}_pick`, '自定义颜色名…');
+      await fillKey(samplePage, colorPanel, `edit_${perCopyId}_color${headIndex}_custom`, '外婆家的藏青');
+      await setSwatch(samplePage, colorPanel, `edit_${perCopyId}_color${headIndex}_swatch`, '#26374a');
+      await clickKey(samplePage, colorPanel, `edit_${perCopyId}_color${headIndex}_preview`);
+      await expect(colorPanel.getByText('修改影响预览 · 尚未应用',{exact:true})).toBeVisible();
+      await clickKey(samplePage, colorPanel, `edit_${perCopyId}_preview_apply`);
+      const swatchId = await resultId(colorPanel, perCopyId);
+      const swatchBackup = JSON.parse(await download(samplePage, key(colorPanel, `dl_backup_${swatchId}`).getByRole('button'), path.join(output, 'color-swatch.json')));
+      assert.equal(swatchBackup.params.display_colors['外婆家的藏青'], '#26374a');
+      assert.equal(swatchBackup.params.parts[headIndex].color, '外婆家的藏青');
+      assert.deepEqual(swatchBackup.params.parts.map(part => part.rounds.map(round => round.stitches)),
+                       perCopyBackup.params.parts.map(part => part.rounds.map(round => round.stitches)));
+      const swatchMarkdown = (await download(samplePage, key(colorPanel, `dl_md_${swatchId}`).getByRole('button'), path.join(output, 'color-swatch.md'))).toString();
+      assert(swatchMarkdown.includes('外婆家的藏青（显示色 #26374a，屏幕示意，不是品牌色号）'));
+      await clickKey(samplePage, colorPanel, `pdf_gen_${swatchId}`);
+      const swatchPdf = await download(samplePage, key(colorPanel, `dl_pdf_${swatchId}`).getByRole('button'), path.join(output, 'color-swatch.pdf'));
+      assert.equal(swatchPdf.subarray(0, 5).toString(), '%PDF-');
+      // Open the Parade expander and wait until its own button is on screen.
+      // Clicking while the block is still moving can hit the external manual
+      // link; that navigation is aborted and closes the page.
+      const paradeHolder = key(colorPanel, `dl_parade_${swatchId}`);
+      const paradeDetails = paradeHolder.locator('xpath=ancestor::details').first();
+      if (await paradeDetails.getAttribute('open') === null) {
+        await paradeDetails.locator(':scope > summary').click();
+        await settle(samplePage);
+      }
+      const paradeButton = paradeHolder.getByRole('button', {name: '下载 CrochetPARADE DSL', exact: true});
+      await paradeButton.scrollIntoViewIfNeeded();
+      await expect(paradeButton).toBeVisible();
+      const swatchParade = (await download(samplePage, paradeButton, path.join(output, 'color-swatch-parade.txt'))).toString();
+      assert(swatchParade.includes('# display swatch for 外婆家的藏青 — screen colour only, not a yarn brand code'));
+      assert(swatchParade.includes('COLOR: #26374a'));
+      assert(!swatchParade.includes('COLOR: #e8bfa8'));
+      assert(!swatchParade.includes('COLOR: #9aa7b8'));
+      await samplePage.screenshot({path: path.join(output, 'color-swatch.png'), fullPage: true});
+
+      await clickKey(samplePage, colorPanel, `edit_${swatchId}_undo`);
+      const swatchUndoId = await resultId(colorPanel, swatchId);
+      const swatchUndone = JSON.parse(await download(samplePage, key(colorPanel, `dl_backup_${swatchUndoId}`).getByRole('button'), path.join(output, 'color-swatch-undo.json')));
+      assert.equal(swatchUndone.params.display_colors, undefined);
+      assert.equal(swatchUndone.params.parts[headIndex].color, perCopyBackup.params.parts[headIndex].color);
+      await clickKey(samplePage, colorPanel, `edit_${swatchUndoId}_redo`);
+      const swatchRedoId = await resultId(colorPanel, swatchUndoId);
+      const swatchRedone = JSON.parse(await download(samplePage, key(colorPanel, `dl_backup_${swatchRedoId}`).getByRole('button'), path.join(output, 'color-swatch-redo.json')));
+      assert.equal(swatchRedone.params.display_colors['外婆家的藏青'], '#26374a');
+      assert.equal(swatchRedone.params.parts[headIndex].color, '外婆家的藏青');
+
+      await clickKey(samplePage, colorPanel, `project_save_${swatchRedoId}`);
+      const swatchProject = path.join(output, 'color-swatch-project.json');
+      await download(samplePage, samplePage.getByRole('dialog').getByRole('button', {name: '下载工程 JSON', exact: true}), swatchProject);
+      const swatchContext = await context();
+      const swatchPage = lastPage = await swatchContext.newPage();
+      await swatchPage.goto(baseURL);
+      const swatchSidebar = swatchPage.locator('[data-testid="stSidebar"]');
+      await key(swatchSidebar, 'open_backup_file').locator('input[type="file"]').setInputFiles(swatchProject);
+      await clickKey(swatchPage, swatchSidebar, 'open_backup_apply');
+      const swatchRestorePanel = swatchPage.getByRole('tabpanel', {name: '照片分析（本地）', exact: true});
+      const swatchRestoreId = await resultId(swatchRestorePanel);
+      const swatchRestored = JSON.parse(await download(swatchPage, key(swatchRestorePanel, `dl_backup_${swatchRestoreId}`).getByRole('button'), path.join(output, 'color-swatch-restored.json')));
+      assert.equal(swatchRestored.params.display_colors['外婆家的藏青'], '#26374a');
+      assert.equal(swatchRestored.params.parts[headIndex].color, '外婆家的藏青');
+      await swatchContext.close();
+      lastPage = page;
+      record('custom display swatch stays with its name through Markdown, PDF, Parade, undo, redo and project restore');
     }
 
     // The legacy fixture saved one ambiguous head completion plus an unrelated hat completion.

@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from app import PRODUCT_NAME
+from app.models.colors import screen_swatch_suffix
 from app.models.instruction_checks import round_expression
 from app.models.parts import _part_instance_colors
 from app.models.stitch_notation import (
@@ -89,6 +90,13 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
     from app.utils.provenance import provenance_lines
 
     require_valid_pattern(params)
+    raw_displays = params.get("display_colors")
+    displays = raw_displays if isinstance(raw_displays, dict) else None
+
+    def shown_color(color: object) -> str:
+        base = display_color_name(color if isinstance(color, str) and color else "—")
+        return _md_cell(f"{base}{screen_swatch_suffix(color, displays)}")
+
     lines: list[str] = []
     lines.append("# 🧶 Amigurumi 钩织图解")
     lines.append("")
@@ -195,11 +203,11 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
             lines.append(f"- **制作数量**：{quantity} 个相同部件" if instance_colors is None
                          else f"- **制作数量**：{quantity} 个同针法部件（逐份配色见下）")
         lines.append(f"- **形状**：{_md_cell(pd.get('type', '—'))}")
-        lines.append(f"- **颜色**：{_md_cell(display_color_name(pd.get('color', '—')))}")
+        lines.append(f"- **颜色**：{shown_color(pd.get('color'))}")
         if instance_colors is not None:
             lines.append("- **逐份配色**：" + "；".join(
                 f"第 {index + 1} 份 "
-                f"{_md_cell(display_color_name(color) if color else '沿用逐圈配色')}"
+                f"{shown_color(color) if color else '沿用逐圈配色'}"
                 for index, color in enumerate(instance_colors)))
             lines.append("\n> 圈次说明里的换线步骤描述这份部件的共用针法；已单独改色的份"
                          "整份使用自己的颜色，不再按这些换线步骤换色。")
@@ -257,7 +265,7 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
                 lines.append(
                     f"| {_md_cell(rd.get('row',''))} | {_md_cell(rd.get('stitches',''))} | "
                     f"{_md_cell(inc)} | {_md_cell(dec)} | {_md_cell(rep)} | "
-                    f"{_md_cell(display_color_name(rd.get('color') or '—'))} | "
+                    f"{shown_color(rd.get('color'))} | "
                     f"{_md_cell(shown_notes)} |")
                 prev_st = st_n or None
         lines.append("")

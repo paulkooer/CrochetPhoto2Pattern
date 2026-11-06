@@ -45,6 +45,7 @@ as purchasing or recognition evidence:
 | **Colour role** | `params.parts[].name` plus `_SKIN_PARTS`/`_BODY_PARTS` in `app/models/parts.py`; the placeholders `skin`/`body` | The semantic placeholder for "which kind of yarn belongs here" (skin yarn, main yarn). It is not a colour and not a colour number. V1 adds **no** role field: part names and placeholders already express the role, and a new field would only invite reading it as colour evidence. |
 | **Actual colour** | `params.parts[].color`, `params.parts[].rounds[].color`, `params.parts[].instance_colors` | A yarn colour name (or a user's custom name) from user choice or photo recognition. This is the pattern's only actual colour source. |
 | **Yarn product** | `params.yarn_spec` (ball weight/length, swatch) plus verified colour numbers from `brand_code()` in `app/models/colors.py` | Purchasing information. V1 still applies **one** yarn spec to every colour; `brand_code()` returns a number only for verified entries and `None` otherwise, never inventing one. |
+| **Display swatch** | `params.display_colors` (custom colour name → `#RGB` or `#RRGGBB`) | The screen colour used by the 3D preview, ring chart, PDF chips and Parade `COLOR:`. It is not a brand code, dye lot or purchasing record. Yarn-table names, hex literals and `skin`/`body` are not stored in this map. |
 
 The RGB values in the colour table are used for swatches and approximate matching
 (CIEDE2000 nearest neighbour) only. They are **not** evidence of colour number, dye lot or
@@ -69,9 +70,11 @@ existing `edit_history` preview/apply/undo/redo → every export.
 The manual path **must not** write back photo evidence: `result["color_bands"]`,
 `vision_meta.color_observation`, `analysis.recommended_colors` and
 `analysis.hair_color`/`top_color`/`bottom_color` keep their values. A manual choice is
-visible only in `rounds[].color`/`parts[].color`/`instance_colors` and `color_origin`; it is
-never disguised as photo recognition, and it does not rewrite prose that the photo semantic
-path wrote.
+visible only in `rounds[].color`/`parts[].color`/`instance_colors`, `color_origin` and the
+optional `params.display_colors`. It is never disguised as photo recognition, and it does not
+rewrite prose that the photo semantic path wrote. `structure.parts[].color` stays the photo
+or template record. The structure table shows it in its own column and does not treat it as
+the current colour.
 
 ## 4. Data model and single source of truth
 
@@ -90,6 +93,9 @@ path wrote.
 | `params.parts[].instance_colors` | An array of `quantity` colour strings or `null` | When the user colours a copy separately | `null` inherits the round or part colour. Omitted when empty or all `null`; copy IDs keep colours aligned when instances move. |
 | `params.parts[].instance_color_ids` | Unique copy IDs, same length as `instance_colors` | Saved with per-copy choices when stable graph IDs are available | Rebinds colours by ID after reordering. Removing a separately coloured copy is rejected until its override is cleared. |
 | `params.parts[].color_section_mode` | `"head_body"` or absent | Set when colouring the head and body of a one-piece part | Allows regeneration to remap section colours using the neck marker; ambiguous mappings are rejected. |
+| `params.display_colors` | At most 64 entries of custom name → `#rrggbb` | When the user picks a display swatch for a custom name | One name has one screen colour, shared by every part. It is not a brand code. Absence is valid. A stored custom name without a swatch still loads; 3D paints it neutral gray. |
+
+V1 does not store a different swatch for each use of a name. One custom name has one display hex for the whole pattern. One edit that maps the same name to two hex values is rejected; choosing that name again replaces the stored hex. Two swatches need two names. `present_color()` returns a `ColorPresentation` with `display_hex` (screen), `export_hex` (what that format may write), `is_placeholder`, `is_custom` and `is_exportable`. A colour that can be drawn is not a yarn product, and it is not necessarily expressible by every export. `skin` / `body` have a screen colour and an empty `export_hex`, so Parade writes no `COLOR:`. A custom name with no swatch has both hex fields empty: 3D uses neutral gray and says the colour is a placeholder, and Parade refuses the export instead of reporting success.
 
 **The meaning of `color`**: generated colours may derive a dominant colour from the rounds;
 a manually chosen base colour remains the user's choice even if a stripe covers more
@@ -150,8 +156,9 @@ round listed in the preview.
   preserve the original pattern bytes and may still contain those fields.
 - **Export cache**: raised whenever exported content changes (including per-colour and
   per-copy colours). This round raises it from **17 to 18**, so Markdown/PDF/Parade from
-  older sessions must be regenerated. The current value is
-  `EXPORT_CACHE_VERSION` in `app/ui/export_cache.py`. Share links are invalidated when
+  older sessions must be regenerated. On 2026-11-06 the display swatches, PDF chips and
+  Parade screen-colour comments changed export bytes again, so the cache moved from **18 to 19**.
+  The current value is `EXPORT_CACHE_VERSION` in `app/ui/export_cache.py`. Share links are invalidated when
   their shared data changes; brush-mask pixels are excluded from the cache check as well as
   from the shared data.
 - **Project revisions**: migration from version 1 to 2 preserves old pattern semantics and
@@ -170,7 +177,9 @@ cancel, undo, redo.
    `app/utils/color_labels.py`).
 2. **Choose a colour**: the colour-table dropdown (`YARN_COLORS` in
    `app/models/colors.py`) or a "custom" text input, which preserves a user's own name just
-   like the round-table editor.
+   like the round-table editor. A custom name that is not itself a hex value also gets a
+   display-swatch picker. The picker defaults to neutral gray, not the part's previous yarn
+   colour. One name can have only one swatch in a single edit.
 3. **Choose an operation** (one of two, always explicit):
    - **Set the base colour and keep existing stripes**: rounds inheriting the base take the
      new one; all explicitly coloured rounds are kept and listed in the preview.
@@ -200,9 +209,10 @@ cancel, undo, redo.
      cannot be restored from the interface afterwards (only undone back to the previous
      state).
    - The 3D preview colours each copy; a copy without its own choice keeps the part
-     colour. Round stripes are not drawn (§8).
+     colour. A custom name with no display swatch uses neutral gray and does not keep the
+     previous yarn colour. Round stripes are not drawn (§8).
    - A custom colour outside the table is used for the pattern and its display only; it
-     provides no colour number or usage evidence.
+     provides no colour number or usage evidence. The display swatch is not a brand code either.
 
 ## 7. Progress rule
 
@@ -217,7 +227,8 @@ identical apart from colour-bearing fields, every completed round is retained. A
 following must hold:
 
 - `parts[].color`, `rounds[].color`, `parts[].instance_colors`, `parts[].instance_color_ids`,
-  `parts[].color_section_mode` and `parts[].color_origin` may differ;
+  `parts[].color_section_mode`, `parts[].color_origin` and `params.display_colors` may differ.
+  An empty display map compares equal to a missing one.
 - per-round `auto_color_note`, the part's `auto_color_summary`, and the part of `notes` that
   is **exactly** those recorded automatic fragments may differ (they are re-derived from the
   colours). A fragment is ignored only when it agrees with the current round colours and row
@@ -261,11 +272,12 @@ re-checking; it does not mean the finished piece matches the pattern.
 
 | Carrier | Reflects the colour change | Notes and limits |
 | --- | --- | --- |
-| Markdown | Yes | The part colour line and round-table colour column are updated; with `instance_colors`, each copy's colour is listed and the quantity note makes clear that copies share the same stitches but can have different colours. |
-| PDF | Yes | Same part colour and round-table colour column as Markdown (PDF additionally shows each part's base colour). |
-| Material list | Yes | Grams/meters/balls per colour; with `instance_colors`, stitch counts are attributed per copy and summarised per copy colour. Still labelled as estimates without a yarn spec or measured swatch. |
-| CrochetPARADE DSL | Yes, within the subset this project has verified | Each copy emits its own `COLOR:` prefix plus per-round colour-change boundaries. Unconvertible custom colours (including legacy colours with unrecorded origins) or unsupported constructions are reported as incomplete instead of silently exporting the old colour. |
-| 3D structure preview | Per copy | Each copy uses its override. `null` or a name outside the yarn table keeps the part colour. When `instance_color_ids` is present, colour follows the ID rather than a reordered list. The interface **states plainly** that round stripes are not drawn. |
+| Markdown | Yes | The part colour line and round-table colour column are updated; with `instance_colors`, each copy's colour is listed and the quantity note makes clear that copies share the same stitches but can have different colours. A custom name adds its display-swatch note, or "no display swatch". |
+| PDF | Yes | Same part colour and round-table colour column as Markdown. PDF also shows each part's base colour and draws a screen chip beside it. |
+| Material list | Yes | Grams/meters/balls stay aggregated by the text name; with `instance_colors`, stitch counts are attributed per copy. A custom name with a display swatch can show a screen chip. Still labelled as estimates without a yarn spec or measured swatch. |
+| Structure table | Two columns | The current base colour is the matching `params.parts[].color`. The original structure colour is `structure.parts[].color`. A manual recolour does not rewrite the structure layer, so the columns can differ. |
+| CrochetPARADE DSL | Yes, within the subset this project has verified | Each copy emits its own `COLOR:` prefix plus per-round colour-change boundaries. A custom name with a display swatch first emits a screen-only comment, then `COLOR:`. Unconvertible custom colours (including a name with no swatch, and legacy colours with unrecorded origins) or unsupported constructions are reported as incomplete instead of silently exporting the old colour. `skin`/`body` do not emit `COLOR:`. |
+| 3D structure preview | Per copy | Each copy uses its override. A blank slot keeps the part colour. Yarn names, hex literals and recorded display swatches share one resolver. A custom name with no swatch uses neutral gray and does not keep the previous yarn colour. When `instance_color_ids` is present, colour follows the ID rather than a reordered list. The interface **states plainly** that round stripes are not drawn. |
 | Trial bundles | Yes | They embed a pattern backup with its colours; trial records remain separately versioned. |
 | Flat grid projects | Unchanged | They have their own grid and palette format. |
 
@@ -315,7 +327,8 @@ actual size, yarn usage, time or crochetability.
 - **One-piece section colouring depends on the neck marker**: hand-built one-piece patterns
   without it cannot use section colouring.
 - **The 3D preview does not draw round stripes**: each copy is one illustrative colour.
-  A copy without an override keeps the part colour.
+  A copy without an override keeps the part colour. A custom name with no display swatch
+  uses neutral gray and does not keep the previous yarn colour.
 - **No per-round colour origin** (§4.1): the interface cannot tell whether a round's colour
   came from the photo or a manual edit.
 - **No per-colour swatches or differing yarn densities**; one yarn spec still applies to all

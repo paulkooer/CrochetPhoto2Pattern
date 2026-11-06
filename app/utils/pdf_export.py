@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from app import PRODUCT_NAME, theme
+from app.models.colors import UNRESOLVED_DISPLAY_HEX, resolve_display_color, screen_swatch_suffix
 from app.models.stitches import (
     PLACEMENT_GUIDANCE,
     ROUND_WORKING_GUIDANCE,
@@ -41,6 +42,41 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
+    raw_displays = params.get("display_colors")
+    displays = raw_displays if isinstance(raw_displays, dict) else None
+
+    def shown_color(color: object) -> str:
+        base = display_color_name(color if isinstance(color, str) and color else "—")
+        return f"{base}{screen_swatch_suffix(color, displays)}"
+
+    def chip_hex(color: object) -> str | None:
+        if not isinstance(color, str) or not color:
+            return None
+        return resolve_display_color(color, displays) or UNRESOLVED_DISPLAY_HEX
+
+    def labeled_swatch(label: str, color: object):
+        hex_color = chip_hex(color)
+        paragraph = Paragraph(label, small)
+        if hex_color is None:
+            return paragraph
+        chip = Table([[""]], colWidths=[4 * mm], rowHeights=[4 * mm])
+        chip.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(hex_color)),
+            ("BOX", (0, 0), (-1, -1), 0.4, colors.HexColor("#94a3b8")),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        row = Table([[chip, paragraph]], colWidths=[6 * mm, 164 * mm])
+        row.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 1),
+            ("TOPPADDING", (0, 0), (-1, -1), 1),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+        ]))
+        return row
 
     _invisible_re = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
@@ -153,13 +189,15 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
             f"🧶 {esc(pd.get('name', '?'))}{qty_label}"
             f"（{len(rounds)} 圈/个 · {esc(pd.get('type', '—'))}）",
             head))
-        story.append(Paragraph(f"部件颜色：{esc(display_color_name(pd.get('color') or '—'))}", small))
+        part_color = pd.get("color")
+        story.append(labeled_swatch(
+            f"部件颜色：{esc(shown_color(part_color))}", part_color))
         from app.models.parts import _part_instance_colors
 
         instance_colors = _part_instance_colors(pd)
         if instance_colors is not None:
             story.append(Paragraph("逐份配色：" + "；".join(
-                f"第 {index + 1} 份 {esc(display_color_name(color) if color else '沿用逐圈配色')}"
+                f"第 {index + 1} 份 {esc(shown_color(color) if color else '沿用逐圈配色')}"
                 for index, color in enumerate(instance_colors)), small))
             story.append(Paragraph(
                 "圈次说明里的换线步骤描述共用针法；已单独改色的份整份使用自己的颜色。", small))
@@ -194,7 +232,7 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
                     Paragraph(esc(rd.get("row", "")), cell),
                     Paragraph(esc(rd.get("stitches", "")), cell),
                     Paragraph(esc(inc), cell),
-                    Paragraph(esc(display_color_name(rd.get("color") or "—")), cell),
+                    Paragraph(esc(shown_color(rd.get("color"))), cell),
                     Paragraph(esc(shown_notes), cell),
                 ])
             rt = Table(rows, colWidths=[10 * mm, 14 * mm, 14 * mm, 32 * mm,

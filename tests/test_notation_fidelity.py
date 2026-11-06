@@ -217,7 +217,7 @@ def test_metadata_cannot_inject_instruction_lines():
     assert lint_parade_dsl(report.text) == []
 
 
-@pytest.mark.parametrize("color,expected", [("#aBc", "#aaBBcc"), ("#a1B2c3", "#a1B2c3")])
+@pytest.mark.parametrize("color,expected", [("#aBc", "#aabbcc"), ("#a1B2c3", "#a1b2c3")])
 def test_valid_custom_hex_colors_survive_export(color, expected):
     result = _result("(2X,V)×6", "XXV" * 6)
     result["params"]["parts"][0]["color"] = color

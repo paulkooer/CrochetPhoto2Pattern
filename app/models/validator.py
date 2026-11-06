@@ -69,6 +69,9 @@ def validate_pattern(params: Mapping[str, Any], *, check_notes: bool = True) -> 
             YarnSpec.model_validate(params["yarn_spec"])
         except ValueError as exc:
             issues.append(f"线材与试片：{exc}")
+    from .colors import display_color_issues
+
+    issues.extend(display_color_issues(params.get("display_colors")))
     checked = 0
     shaping_policy = shaping_policy_for_pattern(params)
     max_change = int(shaping_policy["max_stitch_change"])

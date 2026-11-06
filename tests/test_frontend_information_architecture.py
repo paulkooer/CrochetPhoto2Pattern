@@ -136,7 +136,7 @@ def test_result_page_folds_sources_and_moves_coordinates_into_json():
     assert not at.exception
     structure = next(item.value for item in at.dataframe if "连接" in item.value.columns)
     assert "位置 / 旋转" not in structure.columns
-    assert {"部件", "数量", "形状", "尺寸", "连接", "基准色"} <= set(structure.columns)
+    assert {"部件", "数量", "形状", "尺寸", "连接", "当前基础色", "原始结构色"} <= set(structure.columns)
     assert not any("位置 / 旋转" in item.value for item in at.caption)
     assert any(item.label == "来源与限制" for item in at.expander)
     assert any("结构 v2 坐标" in item.value for item in at.caption)

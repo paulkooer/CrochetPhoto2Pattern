@@ -106,8 +106,10 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - **Part-level yarn colour selection:** choose colours for a whole part, one physical copy,
   or the head and body sections of a one-piece part. Preview affected rounds and materials,
   then apply or cancel; whole-part choices can preserve existing stripes or replace all
-  colours. Single-copy selection requires stable instance IDs, and the 3D preview shows only
-  each part's base colour. See the [colour selection guide](docs/part-color-selection.en.md).
+  colours. Single-copy selection requires stable instance IDs. The 3D preview colours each
+  copy; a custom name also needs a screen swatch, and a name without one is neutral gray
+  rather than the part's previous yarn colour. Round stripes are not drawn in 3D. See the
+  [colour selection guide](docs/part-color-selection.en.md).
 - One per-color yarn purchase list with a separate subtotal; optional ball labels and
   weighed swatches refine grams, metres, and whole-ball counts for parts matching the
   swatch's recorded gauge. Other gauges retain heuristic estimates. Estimates include a

@@ -18,40 +18,43 @@ from collections.abc import Mapping
 from typing import Any
 
 from app import theme
+from app.models.colors import UNRESOLVED_DISPLAY_HEX, resolve_display_color
 from app.models.gauge import gauge_for_part, gauge_from_result
 
-# 单色部件的占位色（skin/body 不是毛线色名）→ 中性示意色
-_PLACEHOLDER_HEX = {"skin": "#e8bfa8", "body": "#9aa7b8"}
+_MISSING_PART_HEX = "#c9a68a"
 
 
-def _yarn_hex(color: str) -> str | None:
-    """毛线色名或 skin/body 占位 → 示意 hex。色表外的自定义名没有对应色。"""
-    from app.models.colors import YARN_COLORS
+def _displays(result: Mapping[str, Any]) -> Mapping[str, str] | None:
+    raw = (result.get("params") or {}).get("display_colors")
+    return raw if isinstance(raw, Mapping) else None
 
-    for (r, g, b), name in YARN_COLORS:
-        if name == color:
-            return f"#{r:02x}{g:02x}{b:02x}"
-    return _PLACEHOLDER_HEX.get(color)
+
+def _part_hex(color: object, displays: Mapping[str, str] | None) -> str:
+    """部件主色的示意 hex。自定义名没有显示色时用中性灰，不借用别的毛线色。"""
+    if not isinstance(color, str) or not color:
+        return _MISSING_PART_HEX
+    return resolve_display_color(color, displays) or UNRESOLVED_DISPLAY_HEX
 
 
 def _hex_by_name(result: Mapping[str, Any]) -> dict[str, str]:
-    """params 部件名 → 毛线色 hex（结构层的 color 字段可能还是占位符）。"""
+    """params 部件名 → 示意 hex。实际颜色读图解，不读结构层的原始记录。"""
+    displays = _displays(result)
     hex_by_name: dict[str, str] = {}
     for pp in (result.get("params") or {}).get("parts", []):
         pd = pp if isinstance(pp, dict) else (
             pp.model_dump() if hasattr(pp, "model_dump") else {})
-        resolved = _yarn_hex(str(pd.get("color", "")))
-        if resolved:
-            hex_by_name[str(pd.get("name"))] = resolved
+        hex_by_name[str(pd.get("name"))] = _part_hex(pd.get("color"), displays)
     return hex_by_name
 
 
 def _copy_hex(part: Mapping[str, Any], instance_id: str, index: int,
-              part_hex: str) -> str:
-    """One physical copy uses its override; None and unknown names keep the part colour.
+              part_hex: str, displays: Mapping[str, str] | None) -> str:
+    """One physical copy uses its override. A blank slot keeps the part colour.
 
-    IDs win over list order. A missing ID does not fall through to another copy's slot.
-    Round stripes are intentionally ignored: the mesh is still one colour per copy.
+    A custom name without a display swatch uses the neutral unresolved colour.
+    It must not fall back to the part colour, which would paint the old yarn.
+    IDs win over list order. A missing ID does not use another copy's slot.
+    Round stripes stay out of the mesh: one colour per copy.
     """
     colors = part.get("instance_colors")
     if not isinstance(colors, list) or not any(colors):
@@ -65,7 +68,7 @@ def _copy_hex(part: Mapping[str, Any], instance_id: str, index: int,
         chosen = colors[index]
     if not chosen:
         return part_hex
-    return _yarn_hex(str(chosen)) or part_hex
+    return resolve_display_color(str(chosen), displays) or UNRESOLVED_DISPLAY_HEX
 
 
 def build_payload(result: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -78,6 +81,7 @@ def build_payload(result: Mapping[str, Any]) -> dict[str, Any] | None:
     height = float(analysis.get("height_cm") or 18.0)
     gauge = gauge_from_result(result)
 
+    displays = _displays(result)
     hex_by_name = _hex_by_name(result)
     rounds_by_name: dict[str, list] = {}
     gauges_by_name = {}
@@ -140,7 +144,7 @@ def build_payload(result: Mapping[str, Any]) -> dict[str, Any] | None:
                       float(pos.get("z", 0)) * height],
                 "r": [float(rot.get("x", 0)), float(rot.get("y", 0)),
                       float(rot.get("z", 0))],
-                "color": _copy_hex(params_part, instance_id, index, part_hex),
+                "color": _copy_hex(params_part, instance_id, index, part_hex, displays),
             })
         if entry["instances"]:
             items.append(entry)

@@ -14,6 +14,14 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
+正式 G1/G2 绑定见 [`docs/release-evidence.json`](release-evidence.json)，由
+`scripts/bind_release_evidence.py` 根据远端检查生成。当前文件绑定 `main`
+`e593b267925ff689704b4b55931e42c68a9c599f`（树 `9042cd948f4c6a7d27ace9d60f0ff72f165fd520`）：
+该提交的 push 检查 12/12 通过。`security.yml` 的 push 有路径过滤，合并提交本身没有
+`pip-audit`；同一棵树的 PR #58 头提交 `97ff142c48cf8a3c7a138aa27874329b1da48b2d` 含
+`pip-audit` 且 13/13 通过。这份证据不覆盖其后的提交。显示色、结构表颜色和门禁文档
+属于后续改动，在该提交的 CI 完成并重新生成证据文件之前，不能算进 G1/G2。
+
 2026-11-06 三维预览按份着色，`fix/preview3d-instance-colors` 提交 `1790f4f`（基于 `main`
 `196c21e`）：结构预览按 `instance_colors` 给每一份实体上色。存在等长的 `instance_color_ids`
 时，每一份使用自己标识上的颜色；没有这些标识时，颜色按列表顺序对应。空槽或毛线色表之外的名称
@@ -949,8 +957,8 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **导出计数基线：`59f8737`** | PR #47 已 squash 合入 `main`，合并树与受检头提交 `c8039b9` 相同。后续修改须重新绑定提交及结果；新增功能不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **PR #47 头提交的 13 项远端检查通过** | 受检头提交 `c8039b9`：Python 3.11–3.14、Docker、PDF、锁定及无锁 pose、Streamlit 下限、mypy、依赖审计和浏览器冒烟均通过；合并后 CI、浏览器与 extras 在 `59f8737` 通过。后续提交按各自 SHA 核对 |
+| G1 可复现源码 | **见 [`docs/release-evidence.json`](release-evidence.json)** | 当前绑定该文件的 `commit`：`e593b267925ff689704b4b55931e42c68a9c599f`。后续修改，包括显示色与本页叙述，不继承这份证据，须重新生成。新增功能不继承 `55280fb` 的独立 PASS |
+| G2 支持版本自动化 | **该提交 push 12/12 通过；pip-audit 见同一棵树** | Python 3.11–3.14、Docker、PDF、锁定及无锁 pose、Streamlit 下限、mypy 与浏览器冒烟在 push 上通过。合并提交本身没有 pip-audit。同一树的 PR #58 头提交 `97ff142c48cf8a3c7a138aa27874329b1da48b2d` 为 13/13，含 pip-audit。要求的检查名见 `.github/required-checks.json` |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛（含可钩率 100%，以及除声明不支持的构造外 Parade 100% 完整导出）。默认本地流程只交付固定模板部件，部件宏 F1 高于模板基线这一条仍需新的识别能力 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |

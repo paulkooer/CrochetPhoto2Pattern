@@ -6,13 +6,11 @@ import re
 
 import streamlit as st
 
-from app.models.colors import YARN_COLORS
 from app.models.gauge import gauge_for_part, gauge_from_result
 from app.schemas import PART_NAMES, ResultData, difficulty_label
 from app.services.result_logic import result_profile
 from app.ui.design_system import section_heading
 
-_RGB_BY_NAME = {name: rgb for rgb, name in YARN_COLORS}
 _INVISIBLE_RE = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
 
 
@@ -84,16 +82,17 @@ def _silhouette_verifications(result: ResultData) -> list[tuple[str, str]]:
     ]
 
 
-def _yarn_chip_html(name: str) -> str:
-    """毛线色名 → 带真实色样的胶囊 HTML。
+def _yarn_chip_html(name: str, displays: dict | None = None) -> str:
+    """毛线色名 → 带色样的胶囊 HTML。
 
-    色样圆点用色表 RGB（用户看颜色选线，而不是只读名字）；色表外
-    （LLM 自造色名）退化为中性胶囊。名字经 html.escape 后才进
-    unsafe_allow_html（prompt-injection 防线，与旧实现同口径）。
+    色样来自统一解析：色表、十六进制，或该名称登记的显示色。
+    没有显示色的自定义名退化为中性胶囊，不借用别的毛线色。
+    名字经 html.escape 后才进 unsafe_allow_html。
     """
-    rgb = _RGB_BY_NAME.get(name)
-    if rgb is not None:
-        hex_bg = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+    from app.models.colors import resolve_display_color
+
+    hex_bg = resolve_display_color(name, displays, placeholders=False)
+    if hex_bg is not None:
         swatch = f"<i class='yarn-chip__swatch' style='background:{hex_bg};'></i>"
         variant = ""
     else:
