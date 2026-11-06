@@ -8,6 +8,10 @@
 
 ## Unreleased
 
+### Changed — 2026-11-06 结果页渲染拆分
+
+- 结果页按章节拆到 `result_analysis`、`result_structure`、`result_progress`、`result_assembly`。`result_renderer` 只负责编排，并继续导出 `md_safe`、`purge_result_state`、`render_results`。页面、控件 key、备份和进度语义不变。
+
 ### Changed — 2026-11-05 结果页阅读顺序与高级编辑器挂载
 
 - 结果页第 1 章的解析来源、掩码/轮廓说明、姿态先验、旧版用量与照片局部色块表收进默认折叠的「来源与限制」面板；警告类提示（复核记录无法识别、局部色块需复核等）仍在面板外直接可见。第 3 章的针法图例、钩法说明、针位说明、工时免责与塑形口径收进「针法速查」；正文保留三个指标、自检徽章、材料与圈序。

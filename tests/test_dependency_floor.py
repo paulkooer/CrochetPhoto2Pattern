@@ -49,7 +49,7 @@ REQUIRED_API_ARGUMENTS = {
     "container": ("horizontal", "width"),
     "button": ("width",),                   # tabs and editors pass width="stretch"
     "image": ("width",),                    # app/ui/tab_photo.py, app/ui/tab_grid.py
-    "dataframe": ("width",),                # app/ui/result_renderer.py
+    "dataframe": ("width",),                # app/ui/result_analysis.py
 }
 
 

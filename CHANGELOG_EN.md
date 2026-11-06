@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-06 Result-page renderer split
+
+- The result page is split by chapter into `result_analysis`, `result_structure`, `result_progress` and `result_assembly`. `result_renderer` only orchestrates the page and still exports `md_safe`, `purge_result_state` and `render_results`. The page, widget keys, backups and progress semantics are unchanged.
+
 ### Changed — 2026-11-05 Result-page reading order and on-demand JSON editors
 
 - Chapter 1 of the result page folds provenance captions, mask/silhouette notes, pose priors, legacy usage and the local colour-block table into a collapsed "sources and limitations" panel; alerts (unrecognized review records, colour blocks needing review) stay visible outside it. Chapter 3 folds the stitch legend, working and placement guidance, the time-estimate disclaimer and the shaping note into the stitch reference; the metrics, self-check badge, materials and round list stay in the body.
