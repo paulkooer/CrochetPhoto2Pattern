@@ -94,13 +94,13 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style,
         st.warning("当前为 Mock 演示：比例与部件是模板值，请自行确认。")
     elif meta.get("source") == "default":
         st.warning("没有可用的头部检测结果；当前比例来自默认模板，请调整头部框或比例。")
+    elif meta.get("source") == "silhouette-head":
+        st.caption("头部范围来自主体轮廓顶部，不是人脸检测；请核对比例，必要时手动框选。")
     if meta.get("parts_source") == "default_template":
         st.info("本地模式不能识别动物种类或完整部件。下方是初始模板，请补选耳朵、尾巴、帽子，"
                 "并移除照片中没有的部件。")
     if meta.get("face_rejection_reason"):
         st.warning(f"已忽略头部候选框：{meta['face_rejection_reason']}。可手动框选头部。")
-    if meta.get("possible_skirt"):
-        st.caption("轮廓下方较宽，可能由腿、底座、背景或裙摆造成；若确有裙子，请在部件列表中添加。")
     subject_choice = st.radio(
         "确认照片主体", ["单个玩偶，所需部件可用下方列表表达", "多个主体，需要先裁剪",
                    "食品或其他无法用现有部件表达的作品"],
@@ -181,9 +181,37 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style,
         )
         st.caption(f"照片约 1:{1 / ratio:.1f} → 玩偶约 1:{styled_body_ratio(1 / ratio, proportion_style):.1f}"
                    "（身高 : 头径）")
+        parts_key = f"review_parts_{key}"
+
+        def offer_part(flag: str, part_name: str, caption: str, label: str, suffix: str) -> None:
+            """Add a contour hint only after an explicit click. Never preselect it."""
+            if not meta.get(flag):
+                return
+            st.caption(caption)
+            if st.button(label, key=f"review_add_{suffix}_{key}"):
+                selected = list(st.session_state.get(parts_key, draft.analysis.parts))
+                if part_name not in selected:
+                    st.session_state[parts_key] = [*selected, part_name]
+                st.rerun()
+
+        offer_part(
+            "possible_ears", "耳朵",
+            "头部两侧上部的轮廓有对称凸起，可能是耳朵。这只是轮廓提示，默认不加入部件。",
+            "检测到头部两侧轮廓凸起，添加耳朵？", "ears",
+        )
+        offer_part(
+            "possible_skirt", "裙子",
+            "轮廓下方较宽，可能由腿、底座、背景或裙摆造成。默认不加入裙子。",
+            "检测到下摆展开，添加裙子？", "skirt",
+        )
+        offer_part(
+            "possible_tail", "尾巴",
+            "主体下方一侧有较窄的轮廓突出，可能是尾巴。单张正面图分不清前后，默认不加入。",
+            "检测到一侧下部突出，添加尾巴？", "tail",
+        )
         options = list(dict.fromkeys([*PART_NAMES, *draft.analysis.parts]))
         parts = st.multiselect(
-            "确认需要的部件", options, default=draft.analysis.parts, key=f"review_parts_{key}"
+            "确认需要的部件", options, default=draft.analysis.parts, key=parts_key
         )
         unsupported = [name for name in parts if name not in PART_NAMES]
         if unsupported:

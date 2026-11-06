@@ -41,6 +41,24 @@ under the git-ignored `eval_outputs/split_browser_clean_20261106/`). These are l
 worktree checks, not remote CI; no independent review, authorized-photo evaluation or
 physical trial was performed. Beta and G3/G4 are unchanged.
 
+2026-11-05 contour head candidate and review-only part hints on
+`fix/review-contour-suggestions` at commit `acda1ae`, based on `main` `196c21e`:
+when no acceptable face is found, a head separated at the top of the subject
+silhouette is an unconfirmed candidate (`silhouette-head`); a nearly straight column
+still uses the default 9 cm head and 18 cm height. Ear, hem and tail observations
+stay unchecked and are not written into `analysis.parts` before confirmation. Ears
+are a symmetric widening above the face equator or two crown lobes, not a
+connected-component split and not an ear-length measurement. The CLI still delivers
+the four-part template and still requires subject review. Local Python 3.12 full
+suite: **2722 passed, 2 skipped in 129.59s**; Ruff and mypy (219 files) pass. The
+clean worktree at that commit passed **25 local Chromium synthetic flows** plus the
+standalone canvas check (`report.json` status `pass`, no page errors, no blocked
+external requests; evidence under the git-ignored
+`eval_outputs/contour_hints_browser_clean_20261105/`). These are local worktree
+checks, not remote CI; no independent review, authorized-photo evaluation or physical
+trial was performed. Beta and G3/G4 are unchanged. Unmerged PR #15 remains a separate
+ear-measurement experiment and is not a dependency.
+
 2026-11-05 result-page information architecture on `fix/result-information-architecture` at
 commit `9302b36`, based on `main` `196c21e`: chapter 1 keeps the metrics, ratio and recommended
 colours on the reading path and folds provenance, mask/silhouette notes, pose priors, legacy

@@ -16,6 +16,14 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 - The result page is split by chapter into `result_analysis`, `result_structure`, `result_progress` and `result_assembly`. `result_renderer` only orchestrates the page and still exports `md_safe`, `purge_result_state` and `render_results`. The page, widget keys, backups and progress semantics are unchanged.
 
+### Added — 2026-11-05 Contour head candidate and review-only part hints
+
+- When the face candidate is missing or rejected, a head separated at the top of the subject silhouette (a gap, or a clear neck) becomes an unconfirmed head box with source `silhouette-head`. A nearly straight column does not invent a head and keeps the default 9 cm head and 18 cm height.
+- Ears are suggested only for a symmetric widening above the face equator, or two symmetric lobes at the crown. Sewn ears usually share the head's pixels, so this does not split components, measure ear length, or generate an ear tube. Unmerged PR #15 explores ear measurement separately and is not a dependency.
+- A flared hem stays an observation, not evidence of a skirt. The review page offers "add a skirt?" and leaves it unchecked, consistent with the 2026-10-09 decision that stopped automatic skirts.
+- A tail is suggested only for a short one-sided lower bump whose row still covers the torso, and it stays unchecked. A hem that widens on both sides, or a leg detached from the torso, is not a tail. One front photo cannot tell back from side.
+- None of these hints are written into `analysis.parts` before confirmation. The CLI path still sets `requires_subject_review` and still delivers head, body, arms and legs. The G3 macro-F1 gate is unchanged.
+
 ### Changed — 2026-11-05 Result-page reading order and on-demand JSON editors
 
 - Chapter 1 of the result page folds provenance captions, mask/silhouette notes, pose priors, legacy usage and the local colour-block table into a collapsed "sources and limitations" panel; alerts (unrecognized review records, colour blocks needing review) stay visible outside it. Chapter 3 folds the stitch legend, working and placement guidance, the time-estimate disclaimer and the shaping note into the stitch reference; the metrics, self-check badge, materials and round list stay in the body.

@@ -53,6 +53,7 @@ def provenance_lines(result: Mapping[str, Any] | None = None) -> list[str]:
         "openai": "OpenAI 视觉解析",
         "anthropic": "Anthropic 视觉解析",
         "opencv-face": "本地视觉估算（人脸检测）",
+        "silhouette-head": "本地视觉估算（轮廓头部候选）",
         "default": "本地默认估算",
     }.get(source, "未记录")
     if not source and sizing.get("source") == "manual_dimensions":

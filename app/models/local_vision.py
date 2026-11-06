@@ -4,10 +4,10 @@
 "头径锚点 × 人体比例" 推算 ImageAnalysis。
 
 能力边界（如实声明）：
-- 比例（身高/头径的倍数）来自照片实际检测 ✓
+- 比例（身高/头径的倍数）来自人脸框，或无人脸时来自轮廓顶部的头部候选
 - 绝对尺度（头径是多少厘米）单张照片无参照无法得到；这里用 9cm
   作为内部比例参考，PipelineOrchestrator 随后按用户目标高度重新缩放
-- 部件列表/姿态/难度无法本地语义推断，按规范默认值填充
+- 部件列表仍是四部件模板。耳朵、裙摆、尾巴只作为确认页提示，默认不勾选
 """
 from __future__ import annotations
 
@@ -17,8 +17,12 @@ from typing import Any
 from PIL import Image
 
 from ..schemas import ImageAnalysis
+from .geometry import ear_hint_from_mask as _ear_hint
 from .geometry import has_bottom_flare as _has_bottom_flare
+from .geometry import head_box_from_mask as _head_box_from_mask
+from .geometry import scale_box as _scale_box
 from .geometry import silhouette_profile as _silhouette_profile
+from .geometry import tail_hint_from_mask as _tail_hint
 from .image_parser import extract_color_palette
 from .subject import SubjectObservation
 
@@ -108,6 +112,55 @@ def _face_rejection_reason(image: Image.Image, box, profile: list[float] | None)
     return None
 
 
+def _mask_pair(image: Image.Image, subject: SubjectObservation | None, *, allow_extract: bool):
+    """Return ``(mask, small_image)`` without a second GrabCut when possible."""
+    if subject is not None:
+        try:
+            segmentation = subject.segmentation
+        except Exception as exc:
+            logger.debug("subject mask unavailable: %s", exc)
+            segmentation = None
+        if segmentation is not None:
+            mask, small = segmentation
+            if getattr(mask, "shape", None) == (small.height, small.width):
+                return mask, small
+    if not allow_extract:
+        return None
+    try:
+        from .subject import extract_subject
+
+        segmentation = extract_subject(image, max_side=120)
+    except Exception as exc:
+        logger.debug("standalone mask unavailable: %s", exc)
+        return None
+    if segmentation is None:
+        return None
+    mask, small = segmentation
+    if mask.shape != (small.height, small.width):
+        return None
+    return mask, small
+
+
+def _clip_box(box: tuple[int, int, int, int], width: int, height: int) -> tuple[int, int, int, int] | None:
+    x, y, box_w, box_h = box
+    x0, y0 = max(0, x), max(0, y)
+    x1, y1 = min(width, x + box_w), min(height, y + box_h)
+    if x1 - x0 < 2 or y1 - y0 < 2:
+        return None
+    return x0, y0, x1 - x0, y1 - y0
+
+
+def _silhouette_head_ok(image: Image.Image, box: tuple[int, int, int, int],
+                        profile: list[float] | None) -> bool:
+    """Same upper-half and minimum-size rules as a face box, without face expansion."""
+    _x, y, width, height = box
+    top, bottom = _subject_vertical_extent(profile, image.height)
+    center = y + height / 2
+    if center < top or center > top + (bottom - top) / 2:
+        return False
+    return (bottom - top) / max(width, height, 1) <= MAX_BODY_RATIO
+
+
 def analyze(
     image: Image.Image,
     n_colors: int = 5,
@@ -128,18 +181,54 @@ def analyze(
     # GrabCut/背景分割做两遍。直接调用 analyze() 仍保持原有独立行为。
     profile = geometry_profile if geometry_observed else _silhouette_profile(image, subject=subject)
     parts = list(_CANONICAL_PARTS)
+    if box is not None:
+        rejection = _face_rejection_reason(image, box, profile)
+        if rejection:
+            rejected_face = (list(box), rejection)
+            box = None
+        else:
+            rejected_face = None
+    else:
+        rejected_face = None
+
+    # geometry_observed means the caller already measured the photo. Do not
+    # start a second extraction when that caller did not pass the subject.
+    mask_pair = _mask_pair(image, subject, allow_extract=not geometry_observed)
+    possible_ears = False
+    possible_tail = False
+    silhouette_head: tuple[int, int, int, int] | None = None
+    if mask_pair is not None:
+        mask, small = mask_pair
+        possible_tail = _tail_hint(mask)
+        if box is None:
+            mask_head = _head_box_from_mask(mask)
+            if mask_head is not None:
+                scaled = _clip_box(
+                    _scale_box(mask_head, small.size, image.size), image.size[0], image.size[1])
+                if scaled is not None and _silhouette_head_ok(image, scaled, profile):
+                    silhouette_head = scaled
+                    ear_box = _clip_box(mask_head, small.size[0], small.size[1])
+                else:
+                    ear_box = None
+            else:
+                ear_box = None
+        else:
+            face_head = head_box_from_face(box, image.size[0], H)
+            ear_box = _clip_box(
+                _scale_box(face_head, image.size, small.size), small.size[0], small.size[1])
+        if ear_box is not None:
+            possible_ears = _ear_hint(mask, ear_box)
     candidate_meta: dict[str, Any] = {
         "parts_source": "default_template", "requires_subject_review": True,
         "subject_type": "unclassified",
         "possible_skirt": bool(profile is not None and _has_bottom_flare(profile)),
+        "possible_ears": possible_ears,
+        "possible_tail": possible_tail,
     }
-    if box is not None:
-        rejection = _face_rejection_reason(image, box, profile)
-        if rejection:
-            candidate_meta.update(rejected_face_box=list(box), face_rejection_reason=rejection)
-            box = None
+    if rejected_face is not None:
+        candidate_meta.update(rejected_face_box=rejected_face[0], face_rejection_reason=rejected_face[1])
 
-    if box is None:
+    if box is None and silhouette_head is None:
         meta: dict[str, Any] = {
             **candidate_meta,
             "source": "default",
@@ -158,8 +247,26 @@ def analyze(
             recommended_colors=colors or None,
         ), meta
 
-    head_px = _head_size_px(box)
-    head_box = head_box_from_face(box, image.size[0], H)
+    if box is None:
+        head_box = silhouette_head
+        assert head_box is not None
+        head_px = float(max(head_box[2], head_box[3], 1))
+        source_name = "silhouette-head"
+        source_note = (
+            "比例来自待确认的轮廓头部候选（不是人脸检测），部件来自模板；"
+            "耳朵、裙摆和尾巴只作为提示，默认不加入。"
+            "单图没有绝对尺度，厘米尺寸由生成时选择的目标高度决定"
+        )
+        face_fields: dict[str, Any] = {}
+    else:
+        head_px = _head_size_px(box)
+        head_box = head_box_from_face(box, image.size[0], H)
+        source_name = "opencv-face"
+        source_note = (
+            "比例来自待确认的头部候选框（由人脸框按经验比例扩展），部件来自模板；"
+            "单图没有绝对尺度，厘米尺寸由生成时选择的目标高度决定"
+        )
+        face_fields = {"face_box": [int(v) for v in box]}
     top, bottom = _subject_vertical_extent(profile, H)
     subject_px = bottom - top
     ratio = min(max(subject_px / head_px, MIN_BODY_RATIO), MAX_BODY_RATIO)
@@ -168,16 +275,13 @@ def analyze(
     head_span = (round(head_box[1] / H, 3), round((head_box[1] + head_box[3]) / H, 3))
     meta = {
         **candidate_meta,
-        "source": "opencv-face",
-        "face_box": [int(v) for v in box],
+        **face_fields,
+        "source": source_name,
         "head_box": list(head_box),
         "head_span": head_span,  # M1.3：实测头部纵向占比（先展示，暂不替代先验）
         "body_ratio": round(ratio, 2),
         "head_cm_anchor": DEFAULT_HEAD_CM,
-        "note": (
-            "比例来自待确认的头部候选框（由人脸框按经验比例扩展），部件来自模板；"
-            "单图没有绝对尺度，厘米尺寸由生成时选择的目标高度决定"
-        ),
+        "note": source_note,
     }
     features = [f"主色调 {c}" for c in colors[:2]] or ["本地视觉估算"]
     return ImageAnalysis(

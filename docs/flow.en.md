@@ -45,7 +45,7 @@ only when an old structure has no attachment graph.
 | `app/services/` | Streamlit-free regeneration, import, size/structure edits and physical progress shared by UI, CLI and tools |
 | `app/utils/images.py` | defensive decoding, size limits, EXIF orientation, transparent-image handling; no Streamlit |
 | `app/models/image_parser.py` | local photo analysis, palettes and explicit mock demonstration |
-| `app/models/local_vision.py` | head box expanded from the face box, proportions and silhouette profile without an LLM |
+| `app/models/local_vision.py` | head box from the face box, or from the top of the silhouette when no face is accepted. Ear, hem and tail hints stay unchecked and are not written into parts before review |
 | `app/models/sizing.py` | relative observation through a proportion style to user target dimensions, with provenance metadata |
 | `app/models/geometry.py` | shared observation IR and StructureGeometry v2 graph |
 | `app/models/color_design.py` | longitudinal photo colors to part/round color bands |

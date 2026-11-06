@@ -45,7 +45,7 @@ JSON 输出 + Streamlit UI 展示 + 用户局部修正 + 下载 + 完整结果�
 | `app/utils/exporters.py` | Markdown 图解导出 |
 | `app/utils/images.py` | 图片安全解码（损坏文件/超限大小、EXIF 方向转置、透明 PNG 合成白底），不依赖 Streamlit |
 | `app/models/image_parser.py` | 本地视觉入口、毛线色板和显式 Mock 演示；无云端服务商 |
-| `app/models/local_vision.py` | 无 LLM 本地视觉估算（人脸框按经验比例扩展为头部框 → 头身比例；轮廓剖面 → 下摆展开待确认提示） |
+| `app/models/local_vision.py` | 无 LLM 本地视觉估算（人脸框按经验比例扩展为头部框；无人脸时用轮廓顶部作头部候选。下摆展开、耳朵对称凸起和一侧下部突出只写入确认页提示，默认不勾选，未确认前不写入部件） |
 | `app/models/sizing.py` | 单图相对比例 → 头身比例风格 → 用户目标成品尺寸；记录尺寸来源、比例限制与变换元数据 |
 | `app/models/geometry.py` | 几何契约：本地单图观测 IR，以及 StructureGeometry v2 部件/实例/连接图谱 |
 | `app/models/color_design.py` | 照片纵向色带 → 部件逐圈配色 + 换线说明（换线由照片颜色驱动） |

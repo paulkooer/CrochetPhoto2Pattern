@@ -66,6 +66,42 @@ render_photo_review(st.session_state.draft, "test", gauge=DEFAULT,
     assert draft.vision_meta["requires_subject_review"] is True
 
 
+def test_contour_hints_stay_unchecked_until_the_user_adds_them(monkeypatch):
+    draft = PipelineOrchestrator().prepare_photo(Image.new("RGB", (80, 160)), vision_mode="local")
+    draft.vision_meta.update(possible_ears=True, possible_skirt=True, possible_tail=True)
+    calls = []
+
+    def generate(draft, **kwargs):
+        calls.append(list(kwargs["analysis"].parts))
+        return {"generated": True}
+
+    monkeypatch.setattr(PipelineOrchestrator, "generate_from_draft", generate)
+    script = '''
+import streamlit as st
+from app.ui.photo_review import render_photo_review
+from app.models.gauge import DEFAULT, DEFAULT_STYLE
+render_photo_review(st.session_state.draft, "hint", gauge=DEFAULT,
+                    style=DEFAULT_STYLE, target_height=18)
+'''
+    at = AppTest.from_string(script)
+    at.session_state["draft"] = draft
+    at.run()
+    assert not at.exception
+    selected = set(at.multiselect(key="review_parts_hint").value)
+    assert selected == {"头部", "身体", "手臂", "腿部"}
+    assert draft.analysis.parts == ["头部", "身体", "手臂", "腿部"]
+    at.button(key="review_add_ears_hint").click().run()
+    at.button(key="review_add_skirt_hint").click().run()
+    selected = set(at.multiselect(key="review_parts_hint").value)
+    assert selected == {"头部", "身体", "手臂", "腿部", "耳朵", "裙子"}
+    assert "尾巴" not in selected
+    at.radio(key="review_subject_hint").set_value("单个玩偶，所需部件可用下方列表表达").run()
+    at.button(key="review_generate_hint").click().run()
+    assert not at.exception
+    assert calls and set(calls[0]) == selected
+    assert "尾巴" not in calls[0]
+
+
 def test_unreviewed_local_template_warning_survives_portable_export():
     from app.utils.provenance import provenance_lines
 

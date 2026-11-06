@@ -155,7 +155,10 @@ def test_silhouette_flare_is_review_hint_not_automatic_skirt(monkeypatch):
     monkeypatch.setattr(lv, "_detect_face", lambda _i: None)  # 关闭人脸路径
     analysis, meta = lv.analyze(_person(dress=True))
     assert "裙子" not in analysis.parts
+    assert analysis.parts == ["头部", "身体", "手臂", "腿部"]
     assert meta["possible_skirt"] is True
+    assert meta["possible_ears"] is False
+    assert meta["possible_tail"] is False
     assert meta["parts_source"] == "default_template"
     assert meta["requires_subject_review"] is True
     assert "silhouette" not in meta  # 几何数据已移至独立 geometry IR
@@ -167,7 +170,14 @@ def test_straight_silhouette_no_skirt(monkeypatch):
     monkeypatch.setattr(lv, "_detect_face", lambda _i: None)
     analysis, meta = lv.analyze(_person(dress=False))
     assert "裙子" not in analysis.parts
+    assert meta["possible_skirt"] is False
+    assert meta["possible_ears"] is False
+    assert meta["possible_tail"] is False
     assert "silhouette" not in meta
+    assert meta["source"] == "silhouette-head"
+    assert meta["parts_source"] == "default_template"
+    _x, y, _w, h = meta["head_box"]
+    assert y + h / 2 < _person(dress=False).height / 2
 
 
 def test_silhouette_profile_normalized():
@@ -240,6 +250,50 @@ def test_photo_driven_profile_body_end_to_end():
     assert "照片驱动轮廓身体" in body.get("notes")
     assert result["gauge"]["stitches_per_10cm"] > 0
     assert result["geometry"]["silhouette"]["profile"]
+
+
+def _eared_doll() -> Image.Image:
+    from PIL import ImageDraw
+    img = Image.new("RGB", (200, 400), (245, 245, 245))
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([40, 28, 78, 78], fill=(230, 180, 150))
+    draw.ellipse([122, 28, 160, 78], fill=(230, 180, 150))
+    draw.ellipse([55, 40, 145, 140], fill=(230, 180, 150))
+    draw.rounded_rectangle([78, 150, 122, 370], radius=12, fill=(0, 120, 215))
+    return img
+
+
+def _tailed_doll() -> Image.Image:
+    from PIL import ImageDraw
+    img = Image.new("RGB", (200, 400), (245, 245, 245))
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([70, 16, 130, 76], fill=(230, 180, 150))
+    draw.rounded_rectangle([78, 90, 122, 300], radius=12, fill=(0, 120, 215))
+    draw.ellipse([108, 240, 142, 275], fill=(0, 120, 215))
+    return img
+
+
+def test_ear_and_tail_hints_do_not_enter_the_part_list(monkeypatch):
+    from app.models import local_vision as lv
+    monkeypatch.setattr(lv, "_detect_face", lambda _i: None)
+    eared, eared_meta = lv.analyze(_eared_doll())
+    assert eared_meta["possible_ears"] is True
+    assert "耳朵" not in eared.parts
+    assert eared.parts == ["头部", "身体", "手臂", "腿部"]
+    tailed, tailed_meta = lv.analyze(_tailed_doll())
+    assert tailed_meta["possible_tail"] is True
+    assert tailed_meta["possible_ears"] is False
+    assert tailed_meta["possible_skirt"] is False
+    assert "尾巴" not in tailed.parts
+
+
+def test_accepted_face_stays_ahead_of_the_contour_head(monkeypatch):
+    from app.models import local_vision as lv
+    monkeypatch.setattr(lv, "_detect_face", lambda _i: (70, 30, 60, 60))
+    _analysis, meta = lv.analyze(_person(dress=False))
+    assert meta["source"] == "opencv-face"
+    assert meta["face_box"] == [70, 30, 60, 60]
+    assert "裙子" not in _analysis.parts
 
 
 def test_flare_detection_composition_invariant():
