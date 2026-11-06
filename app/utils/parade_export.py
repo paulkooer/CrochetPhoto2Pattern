@@ -237,7 +237,11 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
         else:
             report.fail(message)
         return []
-    hex_color = _hex_of(first.get("color"), displays) or _hex_of(part.get("color"), displays)
+    # 开场 COLOR 优先用首圈颜色，首圈不可导出时才用部件基础色。免责声明必须
+    # 指向同一个来源，不能固定写基础色。
+    first_color = first.get("color")
+    opening_color = first_color if _hex_of(first_color, displays) else part.get("color")
+    hex_color = _hex_of(opening_color, displays)
 
     lines: list[str] = []
     inferred_before = report.inferred_rounds
@@ -299,7 +303,7 @@ def _part_lines(part: dict[str, Any], report: ParadeExportReport, *, joined: boo
         if copy_hex:
             # 每份实体都重置为部件色——多份拷贝不能继承上一份的结尾色
             #（条纹部件 ×N 时尤其重要）
-            comment = _swatch_comment(override or part.get("color"), displays)
+            comment = _swatch_comment(override if override_hex else opening_color, displays)
             if comment:
                 lines.append(comment)
             lines.append(f"COLOR: {copy_hex}")

@@ -227,6 +227,41 @@ def test_parade_emits_a_screen_swatch_and_still_refuses_an_unmapped_name():
     assert "COLOR:" not in placeholder.text
 
 
+def test_parade_swatch_comment_names_the_colour_that_was_exported():
+    """首圈颜色和部件基础色不同时，免责声明必须跟着实际写出的 COLOR。"""
+    report = export_parade_report({"params": {
+        "parts": [{
+            "name": "色块", "magic_ring": True, "quantity": 1,
+            "color": "黄色", "color_origin": "manual",
+            "rounds": [
+                {"row": 1, "stitches": 6, "color": "外婆家的藏青"},
+                {"row": 2, "stitches": 12, "increase": 6, "color": "外婆家的藏青"},
+            ],
+        }],
+        "display_colors": {"外婆家的藏青": "#26374a"},
+    }})
+    note = ("# display swatch for 外婆家的藏青 — screen colour only, "
+            "not a yarn brand code")
+    assert note in report.text
+    assert report.text.index(note) < report.text.index("COLOR: #26374a")
+    assert "COLOR: #ffff00" not in report.text
+
+    inverse = export_parade_report({"params": {
+        "parts": [{
+            "name": "色块", "magic_ring": True, "quantity": 1,
+            "color": "外婆家的藏青", "color_origin": "manual",
+            "rounds": [
+                {"row": 1, "stitches": 6, "color": "黄色"},
+                {"row": 2, "stitches": 12, "increase": 6, "color": "外婆家的藏青"},
+            ],
+        }],
+        "display_colors": {"外婆家的藏青": "#26374a"},
+    }})
+    opening = inverse.text.index("COLOR: #ffff00")
+    assert note not in inverse.text[:opening]
+    assert inverse.text.index(note) < inverse.text.index("COLOR: #26374a")
+
+
 def test_ring_and_symbol_use_the_map_or_the_theme_fallback():
     part = {"name": "头部", "rounds": [
         {"row": 1, "stitches": 6, "color": "外婆家的藏青"},
