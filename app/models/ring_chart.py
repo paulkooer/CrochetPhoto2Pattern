@@ -9,17 +9,26 @@ SVG 结构：配色圆 + 右侧引线标注（圈号 · 针数 · 颜色名）�
 from __future__ import annotations
 
 import html
+from collections.abc import Mapping
 from itertools import islice
 from typing import Any
 
 from app import theme
+from app.models.colors import resolve_display_color
 from app.models.instruction_checks import instruction_issues, round_expression
 from app.models.stitch_notation import NotationError, mentions_invisible_decrease
 
 _SVG_W, _SVG_H = 320, 320
 
 
-def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
+def _swatch(color: object, displays: Mapping[str, str] | None, fallback: str) -> str:
+    if not isinstance(color, str) or not color:
+        return fallback
+    return resolve_display_color(color, displays) or fallback
+
+
+def render_ring_svg(part: Any, stitch_w_cm: float = 0.77,
+                    displays: Mapping[str, str] | None = None) -> str:
     """部件 → 环形圈数图 SVG 字符串。
 
     part 为 dict 形态（见 crochet_params._build_result 双态收敛）；
@@ -30,7 +39,6 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
         return ""
 
     name = part.get("name", "?")
-    hex_of = _rgb_hex_lookup()
 
     # 物理半径：r = N·针宽 / 2π；最外圈占满可用区
     radii = [max(0.5, r.get("stitches", 1) * stitch_w_cm / (2 * 3.14159265))
@@ -70,7 +78,7 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
     for i, rd in enumerate(rounds):
         r_px = radii[i] * scale
         c = rd.get("color")
-        fill = hex_of.get(c, theme.GRID) if c else theme.GRID
+        fill = _swatch(c, displays, theme.GRID) if c else theme.GRID
         stroke = theme.EDGE if not c else theme.INK_SOFT
         if r_px >= 1:
             lines.append(
@@ -95,18 +103,6 @@ def render_ring_svg(part: Any, stitch_w_cm: float = 0.77) -> str:
             f'<tspan dx="6">{rd.get("stitches", "?")}X</tspan>{color_span}</text>')
     lines.append("</svg>")
     return "\n".join(lines)
-
-
-_HEX_CACHE: dict[str, str] = {}
-
-
-def _rgb_hex_lookup() -> dict[str, str]:
-    """毛线色名 → hex（模块级缓存）。"""
-    if not _HEX_CACHE:
-        from .colors import YARN_COLORS
-        for rgb, name in YARN_COLORS:
-            _HEX_CACHE[name] = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-    return _HEX_CACHE
 
 
 def _spread_operations(total: int, special: int, symbol: str, limit: int | None = None) -> list[str]:
@@ -170,7 +166,8 @@ def _round_operation_sequence(
 
 
 def render_symbol_strip(part: Any, max_marks: int = 18,
-                        max_rounds: int = 24) -> str:
+                        max_rounds: int = 24,
+                        displays: Mapping[str, str] | None = None) -> str:
     """逐圈符号条（U7）——把每圈可执行的针法序列画成记号横条。
 
     记号与本仓记号体系一致（图例随图自带）：
@@ -194,7 +191,6 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
     mark_w, row_h, left = 14, 24, 100
     width = left + max_marks * mark_w + 60
     height = len(rounds) * row_h + 46
-    hex_of = _rgb_hex_lookup()
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
@@ -229,7 +225,7 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
     for ri, rd in enumerate(rounds):
         y = 46 + ri * row_h
         c = rd.get("color")
-        stroke = hex_of.get(c, theme.INK) if c else theme.INK
+        stroke = _swatch(c, displays, theme.INK) if c else theme.INK
         n = int(rd.get("stitches", 0) or 0)
         seq = _round_operation_sequence(all_rounds, start_row + ri, max_marks)
         shown = min(len(seq), max_marks)

@@ -71,8 +71,9 @@ def test_result_and_paged_progress_show_labels_without_mutating_the_pattern():
     assert any("蓝色" in item.label for item in at.checkbox)
     assert any("换线：主体色（待选色）" in item.label for item in at.checkbox)
     assert any("手写 skin" in item.value and "R1 肤色（待选色）" in item.value for item in at.info)
-    structure = next(item.value for item in at.dataframe if "基准色" in item.value.columns)
-    assert set(structure["基准色"]) >= {"肤色（待选色）", "主体色（待选色）"}
+    structure = next(item.value for item in at.dataframe if "当前基础色" in item.value.columns)
+    assert set(structure["当前基础色"]) >= {"肤色（待选色）", "主体色（待选色）"}
+    assert set(structure["原始结构色"]) >= {"肤色（待选色）", "主体色（待选色）"}
     assert any("待选色使用示意颜色" in item.value for item in at.caption)
 
     paged = AppTest.from_string('''
@@ -135,5 +136,5 @@ def test_pdf_reports_part_and_round_colors_without_mutating_the_pattern(monkeypa
     assert "蓝色" in texts
     assert any("手写 skin" in text and "R1 肤色（待选色）" in text for text in texts)
     assert any("换线：主体色（待选色）" in text for text in texts)
-    assert "蓝&lt;b&gt;绿&lt;/b&gt;" in texts
+    assert any("蓝&lt;b&gt;绿&lt;/b&gt;" in text for text in texts)
     assert result == original

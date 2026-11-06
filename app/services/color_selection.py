@@ -20,6 +20,7 @@ from copy import deepcopy
 from typing import Any, Literal, cast
 
 from app.models.color_design import refresh_color_instructions
+from app.models.colors import normalize_hex_color, resolve_display_color
 from app.models.gauge import gauge_from_result
 from app.models.materials import yarn_requirements
 from app.models.parts import (
@@ -163,9 +164,35 @@ def _recolored_part(part: Mapping[str, Any], color: str, mode: str,
     return cast("PartData", updated)
 
 
+def _store_display_colors(params: dict[str, Any], chosen: list[str],
+                          provided: Mapping[str, str] | None) -> None:
+    """把本次选中的自定义名称登记到 ``params.display_colors``。
+
+    色表名和十六进制本身已能解析，不写入这张表。没提供显示色时保留原名，
+    3D 用中性灰而不是部件旧色。同一名称给出两个不同显示色时拒绝。
+    """
+    if not provided:
+        return
+    current = params.get("display_colors")
+    merged = dict(current) if isinstance(current, dict) else {}
+    for name in chosen:
+        if resolve_display_color(name) is not None or name not in provided:
+            continue
+        raw = provided[name]
+        normalized = normalize_hex_color(raw)
+        if normalized is None:
+            raise ValueError(
+                f"自定义颜色「{name}」的显示色必须是 #RGB 或 #RRGGBB。"
+                "显示色只用于界面和导出，不是毛线品牌色号")
+        merged[name] = normalized
+    if merged:
+        params["display_colors"] = merged
+
+
 def _recolored_result(result: ResultData, *, part_name: str, color: str, mode: str,
                       instance_index: int | None, head_color: str | None = None,
-                      body_color: str | None = None) -> ResultData:
+                      body_color: str | None = None,
+                      display_colors: Mapping[str, str] | None = None) -> ResultData:
     from app.services.color_identity import (
         align_copy_colors,
         color_copy_ids,
@@ -189,6 +216,10 @@ def _recolored_result(result: ResultData, *, part_name: str, color: str, mode: s
             updated["instance_color_ids"] = color_copy_ids(candidate, part)
     refresh_color_instructions(updated, previous=part)
     params["parts"][index] = updated
+    chosen = [head_color, body_color] if head_color is not None and body_color is not None else (
+        [] if mode == MODE_INHERIT else [color])
+    _store_display_colors(cast("dict[str, Any]", params),
+                          [name for name in chosen if name], display_colors)
     candidate["params"] = rebuild_params(params, structure=candidate["structure"])
     return candidate
 
@@ -272,6 +303,7 @@ def _split_preview(result: ResultData, *, part_name: str, head_color: str,
 def color_change_preview(result: ResultData, *, part_name: str, color: str | None = None,
                          mode: str = MODE_KEEP_STRIPES, instance_index: int | None = None,
                          head_color: str | None = None, body_color: str | None = None,
+                         display_colors: Mapping[str, str] | None = None,
                          progress: Mapping[str, bool] | None = None,
                          slot: str = "") -> dict[str, Any]:
     """修改前的预览载荷；绝不改动 ``result``。
@@ -281,7 +313,8 @@ def color_change_preview(result: ResultData, *, part_name: str, color: str | Non
     """
     candidate_result = apply_color_change(
         result, part_name=part_name, color=color, mode=mode,
-        instance_index=instance_index, head_color=head_color, body_color=body_color)
+        instance_index=instance_index, head_color=head_color, body_color=body_color,
+        display_colors=display_colors)
     if head_color is not None and body_color is not None:
         preview = _split_preview(result, part_name=part_name,
                                  head_color=_checked_color(head_color),
@@ -339,7 +372,8 @@ def color_change_preview(result: ResultData, *, part_name: str, color: str | Non
 
 def apply_color_change(result: ResultData, *, part_name: str, color: str | None = None,
                        mode: str = MODE_KEEP_STRIPES, instance_index: int | None = None,
-                       head_color: str | None = None, body_color: str | None = None) -> ResultData:
+                       head_color: str | None = None, body_color: str | None = None,
+                       display_colors: Mapping[str, str] | None = None) -> ResultData:
     """按用户选择返回新的 result；``result`` 本身不被修改。
 
     ``color``/``mode`` 用于整件或单份选色；同时给出 ``head_color`` 与
@@ -349,7 +383,8 @@ def apply_color_change(result: ResultData, *, part_name: str, color: str | None 
         return _recolored_result(result, part_name=part_name, color="",
                                  mode=MODE_UNIFORM, instance_index=None,
                                  head_color=_checked_color(head_color),
-                                 body_color=_checked_color(body_color))
+                                 body_color=_checked_color(body_color),
+                                 display_colors=display_colors)
     checked_mode = _checked_mode(mode)
     if instance_index is not None and checked_mode not in (MODE_UNIFORM, MODE_INHERIT):
         raise ValueError("单份选色只支持明确的整份统一换色或恢复部件配色")
@@ -358,7 +393,8 @@ def apply_color_change(result: ResultData, *, part_name: str, color: str | None 
     return _recolored_result(result, part_name=part_name,
                              color="" if checked_mode == MODE_INHERIT else _checked_color(color),
                              mode=checked_mode,
-                             instance_index=instance_index)
+                             instance_index=instance_index,
+                             display_colors=display_colors)
 
 
 def color_origin_of(part: Mapping[str, Any]) -> str:

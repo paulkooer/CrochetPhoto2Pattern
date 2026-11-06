@@ -67,9 +67,14 @@ def test_ordinal_colours_follow_instance_order_without_ids():
     assert colors == ["#ff0000", "#0078d7"]
 
 
-def test_unknown_copy_colour_keeps_the_part_colour():
+def test_unknown_copy_colour_does_not_keep_the_part_colour():
+    from app.models.colors import UNRESOLVED_DISPLAY_HEX
+
     payload = _arms(["不是色表里的名字"], ["arm-r"])
-    assert payload["items"][0]["instances"][0]["color"] == "#ffff00"
+    arms = payload["items"][0]
+    assert arms["instances"][0]["color"] == UNRESOLVED_DISPLAY_HEX
+    assert arms["instances"][0]["color"] != "#ffff00"
+    assert arms["instances"][1]["color"] == "#ffff00"
 
 
 def test_reordered_ids_do_not_paint_the_other_copy():

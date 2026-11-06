@@ -12,6 +12,9 @@
 from __future__ import annotations
 
 import math
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -50,6 +53,123 @@ YARN_COLORS: list[tuple[RGB, str]] = [
     ((128,   0, 128), "紫色"),
     ((216, 191, 216), "薰衣草色"),
 ]
+
+# skin/body 是「还没选毛线」的占位，不是色表里的线。3D 和环形图用固定示意色，
+# 导出文字仍写待选，不能把这个 hex 当成品牌色号。
+PLACEHOLDER_DISPLAY_HEX = {"skin": "#e8bfa8", "body": "#9aa7b8"}
+# 自定义名称没有显示色时用中性灰。它必须和任何色表颜色都不同，避免看起来像
+# 「还在用部件原来的黄色」。
+UNRESOLVED_DISPLAY_HEX = "#b7b1a8"
+_DISPLAY_NAME_MAX = 40
+_DISPLAY_ENTRY_MAX = 64
+_HEX_COLOR = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+_YARN_NAMES = {name for _rgb, name in YARN_COLORS}
+
+
+def normalize_hex_color(value: object) -> str | None:
+    """``#RGB`` / ``#RRGGBB`` → 小写 ``#rrggbb``。其他文本返回 None。"""
+    if not isinstance(value, str) or _HEX_COLOR.fullmatch(value.strip()) is None:
+        return None
+    text = value.strip()[1:]
+    if len(text) == 3:
+        text = "".join(channel * 2 for channel in text)
+    return f"#{text.lower()}"
+
+
+@dataclass(frozen=True, slots=True)
+class ColorPresentation:
+    """一种颜色在屏幕上和在外部格式里分别是什么。
+
+    屏幕能画出一个色块，不表示它已经是毛线产品，也不表示每种导出都能忠实表达。
+    ``display_hex`` 只给界面。``export_hex`` 只在该格式可以写出这个颜色时才有值。
+    """
+
+    display_hex: str | None
+    export_hex: str | None
+    is_placeholder: bool
+    is_custom: bool
+    is_exportable: bool
+
+
+def present_color(color: object, displays: Mapping[str, str] | None = None) -> ColorPresentation:
+    """颜色呈现的单一来源。调用方按字段取屏幕色或可导出色，不再各写一套规则。
+
+    顺序：字面 ``#RGB`` / ``#RRGGBB``、内置色名、``skin`` / ``body`` 占位、
+    再查 ``displays`` 里为自定义名称登记的显示色。占位有屏幕色但没有可导出色。
+    自定义名称没有显示色时两项都为空，不能退回部件原来的毛线色。
+    """
+    empty = ColorPresentation(None, None, False, False, False)
+    if not isinstance(color, str):
+        return empty
+    name = color.strip()
+    if not name:
+        return empty
+    literal = normalize_hex_color(name)
+    if literal is not None:
+        return ColorPresentation(literal, literal, False, False, True)
+    for (red, green, blue), yarn in YARN_COLORS:
+        if yarn == name:
+            hex_color = f"#{red:02x}{green:02x}{blue:02x}"
+            return ColorPresentation(hex_color, hex_color, False, False, True)
+    if name in PLACEHOLDER_DISPLAY_HEX:
+        return ColorPresentation(PLACEHOLDER_DISPLAY_HEX[name], None, True, False, False)
+    recorded = None
+    if isinstance(displays, Mapping):
+        raw = displays.get(name)
+        if isinstance(raw, str):
+            recorded = normalize_hex_color(raw)
+    if recorded is not None:
+        return ColorPresentation(recorded, recorded, False, True, True)
+    return ColorPresentation(None, None, False, True, False)
+
+
+def resolve_display_color(color: object, displays: Mapping[str, str] | None = None, *,
+                          placeholders: bool = True) -> str | None:
+    """屏幕或导出用的 hex。返回值只是示意，不是毛线品牌色号、批次或用量证据。
+
+    ``placeholders=True`` 取 ``display_hex``（3D、环形图、PDF 色块）。
+    ``placeholders=False`` 取 ``export_hex``：待选占位和没有显示色的自定义名都是 None。
+    """
+    presented = present_color(color, displays)
+    return presented.display_hex if placeholders else presented.export_hex
+
+
+def screen_swatch_suffix(color: object, displays: Mapping[str, str] | None = None) -> str:
+    """自定义名称在图解文字后的显示色说明。色表名、占位和十六进制本身不加。"""
+    presented = present_color(color, displays)
+    if not presented.is_custom:
+        return ""
+    if presented.display_hex is None:
+        return "（无显示色）"
+    return f"（显示色 {presented.display_hex}，屏幕示意，不是品牌色号）"
+
+
+def display_color_issues(raw: object) -> list[str]:
+    """``params.display_colors`` 的校验。缺省合法；坏表给出可读问题。"""
+    if raw is None:
+        return []
+    if not isinstance(raw, dict):
+        return ["显示色表必须是「颜色名 → #RGB/#RRGGBB」对象"]
+    if len(raw) > _DISPLAY_ENTRY_MAX:
+        return [f"显示色条目不能超过 {_DISPLAY_ENTRY_MAX} 条"]
+    issues: list[str] = []
+    for key, value in raw.items():
+        if not isinstance(key, str) or not key.strip() or key != key.strip():
+            issues.append("显示色的颜色名无效")
+            continue
+        if normalize_hex_color(key) is not None:
+            issues.append(f"「{key}」本身是十六进制颜色，不能再登记显示色")
+            continue
+        if (len(key) > _DISPLAY_NAME_MAX
+                or any(ord(char) < 32 or char == "#" for char in key)):
+            issues.append("显示色的颜色名无效")
+            continue
+        if key in _YARN_NAMES or key in PLACEHOLDER_DISPLAY_HEX:
+            issues.append(f"「{key}」已有固定显示色，不能再登记自定义显示色")
+            continue
+        if normalize_hex_color(value) is None:
+            issues.append(f"「{key}」的显示色必须是 #RGB 或 #RRGGBB")
+    return issues
 
 
 def srgb_to_lab(r: int, g: int, b: int) -> LAB:

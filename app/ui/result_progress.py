@@ -10,7 +10,7 @@ from app.models.gauge import gauge_for_part, gauge_from_result, has_independent_
 from app.models.stitches import PLACEMENT_GUIDANCE, ROUND_WORKING_GUIDANCE, STITCH_LEGEND_ZH
 from app.schemas import PartData, ResultData, RoundData
 from app.ui.design_system import section_heading
-from app.ui.result_analysis import _RGB_BY_NAME, _yarn_chip_html, md_safe
+from app.ui.result_analysis import _yarn_chip_html, md_safe
 from app.ui.result_structure import _SHAPE_LABELS
 from app.utils.color_labels import display_color_name, display_generated_color_note
 
@@ -160,13 +160,15 @@ def _render_part_progress(
                     from app.ui.design_system import html_box
 
                     _sw_cm = gauge_for_part(part_data, gauge_from_result(result)).stitch_w_cm
+                    _raw_displays = (result.get("params") or {}).get("display_colors")
+                    _displays = _raw_displays if isinstance(_raw_displays, dict) else None
                     # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>；
                     # st.markdown unsafe_allow_html 不净化（内联 SVG 无空行
                     # 时不经 markdown 重排）
                     st.markdown(html_box(
-                        render_ring_svg(part, stitch_w_cm=_sw_cm), 330),
+                        render_ring_svg(part, stitch_w_cm=_sw_cm, displays=_displays), 330),
                         unsafe_allow_html=True)
-                    _strip = render_symbol_strip(part)
+                    _strip = render_symbol_strip(part, displays=_displays)
                     if _strip:
                         st.markdown("**逐圈符号条**（×=短针，V=加针，A=减针，W=一放三，M=三并一；F/B=前/后半针）")
                         st.caption("可识别操作式按原顺序显示；只有总针数时为均匀分布示意，文字错位提示需另行核对。")
@@ -287,9 +289,15 @@ def render_pattern(result: ResultData, slot: str) -> dict[str, Any]:
             item = str(mat.get("item", "?"))
             qty = str(mat.get("quantity", "?"))
             # T2 逐色材料：item 形如"毛线 · <色名>"且色在色表 → 真实色样胶囊
-            if item.startswith("毛线 · ") and mat.get("color") in _RGB_BY_NAME:
+            from app.models.colors import resolve_display_color
+
+            _displays = params.get("display_colors")
+            _swatch = resolve_display_color(
+                mat.get("color"), _displays if isinstance(_displays, dict) else None,
+                placeholders=False)
+            if item.startswith("毛线 · ") and _swatch:
                 st.markdown(
-                    _yarn_chip_html(item.replace("毛线 · ", ""))
+                    _yarn_chip_html(str(mat.get("color")), _displays if isinstance(_displays, dict) else None)
                     + f"<span class='yarn-qty'>{html.escape(qty)}</span>",
                     unsafe_allow_html=True)
             else:

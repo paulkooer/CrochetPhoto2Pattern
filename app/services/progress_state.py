@@ -23,6 +23,8 @@ _COLOR_FIELDS = ("color", "auto_color_summary", "color_origin", "color_section_m
                  "instance_colors", "instance_color_ids")
 _DERIVED_TOTALS = ("materials", "material_summary", "total_stitches",
                    "estimated_time_minutes", "time_estimate_basis")
+# 显示色只服务屏幕和导出着色，不改变针法。纯显示色变化与改颜色一样保留进度。
+_VISUAL_PARAMS = ("display_colors",)
 
 
 def _without_recorded_fragment(note: object, fragment: object) -> object:
@@ -100,9 +102,14 @@ def _identity_fingerprint(result: ResultData) -> dict[str, list[str]]:
     return fingerprint
 
 
+def _display_map(result: ResultData) -> dict[str, str] | None:
+    value = (result.get("params") or {}).get("display_colors")
+    return value if isinstance(value, dict) and value else None
+
+
 def _pattern_shape(result: ResultData) -> dict[str, Any]:
     params: dict[str, Any] = {k: v for k, v in (result.get("params") or {}).items()
-                              if k not in _DERIVED_TOTALS}
+                              if k not in _DERIVED_TOTALS and k not in _VISUAL_PARAMS}
     parts = params.get("parts") or []
     params["parts"] = [_strip_color_state(p) for p in parts if isinstance(p, Mapping)]
     params["_copy_identity"] = _identity_fingerprint(result)
@@ -126,7 +133,10 @@ def color_only_change(current: ResultData, updated: ResultData) -> bool:
         return [({key: part.get(key) for key in _COLOR_FIELDS},
                  [(row.get("color"), row.get("auto_color_note")) for row in part.get("rounds", [])])
                 for part in parts]
-    return colors(before) != colors(after) and _pattern_shape(current) == _pattern_shape(updated)
+    shapes_match = _pattern_shape(current) == _pattern_shape(updated)
+    colors_differ = colors(before) != colors(after)
+    displays_differ = _display_map(current) != _display_map(updated)
+    return shapes_match and (colors_differ or displays_differ)
 
 
 def progress_record_key(slot: str) -> str:

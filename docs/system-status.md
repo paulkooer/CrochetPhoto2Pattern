@@ -14,6 +14,15 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
+The formal G1/G2 binding is [`docs/release-evidence.json`](release-evidence.json), written by
+`scripts/bind_release_evidence.py` from remote checks. The file currently binds `main`
+`e593b267925ff689704b4b55931e42c68a9c599f` (tree `9042cd948f4c6a7d27ace9d60f0ff72f165fd520`).
+That commit's push checks are 12/12. `security.yml` path-filters pushes, so the merge commit
+itself has no `pip-audit` run. PR #58 head `97ff142c48cf8a3c7a138aa27874329b1da48b2d` has the
+same tree, includes `pip-audit`, and is 13/13. The file does not cover later commits. The
+display-swatch work, the structure-table colours and these gate notes are later changes.
+They are not part of G1/G2 until that commit's CI is green and the evidence file is regenerated.
+
 2026-11-06 per-copy 3D preview colours on `fix/preview3d-instance-colors` at commit
 `1790f4f`, based on `main` `196c21e`: the structure preview paints each physical copy
 from `instance_colors`. When `instance_color_ids` is present and the same length, each
@@ -1144,8 +1153,8 @@ and locked dependency audit
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **Parade-count baseline: `59f8737`** | PR #47 was squash-merged into `main` with the same tree as checked head `c8039b9`. Later changes require their own commit-bound evidence; new features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **All 13 remote checks passed for PR #47 head** | Checked head `c8039b9`: Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy, dependency audit and browser smoke pass; post-merge CI, browser and extras pass on `59f8737`. Verify later changes against their own SHAs |
+| G1 Reproducible source | **See [`docs/release-evidence.json`](release-evidence.json)** | Currently bound to that file's `commit`, `e593b267925ff689704b4b55931e42c68a9c599f`. Later changes, including display swatches and this page, do not inherit it and must be regenerated. New features do not inherit the independent PASS for `55280fb` |
+| G2 Supported-version automation | **12/12 push checks on that commit; pip-audit on the same tree** | Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy and browser smoke passed on the push. The merge commit itself has no pip-audit run. PR #58 head `97ff142c48cf8a3c7a138aa27874329b1da48b2d` is the same tree and is 13/13, including pip-audit. Required context names are in `.github/required-checks.json` |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds, including 100% crochetability and 100% Parade export apart from declared unsupported constructions. The default local flow delivers only template parts, so the macro-F1-above-template floor still needs new recognition capability |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

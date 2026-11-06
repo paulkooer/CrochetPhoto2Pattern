@@ -8,6 +8,13 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-06 Display swatches and the structure-table colour
+
+- The structure table has two colour columns. The current base colour is read from `params.parts[].color`. The original structure colour stays the photo or template record and is not rewritten by a manual recolour.
+- The 3D preview, ring chart, PDF chips and CrochetPARADE share `present_color()`. It returns the screen hex, the exportable hex, and whether the colour is a placeholder, a custom name, or exportable. `resolve_display_color` only reads one of those hex fields. It accepts yarn-table names, `skin`/`body` placeholders, `#RGB`/`#RRGGBB`, and a screen swatch recorded for a custom name in `params.display_colors`. A custom name with no swatch is painted neutral gray in 3D and no longer keeps the part's previous yarn colour. Parade still refuses a custom name it cannot express, and it does not emit `COLOR:` for an unselected placeholder. One custom name has one shared display hex.
+- A display swatch is only for the screen and for export colouring. It is not a brand colour code. Materials stay aggregated by the text name. A custom name has its own swatch picker, which defaults to neutral gray.
+- Changing only `display_colors` counts as a pure colour change and keeps completed rounds. The export cache is now **19**. The browser regression adds a custom display-swatch flow; the full app script is now 28 checks.
+
 ### Changed — 2026-11-06 Per-copy colours in the 3D preview
 
 - The 3D structure preview paints each copy from `instance_colors`. When `instance_color_ids` is present, colour follows the copy ID rather than a reordered list. A copy without its own colour, or with a name outside the yarn table, keeps the part colour. Round stripes are still not drawn. Backup format and the export cache are unchanged.

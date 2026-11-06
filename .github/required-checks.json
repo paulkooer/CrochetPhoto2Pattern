@@ -1,0 +1,18 @@
+{
+  "ruleset": "Protect main",
+  "contexts": [
+    "docker",
+    "type-check",
+    "test (3.11)",
+    "test (3.12)",
+    "test (3.13)",
+    "test (3.14)",
+    "optional-extras (pdf)",
+    "optional-extras (pose)",
+    "browser-smoke",
+    "streamlit-floor",
+    "pose-unlocked (3.11)",
+    "pose-unlocked (3.12)",
+    "pip-audit"
+  ]
+}
