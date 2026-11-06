@@ -8,6 +8,14 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-05 Result-page reading order and on-demand JSON editors
+
+- Chapter 1 of the result page folds provenance captions, mask/silhouette notes, pose priors, legacy usage and the local colour-block table into a collapsed "sources and limitations" panel; alerts (unrecognized review records, colour blocks needing review) stay visible outside it. Chapter 3 folds the stitch legend, working and placement guidance, the time-estimate disclaimer and the shaping note into the stitch reference; the metrics, self-check badge, materials and round list stay in the body.
+- The structure table drops the developer "position / rotation" column; the coordinate legend moves into "view structure JSON". The connection column stays, marked as template-inferred.
+- "Advanced editing (JSON)" now mounts on demand: until enabled, neither editor is rendered and the full pattern/structure JSON is not reserialised on every rerun. After the enable click both editors stay mounted for the tab, including across regeneration, so unapplied drafts keep their preview/cancel/retention guarantees.
+- The photo page drops the "multi-angle photos (planned)" placeholder; the roadmap stays documented in docs/flow.md.
+- Widget keys, backup format and progress semantics are unchanged; the browser suite adds checks for the collapsed sources panel, the coordinate-free structure table and the absence of editor textareas before enabling (27 flows).
+
 ### Documentation — 2026-11-05 English interface descriptions
 
 - Translate interface references in the English README and the colour-selection and physical-trial guides. Clarify that the application interface, CLI help and generated patterns currently use Chinese; the CLI example now uses default parts, and links to Chinese guides are labelled.

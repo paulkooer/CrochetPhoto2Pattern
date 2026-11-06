@@ -247,6 +247,7 @@ def test_history_saves_applied_result_not_unapplied_json_draft(result, monkeypat
     at.run()
     draft = deepcopy(result["params"])
     draft["parts"][0]["rounds"][0]["color"] = "蓝色"
+    at.button(key="json_open_followup").click().run()
     at.text_area(key="json_edit_followup").input("{broken" if bad_json else json.dumps(draft)).run()
     at.button(key="hist_save_followup").click().run()
     assert not at.exception and not at.error

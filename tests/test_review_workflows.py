@@ -84,6 +84,7 @@ def test_invalid_edit_retains_current_result_and_cached_exports(result, monkeypa
     assert cached["share"] is not None
     invalid = deepcopy(result["params"])
     invalid["parts"][0]["rounds"][1]["stitches"] = 13
+    at.button(key="json_open_review-result").click().run()
     at.text_area(key="json_edit_review-result").input(json.dumps(invalid))
     at.button(key="regen_review-result").click().run()
     assert not at.exception

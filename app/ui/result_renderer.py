@@ -397,17 +397,27 @@ def render_results(result: ResultData, slot: str) -> None:
     elif sizing.get("note"):
         st.caption(f"📏 {md_safe(sizing['note'])}")
     geometry = result.get("geometry") or {}
-    if geometry.get("mask_review"):
-        st.caption("✓ 主体选区已经过人工补选／擦除；轮廓与配色来自修正后的掩码，部件仍需确认。")
-    silhouette = geometry.get("silhouette") or {}
-    if silhouette:
-        st.caption(
-            f"📐 单图轮廓观测 · {_confidence_text(silhouette)}"
-            "；深度按旋转体假设补充，可在尺寸与结构区继续修正。")
-    st.text("主要特征: "
-            + ", ".join(_plain_text(f) for f in analysis["main_features"]))
-    st.text("识别部件: "
-            + ", ".join(_plain_text(p) for p in analysis["parts"]))
+    vmeta = result.get("vision_meta") or {}
+    from app.utils.provenance import (
+        confirmed_analysis_review,
+        has_consistent_head_box,
+        unrecognized_review_record,
+    )
+
+    # 2026-11-05 信息架构：解析来源、掩码/轮廓置信、姿态先验、旧版用量与局部
+    # 色块表收进「来源与限制」面板（默认折叠）；警告类信息留在面板外直接可见。
+    if unrecognized_review_record(vmeta):
+        st.warning("复核记录无法识别，请重新核对主体、头部与部件。")
+
+    color_evidence = vmeta.get("color_observation")
+    observation = None
+    if color_evidence:
+        from app.models.color_observation import ColorObservation
+
+        observation = ColorObservation.model_validate(color_evidence)
+        if observation.requires_review:
+            st.warning("照片中的局部色块需要复核：当前图解只有整圈配色，"
+                       "眼斑等局部颜色尚未转换成圈内换色或附着装饰。")
 
     # 导入的旧图解或显式自定义结构可以保留非规范名，不重新猜测其形状。
     unknown = [p for p in analysis.get("parts", []) if p not in PART_NAMES]
@@ -416,15 +426,19 @@ def render_results(result: ResultData, slot: str) -> None:
                    + "、".join(md_safe(p) for p in unknown)
                    + " 使用已有结构与图解，请人工核对形状；不支持从该名称自动推断")
 
-    color_evidence = (result.get("vision_meta") or {}).get("color_observation")
-    if color_evidence:
-        from app.models.color_observation import ColorObservation
-
-        observation = ColorObservation.model_validate(color_evidence)
-        if observation.requires_review:
-            st.warning("照片中的局部色块需要复核：当前图解只有整圈配色，"
-                       "眼斑等局部颜色尚未转换成圈内换色或附着装饰。")
-        with st.expander("照片局部配色观测"):
+    with st.expander("来源与限制", expanded=False):
+        if geometry.get("mask_review"):
+            st.caption("✓ 主体选区已经过人工补选／擦除；轮廓与配色来自修正后的掩码，部件仍需确认。")
+        silhouette = geometry.get("silhouette") or {}
+        if silhouette:
+            st.caption(
+                f"📐 单图轮廓观测 · {_confidence_text(silhouette)}"
+                "；深度按旋转体假设补充，可在尺寸与结构区继续修正。")
+        st.text("主要特征: "
+                + ", ".join(_plain_text(f) for f in analysis["main_features"]))
+        st.text("识别部件: "
+                + ", ".join(_plain_text(p) for p in analysis["parts"]))
+        if observation is not None:
             st.caption("色块按裁剪照片定位，不代表针目位置或制作方法。阴影、背景残留也可能形成色块。"
                        "修改图解不会改写这份照片观测。")
             st.dataframe([{"颜色": r.color, "占主体比例": f"{r.pixels / observation.foreground_pixels:.1%}",
@@ -435,69 +449,59 @@ def render_results(result: ResultData, slot: str) -> None:
                 st.caption(f"另有 {observation.omitted_region_count} 个微小或超出展示上限的色块；"
                            "其颜色计数保留在备份中。")
 
-    # Preserve billing provenance only for imported historical results.
-    usage = result.get("usage") or {}
-    if usage.get("input_tokens") is not None:
-        st.caption(
-            f"📊 旧版图解记录的 Vision 用量（{md_safe(usage.get('provider', '?'))}）："
-            f"输入 {usage['input_tokens']} tok · 输出 {usage.get('output_tokens', '?')} tok"
-        )
+        # Preserve billing provenance only for imported historical results.
+        usage = result.get("usage") or {}
+        if usage.get("input_tokens") is not None:
+            st.caption(
+                f"📊 旧版图解记录的 Vision 用量（{md_safe(usage.get('provider', '?'))}）："
+                f"输入 {usage['input_tokens']} tok · 输出 {usage.get('output_tokens', '?')} tok"
+            )
 
-    if usage.get("usage_complete") is False:
-        st.caption("部分请求未返回用量；以上合计不代表完整账单，失败与重试也可能计费。")
-    if result.get("diagnostics") or usage.get("attempts"):
-        with st.expander("运行耗时与回退原因"):
-            st.caption("耗时只计运行阶段，不含人工确认停留时间；预算在阶段边界检查。")
+        if usage.get("usage_complete") is False:
+            st.caption("部分请求未返回用量；以上合计不代表完整账单，失败与重试也可能计费。")
+        if result.get("diagnostics") or usage.get("attempts"):
+            st.caption("运行耗时与回退原因（耗时只计运行阶段，不含人工确认停留时间；预算在阶段边界检查）：")
             st.json({"diagnostics": result.get("diagnostics", {}), "api_usage": usage})
 
-    # 解析来源透明展示：AI（LLM）/ 本地估算 / Mock 三类（vision_meta）
-    vmeta = result.get("vision_meta") or {}
-    from app.utils.provenance import (
-        confirmed_analysis_review,
-        has_consistent_head_box,
-        unrecognized_review_record,
-    )
+        # 解析来源透明展示：AI（LLM）/ 本地估算 / Mock 三类（vision_meta）
+        if confirmed_analysis_review(vmeta):
+            st.caption("✓ 比例与部件已经过人工确认；原始解析来源保留如下。")
+        elif vmeta.get("parts_source") == "cli_explicit":
+            st.caption("部件为 CLI 显式选择；主体类型、头部与比例仍待人工确认。")
+        if vmeta.get("source") == "mock":
+            st.caption("🎬 Mock 演示数据（体型与部件为固定演示值，"
+                       "配色与分段参考照片，仅供体验流程）")
+        elif vmeta.get("source"):
+            source = vmeta["source"]
+            label = {
+                "anthropic": "🤖 Anthropic Vision（AI 语义解析）",
+                "openai": "🤖 OpenAI Vision（AI 语义解析）",
+                "opencv-face": "🧮 本地视觉估算（人脸检测）",
+                "default": "🧮 本地默认估算",
+            }.get(source, f"解析来源：{md_safe(source)}")
+            body_ratio = vmeta.get("body_ratio")
+            ratio_str = f"，身高/头径 ≈ {body_ratio}" if body_ratio else ""
+            st.caption(f"{label}{ratio_str} — {md_safe(vmeta.get('note', ''))}")
 
-    if confirmed_analysis_review(vmeta):
-        st.caption("✓ 比例与部件已经过人工确认；原始解析来源保留如下。")
-    elif unrecognized_review_record(vmeta):
-        st.warning("复核记录无法识别，请重新核对主体、头部与部件。")
-    elif vmeta.get("parts_source") == "cli_explicit":
-        st.caption("部件为 CLI 显式选择；主体类型、头部与比例仍待人工确认。")
-    if vmeta.get("source") == "mock":
-        st.caption("🎬 Mock 演示数据（体型与部件为固定演示值，"
-                   "配色与分段参考照片，仅供体验流程）")
-    elif vmeta.get("source"):
-        source = vmeta["source"]
-        label = {
-            "anthropic": "🤖 Anthropic Vision（AI 语义解析）",
-            "openai": "🤖 OpenAI Vision（AI 语义解析）",
-            "opencv-face": "🧮 本地视觉估算（人脸检测）",
-            "default": "🧮 本地默认估算",
-        }.get(source, f"解析来源：{md_safe(source)}")
-        body_ratio = vmeta.get("body_ratio")
-        ratio_str = f"，身高/头径 ≈ {body_ratio}" if body_ratio else ""
-        st.caption(f"{label}{ratio_str} — {md_safe(vmeta.get('note', ''))}")
-
-    # S1/F15：分段来源诚实标注——实测覆盖的部件逐一列出，其余为先验
-    measured = result.get("spans_measured") or []
-    manual_spans = []
-    if geometry.get("body_region"):
-        manual_spans.append("身体")
-    head_box_consistent = has_consistent_head_box(vmeta, result.get("spans"))
-    if head_box_consistent:
-        manual_spans.append("头部")
-    elif vmeta.get("review_head_box") is not None:
-        st.caption("头部框记录无效或与分段不一致，无法确认人工框选来源。")
-    if manual_spans:
-        st.caption("📐 人工框选分段：" + "、".join(manual_spans)
-                   + "；身体框仅限定轮廓范围，不代表实物尺寸校准。")
-    if measured:
-        st.caption("📐 部件分段："
-                   + "、".join(md_safe(m) for m in measured)
-                   + " 来自姿态关键点实测；未框选或实测的部件按常规比例先验")
-    elif result.get("spans"):
-        st.caption("📐 未人工框选的部件分段按常规比例先验（未检出姿态关键点）")
+        # S1/F15：分段来源诚实标注——实测覆盖的部件逐一列出，其余为先验
+        measured = result.get("spans_measured") or []
+        manual_spans = []
+        if geometry.get("body_region"):
+            manual_spans.append("身体")
+        head_box_consistent = has_consistent_head_box(vmeta, result.get("spans"))
+        if head_box_consistent:
+            manual_spans.append("头部")
+        elif vmeta.get("review_head_box") is not None:
+            st.caption("头部框记录无效或与分段不一致，无法确认人工框选来源。")
+        if manual_spans:
+            st.caption("📐 人工框选分段：" + "、".join(manual_spans)
+                       + "；身体框仅限定轮廓范围，不代表实物尺寸校准。")
+        if measured:
+            st.caption("📐 部件分段："
+                       + "、".join(md_safe(m) for m in measured)
+                       + " 来自姿态关键点实测；未框选或实测的部件按常规比例先验")
+        elif result.get("spans"):
+            st.caption("📐 未人工框选的部件分段按常规比例先验（未检出姿态关键点）")
 
     # Color palette swatches (from extract_color_palette)
     colors = analysis.get("recommended_colors") or []
@@ -546,20 +550,8 @@ def render_results(result: ResultData, slot: str) -> None:
             dims.append(f"高 {structure_part['height_cm']}cm")
         if structure_part.get("length_cm"):
             dims.append(f"长 {structure_part['length_cm']}cm")
-        poses = []
         connections = []
         for instance in structure_part.get("instances", []):
-            position = instance.get("position") or {}
-            rotation = instance.get("rotation_deg") or {}
-            poses.append(
-                f"{instance.get('instance_id', '?')}: "
-                f"({float(position.get('x', 0)):+.2f},"
-                f" {float(position.get('y', 0)):.2f},"
-                f" {float(position.get('z', 0)):+.2f}); "
-                f"旋转({float(rotation.get('x', 0)):+.0f},"
-                f"{float(rotation.get('y', 0)):+.0f},"
-                f"{float(rotation.get('z', 0)):+.0f})°"
-            )
             for attachment in instance.get("attachments", []):
                 target_id = attachment.get("target_part_id", "?")
                 target = id_to_name.get(target_id, target_id)
@@ -577,16 +569,13 @@ def render_results(result: ResultData, slot: str) -> None:
             # 此为渲染层兜底）。
             "形状": shape_labels.get(shape, shape) if isinstance(shape, (str, type(None))) else "—",
             "尺寸": "，".join(dims) or "—",
-            "位置 / 旋转": "；".join(poses) or "旧版未记录",
             "连接": "；".join(connections) or "独立部件 / 未记录",
             "基准色": display_color_name(structure_part.get("color", "—")),
         })
     if rows:
         st.dataframe(rows, hide_index=True, width="stretch")
-        if structure.get("schema_version") == "2.0":
-            st.caption(
-                "结构 v2 坐标：x 左−右+，y 底部0→顶部1，z 后−前+；"
-                "位置、旋转和连接来自模板推断，并非单张照片的三维测量。")
+        st.caption("连接来自结构模板推断，并非单张照片的三维测量；"
+                   "坐标、位置和旋转细节见「查看结构 JSON」。")
         with st.expander("3D 结构预览（示意）", expanded=False):
             from app.ui.preview3d import structure_preview_html
 
@@ -615,27 +604,46 @@ def render_results(result: ResultData, slot: str) -> None:
             else:
                 st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):
+            if structure.get("schema_version") == "2.0":
+                st.caption(
+                    "结构 v2 坐标：x 左−右+，y 底部0→顶部1，z 后−前+；"
+                    "位置、旋转和连接来自模板推断，并非单张照片的三维测量。")
             for structure_part in structure.get("parts", []):
                 st.json(structure_part)
 
     # Section 3: Crochet Pattern  (with round progress tracking)
     section_heading(3, "钩织参数")
-    st.caption(STITCH_LEGEND_ZH)
-    st.caption(ROUND_WORKING_GUIDANCE)
-    st.caption(PLACEMENT_GUIDANCE)
+    physical_parts = sum(
+        max(1, int(part.get("quantity", 1)))
+        for part in params.get("parts", []))
+    estimated_minutes = max(0, int(params.get("estimated_time_minutes") or 0))
+    # T4：图解自检——代数矛盾直接暴露给用户（借鉴 CrochetPARADE 的
+    # correctness checking；此前只有测试层知道）
+    from app.models.validator import validate_pattern
+    _v = validate_pattern(params)
+    shaping_label = "默认密度" if _v["ok"] and has_independent_gauge(params) else "当前密度"
     from app.models.stitches import (
         glossary_table_markdown,
         symbol_strip_html,
     )
 
+    # 2026-11-05 信息架构：针法图例/钩法/针位/工时/塑形说明收进「针法速查」，
+    # 正文只留三个指标、自检徽章、材料与圈序。
     with st.expander("针法速查（五体系对照 · 含突尼斯针族）", expanded=False):
+        st.caption(STITCH_LEGEND_ZH)
+        st.caption(ROUND_WORKING_GUIDANCE)
+        st.caption(PLACEMENT_GUIDANCE)
+        st.caption(
+            "工时为未校准的基础估算，仅计针数与每圈固定开销；"
+            "不含缝合、填充、换色、刺绣、返工和休息，完整项目通常会更久。"
+        )
+        st.caption(
+            f"塑形口径：{shaping_label}的连续几何变化率约 "
+            f"{_v['shaping_continuous_delta']:.2f} 针/圈，按六等分针法向上量化为 "
+            f"±{_v['max_stitch_change']} 针；较平缓轮廓仍可使用 6 针步长。")
         # 符号条走 markdown 通道（st.html 的净化器剥整个 <svg>，实测 1.60）
         st.markdown(symbol_strip_html(), unsafe_allow_html=True)
         st.markdown(glossary_table_markdown())
-    physical_parts = sum(
-        max(1, int(part.get("quantity", 1)))
-        for part in params.get("parts", []))
-    estimated_minutes = max(0, int(params.get("estimated_time_minutes") or 0))
     summary_a, summary_b, summary_c = st.columns(3)
     with summary_a:
         st.metric("实体部件", f"{physical_parts} 个")
@@ -649,14 +657,6 @@ def render_results(result: ResultData, slot: str) -> None:
             time_label,
             help="低置信度经验模型：只按针数和实体圈次计算。",
         )
-    st.caption(
-        "工时为未校准的基础估算，仅计针数与每圈固定开销；"
-        "不含缝合、填充、换色、刺绣、返工和休息，完整项目通常会更久。"
-    )
-    # T4：图解自检——代数矛盾直接暴露给用户（借鉴 CrochetPARADE 的
-    # correctness checking；此前只有测试层知道）
-    from app.models.validator import validate_pattern
-    _v = validate_pattern(params)
     if _v["ok"]:
         st.success(
             f"✅ 针数代数与相邻圈跳变检查通过（已检查 {_v['checked']} 圈）")
@@ -675,11 +675,6 @@ def render_results(result: ResultData, slot: str) -> None:
                    + "。可在「局部修正 → 快速调整尺寸」增大尺寸后重新生成。")
     if _small := [f for f in _crochetability if f.level == "note"]:
         st.caption("ℹ️ " + "；".join(md_safe(f.message) for f in _small) + "。")
-    shaping_label = "默认密度" if _v["ok"] and has_independent_gauge(params) else "当前密度"
-    st.caption(
-        f"塑形口径：{shaping_label}的连续几何变化率约 "
-        f"{_v['shaping_continuous_delta']:.2f} 针/圈，按六等分针法向上量化为 "
-        f"±{_v['max_stitch_change']} 针；较平缓轮廓仍可使用 6 针步长。")
 
     st.write("**所需材料**:")
     st.caption("克重/米数为估算值（请以实际线标为准）；品牌色号仅收录已核实条目")
@@ -771,10 +766,12 @@ def render_results(result: ResultData, slot: str) -> None:
     )
     applied_params_json = json.dumps(serializable_params, ensure_ascii=False, indent=2)
 
-    # ── 高级编辑：输出 JSON 与结构 JSON 共用一个默认折叠的面板 ──────────────
-    # 两段编辑器始终同时渲染，不用单选切换：Streamlit 会丢弃未渲染控件的状态，
-    # 切换会让尚未应用的草稿消失。
-    with st.expander("高级编辑（JSON）", expanded=False):
+    # ── 高级编辑：两段 JSON 编辑器共用默认折叠的面板，首次启用后才挂载 ──────
+    # 两段编辑器必须一起存在：Streamlit 会丢弃未渲染控件的状态，用切换会让
+    # 尚未应用的草稿消失。启用前不渲染 text_area——两份 JSON 都很大，挂着就
+    # 会在每次 rerun 被重新序列化并下发给浏览器。启用一次后保持挂载（闩按
+    # 标签页记录，重新生成后仍可用，未应用的草稿不丢）。
+    def _render_json_editors() -> bool:
         st.caption("直接编辑生成结果或部件结构的 JSON；建议先预览影响再应用。"
                    "尺寸、部件、逐圈与材料的常用修正请使用上方面板。")
         correction_json = st.text_area(
@@ -840,6 +837,18 @@ def render_results(result: ResultData, slot: str) -> None:
                                            "✅ 已按修正后的部件结构重新生成图解与装配说明！")
             except Exception as e:
                 st.error(f"结构校验或重生成失败: {md_safe(e)}")
+        return draft_pending
+
+    draft_pending = False
+    with st.expander("高级编辑（JSON）", expanded=False):
+        editor_mounted_key = f"json_editor_open_{slot}"
+        if not st.session_state.get(editor_mounted_key):
+            st.caption("启用后才加载两段 JSON 编辑器；未启用时不会在每次刷新时序列化整份图解。")
+            if st.button("启用 JSON 编辑器", key=f"json_open_{result_key}"):
+                st.session_state[editor_mounted_key] = True
+                st.rerun()
+        if st.session_state.get(editor_mounted_key):
+            draft_pending = _render_json_editors()
 
     from app.models.runtime import timed_export
     from app.ui.export_cache import EXPORT_CACHE_VERSION, cached_export, export_fingerprint, parade_payload

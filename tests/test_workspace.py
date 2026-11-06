@@ -91,6 +91,7 @@ def test_edit_moves_typed_notes_title_and_success_message_to_the_new_result():
     at = AppTest.from_string(_RENDER, default_timeout=30)
     at.session_state["result"] = result
     at.run()
+    at.button(key="json_open_ws-edit").click().run()
     at.text_area(key="project_notes_ws-edit").input("线材换成棉线")
     at.text_input(key="hist_title_ws-edit").input("棉线版")
     edited = deepcopy(result["params"])
