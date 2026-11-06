@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "commit": "e593b267925ff689704b4b55931e42c68a9c599f",
-  "tree": "9042cd948f4c6a7d27ace9d60f0ff72f165fd520",
+  "commit": "ba65b8db92c12cab80f4e157a0b11c47bf64763c",
+  "tree": "b2c18d71cfd615504ecd00c9fdef0f64b406ea07",
   "tested_at": "2026-11-06",
   "python": [
     "3.11",
@@ -32,8 +32,8 @@
   },
   "pip_audit": {
     "status": "pass",
-    "evidence_commit": "97ff142c48cf8a3c7a138aa27874329b1da48b2d",
-    "evidence_tree": "9042cd948f4c6a7d27ace9d60f0ff72f165fd520",
+    "evidence_commit": "9063635b2411e59d3b3647710d06fa792146c6ba",
+    "evidence_tree": "b2c18d71cfd615504ecd00c9fdef0f64b406ea07",
     "on_bound_commit": false,
     "note": "security.yml 只在改动 pyproject.toml、uv.lock 或该工作流时对 push 运行 pip-audit。这里的通过来自同一棵树的检查，不一定是绑定提交自己的 push job。"
   },

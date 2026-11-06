@@ -136,8 +136,8 @@ def _commit_facts(sha: str) -> tuple[str, str, str]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--commit", default="e593b267925ff689704b4b55931e42c68a9c599f")
-    parser.add_argument("--audit-commit", default="97ff142c48cf8a3c7a138aa27874329b1da48b2d")
+    parser.add_argument("--commit", default="ba65b8db92c12cab80f4e157a0b11c47bf64763c")
+    parser.add_argument("--audit-commit", default="9063635b2411e59d3b3647710d06fa792146c6ba")
     parser.add_argument("--output", type=Path, default=EVIDENCE_PATH)
     args = parser.parse_args(argv)
     commit, tree, tested_at = _commit_facts(args.commit)

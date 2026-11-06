@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-06 G1/G2 evidence
+
+- `docs/release-evidence.json` now binds `main` `ba65b8d` (tree `b2c18d71`). That push is 12/12. pip-audit comes from the same tree, PR #61 head `9063635`, which is 13/13. G3 and G4 stay blocked. The file does not cover later commits, and no release tag is created.
+
 ### Changed — 2026-11-06 Display swatches and the structure-table colour
 
 - The structure table has two colour columns. The current base colour is read from `params.parts[].color`. The original structure colour stays the photo or template record and is not rewritten by a manual recolour.
