@@ -227,19 +227,19 @@ def test_neighbor_change_preserves_unchanged_custom_instructions(result):
 def test_history_saves_applied_result_not_unapplied_json_draft(result, monkeypatch, bad_json):
     import json
 
-    from app.ui import result_renderer
+    from app.ui import result_assembly
     from app.utils import history
 
     saved = []
     downloads = []
-    download_button = result_renderer.st.download_button
+    download_button = result_assembly.st.download_button
 
     def capture_download(label, data, *args, **kwargs):
         if label == "下载 JSON":
             downloads.append(json.loads(data))
         return download_button(label, data, *args, **kwargs)
 
-    monkeypatch.setattr(result_renderer.st, "download_button", capture_download)
+    monkeypatch.setattr(result_assembly.st, "download_button", capture_download)
     monkeypatch.setattr(history, "history_enabled", lambda: True)
     monkeypatch.setattr(history, "save_result", lambda data, **kwargs: saved.append(deepcopy(data)))
     at = AppTest.from_string(RENDER, default_timeout=30)

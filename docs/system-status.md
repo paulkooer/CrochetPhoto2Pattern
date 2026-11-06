@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Authoritative snapshot: 2026-11-04. Current behavior is defined by source code,
+> Authoritative snapshot: 2026-11-06. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -13,6 +13,20 @@ real-photo baseline and an independent physical-trial baseline are still missing
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
 
 ## Latest reproducible validation
+
+2026-11-06 result-page renderer split on `fix/split-result-renderer` at commit `6fa5846`,
+based on `fix/result-information-architecture` `0defe62`: the result page is split by
+chapter into `result_analysis`, `result_structure`, `result_progress` and
+`result_assembly`. `result_renderer` only orchestrates the same sections and still
+exports `md_safe`, `purge_result_state` and `render_results`. The page, widget keys,
+backups and progress semantics are unchanged. The 3D caption on this branch remains the
+information-architecture wording. Local Python 3.12 full suite: **2715 passed, 2 skipped
+in 107.81s**; Ruff passes and mypy reports 223 source files. The clean worktree at that
+commit passed **27 local Chromium synthetic flows** plus the standalone canvas check
+(`report.json` status `pass`, no page errors, no blocked external requests; evidence
+under the git-ignored `eval_outputs/split_browser_clean_20261106/`). These are local
+worktree checks, not remote CI; no independent review, authorized-photo evaluation or
+physical trial was performed. Beta and G3/G4 are unchanged.
 
 2026-11-05 result-page information architecture on `fix/result-information-architecture` at
 commit `9302b36`, based on `main` `196c21e`: chapter 1 keeps the metrics, ratio and recommended

@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 权威状态快照：2026-11-04。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 权威状态快照：2026-11-06。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 
@@ -13,6 +13,16 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 描述为“已验证尺寸、材料、工时或成品可钩性”的生产版本。
 
 ## 最近一次可复现验证
+
+2026-11-06 结果页按章节拆分，`fix/split-result-renderer` 提交 `6fa5846`（基于
+`fix/result-information-architecture` 的 `0defe62`）：结果页拆到 `result_analysis`、
+`result_structure`、`result_progress`、`result_assembly`。`result_renderer` 只编排同样的
+章节，并继续导出 `md_safe`、`purge_result_state`、`render_results`。页面、控件 key、备份和
+进度语义不变。本分支的 3D 说明仍是信息架构那一句。本地 Python 3.12 全量 **2715 passed、
+2 skipped，107.81s**；Ruff 通过，mypy 检查 223 个源文件。该提交的干净工作树在本地 Chromium
+通过 **27 条合成流程**及独立画布检查（`report.json` status `pass`，无页面错误、无被拦截的
+外部请求；证据在 Git 忽略的 `eval_outputs/split_browser_clean_20261106/`）。以上为本机
+工作树验证，非远端 CI；未做独立复核、授权照片评测或实体试钩；Beta 与 G3/G4 不变。
 
 2026-11-05 结果页信息架构，`fix/result-information-architecture` 提交 `9302b36`（基于 `main` `196c21e`）：
 第 1 章保留指标、头身比与推荐色，把解析来源、掩码/轮廓说明、姿态先验、旧版用量与照片局部色块表收进

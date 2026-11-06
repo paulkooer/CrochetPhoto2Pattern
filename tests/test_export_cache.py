@@ -16,11 +16,11 @@ render_results(st.session_state["result"], "result")
 
 
 def test_repeated_render_reuses_exports_but_content_and_provenance_edits_invalidate(monkeypatch):
-    from app.ui import result_renderer
+    from app.ui import result_assembly
     from app.utils import parade_export
 
     calls = {"markdown": 0, "parade": 0}
-    markdown = result_renderer.export_markdown
+    markdown = result_assembly.export_markdown
     parade = parade_export.export_parade_report
 
     def md(*args, **kwargs):
@@ -31,7 +31,7 @@ def test_repeated_render_reuses_exports_but_content_and_provenance_edits_invalid
         calls["parade"] += 1
         return parade(*args, **kwargs)
 
-    monkeypatch.setattr(result_renderer, "export_markdown", md)
+    monkeypatch.setattr(result_assembly, "export_markdown", md)
     monkeypatch.setattr(parade_export, "export_parade_report", dsl)
     result = run(build_parser().parse_args(["--mock"]))
     result["result_id"] = "cache-test"
@@ -64,17 +64,17 @@ def test_repeated_render_reuses_exports_but_content_and_provenance_edits_invalid
 
 
 def test_markdown_cache_tracks_geometry_provenance_without_hashing_mask_pixels(monkeypatch):
-    from app.ui import result_renderer
+    from app.ui import result_assembly
 
     outputs = []
-    markdown = result_renderer.export_markdown
+    markdown = result_assembly.export_markdown
 
     def capture(*args, **kwargs):
         value = markdown(*args, **kwargs)
         outputs.append(value)
         return value
 
-    monkeypatch.setattr(result_renderer, "export_markdown", capture)
+    monkeypatch.setattr(result_assembly, "export_markdown", capture)
     result = run(build_parser().parse_args(["--mock"]))
     result["result_id"] = "geometry-provenance-cache"
     at = AppTest.from_string(RENDER, default_timeout=30)
