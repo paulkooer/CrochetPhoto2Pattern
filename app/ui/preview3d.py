@@ -24,23 +24,48 @@ from app.models.gauge import gauge_for_part, gauge_from_result
 _PLACEHOLDER_HEX = {"skin": "#e8bfa8", "body": "#9aa7b8"}
 
 
-def _hex_by_name(result: Mapping[str, Any]) -> dict[str, str]:
-    """params 部件名 → 毛线色 hex（结构层的 color 字段可能还是占位符）。"""
+def _yarn_hex(color: str) -> str | None:
+    """毛线色名或 skin/body 占位 → 示意 hex。色表外的自定义名没有对应色。"""
     from app.models.colors import YARN_COLORS
 
+    for (r, g, b), name in YARN_COLORS:
+        if name == color:
+            return f"#{r:02x}{g:02x}{b:02x}"
+    return _PLACEHOLDER_HEX.get(color)
+
+
+def _hex_by_name(result: Mapping[str, Any]) -> dict[str, str]:
+    """params 部件名 → 毛线色 hex（结构层的 color 字段可能还是占位符）。"""
     hex_by_name: dict[str, str] = {}
     for pp in (result.get("params") or {}).get("parts", []):
         pd = pp if isinstance(pp, dict) else (
             pp.model_dump() if hasattr(pp, "model_dump") else {})
-        color = str(pd.get("color", ""))
-        for (r, g, b), name in YARN_COLORS:
-            if name == color:
-                hex_by_name[str(pd.get("name"))] = f"#{r:02x}{g:02x}{b:02x}"
-                break
-        else:
-            if color in _PLACEHOLDER_HEX:
-                hex_by_name[str(pd.get("name"))] = _PLACEHOLDER_HEX[color]
+        resolved = _yarn_hex(str(pd.get("color", "")))
+        if resolved:
+            hex_by_name[str(pd.get("name"))] = resolved
     return hex_by_name
+
+
+def _copy_hex(part: Mapping[str, Any], instance_id: str, index: int,
+              part_hex: str) -> str:
+    """One physical copy uses its override; None and unknown names keep the part colour.
+
+    IDs win over list order. A missing ID does not fall through to another copy's slot.
+    Round stripes are intentionally ignored: the mesh is still one colour per copy.
+    """
+    colors = part.get("instance_colors")
+    if not isinstance(colors, list) or not any(colors):
+        return part_hex
+    chosen: Any = None
+    ids = part.get("instance_color_ids")
+    if isinstance(ids, list) and len(ids) == len(colors):
+        if instance_id in ids:
+            chosen = colors[ids.index(instance_id)]
+    elif index < len(colors):
+        chosen = colors[index]
+    if not chosen:
+        return part_hex
+    return _yarn_hex(str(chosen)) or part_hex
 
 
 def build_payload(result: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -56,11 +81,14 @@ def build_payload(result: Mapping[str, Any]) -> dict[str, Any] | None:
     hex_by_name = _hex_by_name(result)
     rounds_by_name: dict[str, list] = {}
     gauges_by_name = {}
+    params_by_name: dict[str, Mapping[str, Any]] = {}
     for pp in (result.get("params") or {}).get("parts", []):
         pd = pp if isinstance(pp, dict) else (
             pp.model_dump() if hasattr(pp, "model_dump") else {})
-        rounds_by_name[str(pd.get("name"))] = pd.get("rounds") or []
-        gauges_by_name[str(pd.get("name"))] = gauge_for_part(pd, gauge)
+        part_name = str(pd.get("name"))
+        rounds_by_name[part_name] = pd.get("rounds") or []
+        gauges_by_name[part_name] = gauge_for_part(pd, gauge)
+        params_by_name[part_name] = pd
 
     items: list[dict[str, Any]] = []
     for part in sparts:
@@ -100,15 +128,19 @@ def build_payload(result: Mapping[str, Any]) -> dict[str, Any] | None:
             if diameter <= 0 or part_height <= 0:
                 continue
             entry["dims"] = {"r": diameter / 2.0, "h": part_height}
-        for inst in part.get("instances", []):
+        part_hex = entry["color"]
+        params_part = params_by_name.get(name, {})
+        for index, inst in enumerate(part.get("instances", [])):
             pos = inst.get("position") or {}
             rot = inst.get("rotation_deg") or {}
+            instance_id = str(inst.get("instance_id") or "")
             entry["instances"].append({
                 "p": [float(pos.get("x", 0)) * height,
                       float(pos.get("y", 0)) * height,
                       float(pos.get("z", 0)) * height],
                 "r": [float(rot.get("x", 0)), float(rot.get("y", 0)),
                       float(rot.get("z", 0))],
+                "color": _copy_hex(params_part, instance_id, index, part_hex),
             })
         if entry["instances"]:
             items.append(entry)
@@ -222,7 +254,6 @@ def _render_static_svg(payload: dict) -> str:
     faces: list[tuple[float, list, tuple, tuple]] = []
     ys: list[float] = []
     for item in payload["items"]:
-        rgb = _hx(item["color"])
         if item["shape"] == "sphere":
             vs, fs = _mesh_sphere(max(float(item["dims"]["r"]), 0.4))
         elif item["shape"] == "cup":
@@ -237,6 +268,7 @@ def _render_static_svg(payload: dict) -> str:
         else:
             continue
         for inst in item["instances"]:
+            rgb = _hx(inst.get("color") or item["color"])
             wp = [_rot_instance(v, inst["r"][2], inst["r"][0], inst["r"][1]) for v in vs]
             wp = [(v[0] + inst["p"][0], v[1] + inst["p"][1],
                    v[2] + inst["p"][2]) for v in wp]

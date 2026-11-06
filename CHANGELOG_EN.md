@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-06 Per-copy colours in the 3D preview
+
+- The 3D structure preview paints each copy from `instance_colors`. When `instance_color_ids` is present, colour follows the copy ID rather than a reordered list. A copy without its own colour, or with a name outside the yarn table, keeps the part colour. Round stripes are still not drawn. Backup format and the export cache are unchanged.
+
 ### Changed — 2026-11-06 Result-page renderer split
 
 - The result page is split by chapter into `result_analysis`, `result_structure`, `result_progress` and `result_assembly`. `result_renderer` only orchestrates the page and still exports `md_safe`, `purge_result_state` and `render_results`. The page, widget keys, backups and progress semantics are unchanged.

@@ -96,9 +96,12 @@ def render_structure(result: ResultData) -> None:
                     for part in _params_parts)
                 _per_copy = any(_part_instance_colors(part) is not None
                                 for part in _params_parts)
-                if _striped or _per_copy:
-                    st.caption("3D 预览按部件主色示意：不显示逐圈条纹，也不显示各份实体"
-                               "各自的颜色；请以逐圈图解与材料清单为准。")
+                if _per_copy:
+                    st.caption("3D 预览按各份实体的颜色示意；未单独选色的份沿用部件主色。"
+                               "不显示逐圈条纹，请以逐圈图解为准。")
+                elif _striped:
+                    st.caption("3D 预览按部件主色示意：不显示逐圈条纹；"
+                               "请以逐圈图解与材料清单为准。")
             else:
                 st.caption("当前结构无可预览的实体部件。")
         with st.expander("查看结构 JSON"):

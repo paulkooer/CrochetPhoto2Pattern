@@ -199,8 +199,8 @@ cancel, undo, redo.
    - Uniform recolouring overwrites existing per-round colours, and an overwritten round
      cannot be restored from the interface afterwards (only undone back to the previous
      state).
-   - The 3D preview shows one illustrative colour per part and does not show stripes or
-     per-instance colours (§8).
+   - The 3D preview colours each copy; a copy without its own choice keeps the part
+     colour. Round stripes are not drawn (§8).
    - A custom colour outside the table is used for the pattern and its display only; it
      provides no colour number or usage evidence.
 
@@ -265,7 +265,7 @@ re-checking; it does not mean the finished piece matches the pattern.
 | PDF | Yes | Same part colour and round-table colour column as Markdown (PDF additionally shows each part's base colour). |
 | Material list | Yes | Grams/meters/balls per colour; with `instance_colors`, stitch counts are attributed per copy and summarised per copy colour. Still labelled as estimates without a yarn spec or measured swatch. |
 | CrochetPARADE DSL | Yes, within the subset this project has verified | Each copy emits its own `COLOR:` prefix plus per-round colour-change boundaries. Unconvertible custom colours (including legacy colours with unrecorded origins) or unsupported constructions are reported as incomplete instead of silently exporting the old colour. |
-| 3D structure preview | No | Still one illustrative base colour per part; the interface **states plainly** that stripes and per-instance colours are not shown. |
+| 3D structure preview | Per copy | Each copy uses its override. `null` or a name outside the yarn table keeps the part colour. When `instance_color_ids` is present, colour follows the ID rather than a reordered list. The interface **states plainly** that round stripes are not drawn. |
 | Trial bundles | Yes | They embed a pattern backup with its colours; trial records remain separately versioned. |
 | Flat grid projects | Unchanged | They have their own grid and palette format. |
 
@@ -301,7 +301,7 @@ actual size, yarn usage, time or crochetability.
 - [ ] Preview: part, instance, rounds, old and new colour, per-colour material usage and progress impact are all present; cancelling leaves no side effects.
 - [ ] Apply/undo/redo: applying can be undone back to the previous state; undo and redo lose neither personal notes nor completed progress.
 - [ ] Progress: a verified pure colour change retains every completed round; any construction change still clears records conservatively.
-- [ ] Notices: yarn already worked keeps its colour; uniform recolouring overwrites; 3D shows base colours only.
+- [ ] Notices: yarn already worked keeps its colour; uniform recolouring overwrites; 3D colours each copy and does not draw stripes.
 - [ ] Evidence retained: `color_bands`/`vision_meta.color_observation`/`analysis.recommended_colors` are not rewritten.
 - [ ] Consistency: Markdown/PDF/material list/DSL agree on per-round and per-colour values.
 - [ ] Compatibility: legacy backups (without the new fields) load; the new fields survive backups/share/projects/history/trial bundles; a wrong length is rejected at the rebuild boundary.
@@ -314,8 +314,8 @@ actual size, yarn usage, time or crochetability.
   attribution cannot be proved. New per-copy choices require stable IDs.
 - **One-piece section colouring depends on the neck marker**: hand-built one-piece patterns
   without it cannot use section colouring.
-- **The 3D preview stays part-level**: it shows an illustrative base colour and no stripes or
-  per-copy colours.
+- **The 3D preview does not draw round stripes**: each copy is one illustrative colour.
+  A copy without an override keeps the part colour.
 - **No per-round colour origin** (§4.1): the interface cannot tell whether a round's colour
   came from the photo or a manual edit.
 - **No per-colour swatches or differing yarn densities**; one yarn spec still applies to all
