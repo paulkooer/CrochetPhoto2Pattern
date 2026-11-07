@@ -3,11 +3,17 @@
 The file binds G1/G2 to that commit. Later commits are not covered until this
 script is run again. pip-audit is recorded from another commit only when the
 trees match: security.yml does not run that job on every push to main.
+
+Each check name contributes only its latest run. Latest means the greatest
+created_at, or started_at when created_at is absent. That run must be completed,
+its conclusion must be success, and its head_sha must be the requested commit.
+An unfinished latest run rejects the file instead of reusing an older success.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
@@ -17,6 +23,8 @@ REPO = "paulkooer/CrochetPhoto2Pattern"
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_PATH = ROOT / "docs" / "release-evidence.json"
 REQUIRED_PATH = ROOT / ".github" / "required-checks.json"
+_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+_ACTIONS_RUN = re.compile(r"/actions/runs/(\d+)")
 
 PUSH_GROUPS = {
     "ci": ("docker", "type-check", "test (3.11)", "test (3.12)", "test (3.13)",
@@ -28,20 +36,64 @@ PUSH_GROUPS = {
 AUDIT_CONTEXT = "pip-audit"
 
 
-def latest_conclusions(runs: Sequence[Mapping[str, object]]) -> dict[str, str]:
-    """One conclusion per check name. A later completed_at replaces an earlier one."""
-    chosen: dict[str, tuple[str, str]] = {}
+def _text(run: Mapping[str, object], key: str) -> str:
+    value = run.get(key)
+    return value if isinstance(value, str) else ""
+
+
+def _is_completed(run: Mapping[str, object]) -> bool:
+    status = run.get("status")
+    if status == "completed":
+        return True
+    if isinstance(status, str):
+        return False
+    # Unit fixtures omit status and carry a conclusion. Live runs always have status.
+    return bool(_text(run, "conclusion"))
+
+
+def _clock(run: Mapping[str, object]) -> str:
+    """Ordering clock: created_at, then started_at, then completed_at if finished."""
+    stamp = _text(run, "created_at") or _text(run, "started_at")
+    if stamp:
+        return stamp
+    if _is_completed(run):
+        return _text(run, "completed_at")
+    return ""
+
+
+def _recency(run: Mapping[str, object]) -> tuple[int, str, int]:
+    stamp = _clock(run)
+    raw_id = run.get("id")
+    identity = raw_id if isinstance(raw_id, int) else 0
+    if stamp:
+        return (1, stamp, identity)
+    # No clock and not finished: sort after every stamped run so it cannot lose to an old success.
+    return (2, "", identity)
+
+
+def latest_runs(runs: Sequence[Mapping[str, object]], *, head_sha: str) -> dict[str, Mapping[str, object]]:
+    """One run per check name. Refuse when that newest run is not completed."""
+    grouped: dict[str, list[Mapping[str, object]]] = {}
     for run in runs:
         name = run.get("name")
-        conclusion = run.get("conclusion")
-        if not isinstance(name, str) or not isinstance(conclusion, str) or not conclusion:
+        if not isinstance(name, str) or not name:
             continue
-        completed = run.get("completed_at")
-        stamp = completed if isinstance(completed, str) else ""
-        previous = chosen.get(name)
-        if previous is None or stamp >= previous[0]:
-            chosen[name] = (stamp, conclusion)
-    return {name: conclusion for name, (_stamp, conclusion) in chosen.items()}
+        run_head = run.get("head_sha")
+        if isinstance(run_head, str) and run_head != head_sha:
+            continue
+        grouped.setdefault(name, []).append(run)
+    chosen: dict[str, Mapping[str, object]] = {}
+    for name, group in grouped.items():
+        latest = max(group, key=_recency)
+        if not _is_completed(latest):
+            status = latest.get("status")
+            shown = status if isinstance(status, str) and status else "incomplete"
+            raise ValueError(f"{name} 的最新运行尚未完成（{shown}），拒绝沿用更早的成功记录")
+        conclusion = latest.get("conclusion")
+        if not isinstance(conclusion, str) or not conclusion:
+            raise ValueError(f"{name} 的最新运行没有结论")
+        chosen[name] = latest
+    return chosen
 
 
 def _require_success(conclusions: Mapping[str, str], names: Sequence[str], label: str) -> None:
@@ -51,27 +103,54 @@ def _require_success(conclusions: Mapping[str, str], names: Sequence[str], label
         raise ValueError(f"{label} 未全部通过：{found}")
 
 
-def build_evidence(*, commit: str, tree: str, tested_at: str,
+def _completed_stamp(run: Mapping[str, object]) -> str:
+    stamp = _text(run, "completed_at")
+    if "T" not in stamp:
+        raise ValueError(f"{run.get('name')} 已完成但没有完成时间")
+    return stamp
+
+
+def _run_ref(run: Mapping[str, object]) -> dict[str, object]:
+    ref: dict[str, object] = {}
+    check_run_id = run.get("id")
+    if isinstance(check_run_id, int):
+        ref["check_run_id"] = check_run_id
+    url = _text(run, "details_url") or _text(run, "html_url")
+    if url:
+        match = _ACTIONS_RUN.search(url)
+        if match:
+            ref["run_id"] = int(match.group(1))
+        ref["url"] = url
+    return ref
+
+
+def build_evidence(*, commit: str, tree: str, commit_date: str,
                    push_runs: Sequence[Mapping[str, object]],
                    audit_commit: str, audit_tree: str,
                    audit_runs: Sequence[Mapping[str, object]]) -> dict[str, object]:
     """Return the evidence document. Refuse a pip-audit pass from a different tree."""
     if len(commit) != 40 or len(tree) != 40 or len(audit_commit) != 40 or len(audit_tree) != 40:
         raise ValueError("commit 与 tree 必须是 40 位 SHA")
+    if not _DATE.fullmatch(commit_date):
+        raise ValueError("commit_date 必须是 YYYY-MM-DD")
     if audit_tree != tree:
         raise ValueError(f"pip-audit 证据树 {audit_tree} 与绑定树 {tree} 不同")
-    push = latest_conclusions(push_runs)
+    push = latest_runs(push_runs, head_sha=commit)
+    push_conclusions = {name: str(run["conclusion"]) for name, run in push.items()}
     for group, names in PUSH_GROUPS.items():
-        _require_success(push, names, group)
-    audit = latest_conclusions(audit_runs)
-    _require_success(audit, (AUDIT_CONTEXT,), "pip-audit")
-    if not tested_at:
-        raise ValueError("tested_at 不能为空")
+        _require_success(push_conclusions, names, group)
+    audit = latest_runs(audit_runs, head_sha=audit_commit)
+    audit_conclusions = {name: str(run["conclusion"]) for name, run in audit.items()}
+    _require_success(audit_conclusions, (AUDIT_CONTEXT,), "pip-audit")
+    accepted = [push[name] for names in PUSH_GROUPS.values() for name in names]
+    accepted.append(audit[AUDIT_CONTEXT])
+    run_refs = {str(run["name"]): ref for run in accepted if (ref := _run_ref(run))}
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "commit": commit,
         "tree": tree,
-        "tested_at": tested_at,
+        "commit_date": commit_date,
+        "checks_completed_at": max(_completed_stamp(run) for run in accepted),
         "python": ["3.11", "3.12", "3.13", "3.14"],
         "checks": {
             "ci": "pass",
@@ -93,6 +172,7 @@ def build_evidence(*, commit: str, tree: str, tested_at: str,
                 "pip-audit 在绑定提交上通过。"
             ),
         },
+        "run_refs": run_refs,
         "g3_real_photo": "blocked",
         "g4_physical_trial": "blocked",
         "covers_later_commits": False,
@@ -118,7 +198,14 @@ def _check_runs(sha: str) -> list[dict[str, object]]:
         raise ValueError(f"{sha} 没有 check_runs")
     if int(payload.get("total_count") or 0) > len(runs):
         raise ValueError(f"{sha} 的检查超过 100 条，脚本需要分页")
-    return [run for run in runs if isinstance(run, dict)]
+    checked: list[dict[str, object]] = []
+    for run in runs:
+        if not isinstance(run, dict):
+            continue
+        if run.get("head_sha") != sha:
+            raise ValueError(f"{sha} 的检查 {run.get('name')!r} 与 head_sha 不一致")
+        checked.append(run)
+    return checked
 
 
 def _commit_facts(sha: str) -> tuple[str, str, str]:
@@ -140,10 +227,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--audit-commit", default="9063635b2411e59d3b3647710d06fa792146c6ba")
     parser.add_argument("--output", type=Path, default=EVIDENCE_PATH)
     args = parser.parse_args(argv)
-    commit, tree, tested_at = _commit_facts(args.commit)
+    commit, tree, commit_date = _commit_facts(args.commit)
     audit_commit, audit_tree, _audit_date = _commit_facts(args.audit_commit)
     document = build_evidence(
-        commit=commit, tree=tree, tested_at=tested_at,
+        commit=commit, tree=tree, commit_date=commit_date,
         push_runs=_check_runs(commit),
         audit_commit=audit_commit, audit_tree=audit_tree,
         audit_runs=_check_runs(audit_commit),

@@ -20,6 +20,8 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 该提交的 push 检查 12/12 通过。`security.yml` 的 push 有路径过滤，合并提交本身没有
 `pip-audit`；同一棵树的 PR #61 头提交 `9063635b2411e59d3b3647710d06fa792146c6ba` 含
 `pip-audit` 且 13/13 通过。这份证据不覆盖其后的提交，包括本页这次文字更新。
+`commit_date` 是提交日期，`checks_completed_at` 是所采用检查的最晚完成时间，`run_refs`
+保留运行编号和链接。生成器只认每个检查最新的一次运行；最新运行未完成或不是 success 时拒绝写文件。
 G3 与 G4 仍是阻断。
 
 2026-11-06 三维预览按份着色，`fix/preview3d-instance-colors` 提交 `1790f4f`（基于 `main`

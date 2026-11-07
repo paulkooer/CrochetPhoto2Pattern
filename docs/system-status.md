@@ -20,7 +20,10 @@ The formal G1/G2 binding is [`docs/release-evidence.json`](release-evidence.json
 That commit's push checks are 12/12. `security.yml` path-filters pushes, so the merge commit
 itself has no `pip-audit` run. PR #61 head `9063635b2411e59d3b3647710d06fa792146c6ba` has the
 same tree, includes `pip-audit`, and is 13/13. The file does not cover later commits, including
-this page's wording update. G3 and G4 stay blocked.
+this page's wording update. `commit_date` is the commit date, `checks_completed_at` is the
+latest completion time among the adopted runs, and `run_refs` keeps the run ids and links.
+The generator accepts only the latest run of each check and refuses to write the file when
+that run is unfinished or not a success. G3 and G4 stay blocked.
 
 2026-11-06 per-copy 3D preview colours on `fix/preview3d-instance-colors` at commit
 `1790f4f`, based on `main` `196c21e`: the structure preview paints each physical copy

@@ -12,6 +12,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 - `docs/release-evidence.json` now binds `main` `ba65b8d` (tree `b2c18d71`). That push is 12/12. pip-audit comes from the same tree, PR #61 head `9063635`, which is 13/13. G3 and G4 stay blocked. The file does not cover later commits, and no release tag is created.
 
+### Changed — 2026-11-07 Release evidence uses the latest run
+
+- `scripts/bind_release_evidence.py` selects the latest run of each check by `created_at`, or by `started_at` when creation time is absent. That run must be completed, concluded `success`, and carry the requested `head_sha`. An unfinished latest run rejects the file instead of reusing an older success. The evidence schema is now 2: `commit_date` is the commit date, `checks_completed_at` is the latest completion time among the adopted runs, and `run_refs` keeps check-run ids, workflow-run ids, and links. The bound `ba65b8d` pass, tree, and pip-audit source are unchanged.
+
 ### Changed — 2026-11-06 Display swatches and the structure-table colour
 
 - The structure table has two colour columns. The current base colour is read from `params.parts[].color`. The original structure colour stays the photo or template record and is not rewritten by a manual recolour.

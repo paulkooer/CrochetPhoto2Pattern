@@ -12,6 +12,10 @@
 
 - `docs/release-evidence.json` 改绑 `main` `ba65b8d`（树 `b2c18d71`）。该 push 为 12/12。pip-audit 来自同一棵树的 PR #61 头提交 `9063635`，13/13。G3 与 G4 仍阻断。文件不覆盖其后的提交，也不创建发布标签。
 
+### Changed — 2026-11-07 发布证据只认最新运行
+
+- `scripts/bind_release_evidence.py` 按 `created_at`（没有则用 `started_at`）选择每个检查的最新运行。最新运行必须已完成、结论为 success，且 `head_sha` 与指定提交一致；未完成时直接拒绝，不再沿用更早的成功记录。证据改为 schema 2：`commit_date` 是提交日期，`checks_completed_at` 是所采用检查的最晚完成时间，`run_refs` 保留检查运行编号、工作流运行编号和链接。已绑定的 `ba65b8d` 通过结论、树和 pip-audit 来源不变。
+
 ### Changed — 2026-11-06 显示色与结构表颜色
 
 - 结构表分成「当前基础色」和「原始结构色」。当前基础色读 `params.parts[].color`；原始结构色仍是照片或模板记录，手工改色不改写它。
