@@ -5,9 +5,11 @@ script is run again. pip-audit is recorded from another commit only when the
 trees match: security.yml does not run that job on every push to main.
 
 Each check name contributes only its latest run. Latest means the greatest
-created_at, or started_at when created_at is absent. That run must be completed,
-its conclusion must be success, and its head_sha must be the requested commit.
-An unfinished latest run rejects the file instead of reusing an older success.
+created_at, or started_at when created_at is absent. That run must have
+status completed, conclusion success, and head_sha equal to the requested
+commit. An unfinished latest run rejects the file instead of reusing an older
+success. --commit and --audit-commit are required, so a bare run cannot
+rewrite the file onto the previous binding.
 """
 from __future__ import annotations
 
@@ -42,13 +44,7 @@ def _text(run: Mapping[str, object], key: str) -> str:
 
 
 def _is_completed(run: Mapping[str, object]) -> bool:
-    status = run.get("status")
-    if status == "completed":
-        return True
-    if isinstance(status, str):
-        return False
-    # Unit fixtures omit status and carry a conclusion. Live runs always have status.
-    return bool(_text(run, "conclusion"))
+    return run.get("status") == "completed"
 
 
 def _clock(run: Mapping[str, object]) -> str:
@@ -78,8 +74,7 @@ def latest_runs(runs: Sequence[Mapping[str, object]], *, head_sha: str) -> dict[
         name = run.get("name")
         if not isinstance(name, str) or not name:
             continue
-        run_head = run.get("head_sha")
-        if isinstance(run_head, str) and run_head != head_sha:
+        if run.get("head_sha") != head_sha:
             continue
         grouped.setdefault(name, []).append(run)
     chosen: dict[str, Mapping[str, object]] = {}
@@ -223,8 +218,8 @@ def _commit_facts(sha: str) -> tuple[str, str, str]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--commit", default="ba65b8db92c12cab80f4e157a0b11c47bf64763c")
-    parser.add_argument("--audit-commit", default="9063635b2411e59d3b3647710d06fa792146c6ba")
+    parser.add_argument("--commit", required=True)
+    parser.add_argument("--audit-commit", required=True)
     parser.add_argument("--output", type=Path, default=EVIDENCE_PATH)
     args = parser.parse_args(argv)
     commit, tree, commit_date = _commit_facts(args.commit)
@@ -242,9 +237,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise ValueError(
             "push 检查与 .github/required-checks.json 不一致："
             f"多出 {sorted(recorded - expected)}，缺少 {sorted(expected - recorded)}")
+    print(f"commit {commit} tree {tree}")
+    print(f"audit-commit {audit_commit} tree {audit_tree}")
     args.output.write_text(
         json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"wrote {args.output} for {commit}")
+    print(f"wrote {args.output}")
     return 0
 
 

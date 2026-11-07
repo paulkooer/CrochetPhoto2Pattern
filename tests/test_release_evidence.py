@@ -26,8 +26,15 @@ def _section(text: str, heading: str) -> str:
     return rest if nxt < 0 else rest[:nxt]
 
 
-def _run(name: str, conclusion: str) -> dict[str, str]:
-    return {"name": name, "conclusion": conclusion, "completed_at": "2026-11-06T00:00:00Z"}
+def _run(name: str, conclusion: str, head: str) -> dict[str, object]:
+    return {
+        "name": name,
+        "status": "completed",
+        "conclusion": conclusion,
+        "head_sha": head,
+        "started_at": "2026-11-06T00:00:00Z",
+        "completed_at": "2026-11-06T00:00:00Z",
+    }
 
 
 def _attempt(name: str, conclusion: str | None, *, at: str, head: str,
@@ -70,13 +77,14 @@ def _build(bind, push: list[dict[str, object]], *, head: str = "a" * 40, audit_h
 
 def test_builder_accepts_same_tree_audit_and_rejects_a_different_tree():
     bind = _binder()
-    push = [_run(name, "success") for names in bind.PUSH_GROUPS.values() for name in names]
-    audit = [_run("pip-audit", "success")]
     sha = "a" * 40
+    audit_sha = "c" * 40
+    push = [_run(name, "success", sha) for names in bind.PUSH_GROUPS.values() for name in names]
+    audit = [_run("pip-audit", "success", audit_sha)]
     tree = "b" * 40
     document = bind.build_evidence(
         commit=sha, tree=tree, commit_date="2026-11-06", push_runs=push,
-        audit_commit="c" * 40, audit_tree=tree, audit_runs=audit)
+        audit_commit=audit_sha, audit_tree=tree, audit_runs=audit)
     assert document["schema_version"] == 2
     assert document["commit_date"] == "2026-11-06"
     assert document["checks_completed_at"] == "2026-11-06T00:00:00Z"
@@ -91,7 +99,7 @@ def test_builder_accepts_same_tree_audit_and_rejects_a_different_tree():
     try:
         bind.build_evidence(
             commit=sha, tree=tree, commit_date="2026-11-06", push_runs=push,
-            audit_commit="c" * 40, audit_tree="d" * 40, audit_runs=audit)
+            audit_commit=audit_sha, audit_tree="d" * 40, audit_runs=audit)
     except ValueError as exc:
         assert "不同" in str(exc)
     else:
@@ -143,6 +151,32 @@ def test_latest_success_is_accepted():
     assert document["checks"]["ci"] == "pass"
     assert document["checks_completed_at"] == done
     assert document["run_refs"]["docker"] == {"check_run_id": 99, "run_id": 421, "url": url}
+
+
+def test_success_without_status_or_head_sha_is_refused():
+    bind = _binder()
+    head = "a" * 40
+    concluded = {
+        "name": "docker",
+        "conclusion": "success",
+        "head_sha": head,
+        "completed_at": "2026-11-06T03:00:00Z",
+    }
+    with pytest.raises(ValueError, match="docker 的最新运行尚未完成"):
+        _build(bind, _push(bind, head, {"docker": [concluded]}), head=head)
+
+    no_head = _attempt("docker", "success", at="2026-11-06T00:00:00Z", head=head)
+    del no_head["head_sha"]
+    with pytest.raises(ValueError, match="未全部通过"):
+        _build(bind, _push(bind, head, {"docker": [no_head]}), head=head)
+
+
+def test_commit_arguments_are_required(capsys):
+    bind = _binder()
+    with pytest.raises(SystemExit) as raised:
+        bind.main([])
+    assert raised.value.code == 2
+    assert "--commit" in capsys.readouterr().err
 
 
 def test_status_gates_cite_the_evidence_file_without_matching_head():

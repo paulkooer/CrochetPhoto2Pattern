@@ -15,6 +15,7 @@
 ### Changed — 2026-11-07 发布证据只认最新运行
 
 - `scripts/bind_release_evidence.py` 按 `created_at`（没有则用 `started_at`）选择每个检查的最新运行。最新运行必须已完成、结论为 success，且 `head_sha` 与指定提交一致；未完成时直接拒绝，不再沿用更早的成功记录。证据改为 schema 2：`commit_date` 是提交日期，`checks_completed_at` 是所采用检查的最晚完成时间，`run_refs` 保留检查运行编号、工作流运行编号和链接。已绑定的 `ba65b8d` 通过结论、树和 pip-audit 来源不变。
+- `--commit` 和 `--audit-commit` 改为必填，不再默认写回 `ba65b8d`。完成状态只认 `status == "completed"`，缺少 `head_sha` 的运行不算该提交的证据。状态页快照日期改为 2026-11-07，并写明该绑定在生成时对应当时的 `main`，不自动覆盖后续提交。
 
 ### Changed — 2026-11-06 显示色与结构表颜色
 

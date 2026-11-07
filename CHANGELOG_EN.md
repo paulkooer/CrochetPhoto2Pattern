@@ -15,6 +15,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 ### Changed — 2026-11-07 Release evidence uses the latest run
 
 - `scripts/bind_release_evidence.py` selects the latest run of each check by `created_at`, or by `started_at` when creation time is absent. That run must be completed, concluded `success`, and carry the requested `head_sha`. An unfinished latest run rejects the file instead of reusing an older success. The evidence schema is now 2: `commit_date` is the commit date, `checks_completed_at` is the latest completion time among the adopted runs, and `run_refs` keeps check-run ids, workflow-run ids, and links. The bound `ba65b8d` pass, tree, and pip-audit source are unchanged.
+- `--commit` and `--audit-commit` are now required, so a bare run no longer rewrites the `ba65b8d` binding. A run counts as completed only when `status` is `completed`, and a run without `head_sha` is not evidence for that commit. The status snapshot date is 2026-11-07. The page says this binding was `main` when generated and does not cover later commits.
 
 ### Changed — 2026-11-06 Display swatches and the structure-table colour
 

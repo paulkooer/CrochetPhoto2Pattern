@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 权威状态快照：2026-11-06。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 权威状态快照：2026-11-07。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 
@@ -15,13 +15,15 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 ## 最近一次可复现验证
 
 正式 G1/G2 绑定见 [`docs/release-evidence.json`](release-evidence.json)，由
-`scripts/bind_release_evidence.py` 根据远端检查生成。当前文件绑定 `main`
-`ba65b8db92c12cab80f4e157a0b11c47bf64763c`（树 `b2c18d71cfd615504ecd00c9fdef0f64b406ea07`）：
+`scripts/bind_release_evidence.py` 根据远端检查生成。发布证据绑定提交
+`ba65b8db92c12cab80f4e157a0b11c47bf64763c`（树 `b2c18d71cfd615504ecd00c9fdef0f64b406ea07`）。
+生成该文件时，这个提交是 `main`。证据不自动覆盖后续提交。
 该提交的 push 检查 12/12 通过。`security.yml` 的 push 有路径过滤，合并提交本身没有
 `pip-audit`；同一棵树的 PR #61 头提交 `9063635b2411e59d3b3647710d06fa792146c6ba` 含
-`pip-audit` 且 13/13 通过。这份证据不覆盖其后的提交，包括本页这次文字更新。
+`pip-audit` 且 13/13 通过。
 `commit_date` 是提交日期，`checks_completed_at` 是所采用检查的最晚完成时间，`run_refs`
 保留运行编号和链接。生成器只认每个检查最新的一次运行；最新运行未完成或不是 success 时拒绝写文件。
+再次生成必须显式传入 `--commit` 和 `--audit-commit`。
 G3 与 G4 仍是阻断。
 
 2026-11-06 三维预览按份着色，`fix/preview3d-instance-colors` 提交 `1790f4f`（基于 `main`
@@ -959,7 +961,7 @@ PDF/pose extras
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **见 [`docs/release-evidence.json`](release-evidence.json)** | 当前绑定该文件的 `commit`：`ba65b8db92c12cab80f4e157a0b11c47bf64763c`。其后的修改，包括本页叙述，不继承这份证据，须重新生成。新增功能不继承 `55280fb` 的独立 PASS |
+| G1 可复现源码 | **见 [`docs/release-evidence.json`](release-evidence.json)** | 发布证据绑定提交 `ba65b8db92c12cab80f4e157a0b11c47bf64763c`。生成该文件时，这个提交是 `main`。证据不自动覆盖后续提交，须重新生成。新增功能不继承 `55280fb` 的独立 PASS |
 | G2 支持版本自动化 | **该提交 push 12/12 通过；pip-audit 见同一棵树** | Python 3.11–3.14、Docker、PDF、锁定及无锁 pose、Streamlit 下限、mypy 与浏览器冒烟在 push 上通过。合并提交本身没有 pip-audit。同一树的 PR #61 头提交 `9063635b2411e59d3b3647710d06fa792146c6ba` 为 13/13，含 pip-audit。要求的检查名见 `.github/required-checks.json` |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛（含可钩率 100%，以及除声明不支持的构造外 Parade 100% 完整导出）。默认本地流程只交付固定模板部件，部件宏 F1 高于模板基线这一条仍需新的识别能力 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
