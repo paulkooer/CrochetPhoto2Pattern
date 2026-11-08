@@ -10,6 +10,7 @@ from .stitch_notation import (
     UnsupportedLoopError,
     mentions_invisible_decrease,
     mentions_loop_technique,
+    non_sc_symbols,
     parse_stitch_expression,
 )
 
@@ -243,6 +244,8 @@ def instruction_issues(
                     f"针法说明加 {counts.increase} 针、减 {counts.decrease} 针，"
                     f"与数值加 {increase} 针、减 {decrease} 针不一致"
                 )
+            if non_sc_symbols(expression):
+                issues.append("针法说明含短针以外的针，不能写成短针整圈")
             issues.extend(_interval_issues(clause, expression))
     if mentions_loop_technique(text):
         try:

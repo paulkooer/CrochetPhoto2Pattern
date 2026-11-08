@@ -210,25 +210,47 @@ def _render_quick_size(result: ResultData, slot: str) -> None:
 
 
 def _render_stitch_calculator(key: str) -> None:
-    from app.models.stitch_notation import NotationError, parse_stitch_notation
+    from app.models.stitch_notation import NotationError, non_sc_symbols, parse_stitch_expression
 
     expression = st.text_input(
         "针法计算器（可选）", placeholder="例如：(2X,V)×6", key=key,
-        help="支持 BLO((2X,V)×6)、4sc-FLO 等明确写法；计算结果不会自动应用到图解。",
+        help="支持 (2X,V)×6、12F、12FV、K2、4*FV、8SL、BLO((X,V)×6)。"
+             "锁针空隙、汉字说明和同一针目里的组合不猜读；结果不会写入图解。",
     )
     if not expression.strip():
         return
     try:
-        counts = parse_stitch_notation(expression)
+        parsed = parse_stitch_expression(expression)
     except NotationError as exc:
         st.error(str(exc))
         return
-    if counts is None:
+    if parsed is None:
         st.info("请输入完整操作式；此写法含尚未支持的针法或文字说明，请人工核对。")
         return
+    counts = parsed.counts
+    labels = {
+        "T": "中长针", "F": "长针", "E": "长长针", "B": "枣形针", "SL": "引拔针",
+        "FV": "长针加针", "FA": "长针并针", "K": "跳针", "NX": "内钩短针",
+        "S-SC": "站立短针",
+    }
+    extra = ""
+    symbols = non_sc_symbols(parsed)
+    if symbols:
+        names = "、".join(labels.get(symbol, symbol) for symbol in symbols)
+        notes: list[str] = []
+        if "K" in symbols:
+            notes.append("跳针消耗 1 针、不产出，减针数仍为 0，不是并针")
+        if "FV" in symbols:
+            notes.append("长针加针是 1 针目出 2 针")
+        if "FA" in symbols:
+            notes.append("长针并针是 2 针并 1 针")
+        if any(symbol in {"T", "F", "E", "B", "SL", "NX", "S-SC"} for symbol in symbols):
+            notes.append("进出各 1 的针不能换成短针")
+        notes.append("此结果只点数，不会写入图解；行高和用线仍按短针")
+        extra = f" 含{names}。" + "。".join(notes) + "。"
     st.info(
         f"消耗上一圈 {counts.consumed} 针 → 本圈 {counts.produced} 针；"
-        f"加 {counts.increase} 针，减 {counts.decrease} 针。"
+        f"加 {counts.increase} 针，减 {counts.decrease} 针。{extra}"
     )
 
 
