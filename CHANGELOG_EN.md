@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-08 Chart letters for taller stitches
+
+- The stitch calculator accepts a complete formula using T, F, E, B, SL, NX or S-SC. Each consumes and produces one stitch and keeps its own symbol; it is not rewritten as single crochet. FV is a taller increase (1→2) and FA a taller together (2→1). K is a skip: it consumes 1, produces 0, and the decrease count stays 0. K2 is two skips; 12FV is still twelve taller increases; 4*FV repeats the next stitch four times; 4x is still four single crochets. Chain spaces, skips and bobbles written in words, empty-stitch prose and same-stitch clusters stay unrecognized. Printed legends say these stitches are not sc. A round that uses them fails validation and is not translated to sc by CrochetPARADE. Export cache is now **22**.
+- The default working note now says hair and garments are often separate flat pieces or taller stitches. A hat may be joined and then worked flat. A sole may be a chain oval, an inner-loop round and a firm insert. Sleeves and trouser tubes may be separate, reversed, or worked into an earlier round to make a fold. Hair strands may be worked into loops left on a flat cap. None of that is a flare of the body spiral.
+
 ### Changed — 2026-11-06 G1/G2 evidence
 
 - `docs/release-evidence.json` now binds `main` `ba65b8d` (tree `b2c18d71`). That push is 12/12. pip-audit comes from the same tree, PR #61 head `9063635`, which is 13/13. G3 and G4 stay blocked. The file does not cover later commits, and no release tag is created.

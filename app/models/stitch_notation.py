@@ -3,6 +3,13 @@
 This is not a natural-language or chart parser. Unknown stitches/prose return
 None, so partial expressions never masquerade as an entire round. Fully
 recognized notation with bad syntax or excessive counts raises NotationError.
+
+T, F, E, B, SL, NX and S-SC count as one stitch in and one stitch out.
+FV is a taller increase (1→2) and FA a taller together (2→1). K is a skip:
+it consumes one stitch, produces none, and its decrease count stays 0.
+These symbols stay themselves. Equal arithmetic does not make them short
+crochet. Chains, chain spaces, worded skips, worded bobbles and other prose
+stay unrecognized.
 """
 from __future__ import annotations
 
@@ -13,8 +20,11 @@ from dataclasses import dataclass, replace
 from app.schemas import MAX_ROUND_STITCHES
 
 _TOKEN = re.compile(
-    r"[0-9]+|(?:inv-sc2tog|sc-inc|sc2tog|inc|dec|sc|[XVAWM])(?:-(?:FLO|BLO))?"
-    r"|FLO|BLO|[(),+×*]", re.I,
+    # Longer tokens before single letters, so BLO/FV/FA/NX are not split.
+    r"[0-9]+|(?:inv-sc2tog|sc-inc|sc2tog|inc|dec|sc|sl)(?:-(?:FLO|BLO))?"
+    r"|FLO|BLO|(?:S-SC|FV|FA|NX)(?:-(?:FLO|BLO))?"
+    r"|(?:[XTFEVAWMBK])(?:-(?:FLO|BLO))?|[(),+×*]",
+    re.I,
 )
 _PUNCTUATION = str.maketrans({"（": "(", "）": ")", "[": "(", "]": ")",
                              "，": ",", "、": ",", "＊": "*"})
@@ -75,11 +85,24 @@ _COUNTS = {
     "A": StitchCounts(2, 1, 0, 1), "DEC": StitchCounts(2, 1, 0, 1),
     "SC2TOG": StitchCounts(2, 1, 0, 1), "INV-SC2TOG": StitchCounts(2, 1, 0, 1),
     "W": StitchCounts(1, 3, 2), "M": StitchCounts(3, 1, 0, 2),
+    "T": StitchCounts(1, 1), "F": StitchCounts(1, 1), "E": StitchCounts(1, 1),
+    "B": StitchCounts(1, 1), "SL": StitchCounts(1, 1),
+    "NX": StitchCounts(1, 1), "S-SC": StitchCounts(1, 1),
+    "FV": StitchCounts(1, 2, 1), "FA": StitchCounts(2, 1, 0, 1),
+    # A skip drops a stitch without being a together. Decrease stays 0.
+    "K": StitchCounts(1, 0),
 }
-_CANONICAL = {alias: symbol for alias, counts in _COUNTS.items()
-              for symbol in "XVAWM" if counts == _COUNTS[symbol]}
-# Equal stitch arithmetic does not make these two decrease techniques identical.
-_CANONICAL["INV-SC2TOG"] = "inv-sc2tog"
+# Explicit on purpose. Shared arithmetic must not collapse a symbol onto X, V or A.
+_CANONICAL = {
+    "X": "X", "SC": "X",
+    "V": "V", "INC": "V", "SC-INC": "V",
+    "A": "A", "DEC": "A", "SC2TOG": "A",
+    "INV-SC2TOG": "inv-sc2tog",
+    "W": "W", "M": "M",
+    "T": "T", "F": "F", "E": "E", "B": "B", "SL": "SL",
+    "NX": "NX", "S-SC": "S-SC", "FV": "FV", "FA": "FA", "K": "K",
+}
+_SHORT_STITCHES = frozenset({"X", "V", "A", "W", "M", "inv-sc2tog"})
 
 
 @dataclass(frozen=True)
@@ -117,11 +140,39 @@ class StitchExpression:
         if self.stitch is not None:
             if self.has_invisible_decrease:
                 raise UnsupportedLoopError("隐形减针与 FLO/BLO 的组合需人工核对，请明确具体针法")
-            symbol, _, existing = self.stitch.partition("-")
+            # Only a trailing loop suffix counts. S-SC contains a hyphen of its own.
+            existing = ""
+            symbol = self.stitch
+            for name in ("FLO", "BLO"):
+                if symbol.endswith("-" + name):
+                    existing = name
+                    symbol = symbol[: -(len(name) + 1)]
+                    break
             if existing and existing != loop:
                 raise NotationError("针法说明在同一针位同时指定 FLO 和 BLO，请明确挑针范围")
             return replace(self, stitch=f"{symbol}-{loop}")
         return replace(self, children=tuple(child.with_loop(loop) for child in self.children))
+
+
+def non_sc_symbols(expression: StitchExpression) -> tuple[str, ...]:
+    """Stitches that must not be stored or drawn as short crochet.
+
+    Walks the compact tree. Repeats are not expanded. Includes 1→1 letters,
+    taller increases and togethers, and skips.
+    """
+    found: list[str] = []
+
+    def walk(node: StitchExpression) -> None:
+        if node.stitch is not None:
+            symbol = node.stitch.removesuffix("-FLO").removesuffix("-BLO")
+            if symbol not in _SHORT_STITCHES and symbol not in found:
+                found.append(symbol)
+            return
+        for child in node.children:
+            walk(child)
+
+    walk(expression)
+    return tuple(found)
 
 
 def format_stitch_expression(expression: StitchExpression) -> str:
@@ -169,8 +220,21 @@ class _Parser:
             children.append(child)
         return children[0] if len(children) == 1 else StitchExpression(total, children=tuple(children))
 
+    def _prefixed_repeat(self) -> bool:
+        """N*stitch or N×stitch. A letter x after a number is still the stitch X."""
+        nxt = self.index + 1
+        return (nxt < len(self.tokens) and self.tokens[self.index].isdigit()
+                and self.tokens[nxt] in ("×", "*"))
+
     def term(self, depth: int) -> StitchExpression:
-        count = self.number() if self.peek().isdigit() else 1
+        if depth > _MAX_DEPTH:
+            raise NotationError("针法说明的重复组嵌套过深")
+        if self._prefixed_repeat():
+            count = self.number()
+            self.index += 1
+            return self.term(depth + 1).repeat(count)
+        prefixed = self.peek().isdigit()
+        count = self.number() if prefixed else 1
         token = self.peek()
         self.index += 1
         loop = token.upper() if token.upper() in ("FLO", "BLO") else ""
@@ -197,15 +261,21 @@ class _Parser:
         if self.peek() in ("×", "*", "x"):
             self.index += 1
             value = value.repeat(self.number())
+        elif not prefixed and self.peek().isdigit() and value.stitch == "K":
+            # K2 is two skips. Other stitches keep a prefix count (12FV, 8SL).
+            # M1 stays unfinished: a leading M plus a number is a section label.
+            value = value.repeat(self.number())
         return value
 
 
 def parse_stitch_expression(text: str) -> StitchExpression | None:
-    """Parse X/V/A/W/M, US sc/inc/dec aliases, scoped loops and repeat groups.
+    """Parse X/V/A/W/M, taller letters, US aliases, loops and repeats.
 
-    Examples: ``(2X,V)×6``, ``BLO((X,V,X)×5)``, ``2sc-FLO,2X``.
-    Unknown prose/techniques return None, including a recognized prefix followed
-    by an unknown suffix. No eval(), expanded stitch list, or unbounded ints.
+    Examples: ``(2X,V)×6``, ``BLO((X,V,X)×5)``, ``2sc-FLO``, ``12F``, ``8SL``,
+    ``12FV``, ``K2``, ``4*FV``. FV, FA, K, NX and S-SC stay themselves.
+    Chains, chain spaces, worded skips and prose return None, including a
+    recognized prefix followed by an unknown suffix.
+    No eval(), expanded stitch list, or unbounded ints.
     """
     text = text.strip().rstrip("。.!！").translate(_PUNCTUATION)
     scoped = re.fullmatch(r"(FLO|BLO)\s*[:：]\s*(.+)", text, re.I)

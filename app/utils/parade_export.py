@@ -117,7 +117,10 @@ def _expression_token(expression: StitchExpression) -> str:
     """Emit the ordered tree directly, without expanding repeated groups."""
     if expression.stitch is not None:
         symbol, _, loop = expression.stitch.partition("-")
-        body = _DSL_STITCH[symbol]
+        try:
+            body = _DSL_STITCH[symbol]
+        except KeyError as exc:
+            raise NotationError("短针以外的针不在短针 DSL 翻译子集内") from exc
         if loop:
             body = "sc" + {"FLO": "fl", "BLO": "bl"}[loop] + body[2:]
         return f"{expression.repeats}{body}" if expression.repeats != 1 else body
@@ -148,7 +151,10 @@ def _round_translation(previous: int, rd: Any) -> tuple[str | None, bool, str]:
     except NotationError as exc:
         return None, False, str(exc)
     if expression is not None:
-        return _expression_token(expression), False, ""
+        try:
+            return _expression_token(expression), False, ""
+        except NotationError as exc:
+            return None, False, str(exc)
     tokens = _aggregate_round_tokens(previous, rd)
     if tokens is None:
         return None, False, "缺少完整操作式，无法从聚合针数确定针位"

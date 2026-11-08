@@ -2,6 +2,41 @@
 
 [简体中文](SOURCES.md) | **English**
 
+## 2026-11-08 Stitch letters and separate garment pieces
+
+Read finished dressed-doll written charts at the user's request. The charts are
+not stored, their rounds are not transcribed, and they are not calibration
+samples: the dolls were made from those external patterns, not from a
+short-crochet export of this generator.
+
+What was absorbed, checked with synthetic formulas:
+
+- The letters T, F, E, B, SL, NX and S-SC consume one stitch and produce one.
+  FV is a taller increase (one stitch in, two out). FA is a taller together
+  (two stitches in, one out). K is a skip: it consumes one, produces none, and
+  its decrease count stays 0, so it is not an A. Each symbol stays itself.
+- A number written after K is a skip count, as in K2. A number written before a
+  stitch is still a prefix count, as in 12FV or 8SL. `N*stitch` repeats the next
+  stitch, as in 4*FV. A letter x after a number is still single crochet, as in 4x.
+- Chains, chain spaces, skips and bobbles written in words, empty-stitch prose,
+  same-stitch clusters, a whole row worked in reverse, short-row bind-offs, and
+  prose about working into an earlier round stay unrecognized. A section label
+  that begins with M is not sc3tog.
+- Head, body, arms and legs may be single-crochet spirals or joined rounds.
+  Hair, garments, hats, sleeves, trouser tubes, bags and soles are often
+  separate pieces or taller stitches, sometimes on another hook. A hat may be
+  joined rounds and then flat rows. A sole may be a chain oval plus an
+  inner-loop round and a firm insert. A fold may be made by working the current
+  round together with an earlier one. Hair strands may be worked into loops left
+  on a flat cap. None of that is a flare of the body spiral.
+- The calculator may count these stitches, and it says a skip is not a together
+  and a taller increase or together is not a short-crochet one. A round written
+  into this system's pattern is rejected as a short-crochet round. Row height,
+  yarn and the symbol strip stay on single crochet. CrochetPARADE does not
+  translate them to sc.
+
+`tests/test_stitch_notation.py` covers that boundary. No trial record was added.
+
 ## 2026-10-29 Invisible-decrease identity and round-label consistency
 
 Rechecked the action definition in [PlanetJune's invisible-decrease tutorial](https://www.planetjune.com/blog/amigurumi-help/how-to-crochet-an-invisible-decrease/).

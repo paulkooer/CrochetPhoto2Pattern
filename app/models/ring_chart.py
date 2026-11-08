@@ -16,7 +16,7 @@ from typing import Any
 from app import theme
 from app.models.colors import resolve_display_color
 from app.models.instruction_checks import instruction_issues, round_expression
-from app.models.stitch_notation import NotationError, mentions_invisible_decrease
+from app.models.stitch_notation import NotationError, mentions_invisible_decrease, non_sc_symbols
 
 _SVG_W, _SVG_H = 320, 320
 
@@ -149,6 +149,8 @@ def _round_operation_sequence(
     if expression is not None:
         if index == 0 and expression.has_loop_technique:
             return []  # The strip cannot infer the missing foundation's loops.
+        if non_sc_symbols(expression):
+            return []  # Taller stitches, bobbles and slip stitches are not sc glyphs.
         return list(islice(expression.iter_stitches(), limit))
     if index == 0:
         return ["X"] * (stitches if limit is None else min(stitches, limit))
@@ -237,8 +239,10 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
             if symbol in ("W", "M"):
                 glyph = (f'<text x="{gx:.1f}" y="{gy + 4:.1f}" text-anchor="middle" '
                          f'font-size="11" fill="{stroke}">{symbol}</text>')
-            else:
+            elif symbol in ("X", "V", "A"):
                 glyph = {"X": _glyph_x, "V": _glyph_v, "A": _glyph_a}[symbol](gx, gy)
+            else:
+                continue  # Do not draw hdc/dc/bobble/slip as a short-crochet mark.
             if loop:
                 glyph += (f'<title>{loop}：只挑{"前" if loop == "FLO" else "后"}半针</title>'
                           f'<text x="{gx:.1f}" y="{gy + 14:.1f}" text-anchor="middle" '
@@ -250,13 +254,24 @@ def render_symbol_strip(part: Any, max_marks: int = 18,
         suffix = (f'<text x="{left + max_marks * mark_w + 4:.1f}" y="{y + 8}" '
                   f'font-size="9" fill="{theme.INK_SOFT}">+{overflow}</text>'
                   if overflow > 0 else "")
-        label = f'R{rd.get("row", start_row + ri + 1)} 成圈 {n}X'
+        try:
+            parsed = round_expression(rd.get("notes"))
+        except NotationError:
+            parsed = None
+        uses_other_stitch = parsed is not None and bool(non_sc_symbols(parsed))
+        unit = "" if uses_other_stitch else "X"
+        label = f'R{rd.get("row", start_row + ri + 1)} 成圈 {n}{unit}'
         lines.append(
             f'<text x="8" y="{y + 8:.1f}" font-size="9.5" fill="{theme.INK}">'
             f'{html.escape(label)}</text>')
         lines.append(row_svg + suffix)
         if not seq and n:
-            pending = "隐形减针工艺待核对" if mentions_invisible_decrease(rd.get("notes")) else "针位待核对"
+            if mentions_invisible_decrease(rd.get("notes")):
+                pending = "隐形减针工艺待核对"
+            elif uses_other_stitch:
+                pending = "短针以外的针不按短针符号绘制"
+            else:
+                pending = "针位待核对"
             lines.append(f'<text x="{left}" y="{y + 8}" font-size="10" '
                          f'fill="{theme.INK_SOFT}">{pending}</text>')
     lines.append("</svg>")

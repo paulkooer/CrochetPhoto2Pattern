@@ -24,18 +24,30 @@ from dataclasses import dataclass
 # "single crochet 2 stitches together"; PlanetJune distinguishes invdec from it.
 # These letters are this project's convention, not a universal chart standard.
 STITCH_LEGEND_ZH = (
-    "记号：X=短针，V=加针（1针目钩2短针），A=减针（2针并1针），"
-    "W=1针目钩3短针，M=三针短针并一针，B=枣形针（5卷长针并1，进出各1针）；"
+    "记号：X=短针，T=中长针，F=长针，E=长长针，V=加针（1针目钩2短针），"
+    "A=减针（2针并1针），W=1针目钩3短针，M=三针短针并一针，"
+    "B=枣形针（5卷长针并1，进出各1针），SL=引拔针，"
+    "FV=长针加针（1针目出2长针），FA=长针并针（2长针并1），"
+    "K=跳针（消耗1针、不产出，不是并针），NX=内钩短针，S-SC=站立短针；"
     "FLO=只挑前半针，BLO=只挑后半针；(4X,V)×6 = “4短针+1加针”重复 6 次。"
+    "短针以外的这些针不能写成短针，行高也不按短针估算。"
 )
 STITCH_LEGEND_US = (
     "Stitch Key: X = sc (single crochet) · V = 2 sc in same st (increase) · "
     "A = sc2tog (single crochet 2 stitches together) · SL = sl st · CH = ch。"
+    "T = hdc · F = dc · E = tr · B = bobble · FV = 2 dc in one st · FA = dc2tog · "
+    "K = skip · NX = inner-loop sc · S-SC = standing sc。这些针不能换成 sc。"
     "sc2tog 与隐形减针（invdec）操作不同；此处字母为本项目约定，其他图解请以其图例为准。"
 )
 ROUND_WORKING_GUIDANCE = (
     "钩法：默认螺旋钩（不引拔、不翻转），每圈第一针挂记号扣；具体做法以本圈说明为准。"
     "普通圈可参考隐形减针（只挑两针目的前半针）；FLO/BLO 圈按本圈指定针法。"
+    "头发和衣物常另起片钩，或改用中长针、长针，并可能换钩针。"
+    "帽子也可以先合圈，再改成来回片钩。"
+    "鞋底可以是锁针椭圆，再加一圈内钩短针，并衬入硬片。"
+    "袖筒和裤筒有时单独起片，或反向钩，或同时穿入较早的一圈做出褶。"
+    "头发也可以先钩一片较高的帽片，再把发束钩进留下的线圈。"
+    "这些都不是身体螺旋的展开，行高不能按短针圈数估算。"
 )
 PLACEMENT_GUIDANCE = (
     "加针点提示：按操作式给出的段尾或段中位置钩织，不再额外错位；每圈起点以记号扣为准。"
