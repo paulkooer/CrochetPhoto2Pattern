@@ -25,7 +25,7 @@ from app.models.materials import yarn_requirements
 from app.models.ring_chart import render_ring_svg, render_symbol_strip
 from app.models.validator import validate_pattern
 from app.schemas import PatternResult
-from app.services.color_selection import MODE_UNIFORM, apply_color_change
+from app.services.color_selection import MODE_UNIFORM, apply_color_change, color_change_preview
 from app.services.progress_state import color_only_change
 from app.services.result_logic import import_backup
 from app.ui.color_editor import _note_swatch
@@ -557,3 +557,105 @@ def test_colour_panel_keeps_the_display_hex_through_undo_and_redo():
     redone = at.session_state["result"]
     assert redone["params"]["display_colors"] == {_NAME: _HEX}
     assert _part_named(redone, "头部")["color"] == _NAME
+
+
+def test_changing_a_custom_name_loads_its_own_swatch():
+    result = _mock_result("switch-swatch")
+    result["params"]["display_colors"] = {"共享蓝": "#123", "共享红": "#dd4433"}
+    rid = result["result_id"]
+    index = next(i for i, part in enumerate(result["params"]["parts"]) if part["name"] == "身体")
+    prefix = f"edit_{rid}_color{index}"
+    at = AppTest.from_string(_SWATCH_UI, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.selectbox(key=f"edit_{rid}_color_part").set_value(index).run()
+    at.selectbox(key=f"{prefix}_pick").select("自定义颜色名…").run()
+    at.text_input(key=f"{prefix}_custom").set_value("共享蓝").run()
+    assert at.color_picker(key=f"{prefix}_swatch").value == "#112233"
+
+    at.text_input(key=f"{prefix}_custom").set_value("共享红").run()
+    assert at.color_picker(key=f"{prefix}_swatch").value == "#dd4433"
+    at.color_picker(key=f"{prefix}_swatch").set_value("#aabbcc").run()
+    # Whitespace does not change the normalized name or discard an unsaved swatch.
+    at.text_input(key=f"{prefix}_custom").set_value("共享红 ").run()
+    assert at.color_picker(key=f"{prefix}_swatch").value == "#aabbcc"
+    at.text_input(key=f"{prefix}_custom").set_value("全新颜色").run()
+    assert at.color_picker(key=f"{prefix}_swatch").value == "#8d8a84"
+
+    # A built-in name has a fixed swatch even if typed through the custom field.
+    at.text_input(key=f"{prefix}_custom").set_value("蓝色").run()
+    assert not at.color_picker
+    assert any("内置色表" in caption.value for caption in at.caption)
+    # Editing the name and clicking preview in one event must use the saved swatch too.
+    at.text_input(key=f"{prefix}_custom").set_value("共享红")
+    at.button(key=f"{prefix}_preview").click().run()
+    pending = at.session_state["workspace_result"]["pending_preview"]
+    assert _part_named(pending["candidate"], "身体")["color"] == "共享红"
+    assert pending["candidate"]["params"]["display_colors"]["共享红"] == "#dd4433"
+    assert pending["detail"]["display_changes"] == []
+    assert not at.exception
+
+
+def test_shared_display_swatch_change_is_previewed_and_applied_to_all_uses():
+    result = apply_color_change(
+        _mock_result("shared-swatch"), part_name="头部", color=_NAME, mode=MODE_UNIFORM,
+        display_colors={_NAME: "#123"})
+    result = apply_color_change(result, part_name="身体", color=_NAME, mode=MODE_UNIFORM)
+    before = deepcopy(result)
+    preview = color_change_preview(
+        result, part_name="头部", color=_NAME, mode=MODE_UNIFORM,
+        display_colors={_NAME: "#aabbcc"})
+    assert preview["changed"]
+    assert preview["affected"] == []
+    assert preview["display_changes"] == [
+        {"颜色": _NAME, "旧显示色": "#112233", "新显示色": "#aabbcc"}]
+    assert result == before
+    assert not color_change_preview(
+        result, part_name="头部", color=_NAME, mode=MODE_UNIFORM,
+        display_colors={_NAME: "#112233"})["display_changes"]
+
+    rid = result["result_id"]
+    at = AppTest.from_string(_SWATCH_UI, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.color_picker(key=f"edit_{rid}_color0_swatch").set_value("#aabbcc").run()
+    at.button(key=f"edit_{rid}_color0_preview").click().run()
+    pending = at.session_state["workspace_result"]["pending_preview"]
+    assert pending["detail"]["display_changes"] == preview["display_changes"]
+    assert at.session_state["result"] == before
+    assert any("同一名称在整张图解中共用" in caption.value for caption in at.caption)
+    assert any("#112233" in str(table.value) and "#aabbcc" in str(table.value) for table in at.table)
+    at.button(key=f"edit_{rid}_preview_apply").click().run()
+    updated = at.session_state["result"]
+    assert updated["params"]["display_colors"][_NAME] == "#aabbcc"
+    assert _part_named(updated, "头部")["color"] == _NAME
+    assert _part_named(updated, "身体")["color"] == _NAME
+    assert not at.exception
+
+
+def test_switching_copies_prefills_the_selected_copys_colour():
+    result = apply_color_change(
+        _mock_result("switch-copy"), part_name="手臂", color="红色", mode=MODE_UNIFORM,
+        instance_index=0)
+    result = apply_color_change(
+        result, part_name="手臂", color="蓝色", mode=MODE_UNIFORM, instance_index=1)
+    rid = result["result_id"]
+    index = next(i for i, part in enumerate(result["params"]["parts"]) if part["name"] == "手臂")
+    prefix = f"edit_{rid}_color{index}"
+    at = AppTest.from_string(_SWATCH_UI, default_timeout=30)
+    at.session_state["result"] = result
+    at.run()
+    at.selectbox(key=f"edit_{rid}_color_part").set_value(index).run()
+    at.radio(key=f"{prefix}_scope").set_value("仅所选实体（整份统一换色）").run()
+    assert at.selectbox(key=f"{prefix}_copy0_pick").value == "红色"
+    at.selectbox(key=f"{prefix}_instance").set_value(1).run()
+    assert at.selectbox(key=f"{prefix}_copy1_pick").value == "蓝色"
+    at.selectbox(key=f"{prefix}_copy1_pick").select("黄色").run()
+    at.button(key=f"{prefix}_preview").click().run()
+    pending = at.session_state["workspace_result"]["pending_preview"]
+    assert _part_named(pending["candidate"], "手臂")["instance_colors"] == ["红色", "黄色"]
+    assert any("3D 预览按各份颜色示意" in warning.value for warning in at.warning)
+    assert not any("3D 预览也只按部件主色" in warning.value for warning in at.warning)
+    at.button(key=f"edit_{rid}_preview_apply").click().run()
+    assert _part_named(at.session_state["result"], "手臂")["instance_colors"] == ["红色", "黄色"]
+    assert not at.exception

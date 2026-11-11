@@ -8,6 +8,15 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-11-11 Replace a grid colour throughout
+
+- Inspired by [SpriteStitcher's whole-pattern replacement](https://github.com/Jesterace/SpriteStitcherv4), the grid editor can replace every cell of one palette colour with another. It shows the source count first and supports undo, redo, and project restore. The unused source stays in the palette with a zero count; a no-op does not create history.
+
+### Fixed — 2026-11-11 Colour form and display-swatch preview
+
+- Switching custom yarn names now loads each name's saved display swatch; a new name starts with neutral gray. Switching copies initializes the form from the selected copy rather than carrying over another copy's choice. A built-in name typed as custom uses its fixed yarn-table swatch.
+- The edit preview shows old and new display swatches and explains that a name shares its swatch across the pattern. Materials still use the yarn name. The per-copy guidance now matches the 3D preview: each copy uses its own colour, while round stripes are not drawn.
+
 ### Changed — 2026-11-08 Chart letters for taller stitches
 
 - The stitch calculator accepts a complete formula using T, F, E, B, SL, NX or S-SC. Each consumes and produces one stitch and keeps its own symbol; it is not rewritten as single crochet. FV is a taller increase (1→2) and FA a taller together (2→1). K is a skip: it consumes 1, produces 0, and the decrease count stays 0. K2 is two skips; 12FV is still twelve taller increases; 4*FV repeats the next stitch four times; 4x is still four single crochets. Chain spaces, skips and bobbles written in words, empty-stitch prose and same-stitch clusters stay unrecognized. Printed legends say these stitches are not sc. A round that uses them fails validation and is not translated to sc by CrochetPARADE. Export cache is now **22**.

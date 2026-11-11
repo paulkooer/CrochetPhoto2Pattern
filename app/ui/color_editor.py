@@ -36,6 +36,14 @@ _ORIGIN_TEXT = {
 }
 
 
+def _sync_swatch_name(key: str, displays: dict | None, previous_name: str) -> None:
+    """Changing the yarn name selects that name's saved swatch, not the old one."""
+    name = st.session_state[f"{key}_custom"].strip()
+    if name != previous_name:
+        stored = displays.get(name) if displays is not None else None
+        st.session_state[f"{key}_swatch"] = normalize_hex_color(stored) or _NEUTRAL_SWATCH
+
+
 def _color_input(label: str, key: str, current: str | None, *,
                  displays: dict | None = None, help_text: str = "",
                  ) -> tuple[str | None, str | None]:
@@ -59,8 +67,10 @@ def _color_input(label: str, key: str, current: str | None, *,
         return selected, None
     existing = (str(current) if isinstance(current, str) and current
                 and current not in _YARN_NAMES and not is_reserved_placeholder(current) else "")
+    previous_name = st.session_state.get(f"{key}_custom", existing).strip()
     typed = st.text_input(
         "自定义颜色名", value=existing, max_chars=MAX_COLOR_NAME, key=f"{key}_custom",
+        on_change=_sync_swatch_name, args=(key, displays, previous_name),
         help="自定义名称按文字统计材料，不提供品牌色号或用量依据。")
     name = typed.strip() or None
     if name is None:
@@ -68,12 +78,18 @@ def _color_input(label: str, key: str, current: str | None, *,
     if normalize_hex_color(name) is not None:
         st.caption("以 # 开头的值会直接作为显示色，仍然不是毛线品牌色号。")
         return name, None
+    if name in _YARN_NAMES:
+        st.caption("这个名称属于内置色表，使用色表中的显示色。")
+        return name, None
     stored = None if displays is None else displays.get(name)
-    initial = stored if isinstance(stored, str) and normalize_hex_color(stored) else _NEUTRAL_SWATCH
+    initial = normalize_hex_color(stored) or _NEUTRAL_SWATCH
+    swatch_key = f"{key}_swatch"
+    if swatch_key not in st.session_state:
+        st.session_state[swatch_key] = initial
     picked = st.color_picker(
-        "显示颜色", value=initial, key=f"{key}_swatch",
+        "显示颜色", key=swatch_key,
         help="只用于 3D、环形图、PDF 色块和 Parade 的 COLOR 指令。不是品牌色号或采购依据。")
-    st.caption("显示色默认是中性灰，不会沿用部件原来的颜色。材料清单仍按上面的文字名称统计。")
+    st.caption("同一名称在整张图解中共用显示色；新名称默认为中性灰。材料清单按文字名称统计。")
     return name, picked
 
 
@@ -98,8 +114,8 @@ def _preview_detail(preview: dict) -> dict:
     """预览载荷 → 预览面板的表格与提示（edit_history 原样渲染）。"""
     captions = []
     if preview.get("scope") == "instance":
-        captions.append(f"只改第 {int(preview['instance_index']) + 1} 份实体；"
-                        "其余份的配色与材料用量不变。")
+        captions.append(f"只改第 {int(preview['instance_index']) + 1} 份实体的毛线配色；"
+                        "其余份的毛线配色与材料用量不变。")
     if preview.get("scope") == "sections":
         captions.append(f"分段边界：第 {preview['neck_row']} 圈之后属于身体段"
                         "（来自图解中记录的「此处为颈部」标记）。")
@@ -122,7 +138,7 @@ def _preview_detail(preview: dict) -> dict:
             warnings.append("该份将恢复使用部件的逐圈颜色和换线步骤。")
         else:
             warnings.append("单独改色的份整份使用该颜色，不再按圈次说明里的换线步骤换色；"
-                            "3D 预览也只按部件主色示意。")
+                            "3D 预览按各份颜色示意，不显示逐圈条纹。")
     return {
         "captions": captions,
         "affected": [{**({"实体": row["实体"]} if "实体" in row else {}),
@@ -131,6 +147,7 @@ def _preview_detail(preview: dict) -> dict:
         "kept": [{**({"实体": row["实体"]} if "实体" in row else {}),
                   "圈号": row["圈号"], "颜色": _display(row["颜色"])}
                  for row in preview.get("kept", [])],
+        "display_changes": preview.get("display_changes", []),
         "materials": preview.get("materials", []),
         "warnings": warnings,
     }
@@ -141,7 +158,7 @@ def _submit(result: ResultData, slot: str, *, swatches: dict[str, str] | None = 
     from app.ui.result_renderer import md_safe
 
     try:
-        detail = _preview_detail(color_change_preview(result, **change))
+        detail = _preview_detail(color_change_preview(result, display_colors=swatches, **change))
         preview_edit(slot, result, apply_color_change(result, display_colors=swatches, **change),
                      detail=detail)
     except Exception as exc:
@@ -214,11 +231,13 @@ def render_color_editor(result: ResultData, slot: str) -> None:
         elif scope != "仅所选实体（恢复部件配色）":
             if scope == "整个部件":
                 current = part.get("color")
+                input_key = prefix
             else:
                 overrides = part.get("instance_colors") or []
-                chosen_index = int(st.session_state.get(f"{prefix}_instance", 0) or 0)
+                chosen_index = int(chosen)
                 current = overrides[chosen_index] if chosen_index < len(overrides) else None
-            color, color_swatch = _color_input("毛线颜色", prefix, current, displays=displays)
+                input_key = f"{prefix}_copy{chosen_index}"
+            color, color_swatch = _color_input("毛线颜色", input_key, current, displays=displays)
             swatches_ok = _note_swatch(swatches, color, color_swatch)
             if scope == "整个部件":
                 mode = st.radio(

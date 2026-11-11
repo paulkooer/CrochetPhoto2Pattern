@@ -126,7 +126,8 @@ Unknown part names remain available for review. Remove mistaken labels or select
 - Hats and separate skirt tubes can use their own swatches. Preview each change before
   applying; dimensions, materials, exports and saved projects use the same per-part gauge.
   Attached skirts retain body gauge. See the [garment guide (Chinese)](docs/project-format.md#%E5%B8%BD%E5%AD%90%E4%B8%8E%E7%8B%AC%E7%AB%8B%E8%A3%99%E7%AD%92%E5%AF%86%E5%BA%A6).
-- Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows. Failed generation,
+- Editable 2D grid projects for tapestry, C2C, and cross-stitch workflows, with single-cell,
+  rectangle and whole-grid replacement between existing palette colors. Failed generation,
   restoration or editing preserves the current grid and undo/redo history; downloads match
   the displayed result. See the [grid-project guide (Chinese)](docs/project-format.md#%E5%B9%B3%E9%9D%A2%E7%BD%91%E6%A0%BC%E5%B7%A5%E7%A8%8B%E4%B8%8E%E4%BF%AE%E8%89%B2%E5%8E%86%E5%8F%B2).
 - Stitch-arithmetic and supported round-notation checks, an editor calculator for

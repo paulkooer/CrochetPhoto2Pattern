@@ -361,7 +361,18 @@ def color_change_preview(result: ResultData, *, part_name: str, color: str | Non
                 kept.append({**identity, "圈号": old_row["row"], "颜色": old_color})
     preview["affected"] = affected
     preview["kept"] = kept
-    preview["changed"] = original != proposed
+    before_value = result["params"].get("display_colors")
+    after_value = candidate_result["params"].get("display_colors")
+    before_displays = before_value if isinstance(before_value, dict) else {}
+    after_displays = after_value if isinstance(after_value, dict) else {}
+    display_changes = []
+    for name, raw in after_displays.items():
+        old = normalize_hex_color(before_displays.get(name))
+        new = normalize_hex_color(raw)
+        if old != new:
+            display_changes.append({"颜色": name, "旧显示色": old or "未设置", "新显示色": new})
+    preview["display_changes"] = display_changes
+    preview["changed"] = original != proposed or before_displays != after_displays
     preview["materials"] = _materials_delta(result, candidate_result)
     if progress is not None:
         from app.services.progress_state import progress_impact
