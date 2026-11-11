@@ -117,10 +117,14 @@ jobs:
       - name: Lint
         run: uv run --locked --extra dev ruff check app tests
 
-      - name: Test
-        # 阈值放在 CI 命令而非 pytest addopts，保证本地裸 pytest 不依赖 pytest-cov
-        # 当前实测 ~90%，阈值 80% 留出波动余量
+      # 四个版本都运行全量测试；只在默认的 3.12 收集覆盖率，减少重复开销。
+      - name: Test with coverage
+        if: matrix.python-version == '3.12'
         run: uv run --locked --extra dev pytest -v --cov=app --cov-report=term-missing --cov-fail-under=80
+
+      - name: Test
+        if: matrix.python-version != '3.12'
+        run: uv run --locked --extra dev pytest -v
 
       - name: Build wheel (packaging check)
         run: |
