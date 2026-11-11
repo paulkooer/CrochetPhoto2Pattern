@@ -155,7 +155,7 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
     # 带裙案例（red-skirt）含环形起针的裙子，Parade 无法忠实导出（F-10）。
     # 策略 v3 把它登记为导出器声明不支持的构造：严格完整率降为 0.5，但不计为
     # 导出失败；其余内容仍须完整翻译。
-    assert report["summary"] == {
+    assert {k: v for k, v in report["summary"].items() if k != "review_hint_metrics"} == {
         "cases": 2,
         "tag_counts": {"test-fixture": 2},
         "pipeline_errors": 0,
@@ -172,6 +172,8 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
         "parade_syntax_rate": 1.0,
         "passed": True,
     }
+    assert all(metric["unavailable_cases"] == 2
+               for metric in report["summary"]["review_hint_metrics"].values())
     by_id = {case["id"]: case for case in report["cases"]}
     assert by_id["blue-doll"]["passed"] and by_id["blue-doll"]["parade_complete"]
     skirt = by_id["red-skirt"]
@@ -179,7 +181,7 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
     assert skirt["parade_export"]["unsupported_constructions"] == [
         {"part": "裙子", "construction": "ring_start"}]
     assert skirt["parade_export"]["failures"] == []
-    assert report["report_schema_version"] == 4
+    assert report["report_schema_version"] == 5
     assert report["cases"][0]["rights"]["copyright_basis"] == "self_owned"
 
 
@@ -631,6 +633,7 @@ def test_default_runner_scores_crochetability_instead_of_raising(tmp_path, monke
     case = evaluate_dataset(tmp_path)["cases"][0]
     assert seen["enforce_crochetability"] is False
     assert case["error"] is None and case["crochetable"] is True
+    assert all(type(value) is bool for value in case["review_hints"].values())
 
 
 def test_declared_ring_start_does_not_excuse_other_parade_failures(tmp_path):

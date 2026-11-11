@@ -116,7 +116,9 @@ def render_tab_manual() -> None:
 
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        m_body_type = st.selectbox("体型", ["标准", "瘦", "胖"], key="m_body_type")
+        m_body_type = st.selectbox(
+            "体型（仅记录）", ["标准", "瘦", "胖"], key="m_body_type",
+            help="仅作为描述保存，不改变尺寸或针数；请用头径和整体高度调整比例。")
         m_head_d = st.slider("头部直径 (cm)", 4.0, MAX_MANUAL_HEAD_CM, 9.0, 0.5, key="m_head_d")
         m_height = st.slider("整体高度 (cm)", 10.0, 60.0, 18.0, 0.5, key="m_height")
         difficulty_options: tuple[Difficulty, ...] = ("easy", "medium", "hard")

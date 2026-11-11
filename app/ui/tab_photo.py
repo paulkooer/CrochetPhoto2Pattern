@@ -137,8 +137,9 @@ def render_tab_photo() -> None:
                         logger.warning("Photo recognition failed (%s)", type(exc).__name__)
                         if orchestrator:
                             st.session_state["photo_failure"] = {
-                                "diagnostics": orchestrator.last_diagnostics,
-                                "usage": orchestrator.parser.last_usage}
+                                "diagnostics": orchestrator.last_diagnostics}
+                            if orchestrator.parser.last_usage:
+                                st.session_state["photo_failure"]["usage"] = orchestrator.parser.last_usage
                     finally:
                         progress.empty()
                 if st.session_state.get("photo_failure"):

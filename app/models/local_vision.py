@@ -239,7 +239,7 @@ def analyze(
                      "未检测到人脸，使用默认 Q 版比例；部件来自模板，请手动确认"),
         }
         return ImageAnalysis(
-            body_type="标准",
+            body_type="未评估",
             head_diameter_cm=DEFAULT_HEAD_CM,
             height_cm=18.0,
             main_features=["本地估算（未检出人脸）"],
@@ -273,7 +273,6 @@ def analyze(
     subject_px = bottom - top
     ratio = min(max(subject_px / head_px, MIN_BODY_RATIO), MAX_BODY_RATIO)
     height_cm = round(DEFAULT_HEAD_CM * ratio, 1)
-    body_type = "胖" if ratio <= 3.0 else ("标准" if ratio <= 5.5 else "瘦")
     head_span = (round(head_box[1] / H, 3), round((head_box[1] + head_box[3]) / H, 3))
     meta = {
         **candidate_meta,
@@ -287,7 +286,8 @@ def analyze(
     }
     features = [f"主色调 {c}" for c in colors[:2]] or ["本地视觉估算"]
     return ImageAnalysis(
-        body_type=body_type,
+        # Head-to-height ratio is not evidence of body fat or physique.
+        body_type="未评估",
         head_diameter_cm=DEFAULT_HEAD_CM,
         height_cm=height_cm,
         main_features=features,

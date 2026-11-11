@@ -91,16 +91,17 @@ readiness separately from `summary.passed` quality metrics.
 > The default local runner always delivers the fixed head/body/arms/legs template and never
 > delivers a skirt automatically. The review page may show a contour head, ears, a hem flare
 > or a one-sided lower bump as hints, but it does not preselect them or write them into
-> `analysis.parts` before confirmation. The macro-F1-above-template floor and flare-positive recall
-> therefore keep G3 blocked until photo analysis recognizes parts beyond the template. That is
-> the intended visual-benefit bar, not a calculation error.
+> `analysis.parts` before confirmation. Its delivered macro F1 cannot strictly exceed the same
+> template baseline and its delivered skirt recall is zero. Better hints alone cannot satisfy
+> either condition. The policy for assessing human-confirmed delivery remains undecided; the
+> current gate is unchanged.
 
 `release_approved` remains false: photo authenticity, labels, rights evidence and physical
 trials require review.
 
-As of 2026-11-02, report schema 4 uses release policy 3 (input manifest remains 2; the new
-crochetability threshold is optional). It adds the crochetability rate and reports declared
-Parade constructions separately; rerun older reports. The default runner uses the product's
+Report schema 5 adds non-gating review-hint metrics. Release policy remains 3 and the input
+manifest remains 2. Schema 4 added the crochetability rate and reports declared Parade
+constructions separately; rerun older reports to obtain new metrics. The default runner uses the product's
 Q proportion style, recorded in `evaluator.proportion_style` (`null` for custom runners). The
 rules below date from policy 2.
 Since 2026-10-11, part precision/recall/F1 score final `params.parts`. Every case must agree across
@@ -140,6 +141,12 @@ uv run pytest -q tests/test_eval_real.py
 
 ## 4. Metrics
 
+- `review_hint_metrics`: per ear, skirt and tail, precision, recall, TP/FP/FN and observed
+  versus unavailable case counts for review-page prompts, compared with `expected.parts`.
+  Missing or non-boolean flags and pipeline failures are unavailable, not negative predictions;
+  a zero denominator produces `null`. `cases[].review_hints` retains per-case values. These
+  measure the prompt only and do not change delivered parts, case pass rate or the G3 gate;
+  interpret them alongside unavailable counts and dataset coverage.
 - `macro_part_f1`: macro-average per-image part-set F1; penalizes omissions and extras.
 - `case_pass_rate`: rate of cases meeting part recall, annotated flare/color checks, and
   deterministic pattern validation.
