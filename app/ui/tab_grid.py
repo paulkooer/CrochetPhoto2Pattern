@@ -25,6 +25,7 @@ from app.models.grid_pattern import (
     render_preview_png,
     render_svg,
     render_text_chart,
+    replace_grid_color,
 )
 from app.ui.design_system import html_box
 from app.ui.uploads import load_uploaded_image_cached
@@ -91,7 +92,7 @@ def _reset_grid_editor_state() -> None:
     """Clear dimension-dependent widgets when installing a different grid."""
     prefixes = (
         "grid_edit_row", "grid_edit_col", "grid_edit_color_",
-        "grid_edit_mode", "grid_region_",
+        "grid_edit_mode", "grid_region_", "grid_replace_",
     )
     for key in list(st.session_state):
         if str(key).startswith(prefixes):
@@ -265,7 +266,7 @@ def render_tab_grid() -> None:
                        f"已钳至 {view['height']:,} 行——建议先裁剪图片）"
                        if view.get("clamped_from") else "")
         st.success(f"✅ 网格大小：{view['width']} 列 × {view['height']} 行，"
-                   f"{view['n_colors']} 种颜色 {_clamp_note}")
+                   f"色板 {view['n_colors']} 种颜色 {_clamp_note}")
 
         if view.get("pattern_payload"):
             undo_stack = st.session_state.setdefault("grid_undo_stack", [])
@@ -296,9 +297,9 @@ def render_tab_grid() -> None:
                         if restored:
                             st.rerun()
 
-            with st.expander("单格 / 矩形修色（不重新量化图片）", expanded=False):
+            with st.expander("网格修色（不重新量化图片）", expanded=False):
                 edit_mode = st.radio(
-                    "编辑范围", ["单格", "矩形"], horizontal=True,
+                    "编辑范围", ["单格", "矩形", "全图换色"], horizontal=True,
                     key="grid_edit_mode")
                 # 普通 rerun 只读两个整数/短色板；GridPattern（最多 8 万个
                 # GridCell）仅在点击“应用”时恢复，保持预渲染缓存的性能收益。
@@ -328,7 +329,7 @@ def render_tab_grid() -> None:
                     color_key = f"grid_edit_color_{crochet_row}_{crochet_col}"
                     apply_label = "应用到该格"
                     edit_description = f"R{crochet_row} / C{crochet_col}"
-                else:
+                elif edit_mode == "矩形":
                     row_c1, row_c2 = st.columns(2)
                     with row_c1:
                         crochet_row_start = int(st.number_input(
@@ -369,13 +370,23 @@ def render_tab_grid() -> None:
                     edit_description = (
                         f"R{crochet_row_start}–R{crochet_row_end} / "
                         f"C{crochet_col_start}–C{crochet_col_end}")
+                else:
+                    source_name = st.selectbox("要替换的颜色", palette_names, key="grid_replace_source")
+                    selected_name = st.selectbox("替换为", palette_names, key="grid_replace_target")
+                    source_index = palette_names.index(source_name)
+                    source_count = sum(row.count(source_index) for row in payload["cells"])
+                    st.caption(f"当前图案中有 {source_count} 格使用此颜色；"
+                               "未使用的原色仍保留在色板，图例显示 0 格。")
+                    apply_label = "替换全图颜色"
+                    edit_description = f"全图（原色：{source_name}）"
 
-                selected_name = st.selectbox(
-                    color_label,
-                    palette_names,
-                    index=current_index,
-                    key=color_key,
-                )
+                if edit_mode != "全图换色":
+                    selected_name = st.selectbox(
+                        color_label,
+                        palette_names,
+                        index=current_index,
+                        key=color_key,
+                    )
                 if st.button(apply_label, key="grid_apply_cell"):
                     try:
                         editable_pattern = grid_pattern_from_payload(payload)
@@ -387,7 +398,7 @@ def render_tab_grid() -> None:
                                 image_col_start,
                                 selected_index,
                             )
-                        else:
+                        elif edit_mode == "矩形":
                             changed = recolor_grid_region(
                                 editable_pattern,
                                 image_row_start,
@@ -396,6 +407,8 @@ def render_tab_grid() -> None:
                                 image_col_end,
                                 selected_index,
                             )
+                        else:
+                            changed = replace_grid_color(editable_pattern, source_index, selected_index)
                         if changed:
                             _record_grid_edit(editable_pattern,
                                               f"{edit_description} 中 {changed} 格已改为{selected_name}")
@@ -405,7 +418,7 @@ def render_tab_grid() -> None:
                         if changed:
                             st.rerun()
                         else:
-                            st.info("所选区域已经全部是该颜色，没有产生修改。")
+                            st.info("所选范围没有需要改变的颜色，没有产生修改。")
                 edit_notice = st.session_state.pop("grid_edit_notice", None)
                 if edit_notice is not None:
                     st.success(

@@ -253,3 +253,49 @@ def test_failed_rectangle_recolor_keeps_region_inputs_and_history(monkeypatch):
     assert at.number_input(key="grid_region_row_start").value == 2
     assert at.number_input(key="grid_region_col_end").value == 2
     assert at.selectbox(key="grid_region_color_2_2_1_2").value == "蓝色"
+
+
+def test_replace_color_updates_outputs_and_supports_undo_and_redo():
+    at = AppTest.from_string(_UI, default_timeout=30)
+    original, _, _ = _seed(at)
+    at.run()
+    at.radio(key="grid_edit_mode").set_value("全图换色").run()
+    at.selectbox(key="grid_replace_source").set_value("红色").run()
+    at.selectbox(key="grid_replace_target").set_value("蓝色").run()
+    assert any("3 格使用此颜色" in caption.value for caption in at.caption)
+    at.button(key="grid_apply_cell").click().run()
+    changed = deepcopy(at.session_state["grid_view"])
+    assert changed["pattern_payload"]["cells"] == [[1, 1], [1, 1]]
+    assert "100% (4 格)" in changed["legend"] and "0% (0 格)" in changed["legend"]
+    assert "R02: ▲▲" in changed["chart"] and "R02: ▲▲" in changed["markdown"]
+    assert grid_pattern_to_payload(import_grid_project(changed["project_json"])) == changed["pattern_payload"]
+    assert at.session_state["grid_redo_stack"] == []
+
+    at.button(key="grid_undo").click().run()
+    assert at.session_state["grid_view"]["pattern_payload"] == original["pattern_payload"]
+    snapshot = _snapshot(at)
+    at.selectbox(key="grid_replace_target").set_value("红色").run()
+    at.button(key="grid_apply_cell").click().run()
+    assert any("没有产生修改" in message.value for message in at.info)
+    assert _snapshot(at) == snapshot  # no-op must keep redo
+    at.button(key="grid_redo").click().run()
+    assert at.session_state["grid_view"]["pattern_payload"] == changed["pattern_payload"]
+    assert not at.exception
+
+
+def test_failed_replace_color_preserves_grid_history_and_inputs(monkeypatch):
+    at = AppTest.from_string(_UI, default_timeout=30)
+    original = _seed(at)
+    at.run()
+    at.radio(key="grid_edit_mode").set_value("全图换色").run()
+    at.selectbox(key="grid_replace_target").set_value("蓝色").run()
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("synthetic export failure")
+
+    monkeypatch.setattr(tab_grid, "export_grid_markdown", fail)
+    at.button(key="grid_apply_cell").click().run()
+    assert not at.exception and any("失败" in message.value for message in at.error)
+    assert _snapshot(at) == original
+    assert at.selectbox(key="grid_replace_source").value == "红色"
+    assert at.selectbox(key="grid_replace_target").value == "蓝色"

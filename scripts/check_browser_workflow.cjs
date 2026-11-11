@@ -160,7 +160,8 @@ async function headProgress(page, scope, rid, checked) {
     harness_sha256:createHash('sha256').update(await fs.readFile(__filename)).digest('hex'),
     working_tree_clean:!execFileSync('git',['status','--porcelain'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     github_head_commit:process.env.CROCHET_BROWSER_HEAD_SHA || null,
-    base_url:baseURL, input:'synthetic SVG/PNG and CLI-generated manual garment pattern', checks:[], page_errors:[],
+    base_url:baseURL, input:'synthetic SVG/PNG, grid project and CLI-generated manual garment pattern',
+    checks:[], page_errors:[],
     blocked_external_requests:[], physical_validation:false,
   };
   const browser = await chromium.launch({
@@ -196,6 +197,51 @@ async function headProgress(page, scope, rid, checked) {
                                              '打开备份图解','打开试钩包','我的图解（历史）']);
     await page.locator('[data-testid="stSidebar"]').screenshot({path:path.join(output,'sidebar-information-architecture.png')});
     record('sidebar lists the gauge first and groups the existing-work entries');
+
+    // A small synthetic grid verifies whole-palette replacement, exported bytes
+    // and history in the actual browser without using a private image.
+    const gridContext = await context();
+    const gridPage = lastPage = await gridContext.newPage();
+    await gridPage.goto(baseURL);
+    await gridPage.getByRole('tab', {name:'2D 像素网格', exact:true}).click();
+    const gridPanel = gridPage.getByRole('tabpanel', {name:'2D 像素网格', exact:true});
+    const gridFile = path.join(output, 'synthetic-grid.json');
+    await fs.writeFile(gridFile, JSON.stringify({
+      format:'crochet-photo2pattern-grid', schema_version:'1.0',
+      pattern:{width:2, height:2, clamped_from:null,
+               palette:[{name:'红色',rgb:[255,0,0]},{name:'蓝色',rgb:[0,120,215]}],
+               cells:[[0,0],[0,1]]},
+    }));
+    await key(gridPanel,'grid_project_uploader').locator('input[type="file"]').setInputFiles(gridFile);
+    await clickKey(gridPage,gridPanel,'grid_restore_project');
+    const gridMode = key(gridPanel,'grid_edit_mode');
+    await reveal(gridMode);
+    await gridMode.getByText('全图换色',{exact:true}).click();
+    await settle(gridPage);
+    await chooseSelect(gridPage,gridPanel,'grid_replace_target','蓝色');
+    await expect(gridPanel.getByText(/当前图案中有 3 格使用此颜色/)).toBeVisible();
+    await clickKey(gridPage,gridPanel,'grid_apply_cell');
+    const gridDownload = gridPanel.getByRole('button',{name:'下载可编辑工程',exact:true});
+    const replacedGrid = JSON.parse(await download(gridPage,gridDownload,path.join(output,'grid-replaced.json')));
+    assert.deepEqual(replacedGrid.pattern.cells,[[1,1],[1,1]]);
+    assert.deepEqual(replacedGrid.pattern.palette[0].name,'红色');
+    const gridMarkdown = (await download(gridPage,
+      gridPanel.getByRole('button',{name:'下载完整 Markdown 图解',exact:true}),
+      path.join(output,'grid-replaced.md'))).toString();
+    assert(gridMarkdown.includes('0% (0 格)') && gridMarkdown.includes('100% (4 格)'));
+    await clickKey(gridPage,gridPanel,'grid_undo');
+    const undoneGrid = JSON.parse(await download(gridPage,gridDownload,path.join(output,'grid-undo.json')));
+    assert.deepEqual(undoneGrid.pattern.cells,[[0,0],[0,1]]);
+    await clickKey(gridPage,gridPanel,'grid_redo');
+    const redoneGrid = JSON.parse(await download(gridPage,gridDownload,path.join(output,'grid-redo.json')));
+    assert.deepEqual(redoneGrid.pattern.cells,replacedGrid.pattern.cells);
+    await reveal(gridMode);
+    await gridMode.scrollIntoViewIfNeeded();
+    await gridPage.screenshot({path:path.join(output,'grid-replaced.png'),fullPage:true});
+    await gridContext.close();
+    lastPage = page;
+    record('whole-grid colour replacement updates downloads and supports undo and redo');
+
     const photoTab = page.getByRole('tab', {name:'照片分析（本地）',exact:true});
     const manualTab = page.getByRole('tab', {name:'手动输入',exact:true});
     await photoTab.focus();
@@ -934,6 +980,30 @@ async function headProgress(page, scope, rid, checked) {
       const swatchRedone = JSON.parse(await download(samplePage, key(colorPanel, `dl_backup_${swatchRedoId}`).getByRole('button'), path.join(output, 'color-swatch-redo.json')));
       assert.equal(swatchRedone.params.display_colors['外婆家的藏青'], '#26374a');
       assert.equal(swatchRedone.params.parts[headIndex].color, '外婆家的藏青');
+
+      // Switching the custom name must not carry a prior name's swatch into the
+      // next preview, and a shared-swatch change must be visible before applying.
+      const customName = `edit_${swatchRedoId}_color${headIndex}_custom`;
+      const customSwatch = `edit_${swatchRedoId}_color${headIndex}_swatch`;
+      const swatchPreview = `edit_${swatchRedoId}_color${headIndex}_preview`;
+      const displayChangeCaption = colorPanel.getByText(
+        '显示色变化：同一名称在整张图解中共用，界面和导出会同步更新；毛线名称及用量不受显示色影响。',
+        {exact: true});
+      await fillKey(samplePage, colorPanel, customName, '临时测试色');
+      await clickKey(samplePage, colorPanel, swatchPreview);
+      await expect(displayChangeCaption).toBeVisible();
+      await expect(colorPanel.getByText('#8d8a84', {exact: true})).toBeVisible();
+      await clickKey(samplePage, colorPanel, `edit_${swatchRedoId}_preview_cancel`);
+      await fillKey(samplePage, colorPanel, customName, '外婆家的藏青');
+      await clickKey(samplePage, colorPanel, swatchPreview);
+      await expect(displayChangeCaption).toHaveCount(0);
+      await clickKey(samplePage, colorPanel, `edit_${swatchRedoId}_preview_cancel`);
+      await setSwatch(samplePage, colorPanel, customSwatch, '#aabbcc');
+      await clickKey(samplePage, colorPanel, swatchPreview);
+      await expect(displayChangeCaption).toBeVisible();
+      await expect(colorPanel.getByText('#aabbcc', {exact: true})).toBeVisible();
+      await clickKey(samplePage, colorPanel, `edit_${swatchRedoId}_preview_cancel`);
+      record('switching custom names restores their own swatches and shared display-colour changes are previewed');
 
       await clickKey(samplePage, colorPanel, `project_save_${swatchRedoId}`);
       const swatchProject = path.join(output, 'color-swatch-project.json');

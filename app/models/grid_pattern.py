@@ -311,6 +311,23 @@ def recolor_grid_region(
     return changed
 
 
+def replace_grid_color(pattern: GridPattern, source_index: int, target_index: int) -> int:
+    """Replace one palette color throughout the grid without changing its symbols."""
+    if any(type(index) is not int or not 0 <= index < len(pattern.palette)
+           for index in (source_index, target_index)):
+        raise ValueError("palette index is out of range")
+    if source_index == target_index:
+        return 0
+    name, rgb = pattern.palette[target_index]
+    changed = 0
+    for row in pattern.cells:
+        for column_index, cell in enumerate(row):
+            if cell.col_index == source_index:
+                row[column_index] = GridCell(target_index, name, rgb)
+                changed += 1
+    return changed
+
+
 def _assign_dithered(px_arr: np.ndarray, width: int, height: int,
                      palette_rgbs: list, pal_labs: np.ndarray) -> np.ndarray:
     """Floyd–Steinberg 误差扩散 + CIEDE2000 最近邻（对照 Stitchy 等照片转
@@ -550,7 +567,7 @@ def export_grid_markdown(
         "# 🧶 平面网格钩织图解",
         "",
         f"> 网格：{pattern.width} 列 × {pattern.height} 行 · "
-        f"{len(pattern.palette)} 种毛线色",
+        f"色板 {len(pattern.palette)} 种毛线色",
         "> 坐标：R1 是成品底行；每行符号从左向右阅读。",
         "",
         "## 颜色图例",

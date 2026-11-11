@@ -23,6 +23,7 @@ from app.models.grid_pattern import (
     render_legend_markdown,
     render_svg,
     render_text_chart,
+    replace_grid_color,
 )
 
 
@@ -174,6 +175,33 @@ def test_region_recolor_is_inclusive_and_reports_real_changes():
     assert [row[0].col_index for row in pattern.cells] == [1, 1]
     # 重复应用不制造虚假的历史步骤。
     assert recolor_grid_region(pattern, 0, 1, 0, 0, 1) == 0
+
+
+def test_replace_color_updates_only_matching_cells_and_keeps_the_palette():
+    pattern = _editable_pattern()
+    palette = list(pattern.palette)
+    symbols = dict(pattern.symbol_map)
+    assert replace_grid_color(pattern, 0, 1) == 3
+    assert [[cell.col_index for cell in row] for row in pattern.cells] == [[1, 1], [1, 1]]
+    assert all(cell.color_name == "蓝色" and cell.rgb == palette[1][1]
+               for row in pattern.cells for cell in row)
+    assert pattern.palette == palette and pattern.symbol_map == symbols
+    assert "0% (0 格)" in render_legend_markdown(pattern)
+    assert "100% (4 格)" in render_legend_markdown(pattern)
+    assert "R02: ▲▲" in export_grid_markdown(pattern)
+    restored = import_grid_project(export_grid_project(pattern))
+    assert grid_pattern_to_payload(restored) == grid_pattern_to_payload(pattern)
+    assert replace_grid_color(pattern, 0, 1) == 0
+    assert replace_grid_color(pattern, 1, 1) == 0
+
+
+@pytest.mark.parametrize("source,target", [(-1, 1), (0, 2), (True, 1)])
+def test_replace_color_rejects_invalid_palette_indices_before_mutating(source, target):
+    pattern = _editable_pattern()
+    original = grid_pattern_to_payload(pattern)
+    with pytest.raises(ValueError, match="palette index"):
+        replace_grid_color(pattern, source, target)
+    assert grid_pattern_to_payload(pattern) == original
 
 
 def test_region_recolor_rejects_reversed_or_out_of_bounds_rectangle():

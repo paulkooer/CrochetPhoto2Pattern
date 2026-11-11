@@ -97,6 +97,8 @@ the current colour.
 
 V1 does not store a different swatch for each use of a name. One custom name has one display hex for the whole pattern. One edit that maps the same name to two hex values is rejected; choosing that name again replaces the stored hex. Two swatches need two names. `present_color()` returns a `ColorPresentation` with `display_hex` (screen), `export_hex` (what that format may write), `is_placeholder`, `is_custom` and `is_exportable`. A colour that can be drawn is not a yarn product, and it is not necessarily expressible by every export. `skin` / `body` have a screen colour and an empty `export_hex`, so Parade writes no `COLOR:`. A custom name with no swatch has both hex fields empty: 3D uses neutral gray and says the colour is a placeholder, and Parade refuses the export instead of reporting success.
 
+Switching custom names loads the saved swatch for that name; a new name defaults to neutral gray. The preview shows the old and new swatches and explains that all uses of the name share the change. The yarn name and material estimate do not change when only the swatch changes. Switching copies initializes the form from the selected copy.
+
 **The meaning of `color`**: generated colours may derive a dominant colour from the rounds;
 a manually chosen base colour remains the user's choice even if a stripe covers more
 rounds. The effective colour follows the precedence above.

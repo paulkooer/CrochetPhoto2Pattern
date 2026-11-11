@@ -209,6 +209,10 @@ def _render_preview_detail(detail: dict | None) -> None:
     if detail.get("kept"):
         st.caption("按「保留已有条纹」保留的圈（已有圈色或逐份配色，不会被覆盖）")
         st.table(detail["kept"])
+    if display_changes := detail.get("display_changes"):
+        st.caption("显示色变化：同一名称在整张图解中共用，界面和导出会同步更新；"
+                   "毛线名称及用量不受显示色影响。")
+        st.table(display_changes)
     if alignment := detail.get("copy_color_alignment"):
         st.caption("按实体 ID 对齐后的逐份颜色")
         st.table(alignment)
