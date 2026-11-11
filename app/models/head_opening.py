@@ -1,6 +1,7 @@
 """Explicit neck openings for newly generated, separate head constructions."""
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any, Final
@@ -9,6 +10,7 @@ from app.schemas import MAX_ROUND_STITCHES
 from app.utils.counts import integer_count
 
 HEAD_OPENING_KEY: Final = "head_opening_stitches"
+_EXPLICIT_CLOSURE = re.compile(r"(?<![不勿未没别])(?:拉紧收口|无痕收口|完全收口)")
 
 
 def has_declared_head_opening(part: Mapping[str, Any]) -> bool:
@@ -17,6 +19,12 @@ def has_declared_head_opening(part: Mapping[str, Any]) -> bool:
 
     rows = part.get("rounds") or []
     if not rows:
+        return False
+    if part.get("connection_state") == "open":
+        from .parts import same_round
+
+        return same_round(part.get("opening_row"), rows[-1].get("row"))
+    if part.get("connection_state") == "closed":
         return False
     note = str(rows[-1].get("notes") or "")
     return (not _CLOSING_RE.search(note)
@@ -84,6 +92,7 @@ def head_opening_issues(params: Mapping[str, Any]) -> list[str]:
     if raw is None:
         return []
     from .assembly import _CLOSING_RE
+    from .parts import same_round
 
     try:
         target = head_opening_target(raw)
@@ -92,10 +101,11 @@ def head_opening_issues(params: Mapping[str, Any]) -> list[str]:
             raise ValueError("头部留口仅适用于独立头部，不能与头身一体同时使用")
         head = heads[0]
         rows = head["rounds"]
-        if (head.get("opening_row") != rows[-1].get("row")
-                or rows[-1]["stitches"] != target):
+        if (not same_round(head.get("opening_row"), rows[-1].get("row"))
+                or integer_count(rows[-1]["stitches"]) != target):
             raise ValueError("头部留口必须引用实际末圈，且末圈针数等于保存的留口目标")
-        if _CLOSING_RE.search(rows[-1].get("notes") or ""):
+        closure = _EXPLICIT_CLOSURE if head.get("connection_state") == "open" else _CLOSING_RE
+        if closure.search(rows[-1].get("notes") or ""):
             raise ValueError("头部留口末圈不能同时要求收口")
     except (ValueError, KeyError, IndexError, TypeError) as exc:
         return [f"头部留口：{exc}"]

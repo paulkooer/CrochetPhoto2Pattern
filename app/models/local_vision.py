@@ -72,9 +72,11 @@ def _detect_face(img: Image.Image) -> tuple[int, int, int, int] | None:
 
 
 def _subject_vertical_extent(profile: list[float] | None, height: int) -> tuple[float, float]:
-    rows = [i for i, width in enumerate(profile or []) if width > 0.08]
-    if rows and profile:
-        return rows[0] / len(profile) * height, (rows[-1] + 1) / len(profile) * height
+    from .geometry import profile_extent
+
+    extent = profile_extent(profile)
+    if extent:
+        return extent[0] * height, extent[1] * height
     return 0.0, height * FRAME_FILL_RATIO
 
 

@@ -116,6 +116,8 @@ def merge_head_body(parts: list[CrochetPart], gauge: Gauge, *,
         rounds=[CrochetStitch(**r) for r in rounds_raw],
         color=head.color,
         magic_ring=True,
+        connection_state="closed",
+        neck_row=len(head_kept),
         notes=(
             f"头身一体钩（最大 {max(merged_sts)} 针）：头顶起针钩至颈部后"
             f"不断线直接向下钩身体，末端收口；第 {eye_round} 圈安装安全眼。"

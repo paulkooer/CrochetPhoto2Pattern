@@ -212,6 +212,8 @@ def test_corrupt_image_is_a_dataset_error(tmp_path):
          "evaluation_use_approved"),
         (lambda payload: payload["cases"][0].update(file="../outside.png"),
          "relative path"),
+        (lambda payload: payload["cases"][0].update(file="photo.webp"),
+         "unsupported image suffix"),
         (lambda payload: payload["cases"][0]["expected"].update(parts=["双手"]),
          "unknown canonical parts"),
         (lambda payload: payload["cases"][0]["rights"].update(

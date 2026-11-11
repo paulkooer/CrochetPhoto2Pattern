@@ -19,6 +19,8 @@ shasum -a 256 eval_data/release-01/standing-plain-001.jpg
 
 Put the 64-character hash in the manifest. Every file is checked before evaluation. A
 replaced, recompressed, or rotated image requires a new version and hash.
+The same formats as photo upload are supported: JPEG (`.jpg`, `.jpeg`) and PNG. WebP is
+rejected during manifest validation.
 
 The manifest must include:
 

@@ -119,8 +119,9 @@ round listed in the preview.
 
 ## 5. Compatibility and migration
 
-- **The backup root moves to `schema_version="2"`.** Unversioned and version 1 patterns are
-  migrated without guessing colour origin. Older applications reject version 2 explicitly,
+- Part colour selection introduced backup version `2`; the current version `3` also records
+  connection state and the one-piece neck round. Unversioned, version 1 and version 2 patterns
+  migrate without guessing these fields. Older applications reject versions they cannot read,
   preventing a re-save from silently discarding fields they do not understand.
 - **They must be declared on `CrochetPart`.** `rebuild_params` runs
   `CrochetPart(**part_input)` then `to_data()`, and undeclared keys are silently dropped by

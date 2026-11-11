@@ -283,6 +283,13 @@ The tool does not yet model maker speed, stitch type, stuffing tension, fibre mo
 or dye-lot variation. Larger samples should be stratified by maker, yarn/hook, and pattern
 complexity instead of collapsed into one constant.
 
+Include ladder-sphere heads in G4 calibration: their round count follows the maximum
+circumference in stitches and does not directly adjust the constant section for row height.
+Generate the same target head diameter with different stitch-width/row-height ratios, then
+measure the finished width and height while recording yarn and stuffing. Comparing round count
+times row height with an ideal sphere's meridian is only a screening estimate, not a physical
+measurement. Ideal-sphere and egg quantization can also end at six stitches; test their shape.
+
 ## 5. External trial evidence
 
 The wheel contains a small curated

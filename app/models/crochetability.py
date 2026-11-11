@@ -18,7 +18,7 @@ from typing import Any, Literal, TypeVar
 
 from .crochet_params import PatternGenerationError
 from .gauge import PRESETS, Gauge
-from .parts import _ONE_PIECE_NAME, ONE_PIECE_NECK_MARKER
+from .parts import _ONE_PIECE_NAME, one_piece_neck_index
 
 MIN_CORE_STITCHES = 18
 RECOMMENDED_CORE_STITCHES = 24
@@ -58,8 +58,7 @@ def _core_peak(part: Mapping[str, Any]) -> int | None:
     rounds = list(part.get("rounds") or [])
     if part.get("name") == _ONE_PIECE_NAME:
         # 一体件只看颈部及以上：身体段可以比头宽，不能替头部凑够针数
-        neck = next((i for i, rd in enumerate(rounds) if isinstance(rd, Mapping)
-                     and ONE_PIECE_NECK_MARKER in str(rd.get("notes") or "")), None)
+        neck = one_piece_neck_index(part)
         if neck is not None:
             rounds = rounds[:neck + 1]
     counts = _stitch_counts(rounds)

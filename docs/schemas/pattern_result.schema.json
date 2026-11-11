@@ -104,7 +104,7 @@
       "title": "Result Id"
     },
     "schema_version": {
-      "default": "2",
+      "default": "3",
       "title": "Schema Version",
       "type": "string"
     },

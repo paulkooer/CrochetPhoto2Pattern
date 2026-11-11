@@ -43,10 +43,17 @@ def _upgrade_v1(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
+def _upgrade_v2(data: dict[str, Any]) -> dict[str, Any]:
+    # Old prose cannot reliably establish connection state or a neck boundary.
+    # Leave both absent and retain the legacy interpretation on read.
+    return data
+
+
 # Each stored version → (next version, step producing it).
 _STEPS: dict[str, tuple[str, Callable[[dict[str, Any]], dict[str, Any]]]] = {
     UNVERSIONED: ("1", _label_unversioned),
     "1": ("2", _upgrade_v1),
+    "2": ("3", _upgrade_v2),
 }
 
 

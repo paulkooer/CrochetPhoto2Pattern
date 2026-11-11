@@ -76,8 +76,10 @@ def test_skirt_assembly_uses_waist_including_legacy_restore_and_pdf(ruffle, monk
     assert waist != skirt["rounds"][-1]["stitches"]
     # Legacy backups have no explicit opening reference and can contain stale prose.
     backup = PatternResult.from_result(result).to_backup()
+    backup["schema_version"] = "2"
     for p in backup["params"]["parts"]:
         p.pop("opening_row", None)
+        p.pop("connection_state", None)
     restored = import_backup(backup, "old-skirt")
     for candidate in (result, restored):
         assert f"裙筒腰部（{waist} 针开口）" in candidate["params"]["assembly_instructions"]

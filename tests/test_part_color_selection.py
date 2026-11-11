@@ -289,6 +289,7 @@ def test_one_piece_split_preview_names_the_boundary_round():
 def test_one_piece_split_refuses_an_unreliable_boundary(damage):
     result = _onepiece_result()
     part = _part(result, "头身（一体）")
+    part.pop("neck_row")  # Legacy patterns have only the prose marker.
     rounds = part["rounds"]
     marker = "此处为颈部"
     for rd in rounds:

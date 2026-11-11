@@ -31,7 +31,7 @@ MANIFEST_SCHEMA_VERSION = Literal[2]
 REPORT_SCHEMA_VERSION = 4
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
-ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp"})
+ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png"})
 
 EvaluationRunner = Callable[[Image.Image], Mapping[str, Any]]
 
