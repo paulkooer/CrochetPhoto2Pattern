@@ -61,6 +61,39 @@ def test_recovered_foreground_updates_geometry_palette_and_generated_colors(draf
     assert any("补选／擦除" in line for line in provenance_lines(generated))
 
 
+def test_recovered_foreground_remaps_unmeasured_spans_and_head_colors(draft):
+    from app.models.color_design import resolved_part_spans
+
+    previous = deepcopy(draft.spans)
+    edited = with_reviewed_mask(draft, payload(draft))
+    expected = resolved_part_spans(None, edited.geometry.silhouette.subject_extent)
+    assert edited.spans == expected
+    assert draft.spans == previous
+    assert edited.spans["头部"] == pytest.approx((0.0912, 0.2975))
+    assert edited.spans["头部"] != previous["头部"]
+    generated = PipelineOrchestrator.generate_from_draft(edited)
+    head = next(p for p in generated["params"]["parts"] if p["name"] == "头部")
+    assert {r["color"] for r in head["rounds"]} == {"蓝色"}
+    assert generated["spans"] == expected
+
+
+def test_mask_correction_preserves_pose_and_reviewed_head_and_body_spans(draft):
+    from app.models.color_design import resolved_part_spans
+    from app.ui.photo_review import _confirmed_draft
+
+    draft.spans["手臂"] = (0.4, 0.6)
+    draft.spans_measured = ["手臂"]
+    body = with_reviewed_body(draft, (0.25, 0.33, 0.75, 0.85))
+    reviewed = _confirmed_draft(draft, body, 0.4, (0.25, 0.04, 0.75, 0.25))
+    edited = with_reviewed_mask(reviewed, payload(reviewed))
+    expected = resolved_part_spans({"手臂": (0.4, 0.6), "头部": (0.04, 0.25)},
+                                   edited.geometry.silhouette.subject_extent)
+    assert edited.spans == {**expected, "身体": (0.33, 0.85)}
+    assert edited.spans_measured == ["手臂"]
+    assert edited.geometry.body_region.box == body.geometry.body_region.box
+    assert reviewed.spans["腿部"] != edited.spans["腿部"]
+
+
 def test_erasure_removes_foreground_from_both_geometry_and_colors(draft):
     data = payload(draft)
     data["pixels"] = "".join("1" if 10 <= y < 45 and 25 <= x < 55 else "0"
@@ -92,6 +125,7 @@ def test_corrected_mask_survives_unstripped_serialization_and_resize_without_pho
         assert output["geometry"]["mask_review"] == result["geometry"]["mask_review"]
         assert output["geometry"]["silhouette"] == result["geometry"]["silhouette"]
         assert output["color_bands"] == result["color_bands"]
+        assert {name: tuple(span) for name, span in output["spans"].items()} == result["spans"]
 
 
 def test_downloaded_backup_omits_mask_but_retains_corrected_pattern(draft, monkeypatch):

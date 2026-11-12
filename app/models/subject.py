@@ -9,7 +9,7 @@
   Histograms", IEEE Trans. SMC 1979）——种子距离阈值对图像对比度
   自适应（低对比度图固定阈值分不出主体/背景）。
 
-分割架构：确定性背景 = 顶+左右条带（主体常贴底边）；前景种子按"到背景
+分割架构：顶部及两侧条带提供背景种子，保留已确定的前景；前景种子按"到背景
 色集合的距离"三档（阈值 = clamp(Otsu(距离分布), 16, 96)），haar 人脸框
 （检出时）作为确定性前景种子锚定头部。失败回退：cv2 缺失/图过小/分割
 退化（主体占比 <5% 或 >95%）→ None，调用方走旧的背景阈值启发式。
@@ -187,8 +187,7 @@ def extract_subject(
         if h < 20 or w < 20:
             return None
         # 无交互分割用 mask 初始化（Rother 2004 的 incomplete labelling）。
-        # 确定性背景 = 顶部整条 + 左右整条（人像/玩偶照构图先验：顶与两侧
-        # 几乎总有留白），底部中央保持可能前景——主体常贴底边。
+        # 顶部和两侧条带提供背景种子；底部中央保持可能前景。
         # 前景种子按"与背景色解释力的距离"分三档（背景色集合 = 条带全部
         # 量化色，不只众数——双色背景的第二种色也在其中，不会被误标前景）：
         #   GC_FGD  确定前景：与任何背景色距离都远（GrabCut 的数据项/平滑项
@@ -251,11 +250,10 @@ def extract_subject(
             if (0 <= fx < fx + fw <= w and 0 <= fy < fy + fh <= h
                     and 0.003 <= (fw * fh) / (w * h) <= 0.5):
                 mask[fy:fy + fh, fx:fx + fw] = cv2.GC_FGD
-        # 确定性背景条带最后强制写入：种子展开不得覆盖（否则 GMM 样本
-        # 为空，grabCut 直接断言失败）
-        mask[:kt, :] = cv2.GC_BGD
-        mask[:, :ks] = cv2.GC_BGD
-        mask[:, w - ks:] = cv2.GC_BGD
+        # 条带内仍需背景样本，但不能抹掉已确定的前景：主体或人脸框
+        # 可能贴到照片上沿/侧沿。分割样本退化时保留既有失败回退。
+        for strip in (mask[:kt, :], mask[:, :ks], mask[:, w - ks:]):
+            strip[strip != cv2.GC_FGD] = cv2.GC_BGD
         bgd = np.zeros((1, 65), np.float64)
         fgd = np.zeros((1, 65), np.float64)
         # GrabCut initializes GMMs with randomized k-means++. OpenCV's default
