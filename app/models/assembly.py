@@ -8,7 +8,7 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .parts import _ONE_PIECE_NAME, _part_name, _part_rounds, _round_stitches
+from .parts import _ONE_PIECE_NAME, _part_name, _part_rounds, _round_stitches, same_round
 
 # 末圈注记里的闭合语义："收口/勒紧收口/无痕收口"=已闭合；"不收口/勿收口/
 # 未收口/没收口"是开口声明——负向断言排除这些前导字（中文社区头套
@@ -22,6 +22,10 @@ def joining_round(part: Mapping[str, Any]) -> dict | None:
     if not rounds:
         return None
     selected = part.get("opening_row")
+    if part.get("connection_state") == "closed":
+        return None
+    if part.get("connection_state") == "open":
+        return next((rd for rd in rounds if same_round(rd.get("row"), selected)), None)
     row = (next(rd for rd in rounds if rd["row"] == selected) if selected is not None
            else rounds[0] if _part_name(part) == "裙子" else rounds[-1])
     return None if _CLOSING_RE.search(str(row.get("notes") or "")) else row

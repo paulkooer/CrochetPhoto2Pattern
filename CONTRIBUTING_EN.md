@@ -67,6 +67,7 @@ The pose extra is supported only on Python 3.11–3.12 and requires `libEGL.so.1
 - Explain user-visible changes, risks, commands, and actual results. Attach redacted
   screenshots for UI changes.
 - Add tests for new behavior and a reproducer for defect fixes.
+- Name and group new tests by the module or behavior they cover, not by audit round.
 - Update both language entry points when user-visible behavior, installation, privacy,
   data formats, or release gates change.
 - Ensure `git diff --check` passes and no generated files or local paths are included.

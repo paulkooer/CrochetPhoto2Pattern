@@ -277,9 +277,8 @@ def _ideal_sphere_rounds(
     均匀、填充后更圆。
     egg=True：宽度乘 (1 + e·cosθ)（θ 自顶极点），上略宽下略窄的蛋形——
     玩偶头主流形状；返回值附 eye_round（最大围行，眼睛在其下一两圈）。
-    原文工艺警告：收尾不要按标准减针收到 6 针（底部过尖）——保持约
-    12 针左右直接穿线无痕收口（穿末圈前半针拉紧）；动态塑形上限仍受
-    单圈可执行性约束。
+    原文工艺建议在约 12 针处直接穿线无痕收口，避免过尖；本算法量化后
+    末圈仍可能为 6 针，应如实标明并通过试钩评估形状。
     """
     import math
 
@@ -317,10 +316,11 @@ def _ideal_sphere_rounds(
     rounds = _mark_staggered(rounds)
     if rounds:
         last = rounds[-1]
-        # 原文工艺：不要继续减针收到 6 针（底部过尖）——穿前半针收口
+        warning = ("末圈已为6针，底部可能较尖，需试钩确认" if last["stitches"] <= 6
+                   else "勿再减针收成6针，底部会过尖")
         last["notes"] = (last.get("notes") or "") + (
             "；断线留10cm，穿末圈每针前半针后拉紧（无痕收口）藏线头"
-            "（勿再减针收成6针，底部会过尖）")
+            f"（{warning}）")
     # 眼睛：最大围所在圈（蛋形时上移），再往下 1 圈
     eye_idx = max(range(len(clamped)), key=lambda i: clamped[i])
     rounds[0]["eye_round"] = min(len(rounds), eye_idx + 2)  # 附带信息，CrochetStitch 会忽略
@@ -609,6 +609,7 @@ class CrochetParamsGenerator:
                     magic_ring=True,
                     opening_row=(rounds_raw[-1]["row"]
                                  if is_head and head_opening_stitches is not None else None),
+                    connection_state="open" if is_head and head_opening_stitches is not None else "closed",
                     notes=notes,
                 )
 
@@ -675,6 +676,7 @@ class CrochetParamsGenerator:
                     color=sp.get("color", "body"),
                     magic_ring=False,  # 腰部开口起针，非魔法环
                     opening_row=rounds_raw[0]["row"],
+                    connection_state="open",
                     notes=skirt_notes,
                 )
 
@@ -703,6 +705,8 @@ class CrochetParamsGenerator:
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
                     magic_ring=True,
+                    opening_row=rounds_raw[-1]["row"],
+                    connection_state="open",
                     notes=(
                         f"开口帽形（帽围 {max_st} 针 > 头围，不收口可直接佩戴），"
                         f"筒深 {wall_rounds} 圈 ≈ {actual_h}cm"
@@ -744,6 +748,8 @@ class CrochetParamsGenerator:
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
                     magic_ring=True,  # F-13：底部圆盘以魔法环起针（首圈 note 即“魔法环起6针”）
+                    opening_row=rounds_raw[-1]["row"],
+                    connection_state="open",
                     notes=(
                         f"照片驱动轮廓身体（筒壁高约 {actual_h}cm，逐圈针数随照片"
                         f"剖面变化；底部另含圆盘）。末圈保持颈部开口不收针："
@@ -774,6 +780,8 @@ class CrochetParamsGenerator:
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "body"),
                     magic_ring=True,  # F-13：圆盘起底以魔法环起针
+                    opening_row=rounds_raw[-1]["row"],
+                    connection_state="open",
                     notes=(
                         f"圆柱身体（筒壁高约 {actual_h}cm，另含底部圆盘直径 "
                         f"{round(max_st * part_gauge.stitch_w_cm / 3.14159, 1)}cm）。"
@@ -798,6 +806,8 @@ class CrochetParamsGenerator:
                     rounds=[CrochetStitch(**r) for r in rounds_raw],
                     color=sp.get("color", "skin" if part_name in _SKIN_PARTS else "body"),
                     magic_ring=True,  # F-13：肢体底部小圆盘以魔法环起针
+                    opening_row=rounds_raw[-1]["row"],
+                    connection_state="open",
                     notes=f"{part_name}（筒壁长约 {actual_h}cm，另含底部小圆盘），两端留线头便于缝合。",
                 )
 

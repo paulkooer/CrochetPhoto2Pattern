@@ -8,6 +8,26 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-11-11 Review-hint evaluation
+
+- Evaluation report schema 5 measures precision/recall, TP/FP/FN and unavailable cases for ear, skirt and tail review prompts. Missing or non-boolean hints and pipeline failures are not treated as negatives. These metrics do not change delivery or the G3 gate. Older reports must be rerun for the new metrics; an authorized real-photo dataset is still unavailable.
+
+### Fixed — 2026-11-11 Local body-type labels
+
+- Local photo analysis no longer infers physique from head-to-height ratio; body type is reported as unassessed. A manual label is descriptive and does not change sizes or stitches. Existing results retain their original label, with the legacy inference explained in the UI. Diagnostics no longer show an empty API-usage entry.
+- For structured openings, reject standalone closing directives and known generated closure instructions without treating negated or incidental author notes as closure.
+
+### Fixed — 2026-11-11 Subject spans and structural joins
+
+- Map default part proportions through the silhouette's estimated subject extent into image coordinates, then overlay pose measurements and reviewed boxes. Round colours and body profiles use the same spans and can be regenerated from a backup. The low-resolution silhouette remains a heuristic, not part recognition. [MediaPipe pose coordinates](https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/pose.md) are image-normalized, so measured spans are not transformed again.
+- New patterns record whether a connection is open, its joining round, and the one-piece neck round. Assembly, section colours, skirt joins and crochetability use the structured records. Backup schema is now 3; unversioned, version 1 and version 2 patterns retain their legacy interpretation without invented fields, and old project progress remains bound.
+- When an ideal-sphere or egg head ends at six stitches, the finishing note states the actual count and asks for a physical trial instead of also saying not to decrease to six. Stitch counts are unchanged. Cross-gauge ladder-sphere shape is recorded for G4 trials. Export cache is now 23.
+- Evaluation manifests accept JPEG and PNG, matching the upload decoder, and reject WebP during validation instead of recording a guaranteed pipeline error.
+
+### Changed — 2026-11-11 Leaner status documentation
+
+- The bilingual status pages now cover current conclusions, evidence, and gates. Historical per-round records remain accessible at a fixed Git revision. New tests are grouped by module or behavior.
+
 ### Added — 2026-11-11 Replace a grid colour throughout
 
 - Inspired by [SpriteStitcher's whole-pattern replacement](https://github.com/Jesterace/SpriteStitcherv4), the grid editor can replace every cell of one palette colour with another. It shows the source count first and supports undo, redo, and project restore. The unused source stays in the palette with a zero count; a no-op does not create history.

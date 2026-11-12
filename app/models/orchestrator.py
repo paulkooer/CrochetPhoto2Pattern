@@ -74,17 +74,14 @@ class PipelineOrchestrator:
         with trace.stage("geometry"):
             if vision_mode != "mock":
                 geometry = observe_geometry(image, subject=subject)
-        spans, measured_names = None, []
+        measured, measured_names = {}, []
         with trace.stage("pose"):
             try:
                 from .pose import get_body_landmarks, measured_spans
 
                 landmarks = get_body_landmarks(image)
                 if landmarks is not None:
-                    from .color_design import PART_SPAN
-
                     measured = measured_spans(landmarks)
-                    spans = {**PART_SPAN, **measured}
                     measured_names = sorted(measured)
                 else:
                     trace.fallbacks.append("姿态关键点不可用；使用部件分段先验")
@@ -107,6 +104,12 @@ class PipelineOrchestrator:
                 geometry = mock_geometry()
             elif geometry is None:
                 geometry = observe_geometry(image, subject=subject)
+        # Color bands, silhouette profiles, and pose landmarks use image
+        # coordinates. Only the fallback part proportions are subject-relative.
+        from .color_design import resolved_part_spans
+
+        extent = geometry.silhouette.subject_extent if geometry.silhouette else None
+        spans = resolved_part_spans(measured, extent)
         if source == "default":
             trace.fallbacks.append("没有通过检查的头部候选框；比例来自默认模板，请人工确认")
         elif source == "silhouette-head":

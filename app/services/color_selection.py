@@ -10,8 +10,7 @@
    ``vision_meta.color_observation``、``analysis.recommended_colors``）保持原值。
 2. ``MODE_KEEP_STRIPES`` 只改未单独指定的圈；已有圈色来源不明时一律保留。
    ``MODE_UNIFORM`` 由用户明确选择覆盖全部圈与逐份覆盖。
-3. 一体件分段边界只取生成器写下的 ``ONE_PIECE_NECK_MARKER``；标记缺失或不唯一时
-   拒绝操作，不凭文本猜测边界。
+3. 一体件分段边界使用结构化颈部圈；旧图解只接受唯一的生成器标记。
 """
 from __future__ import annotations
 
@@ -25,9 +24,9 @@ from app.models.gauge import gauge_from_result
 from app.models.materials import yarn_requirements
 from app.models.parts import (
     _ONE_PIECE_NAME,
-    ONE_PIECE_NECK_MARKER,
     _part_instance_colors,
     _part_quantity,
+    one_piece_neck_index,
 )
 from app.schemas import PartData, ResultData
 
@@ -70,23 +69,6 @@ def part_index(params: Mapping[str, Any], name: str) -> int:
         if isinstance(part, Mapping) and part.get("name") == name:
             return index
     raise ValueError(f"图解中没有部件「{name}」")
-
-
-def one_piece_neck_index(part: Mapping[str, Any]) -> int | None:
-    """一体件的颈部圈序号，来自生成器写下的唯一标记；无法确定时返回 None。
-
-    边界不可靠时返回 None（而不是猜一个位置）：``MODE_*`` 分段选色随后拒绝操作。
-    """
-    if part.get("name") != _ONE_PIECE_NAME:
-        return None
-    rounds = part.get("rounds") or []
-    marks = [index for index, rd in enumerate(rounds)
-             if isinstance(rd, Mapping) and ONE_PIECE_NECK_MARKER in str(rd.get("notes") or "")]
-    if len(marks) != 1:
-        return None
-    neck = marks[0]
-    # 颈部必须是头部段的末端：后面还有身体段才谈得上分段选色。
-    return neck if neck < len(rounds) - 1 else None
 
 
 def instance_labels(result: ResultData, name: str) -> list[str]:

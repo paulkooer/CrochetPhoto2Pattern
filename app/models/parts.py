@@ -9,9 +9,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from app.utils.counts import integer_count
+
 # 头身一体件：粗略计入两组用线（实际占比取决于配色，可试钩后修正）
 _ONE_PIECE_NAME = "头身（一体）"
-# 一体件颈部圈的说明标记：接裙定位与可钩性检查据此区分头部段和身体段
+# 一体件旧格式的颈部圈说明标记；新图解使用结构化圈号。
 ONE_PIECE_NECK_MARKER = "此处为颈部"
 
 
@@ -26,6 +28,29 @@ def _part_name(part: Mapping[str, Any]) -> str:
 
 def _part_rounds(part: Mapping[str, Any]) -> list[dict[str, Any]]:
     return part.get("rounds", [])
+
+
+def same_round(left: Any, right: Any) -> bool:
+    """Compare row identifiers using the same numeric rules as validation."""
+    try:
+        return integer_count(left) == integer_count(right)
+    except ValueError:
+        return False
+
+
+def one_piece_neck_index(part: Mapping[str, Any]) -> int | None:
+    """Resolve the declared neck, or the unique legacy marker when absent."""
+    if part.get("name") != _ONE_PIECE_NAME:
+        return None
+    rounds = part.get("rounds") or []
+    neck_row = part.get("neck_row")
+    if neck_row is not None:
+        matches = [i for i, rd in enumerate(rounds)
+                   if isinstance(rd, Mapping) and same_round(rd.get("row"), neck_row)]
+    else:
+        matches = [i for i, rd in enumerate(rounds) if isinstance(rd, Mapping)
+                   and ONE_PIECE_NECK_MARKER in str(rd.get("notes") or "")]
+    return matches[0] if len(matches) == 1 and matches[0] < len(rounds) - 1 else None
 
 
 def _part_quantity(part: Mapping[str, Any]) -> int:

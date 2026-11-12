@@ -24,7 +24,8 @@ _GENERATED_CHANGE = re.compile(
 _GENERATED_ALL = re.compile(r"([加减])针×([0-9]+)（([VA]×[0-9]+)，(每针都加|每2针并1针)）")
 _GENERATED_CLOSURE = re.compile(
     r"断线留[0-9]+(?:\.[0-9]+)?cm，穿末圈每针前半针后拉紧(?:（无痕收口）)?藏线头"
-    r"(?:（(?:无痕收口，社区/PlanetJune fastening off 通行技法|勿再减针收成6针，底部会过尖)）)?[。.!！]?"
+    r"(?:（(?:无痕收口，社区/PlanetJune fastening off 通行技法|勿再减针收成6针，底部会过尖|"
+    r"末圈已为6针，底部可能较尖，需试钩确认)）)?[。.!！]?"
 )
 _LOOP_DIRECTIVES = {
     "flo": "FLO", "blo": "BLO",

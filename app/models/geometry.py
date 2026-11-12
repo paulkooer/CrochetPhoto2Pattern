@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import Annotated, Any, Literal, cast
 
 from PIL import Image
@@ -33,6 +34,11 @@ class SilhouetteObservation(BaseModel):
     source: Literal["segmentation_pipeline"] = "segmentation_pipeline"
     # Legacy numeric values remain readable; no probability has been calibrated.
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+
+    @property
+    def subject_extent(self) -> tuple[float, float] | None:
+        """Image-coordinate bounds derived from the existing saved profile."""
+        return profile_extent(self.profile)
 
 
 class BodyRegionObservation(BaseModel):
@@ -302,6 +308,18 @@ def silhouette_profile(image: Image.Image, n_rows: int = 40, *,
     except Exception as exc:
         logger.debug("silhouette extraction failed: %s", exc)
         return None
+
+
+def profile_extent(profile: Sequence[float] | None) -> tuple[float, float] | None:
+    """Occupied rows of a width profile as image fractions (top, bottom).
+
+    Uses the same 8%-of-peak row threshold as flare detection and the local
+    proportion estimate, so every consumer agrees on where the subject is.
+    """
+    rows = [i for i, width in enumerate(profile or []) if width > 0.08]
+    if not rows or not profile:
+        return None
+    return rows[0] / len(profile), (rows[-1] + 1) / len(profile)
 
 
 def has_bottom_flare(profile: list[float]) -> bool:

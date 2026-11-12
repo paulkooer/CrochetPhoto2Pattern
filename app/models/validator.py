@@ -238,6 +238,28 @@ def validate_pattern(params: Mapping[str, Any], *, check_notes: bool = True) -> 
             except ValueError:
                 issues.append(f"{name}：连接开口必须引用部件中存在的整数圈号")
 
+        state = part.get("connection_state")
+        if state not in (None, "open", "closed") or (
+                state == "open" and part.get("opening_row") is None
+                or state == "closed" and part.get("opening_row") is not None):
+            issues.append(f"{name}：连接状态与开口圈不一致")
+        if state == "open" and part.get("opening_row") is not None:
+            from .head_opening import _has_explicit_closure
+            from .parts import same_round
+
+            joining = next((r for r in rounds if isinstance(r, dict)
+                            and same_round(r.get("row"), part["opening_row"])), None)
+            if joining and _has_explicit_closure(joining.get("notes")):
+                issues.append(f"{name}：连接开口圈不能同时要求完全收口")
+        if part.get("neck_row") is not None:
+            try:
+                neck = _integer_count(part["neck_row"])
+                if (name != "头身（一体）" or neck not in seen_rows
+                        or neck == _integer_count(rounds[-1].get("row"))):
+                    raise ValueError("颈部圈无效")
+            except (ValueError, TypeError, AttributeError):
+                issues.append(f"{name}：颈部圈必须引用一体件内、身体段之前的圈号")
+
     if not issues:
         from .head_opening import head_opening_issues
 

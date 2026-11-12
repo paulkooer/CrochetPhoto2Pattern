@@ -36,6 +36,8 @@ Root-level user and community documents are also bilingual:
 
 ## Historical review material / 历史审查材料
 
+- [2026-11-11 系统审查处理记录 / audit disposition (Chinese)](optimization-review-20261111.md)
+
 `archive/audit-brief*.md`, `archive/handoff-review.md`, and
 `archive/optimization-brief.md` are immutable snapshots of earlier review rounds,
 not current operating instructions. They remain in their original Chinese; use
