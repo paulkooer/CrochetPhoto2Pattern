@@ -15,6 +15,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 ### Fixed — 2026-11-11 Local body-type labels
 
 - Local photo analysis no longer infers physique from head-to-height ratio; body type is reported as unassessed. A manual label is descriptive and does not change sizes or stitches. Existing results retain their original label, with the legacy inference explained in the UI. Diagnostics no longer show an empty API-usage entry.
+- For structured openings, reject standalone closing directives and known generated closure instructions without treating negated or incidental author notes as closure.
 
 ### Fixed — 2026-11-11 Subject spans and structural joins
 

@@ -10,7 +10,16 @@ from app.schemas import MAX_ROUND_STITCHES
 from app.utils.counts import integer_count
 
 HEAD_OPENING_KEY: Final = "head_opening_stitches"
-_EXPLICIT_CLOSURE = re.compile(r"(?<![不勿未没别])(?:拉紧收口|无痕收口|完全收口)")
+_EXPLICIT_CLOSURE = re.compile(r"(?:拉紧收口|无痕收口|完全收口|收口)(?:[，,]\s*藏线头?)?[。.!！]?")
+
+
+def _has_explicit_closure(notes: object) -> bool:
+    """Recognize standalone closing instructions, not incidental prose."""
+    from .instruction_checks import _GENERATED_CLOSURE
+
+    clauses = (clause.strip() for clause in re.split(r"[；;。\n]", str(notes or "")))
+    return any(_EXPLICIT_CLOSURE.fullmatch(clause) or _GENERATED_CLOSURE.fullmatch(clause)
+               for clause in clauses)
 
 
 def has_declared_head_opening(part: Mapping[str, Any]) -> bool:
@@ -104,8 +113,10 @@ def head_opening_issues(params: Mapping[str, Any]) -> list[str]:
         if (not same_round(head.get("opening_row"), rows[-1].get("row"))
                 or integer_count(rows[-1]["stitches"]) != target):
             raise ValueError("头部留口必须引用实际末圈，且末圈针数等于保存的留口目标")
-        closure = _EXPLICIT_CLOSURE if head.get("connection_state") == "open" else _CLOSING_RE
-        if closure.search(rows[-1].get("notes") or ""):
+        note = rows[-1].get("notes") or ""
+        closed = (_has_explicit_closure(note) if head.get("connection_state") == "open"
+                  else bool(_CLOSING_RE.search(note)))
+        if closed:
             raise ValueError("头部留口末圈不能同时要求收口")
     except (ValueError, KeyError, IndexError, TypeError) as exc:
         return [f"头部留口：{exc}"]

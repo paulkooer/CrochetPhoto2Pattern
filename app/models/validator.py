@@ -244,12 +244,12 @@ def validate_pattern(params: Mapping[str, Any], *, check_notes: bool = True) -> 
                 or state == "closed" and part.get("opening_row") is not None):
             issues.append(f"{name}：连接状态与开口圈不一致")
         if state == "open" and part.get("opening_row") is not None:
-            from .head_opening import _EXPLICIT_CLOSURE
+            from .head_opening import _has_explicit_closure
             from .parts import same_round
 
             joining = next((r for r in rounds if isinstance(r, dict)
                             and same_round(r.get("row"), part["opening_row"])), None)
-            if joining and _EXPLICIT_CLOSURE.search(str(joining.get("notes") or "")):
+            if joining and _has_explicit_closure(joining.get("notes")):
                 issues.append(f"{name}：连接开口圈不能同时要求完全收口")
         if part.get("neck_row") is not None:
             try:
