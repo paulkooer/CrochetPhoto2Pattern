@@ -419,7 +419,7 @@ def test_joined_part_copy_color_keeps_existing_conservative_progress_rule():
 def test_new_color_assignments_use_new_pattern_version():
     result = _instance(_result())
     data = project_backup(result, {})
-    assert data["schema_version"] == "2"
+    assert data["schema_version"] == "3"
     assert _part(import_backup(data, "restored"), "手臂")["instance_colors"] == ["蓝色", None]
 
 

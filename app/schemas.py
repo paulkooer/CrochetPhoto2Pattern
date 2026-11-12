@@ -170,6 +170,9 @@ class CrochetPart(BaseModel):
     notes: str | None = None
     auto_color_summary: str | None = None
     opening_row: IntegerCount | None = Field(default=None, gt=0)
+    # None means a legacy pattern whose connection state was not recorded.
+    connection_state: Literal["open", "closed"] | None = None
+    neck_row: IntegerCount | None = Field(default=None, gt=0)
     magic_ring: bool = False
     gauge: PartGauge | None = None
     # 部件基础色由用户显式选择时记为 "manual"；旧记录缺失时来源未知。
@@ -195,6 +198,10 @@ class CrochetPart(BaseModel):
             data.pop("color_origin", None)  # Absent means the origin was not recorded.
         if self.color_section_mode is None:
             data.pop("color_section_mode", None)
+        if self.connection_state is None:
+            data.pop("connection_state", None)
+        if self.neck_row is None:
+            data.pop("neck_row", None)
         if self.instance_colors is None or not any(self.instance_colors):
             # A part whose copies share one colour carries no per-copy overrides.
             data.pop("instance_colors", None)
@@ -205,6 +212,13 @@ class CrochetPart(BaseModel):
     def _opening_exists(self):
         if self.opening_row is not None and self.opening_row not in {r.row for r in self.rounds}:
             raise ValueError("连接开口必须引用部件中存在的圈号")
+        if (self.connection_state == "open" and self.opening_row is None
+                or self.connection_state == "closed" and self.opening_row is not None):
+            raise ValueError("连接状态与开口圈不一致")
+        if self.neck_row is not None and (
+                self.name != "头身（一体）"
+                or self.neck_row not in {r.row for r in self.rounds[:-1]}):
+            raise ValueError("颈部圈必须引用一体件内、身体段之前的圈号")
         if self.gauge is not None and self.name not in INDEPENDENT_GAUGE_PARTS:
             raise ValueError("独立密度目前仅支持帽子和独立裙筒")
         if self.instance_colors is not None and len(self.instance_colors) != self.quantity:
@@ -355,7 +369,7 @@ class VisionOutput(BaseModel):
 # result 顶层键集此前在 orchestrator、CLI 两个分支、手动输入、结果页调尺寸、
 # 备份导入共 6 处手写，靠 _BACKUP_KEYS + test_key_sets 维持一致。现在统一为
 # pydantic 模型：share/history 的键集从本模块派生，备份文件携带 schema_version。
-SCHEMA_VERSION = "2"
+SCHEMA_VERSION = "3"
 
 # 备份/分享/历史 blob 的顶层键集（= 会话内 result dict 的运行时键集）。
 # result_id/history_id/title 是会话/存储层字段，不随备份导出；schema_version 由
@@ -547,6 +561,8 @@ class PartData(TypedDict, total=False):
     notes: str | None
     auto_color_summary: str | None
     opening_row: int | None
+    connection_state: Literal["open", "closed"] | None
+    neck_row: int | None
     magic_ring: bool
     gauge: dict[str, float]
     color_origin: Literal["manual"] | None

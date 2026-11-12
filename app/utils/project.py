@@ -45,7 +45,7 @@ def _revision_hash(data: dict) -> str:
 
 
 def _revision_backup(result: Mapping[str, Any], *, canonical: bool = True) -> dict:
-    """Hash v1/v2 under one identity: v2 only adds optional color fields."""
+    """Keep unchanged old patterns bound across optional-field migrations."""
     source_version = result.get("schema_version")
     if source_version is not None and source_version != SCHEMA_VERSION:
         from app.services.migrations import upgrade_result
@@ -54,10 +54,9 @@ def _revision_backup(result: Mapping[str, Any], *, canonical: bool = True) -> di
         backup["schema_version"] = source_version
     else:
         backup = PatternResult.from_result(result).to_backup()
-    # The 1→2 migration changes only the envelope version. Retaining the v1
-    # canonical tag keeps old project progress bound to the unchanged pattern;
-    # new authored color fields still participate fully in the hash.
-    if canonical and backup.get("schema_version") in ("1", "2"):
+    # Both migrations leave old data unchanged. New optional fields still
+    # participate in the hash when present.
+    if canonical and backup.get("schema_version") in ("1", "2", "3"):
         backup["schema_version"] = "1"
     return backup
 

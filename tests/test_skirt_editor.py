@@ -82,6 +82,7 @@ def test_unrecoverable_or_special_instructions_are_not_silently_rewritten(damage
     elif damage == "head_region":
         target = 1
     else:
+        body.pop("neck_row")  # A legacy one-piece pattern has only prose markers.
         for r in body["rounds"]:
             r["notes"] = r["notes"].replace("此处为颈部", "自定义位置")
     snapshot = deepcopy(result)

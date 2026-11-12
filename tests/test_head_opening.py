@@ -133,6 +133,7 @@ def test_close_again_and_noop_preserve_other_authored_parts():
 def test_explicit_manual_opening_without_generation_flag_can_restore_closed_template(declared_row):
     current = regenerate_with_head_opening(reference(), 16)
     current["params"].pop(HEAD_OPENING_KEY)
+    part(current, "头部").pop("connection_state")  # A legacy manually authored opening.
     if not declared_row:
         part(current, "头部")["opening_row"] = None
     at = AppTest.from_string(RENDER, default_timeout=30)

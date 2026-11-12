@@ -45,6 +45,34 @@ PART_SPAN_BY_KIND: dict[PartKind, tuple[float, float]] = {
 PART_SPAN: dict[str, tuple[float, float]] = {
     PART_LABELS_ZH[kind]: span for kind, span in PART_SPAN_BY_KIND.items()}
 
+
+def resolved_part_spans(
+    known: Mapping[str, Any] | None,
+    subject_extent: tuple[float, float] | None,
+) -> dict[str, Any] | None:
+    """Image-coordinate spans for every part: ``known`` values over the mapped prior.
+
+    The prior is a share of the *subject*, while color bands and the width
+    profile are sampled in *image* coordinates. A subject that fills only part
+    of the frame therefore needs the prior mapped into the rows it occupies;
+    otherwise a doll in the lower half has its head colours assigned to the body.
+    ``known`` holds pose-measured or user-reviewed spans, which are already image
+    coordinates and are kept as given. Without a measured extent the legacy
+    behaviour is preserved: ``None`` when nothing is known (callers then use the
+    unmapped prior), otherwise the unmapped prior under the known values.
+    """
+    if subject_extent is None:
+        return {**PART_SPAN, **known} if known else None
+    top, bottom = subject_extent
+    height = bottom - top
+    mapped: dict[str, Any] = {
+        name: (round(top + start * height, 4), round(top + end * height, 4))
+        for name, (start, end) in PART_SPAN.items()
+    }
+    mapped.update(known or {})
+    return mapped
+
+
 _BG_DIST_THRESHOLD = 48  # 与背景色的欧氏距离超过此值视为主体像素
 
 

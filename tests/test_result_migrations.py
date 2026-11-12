@@ -47,7 +47,7 @@ def test_unversioned_records_are_labelled_without_touching_the_input():
     assert data == before
 
 
-@pytest.mark.parametrize("version", ["3", "999", UNVERSIONED, "", 1, 1.0, True, ["1"], {"v": "1"}])
+@pytest.mark.parametrize("version", ["4", "999", UNVERSIONED, "", 1, 1.0, True, ["1"], {"v": "1"}])
 def test_newer_unknown_and_malformed_versions_are_refused(version):
     data = {**_mock_result("future"), "schema_version": version}
     with pytest.raises(UnsupportedFormatError, match="不支持的图解格式版本") as caught:
@@ -96,7 +96,7 @@ def test_share_links_and_history_refuse_newer_formats(caplog):
     from app.utils import history, share
 
     small = {"analysis": {"body_type": "标准"}, "structure": {"parts": []}, "params": {"parts": []}}
-    assert share.decode_result(_token({**small, "schema_version": "3"})) is None
+    assert share.decode_result(_token({**small, "schema_version": "4"})) is None
     decoded = share.decode_result(_token(small))
     assert decoded == {**small, "schema_version": SCHEMA_VERSION}
 
@@ -105,6 +105,6 @@ def test_share_links_and_history_refuse_newer_formats(caplog):
     with history._connection() as conn:
         blob = json.loads(conn.execute("SELECT blob FROM patterns WHERE rid = ?", (rid,)).fetchone()[0])
         conn.execute("UPDATE patterns SET blob = ? WHERE rid = ?",
-                     (json.dumps({**blob, "schema_version": "3"}), rid))
+                     (json.dumps({**blob, "schema_version": "4"}), rid))
     assert history.load_result(rid) is None
     assert "不支持的图解格式版本" in caplog.text

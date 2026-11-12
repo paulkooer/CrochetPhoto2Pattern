@@ -58,6 +58,7 @@ uv run --locked --extra dev --extra pose pytest -q
 - 一个 PR 聚焦一个可以独立审查的目标。
 - 说明用户可见变化、风险、验证命令和结果；UI 变化附脱敏截图。
 - 新行为带测试，修复缺陷先覆盖可复现案例。
+- 新增测试按所覆盖的模块或行为命名并归档，避免以审查轮次命名新测试文件。
 - 若改变功能、安装、隐私、数据格式或发布门禁，同步更新 README、相关 `docs/`、
   `CHANGELOG.md` 或 `docs/system-status.zh-CN.md`。
 - 确保 `git diff --check` 通过，且没有无关生成文件和本机路径。
