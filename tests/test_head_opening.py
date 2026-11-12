@@ -47,13 +47,13 @@ def reference(mode="ladder"):
 def test_reference_head_opens_at_exact_sixteen_with_executable_transition():
     current = reference()
     snapshot = deepcopy(current)
-    assert len(part(current, "头部")["rounds"]) == 26
+    closed_rows = len(part(current, "头部")["rounds"])
     updated = regenerate_with_head_opening(current, 16)
     head = part(updated, "头部")
     assert current == snapshot
     assert max(row["stitches"] for row in head["rounds"]) == 54
-    assert len(head["rounds"]) == 25  # A generated variant, not a copy of a 26-round source pattern.
-    assert head["opening_row"] == head["rounds"][-1]["row"] == 25
+    assert len(head["rounds"]) < closed_rows
+    assert head["opening_row"] == head["rounds"][-1]["row"] == len(head["rounds"])
     previous, last = head["rounds"][-2:]
     assert (previous["stitches"], last["stitches"], last["decrease"]) == (18, 16, 2)
     assert last["notes"].startswith("(7X,A)×2")
@@ -62,7 +62,8 @@ def test_reference_head_opens_at_exact_sixteen_with_executable_transition():
     assert not _CLOSING_RE.search(last["notes"])
     assert _openings_by_part(updated["params"]["parts"])["头部"] == 16
     assert part(updated, "手臂") == part(current, "手臂")
-    assert updated["params"]["total_stitches"] == current["params"]["total_stitches"] - 2
+    removed = sum(row["stitches"] for row in part(current, "头部")["rounds"][len(head["rounds"]) - 1:])
+    assert updated["params"]["total_stitches"] == current["params"]["total_stitches"] - removed + 16
     require_valid_pattern(updated["params"])
 
 
@@ -217,14 +218,14 @@ def test_numeric_string_intent_normalizes_before_rendering_and_assembly_is_curre
     restored = import_backup(current, "opened")
     assert restored["params"][HEAD_OPENING_KEY] == 16
     assembly = restored["params"]["assembly_instructions"]
-    assert "第 25 圈颈口（16 针）" in assembly
+    assert f"第 {part(restored, '头部')['opening_row']} 圈颈口（16 针）" in assembly
     body = part(restored, "身体")
     assert f"第 {body['rounds'][-1]['row']} 圈开口（{body['rounds'][-1]['stitches']} 针）" in assembly
     assert "两侧针数不同" in assembly
     markdown = export_markdown(current["params"], result=current)
     assert "stale closed" not in markdown
-    assert "连接开口**：第 25 圈 · 16 针" in markdown
-    assert "第 25 圈颈口（16 针）" in markdown
+    assert f"连接开口**：第 {part(current, '头部')['opening_row']} 圈 · 16 针" in markdown
+    assert f"第 {part(current, '头部')['opening_row']} 圈颈口（16 针）" in markdown
 
 
 def test_pdf_uses_real_opening_row_and_count(monkeypatch):
@@ -237,8 +238,9 @@ def test_pdf_uses_real_opening_row_and_count(monkeypatch):
     monkeypatch.setattr(platypus, "Paragraph", paragraph)
     current = regenerate_with_head_opening(reference(), 16)
     assert export_pdf(current["params"], result=current).startswith(b"%PDF-")
-    assert any("连接开口：第 25 圈 · 16 针" in text for text in texts)
-    assert any("第 25 圈颈口（16 针）" in text for text in texts)
+    opening_row = part(current, "头部")["opening_row"]
+    assert any(f"连接开口：第 {opening_row} 圈 · 16 针" in text for text in texts)
+    assert any(f"第 {opening_row} 圈颈口（16 针）" in text for text in texts)
 
 
 def test_preview_apply_undo_redo_and_project_restore_keep_unrelated_work():

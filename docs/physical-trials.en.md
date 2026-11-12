@@ -283,12 +283,16 @@ The tool does not yet model maker speed, stitch type, stuffing tension, fibre mo
 or dye-lot variation. Larger samples should be stratified by maker, yarn/hook, and pattern
 complexity instead of collapsed into one constant.
 
-Include ladder-sphere heads in G4 calibration: their round count follows the maximum
-circumference in stitches and does not directly adjust the constant section for row height.
-Generate the same target head diameter with different stitch-width/row-height ratios, then
-measure the finished width and height while recording yarn and stuffing. Comparing round count
-times row height with an ideal sphere's meridian is only a screening estimate, not a physical
-measurement. Ideal-sphere and egg quantization can also end at six stitches; test their shape.
+Include ladder-sphere heads in G4 calibration: new patterns estimate round count from stitch
+width and row height, then distribute changes of at most six stitches along a sphere profile.
+Extreme gauges can require more rounds than the model target and receive a part-level warning.
+Generate the same target diameter at different gauge ratios, then measure finished width and
+height while recording yarn and stuffing. The meridian and profile are screening models, not
+measurements or proof of a round finished object. Existing backups keep their old rounds until
+regenerated. Ideal-sphere and egg quantization can also end at six stitches; test their shape.
+[Crochet Sphere Calculator](https://bookworm3x4.github.io/crochet-sphere-calculator/sphere.html)
+also distinguishes stitch and row gauge; its author notes that its discrete-round model
+does not establish the result of spiral rounds.
 
 ## 5. External trial evidence
 

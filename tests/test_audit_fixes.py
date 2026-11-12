@@ -127,9 +127,13 @@ def test_one_piece_height_excludes_closure_disc():
     params = _gen(one_piece=True)
     one = [p for p in params["parts"] if p["type"] == "onepiece"][0]
     sts = [r["stitches"] for r in one["rounds"]]
-    # 默认 ladder 配置的确定口径：axial = 头部到颈 14 圈 + 筒壁 8 圈 = 22；
-    # 总 27 圈末尾的收口盘（径向）不计高
-    assert (len(sts), one["height_cm"]) == (27, 13.8)
+    # 最末一串减针构成底部收口盘，不计入轴向高度。
+    start = len(sts) - 1
+    while start > 0 and sts[start - 1] > sts[start]:
+        start -= 1
+    closure_rounds = len(sts) - start - 1
+    assert closure_rounds > 0
+    assert one["height_cm"] == round((len(sts) - closure_rounds) * 0.625, 1)
     assert one["height_cm"] < len(sts) * 0.625
 
 

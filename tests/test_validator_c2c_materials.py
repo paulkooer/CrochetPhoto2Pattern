@@ -127,11 +127,14 @@ def test_validator_downgrades_mixed_inc_dec_to_notes():
     7X,7V,A,7V,7X：30→43）——可钩，降级为 notes 而非硬错误。"""
     params = _params()
     pd = params["parts"][0]
-    pd["rounds"][8]["increase"] = 6
-    pd["rounds"][8]["decrease"] = 6
+    rounds = pd["rounds"]
+    stable = next(current for previous, current in zip(rounds, rounds[1:], strict=False)
+                  if current["stitches"] == previous["stitches"] and current["stitches"] >= 12)
+    stable["increase"] = 6
+    stable["decrease"] = 6
     # The original generated prose says no increases/decreases; keep the fixture
     # consistent so this test isolates support for mixed shaping.
-    pd["rounds"][8]["notes"] = "本圈混用 6 个加针和 6 个减针，位置按记号安排"
+    stable["notes"] = "本圈混用 6 个加针和 6 个减针，位置按记号安排"
     v = validate_pattern(params)
     assert v["ok"], v["issues"]
     assert any("混用加针" in n for n in v["notes"])
