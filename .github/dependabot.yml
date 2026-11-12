@@ -1,12 +1,21 @@
 version: 2
 updates:
-  # uv 生态自 2025-12 起官方支持：同时更新 pyproject.toml 与 uv.lock
-  # （pip 生态对 uv 项目存在"改 pyproject 不重建 lock"的已知问题）
+  # uv 同步更新 pyproject.toml 与 uv.lock。
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      python-minor-patch:
+        applies-to: "version-updates"
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      actions-minor-patch:
+        applies-to: "version-updates"
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
