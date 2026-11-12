@@ -31,23 +31,36 @@ def test_tiny_face_candidate_is_not_clamped_into_plausible_proportions(monkeypat
     assert analysis.parts == ["头部", "身体", "手臂", "腿部"]
 
 
-def test_mid_ratio_is_standard_build(monkeypatch):
+def test_mid_ratio_does_not_guess_body_type(monkeypatch):
     monkeypatch.setattr("app.models.local_vision._detect_face",
                         lambda _img: (70, 30, 60, 60))
     analysis, meta = analyze(_img(200, 400))
-    # 360/(60×1.5) = 4.0 → 标准
+    # 360/(60×1.5) = 4.0, which says nothing about body fat.
     assert meta["body_ratio"] == 4.0
-    assert analysis.body_type == "标准"
+    assert analysis.body_type == "未评估"
     assert analysis.height_cm == 36.0
 
 
-def test_big_head_ratio_is_chubby(monkeypatch):
-    """大头照（头占画面 1/3）→ 胖（Q 版）。"""
+def test_big_head_does_not_imply_chubby_body(monkeypatch):
+    """A large head-to-height ratio is not a body-type classification."""
     monkeypatch.setattr("app.models.local_vision._detect_face",
                         lambda _img: (50, 40, 100, 100))
     analysis, meta = analyze(_img(200, 400))
     assert meta["body_ratio"] == 2.4  # 360/(100×1.5)
-    assert analysis.body_type == "胖"
+    assert analysis.body_type == "未评估"
+
+
+def test_body_type_label_does_not_change_generated_stitches(monkeypatch):
+    from app.models.crochet_params import CrochetParamsGenerator
+    from app.models.structure_designer import StructureDesigner
+
+    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _img: (70, 30, 60, 60))
+    analysis, _ = analyze(_img())
+    structure = StructureDesigner.design_3d_structure(analysis)
+    normal = CrochetParamsGenerator.generate_params(analysis, structure)
+    relabeled = CrochetParamsGenerator.generate_params(
+        analysis.model_copy(update={"body_type": "胖"}), structure)
+    assert relabeled == normal
 
 
 def test_min_ratio_clamped(monkeypatch):
@@ -64,7 +77,7 @@ def test_no_face_falls_back_to_defaults(monkeypatch):
     analysis, meta = analyze(_img())
     assert meta["source"] == "default"
     assert analysis.height_cm == 18.0
-    assert analysis.body_type == "标准"
+    assert analysis.body_type == "未评估"
     assert "未检出人脸" in analysis.main_features[0]
 
 
@@ -94,7 +107,7 @@ def test_parse_image_local_records_meta(monkeypatch):
                         lambda _img: (70, 30, 60, 60))
     parser = ImageParser()
     result = parser.parse_image_local(_img())
-    assert result.body_type == "标准"
+    assert result.body_type == "未评估"
     assert parser.last_local_meta["body_ratio"] == 4.0
     assert parser.last_local_meta["source"] == "opencv-face"
 
@@ -111,7 +124,7 @@ def test_full_pipeline_local_vision_mode(monkeypatch):
         "sizing", "geometry", "generator_version", "diagnostics",
     }
     assert result["gauge"]["stitches_per_10cm"] > 0  # gauge 透传（M4.15）
-    assert result["analysis"]["body_type"] == "标准"
+    assert result["analysis"]["body_type"] == "未评估"
     assert [p["name"] for p in result["params"]["parts"]] == ["头部", "身体", "手臂", "腿部"]
     assert result["vision_meta"]["source"] == "opencv-face"
     assert result["usage"] == {}  # 无 LLM 调用

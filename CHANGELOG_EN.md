@@ -8,6 +8,15 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Added — 2026-11-11 Review-hint evaluation
+
+- Evaluation report schema 5 measures precision/recall, TP/FP/FN and unavailable cases for ear, skirt and tail review prompts. Missing or non-boolean hints and pipeline failures are not treated as negatives. These metrics do not change delivery or the G3 gate. Older reports must be rerun for the new metrics; an authorized real-photo dataset is still unavailable.
+
+### Fixed — 2026-11-11 Local body-type labels
+
+- Local photo analysis no longer infers physique from head-to-height ratio; body type is reported as unassessed. A manual label is descriptive and does not change sizes or stitches. Existing results retain their original label, with the legacy inference explained in the UI. Diagnostics no longer show an empty API-usage entry.
+- For structured openings, reject standalone closing directives and known generated closure instructions without treating negated or incidental author notes as closure.
+
 ### Fixed — 2026-11-11 Subject spans and structural joins
 
 - Map default part proportions through the silhouette's estimated subject extent into image coordinates, then overlay pose measurements and reviewed boxes. Round colours and body profiles use the same spans and can be regenerated from a backup. The low-resolution silhouette remains a heuristic, not part recognition. [MediaPipe pose coordinates](https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/pose.md) are image-normalized, so measured spans are not transformed again.

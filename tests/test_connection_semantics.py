@@ -92,6 +92,36 @@ def test_opening_with_explicit_full_closure_instruction_is_rejected():
         require_valid_pattern(result["params"])
 
 
+@pytest.mark.parametrize("comment", ["不要无痕收口，保留开口缝合", "不要拉紧收口，留给身体缝合",
+                                     "作者备注：是否完全收口仍需确认", "先收口一半再缝",
+                                     "不要无痕收口。保留开口缝合"])
+def test_opening_prose_does_not_override_structured_connection(comment):
+    result = _result()
+    arm = next(p for p in result["params"]["parts"] if p["name"] == "手臂")
+    arm["rounds"][-1]["notes"] += f"；{comment}"
+    require_valid_pattern(result["params"])
+    restored = import_backup(PatternResult.from_result(result).to_backup(), "open-arm")
+    assert _openings_by_part(restored["params"]["parts"])["手臂"] == arm["rounds"][-1]["stitches"]
+
+
+def test_generated_closure_instruction_conflicts_with_structured_opening():
+    result = _result()
+    arm = next(p for p in result["params"]["parts"] if p["name"] == "手臂")
+    head = next(p for p in result["params"]["parts"] if p["name"] == "头部")
+    finishing = head["rounds"][-1]["notes"].split("；", 1)[1]
+    arm["rounds"][-1]["notes"] += f"；{finishing}"
+    with pytest.raises(ValueError, match="不能同时要求完全收口"):
+        require_valid_pattern(result["params"])
+
+
+def test_standalone_closure_sentence_conflicts_with_structured_opening():
+    result = _result()
+    arm = next(p for p in result["params"]["parts"] if p["name"] == "手臂")
+    arm["rounds"][-1]["notes"] += "；作者补充。无痕收口。"
+    with pytest.raises(ValueError, match="不能同时要求完全收口"):
+        require_valid_pattern(result["params"])
+
+
 @pytest.mark.parametrize("damage", ["state", "opening", "neck"])
 def test_inconsistent_structural_references_are_rejected(damage):
     result = _result(one_piece=damage == "neck")

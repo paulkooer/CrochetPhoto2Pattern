@@ -66,6 +66,15 @@ def test_reference_head_opens_at_exact_sixteen_with_executable_transition():
     require_valid_pattern(updated["params"])
 
 
+def test_open_head_accepts_explicitly_negated_closure_in_author_note():
+    current = regenerate_with_head_opening(reference(), 16)
+    head = part(current, "头部")
+    head["rounds"][-1]["notes"] += "；不要拉紧收口，保留开口缝合"
+    require_valid_pattern(current["params"])
+    restored = import_backup(PatternResult.from_result(current).to_backup(), "open-head")
+    assert _openings_by_part(restored["params"]["parts"])["头部"] == 16
+
+
 @pytest.mark.parametrize("mode", ["ladder", "ideal", "egg"])
 @pytest.mark.parametrize("target", [6, 7, 16, 18, "maximum"])
 def test_shape_modes_keep_exact_opening_and_executable_round_counts(mode, target):

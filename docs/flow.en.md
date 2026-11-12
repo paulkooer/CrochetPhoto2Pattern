@@ -11,7 +11,8 @@ photo upload
    ↓
 2. local geometry and template suggestions
    geometry: versioned width profile, flare, uncalibrated provenance, single-view limitations
-   semantics: body type, parts, features, pose, relative proportions, difficulty
+   templates and observations: parts, features, pose, relative proportions, difficulty;
+   body type is not assessed
    ↓
 3. human review (Photo UI): head box/proportion and parts; local generation
    then target-size transform
@@ -31,6 +32,9 @@ photo upload
    ↓
 deterministic validation → JSON/UI → corrections → downloads/backups
 ```
+
+Local photo analysis does not infer physique from head-to-height ratio. A body-type label
+entered manually or retained from an old result is descriptive and does not change sizes or stitches.
 
 Entity quantities drive total stitches, materials, time, and progress. StructureGeometry
 v2 attachments are projected into `assembly_plan`; legacy name-based assembly is used

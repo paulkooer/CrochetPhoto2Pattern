@@ -28,10 +28,11 @@ from app.utils.images import MAX_UPLOAD_MB, load_image_bytes, load_image_file
 
 MANIFEST_NAME = "eval_manifest.json"
 MANIFEST_SCHEMA_VERSION = Literal[2]
-REPORT_SCHEMA_VERSION = 4
+REPORT_SCHEMA_VERSION = 5
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
 ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png"})
+REVIEW_HINT_FLAGS = {"耳朵": "possible_ears", "裙子": "possible_skirt", "尾巴": "possible_tail"}
 
 EvaluationRunner = Callable[[Image.Image], Mapping[str, Any]]
 
@@ -354,6 +355,32 @@ def _mean(values: list[float]) -> float | None:
     return round(sum(values) / len(values), 4) if values else None
 
 
+def _review_hints(result: Mapping[str, Any] | None) -> dict[str, bool | None]:
+    """Read only explicit hint flags; missing evidence is not a negative hint."""
+    meta = result.get("vision_meta") if result is not None else None
+    if not isinstance(meta, Mapping):
+        meta = {}
+    values = {name: meta.get(flag) for name, flag in REVIEW_HINT_FLAGS.items()}
+    return {name: value if type(value) is bool else None for name, value in values.items()}
+
+
+def _review_hint_metrics(cases: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Score optional review prompts against labeled parts, outside release gates."""
+    metrics: dict[str, dict[str, Any]] = {}
+    for name in REVIEW_HINT_FLAGS:
+        observed = [case for case in cases if case["review_hints"][name] is not None]
+        tp = sum(case["review_hints"][name] and name in case["expected_parts"] for case in observed)
+        fp = sum(case["review_hints"][name] and name not in case["expected_parts"] for case in observed)
+        fn = sum(not case["review_hints"][name] and name in case["expected_parts"] for case in observed)
+        metrics[name] = {
+            "observed_cases": len(observed), "unavailable_cases": len(cases) - len(observed),
+            "true_positives": tp, "false_positives": fp, "false_negatives": fn,
+            "precision": round(tp / (tp + fp), 4) if tp + fp else None,
+            "recall": round(tp / (tp + fn), 4) if tp + fn else None,
+        }
+    return metrics
+
+
 def _application_version() -> str:
     try:
         return version("crochet-photo2pattern")
@@ -485,6 +512,7 @@ def evaluate_dataset(
                 "tags": case.tags,
                 "expected_parts": sorted(expected_parts),
                 "actual_parts": sorted(actual_parts),
+                "review_hints": _review_hints(result),
                 "part_precision": round(precision, 4),
                 "part_recall": round(recall, 4),
                 "part_f1": round(part_f1, 4),
@@ -526,6 +554,7 @@ def evaluate_dataset(
                 "tags": case.tags,
                 "expected_parts": sorted(expected_parts),
                 "actual_parts": [],
+                "review_hints": _review_hints(None),
                 "part_precision": 0.0,
                 "part_recall": 0.0,
                 "part_f1": 0.0,
@@ -680,6 +709,7 @@ def evaluate_dataset(
             "cases": len(case_reports),
             "tag_counts": dict(sorted(tag_counts.items())),
             "pipeline_errors": pipeline_errors,
+            "review_hint_metrics": _review_hint_metrics(case_reports),
             "macro_part_f1": macro_part_f1,
             "case_pass_rate": case_pass_rate,
             "flare_labeled_cases": len(flare_matches),

@@ -248,5 +248,8 @@ def render_photo_review(draft: PhotoDraft, key: str, *, gauge, style,
         st.error(f"检查或生成失败：{md_safe(exc)}")
         if run_trace is not None:
             with st.expander("本次生成失败的诊断"):
-                st.json({"diagnostics": run_trace.payload(), "usage": draft.usage})
+                details = {"diagnostics": run_trace.payload()}
+                if draft.usage:
+                    details["usage"] = draft.usage
+                st.json(details)
     return None

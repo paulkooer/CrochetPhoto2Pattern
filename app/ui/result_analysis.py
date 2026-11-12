@@ -112,7 +112,8 @@ def render_analysis(result: ResultData) -> None:
     section_heading(1, "人物与比例")
     col_a, col_b = st.columns(2)
     with col_a:
-        st.metric("体型", analysis["body_type"])
+        st.metric("体型", analysis["body_type"],
+                  help="此标签仅供记录，不影响尺寸或针数；本地照片分析不判断胖瘦。")
         st.metric("难度", difficulty_label(analysis["difficulty"]),
                   help="难度档按 CYC（Craft Yarn Council）Project Levels 官方"
                        "定义对齐：Basic=基础针法+基础加减针；Easy=简单配色/"
@@ -137,6 +138,9 @@ def render_analysis(result: ResultData) -> None:
         st.caption(f"📏 {md_safe(sizing['note'])}")
     geometry = result.get("geometry") or {}
     vmeta = result.get("vision_meta") or {}
+    if (vmeta.get("source") in ("opencv-face", "silhouette-head", "default")
+            and analysis.get("body_type") in ("胖", "瘦", "标准")):
+        st.caption("旧版本地照片结果的体型标签可能按头身比例估算，不能据此判断胖瘦，也不影响图解。")
     from app.utils.provenance import (
         confirmed_analysis_review,
         has_consistent_head_box,
@@ -200,7 +204,10 @@ def render_analysis(result: ResultData) -> None:
             st.caption("部分请求未返回用量；以上合计不代表完整账单，失败与重试也可能计费。")
         if result.get("diagnostics") or usage.get("attempts"):
             st.caption("运行耗时与回退原因（耗时只计运行阶段，不含人工确认停留时间；预算在阶段边界检查）：")
-            st.json({"diagnostics": result.get("diagnostics", {}), "api_usage": usage})
+            details = {"diagnostics": result.get("diagnostics", {})}
+            if usage:
+                details["api_usage"] = usage
+            st.json(details)
 
         # 解析来源透明展示：AI（LLM）/ 本地估算 / Mock 三类（vision_meta）
         if confirmed_analysis_review(vmeta):

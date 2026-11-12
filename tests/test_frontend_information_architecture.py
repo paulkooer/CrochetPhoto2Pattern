@@ -21,6 +21,18 @@ render_results(st.session_state.result, "result")
 """
 
 
+def test_legacy_local_body_label_is_explained_without_changing_the_saved_value():
+    result = _mock_result("legacy-physique")
+    result["analysis"]["body_type"] = "胖"
+    result["vision_meta"] = {"source": "opencv-face"}
+    at = AppTest.from_string(_RENDER, default_timeout=30)
+    at.session_state["result"] = deepcopy(result)
+    at.run()
+    assert not at.exception
+    assert any("旧版本地照片结果的体型标签" in caption.value for caption in at.caption)
+    assert at.session_state["result"]["analysis"]["body_type"] == "胖"
+
+
 def _outline(block) -> list[tuple[str, object]]:
     """Flat, in-order (type, label-or-key-or-value) pairs for a block's subtree."""
     items: list[tuple[str, object]] = []
