@@ -1,8 +1,10 @@
-"""Review hints are observable without changing the delivery release gate."""
+"""Hints are scored separately from the runner's actual delivered parts."""
+import hashlib
 import json
 
 from app.evaluation import evaluate_dataset
 from tests.test_evaluation import _case, _manifest, _valid_result, _write_image
+from tests.test_local_vision import _person
 
 
 def test_review_hint_precision_recall_and_unavailable_cases(tmp_path):
@@ -47,7 +49,7 @@ def test_review_hint_precision_recall_and_unavailable_cases(tmp_path):
     assert report["cases"][4]["review_hints"] == {"耳朵": None, "裙子": None, "尾巴": None}
 
 
-def test_hints_neither_change_delivered_parts_nor_the_existing_gates(tmp_path):
+def test_evaluator_does_not_infer_delivery_from_custom_runner_hints(tmp_path):
     digest = _write_image(tmp_path / "one.png", (1, 2, 3))
     case = _case("one", "one.png", digest, ["头部", "耳朵"], flare=False, colors=["蓝色"])
     (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest([case])), encoding="utf-8")
@@ -65,3 +67,24 @@ def test_hints_neither_change_delivered_parts_nor_the_existing_gates(tmp_path):
     assert with_hint["summary"]["passed"] == without_hint["summary"]["passed"]
     assert with_hint["summary"]["review_hint_metrics"]["耳朵"]["recall"] == 1.0
     assert without_hint["summary"]["review_hint_metrics"]["耳朵"]["recall"] == 0.0
+
+
+def test_default_automatic_runner_can_exceed_the_fixed_template(tmp_path, monkeypatch):
+    """A synthetic skirt exercises actual delivery, not a hint counted as delivery."""
+    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _img: None)
+    monkeypatch.setattr("app.models.pose.get_body_landmarks", lambda _img: None)
+    image_path = tmp_path / "dress.png"
+    _person(dress=True).save(image_path)
+    digest = hashlib.sha256(image_path.read_bytes()).hexdigest()
+    expected = ["头部", "身体", "手臂", "腿部", "裙子"]
+    case = _case("dress", "dress.png", digest, expected, flare=True)
+    (tmp_path / "eval_manifest.json").write_text(json.dumps(_manifest([case])), encoding="utf-8")
+
+    report = evaluate_dataset(tmp_path)
+    assert report["evaluator"]["part_selection"] == "automatic_contour_candidates"
+    assert report["cases"][0]["actual_parts"] == sorted(expected)
+    assert report["cases"][0]["delivery_consistent"] is True
+    assert report["summary"]["macro_part_f1"] == 1.0
+    assert report["release_readiness"]["quality_metrics"]["fixed_template_macro_f1"] < 1.0
+    # One synthetic image is not release evidence, regardless of its F1.
+    assert report["release_readiness"]["automated_passed"] is False

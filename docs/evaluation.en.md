@@ -88,18 +88,20 @@ readiness separately from `summary.passed` quality metrics.
 > to translate completely, and `parade_complete_rate` still reports the strict rate. Once a
 > faithful chain-ring start lands, these parts should export completely again.
 >
-> The default local runner always delivers the fixed head/body/arms/legs template and never
-> delivers a skirt automatically. The review page may show a contour head, ears, a hem flare
-> or a one-sided lower bump as hints, but it does not preselect them or write them into
-> `analysis.parts` before confirmation. Its delivered macro F1 cannot strictly exceed the same
-> template baseline and its delivered skirt recall is zero. Better hints alone cannot satisfy
-> either condition. The policy for assessing human-confirmed delivery remains undecided; the
-> current gate is unchanged.
+> The default runner shares the noninteractive CLI's automatic delivery path: four template
+> parts plus detected contour candidates for ears, skirt and tail. Explicit `--parts` wins.
+> The heuristics are uncalibrated on real photos and may produce false positives or misses;
+> they are not high-confidence predictions. The Photo review draft still leaves hints
+> unchecked, and its reviewed result is not mixed into this automatic evaluation.
+> Scoring reads actual delivered `params.parts` and checks agreement across the pipeline.
+> Gate thresholds are unchanged. A synthetic improvement does not establish real-photo
+> accuracy or a release pass.
 
 `release_approved` remains false: photo authenticity, labels, rights evidence and physical
 trials require review.
 
-Report schema 5 adds non-gating review-hint metrics. Release policy remains 3 and the input
+Report schema 6 records automatic contour selection in `evaluator.part_selection` (`null`
+for custom runners). Schema 5 added non-gating review-hint metrics. Release policy remains 3 and the input
 manifest remains 2. Schema 4 added the crochetability rate and reports declared Parade
 constructions separately; rerun older reports to obtain new metrics. The default runner uses the product's
 Q proportion style, recorded in `evaluator.proportion_style` (`null` for custom runners). The
@@ -145,8 +147,9 @@ uv run pytest -q tests/test_eval_real.py
   versus unavailable case counts for review-page prompts, compared with `expected.parts`.
   Missing or non-boolean flags and pipeline failures are unavailable, not negative predictions;
   a zero denominator produces `null`. `cases[].review_hints` retains per-case values. These
-  measure the prompt only and do not change delivered parts, case pass rate or the G3 gate;
-  interpret them alongside unavailable counts and dataset coverage.
+  score the prompt separately and do not themselves alter delivery or the G3 gate. The
+  default automatic runner can turn hints into delivered parts before scoring. Interpret
+  them alongside unavailable counts and dataset coverage.
 - `macro_part_f1`: macro-average per-image part-set F1; penalizes omissions and extras.
 - `case_pass_rate`: rate of cases meeting part recall, annotated flare/color checks, and
   deterministic pattern validation.

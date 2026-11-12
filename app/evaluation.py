@@ -28,7 +28,7 @@ from app.utils.images import MAX_UPLOAD_MB, load_image_bytes, load_image_file
 
 MANIFEST_NAME = "eval_manifest.json"
 MANIFEST_SCHEMA_VERSION = Literal[2]
-REPORT_SCHEMA_VERSION = 5
+REPORT_SCHEMA_VERSION = 6
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_CASES = 500
 ALLOWED_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png"})
@@ -306,6 +306,7 @@ def _default_local_runner() -> EvaluationRunner:
 
     def _run(image: Image.Image) -> ResultData:
         # 可钩性在报告里逐例统计；门禁抛错会把整例记为管线错误，丢掉其他指标。
+        # 与无交互 CLI 共用自动候选交付；评测只计实际生成的部件。
         return orchestrator.run_full_pipeline(
             image,
             vision_mode="local",
@@ -701,6 +702,7 @@ def evaluate_dataset(
             "network_images_sent": False,
             # 默认运行器按产品默认的头身比例风格生成；自定义运行器自行决定
             "proportion_style": None if runner is not None else DEFAULT_PROPORTION_STYLE,
+            "part_selection": None if runner is not None else "automatic_contour_candidates",
         },
         "release_readiness": readiness,
         "dataset": manifest.dataset.model_dump(mode="json"),

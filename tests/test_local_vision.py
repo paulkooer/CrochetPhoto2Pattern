@@ -1,4 +1,5 @@
 """Tests for the no-LLM local vision path (app/models/local_vision.py)."""
+import pytest
 from PIL import Image
 
 from app.models.image_parser import ImageParser
@@ -298,6 +299,72 @@ def test_ear_and_tail_hints_do_not_enter_the_part_list(monkeypatch):
     assert tailed_meta["possible_ears"] is False
     assert tailed_meta["possible_skirt"] is False
     assert "尾巴" not in tailed.parts
+
+
+def test_missing_contour_observations_are_unavailable_not_negative(monkeypatch):
+    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _img: None)
+    _, meta = analyze(_img(), geometry_profile=None, geometry_observed=True)
+    assert meta["possible_ears"] is None
+    assert meta["possible_skirt"] is None
+    assert meta["possible_tail"] is None
+
+
+@pytest.mark.parametrize(("image_factory", "flag", "part"), [
+    (lambda: _person(dress=True), "possible_skirt", "裙子"),
+    (_eared_doll, "possible_ears", "耳朵"),
+    (_tailed_doll, "possible_tail", "尾巴"),
+])
+def test_headless_pipeline_delivers_automatic_contour_candidates(monkeypatch, image_factory, flag, part):
+    """Automatic delivery and the review draft share evidence, not review status."""
+    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _img: None)
+    monkeypatch.setattr("app.models.pose.get_body_landmarks", lambda _img: None)
+    image = image_factory()
+    pipeline = PipelineOrchestrator()
+    draft = pipeline.prepare_photo(image)
+    assert draft.vision_meta[flag] is True
+    assert part not in draft.analysis.parts  # interactive review remains explicit
+
+    result = pipeline.run_full_pipeline(image, enforce_crochetability=False)
+    assert part in result["analysis"]["parts"]
+    assert part in {item["name"] for item in result["structure"]["parts"]}
+    assert part in {item["name"] for item in result["params"]["parts"]}
+    assert result["vision_meta"]["parts_source"] == "automatic_contour"
+    assert part in result["vision_meta"]["automatic_parts"]
+    assert result["vision_meta"]["requires_subject_review"] is True
+    assert not result["vision_meta"].get("reviewed_by_user")
+    from app.utils.provenance import provenance_lines
+
+    provenance = provenance_lines(result)
+    assert any("未经校准" in line and "轮廓" in line for line in provenance)
+    assert not any("用户已确认" in line for line in provenance)
+
+
+def test_headless_explicit_parts_override_contour_candidates(monkeypatch):
+    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _img: None)
+    monkeypatch.setattr("app.models.pose.get_body_landmarks", lambda _img: None)
+    result = PipelineOrchestrator().run_full_pipeline(
+        _person(dress=True), parts=["头部", "身体"], enforce_crochetability=False)
+    assert result["analysis"]["parts"] == ["头部", "身体"]
+    assert [part["name"] for part in result["params"]["parts"]] == ["头部", "身体"]
+    assert result["vision_meta"]["parts_source"] == "cli_explicit"
+    assert not result["vision_meta"].get("reviewed_by_user")
+
+
+def test_automatic_parts_and_unreviewed_provenance_survive_backup_and_resize(monkeypatch):
+    from app.schemas import PatternResult
+    from app.services.result_logic import import_backup, regenerate_with_size
+
+    monkeypatch.setattr("app.models.local_vision._detect_face", lambda _img: None)
+    monkeypatch.setattr("app.models.pose.get_body_landmarks", lambda _img: None)
+    result = PipelineOrchestrator().run_full_pipeline(_person(dress=True), enforce_crochetability=False)
+    restored = import_backup(PatternResult.from_result(result).to_backup(), "automatic")
+    resized = regenerate_with_size(restored, 8, 20)
+    for value in (restored, resized):
+        assert "裙子" in value["analysis"]["parts"]
+        assert "裙子" in {part["name"] for part in value["params"]["parts"]}
+        assert value["vision_meta"]["parts_source"] == "automatic_contour"
+        assert value["vision_meta"]["requires_subject_review"] is True
+        assert not value["vision_meta"].get("reviewed_by_user")
 
 
 def test_accepted_face_stays_ahead_of_the_contour_head(monkeypatch):

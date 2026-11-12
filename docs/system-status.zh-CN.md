@@ -49,7 +49,7 @@ MediaPipe 未安装），与独立运行分开记录。该轮导出缓存为 **1
 |---|---|---|
 | G1 可复现源码 | **见 [`docs/release-evidence.json`](release-evidence.json)** | 发布证据绑定提交 `ba65b8db92c12cab80f4e157a0b11c47bf64763c`。生成该文件时，这个提交是 `main`。证据不自动覆盖后续提交，须重新生成。新增功能不继承 `55280fb` 的独立 PASS |
 | G2 支持版本自动化 | **该提交 push 12/12 通过；pip-audit 见同一棵树** | Python 3.11–3.14、Docker、PDF、锁定及无锁 pose、Streamlit 下限、mypy 与浏览器冒烟在 push 上通过。合并提交本身没有 pip-audit。同一树的 PR #61 头提交 `9063635b2411e59d3b3647710d06fa792146c6ba` 为 13/13，含 pip-audit。要求的检查名见 `.github/required-checks.json` |
-| G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛。默认流程交付固定模板部件，提示不计入部件得分；现行口径下宏 F1 严格高于同一模板基线不可达，门禁政策待决 |
+| G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛。无交互自动路径可交付未经校准的轮廓候选；合成图能超过固定模板不代表真实照片达标 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |
 | G6 产品声明 | **Beta 合格** | UI、README、导出继续明确单图、模板、估算和试钩边界 |

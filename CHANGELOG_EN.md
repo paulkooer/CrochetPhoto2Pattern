@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-12 Automatic part delivery evaluation
+
+- The noninteractive CLI and default evaluator add ear, skirt and tail contour candidates to the four-part template; explicit part selection wins. These candidates are uncalibrated and can be wrong; the Photo review still uses explicit selection. Missing contour observations are unavailable, not negative hints. Evaluation report schema 6 records the selection path; release floors are unchanged and real-photo evidence remains pending.
+
 ### Added — 2026-11-11 Review-hint evaluation
 
 - Evaluation report schema 5 measures precision/recall, TP/FP/FN and unavailable cases for ear, skirt and tail review prompts. Missing or non-boolean hints and pipeline failures are not treated as negatives. These metrics do not change delivery or the G3 gate. Older reports must be rerun for the new metrics; an authorized real-photo dataset is still unavailable.
