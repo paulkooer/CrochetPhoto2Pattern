@@ -121,6 +121,21 @@ def test_segmentation_is_stable_across_prior_rng_state_and_threads(monkeypatch):
         np.testing.assert_array_equal(mask, masks[0])
 
 
+@pytest.mark.parametrize("top", [0, 8, 16])
+def test_foreground_touching_top_strip_is_not_forced_to_background(monkeypatch, top):
+    monkeypatch.setattr(subject, "_face_box", lambda image: None)
+    image = Image.new("RGB", (120, 160), "white")
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((40, top, 79, top + 35), fill=(60, 40, 30))
+    draw.rectangle((35, top + 36, 84, top + 80), fill=(210, 25, 30))
+    draw.rectangle((40, top + 81, 79, top + 110), fill=(0, 80, 210))
+    result = subject.extract_subject(image)
+    assert result is not None
+    mask, _ = result
+    assert mask[top:top + 36, 40:80].mean() > 0.95
+    assert not mask[:, :10].any()
+
+
 def test_geometry_keeps_thin_parts_while_colors_use_cached_interior(monkeypatch):
     image = Image.new("RGB", (100, 80))
     mask = np.zeros((80, 100), dtype=bool)

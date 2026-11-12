@@ -1,4 +1,5 @@
 """Structured joins and neck boundaries survive prose edits and old backups."""
+from copy import deepcopy
 from dataclasses import asdict
 
 import pytest
@@ -14,6 +15,7 @@ from app.models.validator import require_valid_pattern
 from app.schemas import ImageAnalysis, PatternResult
 from app.services.color_selection import apply_color_change
 from app.services.result_logic import import_backup, regenerate_with_size
+from app.ui.pattern_editor import edit_rounds
 from app.utils.project import pattern_revision, project_backup, read_project_state
 
 
@@ -41,6 +43,16 @@ def test_open_and_closed_joins_do_not_depend_on_round_prose():
     assert "头部" not in expected
     restored = import_backup(PatternResult.from_result(result).to_backup(), "join")
     assert _openings_by_part(restored["params"]["parts"]) == expected
+
+
+def test_round_editor_rejects_relabeling_that_would_move_an_opening():
+    result = _result()
+    index = next(i for i, p in enumerate(result["params"]["parts"]) if p["name"] == "手臂")
+    rounds = deepcopy(result["params"]["parts"][index]["rounds"])
+    rounds[-1]["row"], rounds[-2]["row"] = rounds[-2]["row"], rounds[-1]["row"]
+    with pytest.raises(ValueError, match="圈号"):
+        edit_rounds(result, index, rounds)
+    assert _openings_by_part(result["params"]["parts"])["手臂"] == 6
 
 
 def test_one_piece_neck_remains_usable_after_editing_its_notes():

@@ -51,6 +51,7 @@ def with_reviewed_mask(draft: PhotoDraft, payload: dict) -> PhotoDraft:
     Other semantic/proportion estimates remain user-reviewable, not silently
     reinterpreted. Body selection is recomputed if this draft already has one.
     """
+    from .color_design import resolved_part_spans
     from .geometry import observe_geometry
     from .image_parser import extract_color_palette
     from .photo_review import with_reviewed_body
@@ -70,6 +71,15 @@ def with_reviewed_mask(draft: PhotoDraft, payload: dict) -> PhotoDraft:
     reviewed.subject = observed
     reviewed.geometry = observe_geometry(draft.image, subject=observed)
     reviewed.geometry.mask_review = correction
+    # Pose measurements and explicit head/body selections are already in image
+    # coordinates. Only the prior-derived spans depend on the subject extent.
+    known = {name: draft.spans[name] for name in draft.spans_measured
+             if draft.spans and name in draft.spans}
+    if (draft.vision_meta.get("head_ratio_source") == "user_box"
+            and draft.spans and "头部" in draft.spans):
+        known["头部"] = draft.spans["头部"]
+    extent = reviewed.geometry.silhouette.subject_extent if reviewed.geometry.silhouette else None
+    reviewed.spans = resolved_part_spans(known, extent)
     reviewed.analysis = draft.analysis.model_copy(deep=True)
     reviewed.analysis.recommended_colors = extract_color_palette(draft.image, subject=observed) or None
     if draft.geometry.body_region is not None:
