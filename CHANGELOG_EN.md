@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-12 Gauge-aware ladder spheres
+
+- Newly generated ladder spheres estimate meridian rounds from quantized circumference, stitch width and row height, then distribute changes of at most six stitches along the model profile instead of simply extending a cylindrical belt. Extreme gauges that cannot meet the target with six-stitch steps carry a part-level warning. Existing backups keep their rounds; size or gauge regeneration uses the new rule and may affect progress. Physical trials remain outstanding.
+- Share links compress compact JSON to reduce URL length pressure from extra rounds, retaining every existing field and the same length and decoding limits.
+
 ### Changed — 2026-11-12 Automatic part delivery evaluation
 
 - The noninteractive CLI and default evaluator add ear, skirt and tail contour candidates to the four-part template; explicit part selection wins. These candidates are uncalibrated and can be wrong; the Photo review still uses explicit selection. Missing contour observations are unavailable, not negative hints. Evaluation report schema 6 records the selection path; release floors are unchanged and real-photo evidence remains pending.

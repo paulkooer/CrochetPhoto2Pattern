@@ -72,6 +72,22 @@ def test_share_roundtrip():
     assert decode_result("garbage!!") is None
 
 
+def test_share_decodes_precompact_json_tokens():
+    import base64
+    import zlib
+
+    from app.schemas import PatternResult, strip_photo_derived
+    from app.utils.share import decode_result
+
+    payload = strip_photo_derived(PatternResult.from_result(_full_result()).to_backup())
+    old_json = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    token = base64.urlsafe_b64encode(zlib.compress(old_json, 9)).decode()
+    decoded = decode_result(token)
+    assert decoded is not None
+    for key in ("analysis", "structure", "params", "vision_meta"):
+        assert decoded[key] == payload[key]
+
+
 def test_share_size_guard_returns_none():
     """超大图解 → encode 返回 None（调用方提示改用备份文件）。"""
     import uuid

@@ -50,8 +50,13 @@ def test_materials_estimate_disclaimer_in_exports():
 # ── U23 升级：校准模型 ───────────────────────────────────────────────────
 
 def test_time_model_anchor_preserved():
-    """校准锚点：classic 默认玩偶含左右手/腿，不能再漏算第二件。"""
+    """历史参考圈序固定时，时长锚点仍含左右手/腿，不能漏算第二件。"""
+    from app.models.crochet_params import _sphere_rounds, refresh_derived
+
     params = _params(gauge=PRESETS["classic"])
+    # 生成器的默认阶梯球随密度修正；时长模型的旧锚点保留在原圈序上。
+    next(part for part in params["parts"] if part["name"] == "头部")["rounds"] = _sphere_rounds(36)
+    params = refresh_derived(params)
     assert params["total_stitches"] == 1224
     assert params["estimated_time_minutes"] == pytest.approx(144, abs=5)
     assert params["time_estimate_basis"]["scope"] == "round_crochet_baseline"

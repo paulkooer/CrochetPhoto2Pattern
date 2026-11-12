@@ -45,7 +45,9 @@ def encode_result(result: dict[str, Any]) -> str | None:
     from ..services.color_identity import require_aligned_copy_colors
 
     require_aligned_copy_colors(payload)
-    blob = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    # Whitespace is not part of the backup; compact JSON leaves more room in
+    # the practical URL limit without dropping any pattern or provenance data.
+    blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(blob) > _MAX_DECOMPRESSED_BYTES:
         return None
     token = base64.urlsafe_b64encode(zlib.compress(blob, 9)).decode()

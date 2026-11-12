@@ -211,6 +211,12 @@ class PatternGenerationError(RuntimeError):
     """生成器自检失败——阻止代数矛盾的图解成为可下载产物（F13）。"""
 
 
+_LADDER_GAUGE_WARNING = (
+    "当前密度下每圈增减6针所需的圈数无法匹配球面经线估计；"
+    "请考虑调整密度或试钩，形状尚未经过实物校准。"
+)
+
+
 def _mark_staggered(rounds: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Write executable alternating placement instead of a prose-only hint."""
     for i in range(1, len(rounds)):
@@ -230,30 +236,59 @@ def _mark_staggered(rounds: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rounds
 
 
-def _sphere_rounds(max_stitches: int = 36) -> list[dict[str, Any]]:
+def _sphere_rounds(max_stitches: int = 36, gauge: Gauge | None = None) -> list[dict[str, Any]]:
     """Increase -> constant -> decrease rounds for an Amigurumi sphere.
-    max_stitches must be a positive multiple of 6.
+    max_stitches must be a positive multiple of 6. With a gauge, approximate
+    the sphere meridian and distribute six-stitch changes along its curvature.
+    Without one, retain the traditional uncalibrated reference sequence.
     """
     step = 6
     n_up = max_stitches // step
+    rounds: list[dict[str, Any]]
+    if gauge is not None:
+        import math
 
-    constant = [
-        {"row": n_up + i, "stitches": max_stitches, "notes": f"{max_stitches}X（不加不减）"}
-        for i in range(1, n_up + 1)
-    ]
-    decrease = []
-    for i in range(1, n_up):
-        remaining = max_stitches - step * i
-        if remaining <= 0:
-            break
-        decrease.append({
-            "row": n_up * 2 + i,
-            "stitches": remaining,
-            "decrease": step,
-            "notes": _dec_note(remaining + step),  # before = 本圈减针前的针数
-        })
-
-    rounds = _increase_rounds(max_stitches) + constant + decrease
+        target = gauge.rounds_for_height(max_stitches * gauge.stitch_w_cm / 2)
+        count = max(target, 2 * n_up - 1)
+        stitches = [6]
+        for i in range(1, count):
+            # Keep the poles at six, but do not insert straight rounds at six
+            # when the part can grow; those would make a protruding tip.
+            minimum = 12 if max_stitches >= 12 and i < count - 1 else 6
+            ideal = max_stitches * math.sin(math.pi * (i + 0.5) / count)
+            desired = max(minimum, min(max_stitches, round(ideal / step) * step))
+            # Preserve the familiar first few uninterrupted six-way increases.
+            if i < min(n_up, 4):
+                desired = step * (i + 1)
+            desired = max(stitches[-1], desired) if i < count / 2 else min(stitches[-1], desired)
+            # Reserve enough remaining rows to return to six using decreases of six.
+            desired = min(desired, 6 + step * (count - 1 - i))
+            stitches.append(max(stitches[-1] - step, min(stitches[-1] + step, desired)))
+        rounds = [{"row": 1, "stitches": 6, "notes": "魔法环起6针（X×6）"}]
+        for i in range(1, count):
+            before, current = stitches[i - 1], stitches[i]
+            rounds.append({"row": i + 1, "stitches": current,
+                           "increase": max(0, current - before),
+                           "decrease": max(0, before - current),
+                           "notes": _change_note(before, current)})
+        rounds = _mark_staggered(rounds)
+    else:
+        constant: list[dict[str, Any]] = [
+            {"row": n_up + i, "stitches": max_stitches, "notes": f"{max_stitches}X（不加不减）"}
+            for i in range(1, n_up + 1)
+        ]
+        decrease: list[dict[str, Any]] = []
+        for i in range(1, n_up):
+            remaining = max_stitches - step * i
+            if remaining <= 0:
+                break
+            decrease.append({
+                "row": n_up * 2 + i,
+                "stitches": remaining,
+                "decrease": step,
+                "notes": _dec_note(remaining + step),
+            })
+        rounds = _increase_rounds(max_stitches) + constant + decrease
     if rounds:
         last = rounds[-1]
         last["notes"] = (last.get("notes") or "") + (
@@ -550,6 +585,7 @@ class CrochetParamsGenerator:
                 if name == "裙子" and style.skirt_style == "attached" and selected != gauge:
                     raise ValueError("挑针接裙须沿用身体密度，请使用独立裙筒或恢复默认密度")
                 overrides[name] = selected
+        head_ladder_unreachable = False
         for part_name in part_order:
             part_gauge = overrides.get(part_name, gauge)
             sp = struct_parts.get(part_name, {})
@@ -564,6 +600,7 @@ class CrochetParamsGenerator:
                 diameter = sp.get("diameter_cm", fallback_d)
                 max_st = _stitches_for_diameter(diameter, part_gauge)
                 eye_extra = None
+                ladder_unreachable = False
                 if is_head and style.sphere_mode in ("ideal", "egg"):
                     # 理想球/蛋形（M2.6/M2.7）：sinθ 分布 + 几何化眼睛定位
                     rounds_raw = _ideal_sphere_rounds(
@@ -571,7 +608,11 @@ class CrochetParamsGenerator:
                     eye_extra = rounds_raw[0].pop("eye_round", None)
                     max_st = max(r["stitches"] for r in rounds_raw)
                 else:
-                    rounds_raw = _sphere_rounds(max_stitches=max_st)
+                    rounds_raw = _sphere_rounds(max_stitches=max_st, gauge=part_gauge)
+                    target_rows = part_gauge.rounds_for_height(max_st * part_gauge.stitch_w_cm / 2)
+                    ladder_unreachable = target_rows < 2 * (max_st // 6) - 1
+                    if is_head:
+                        head_ladder_unreachable = ladder_unreachable
                 if is_head and head_opening_stitches is not None:
                     rounds_raw = leave_head_open(rounds_raw, head_opening_stitches,
                                                 part_gauge.max_shaping_change)
@@ -600,6 +641,8 @@ class CrochetParamsGenerator:
                 else:
                     color = sp.get("color", "body")
                     notes = f"小球形部件（直径 {diameter}cm），完成后缝合到主体。"
+                if ladder_unreachable:
+                    notes += _LADDER_GAUGE_WARNING
                 part = CrochetPart(
                     name=part_name,
                     type="sphere",
@@ -854,6 +897,10 @@ class CrochetParamsGenerator:
 
             crochet_parts = merge_head_body(
                 crochet_parts, gauge, sections=sections)
+            if head_ladder_unreachable:
+                combined = next((part for part in crochet_parts if part.type == "onepiece"), None)
+                if combined is not None:
+                    combined.notes = (combined.notes or "") + _LADDER_GAUGE_WARNING
 
         result = CrochetParamsGenerator._build_result(
             analysis, crochet_parts, gauge, style, prepared_structure, body_rows=sections.get("body"))
