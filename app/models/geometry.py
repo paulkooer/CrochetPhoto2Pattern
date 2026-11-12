@@ -571,8 +571,8 @@ def tail_hint_from_mask(mask: Any) -> bool:
     """True for a short one-sided lower bump that still covers the torso.
 
     A detached leg, a pair of legs, or a hem that widens on both sides is not
-    a tail. A single front photo cannot tell back from side; callers must
-    leave the part unchecked.
+    a tail. A single front photo cannot tell back from side; this is an
+    uncalibrated contour candidate, not a semantic certainty.
     """
     rows = _foreground_runs(mask)
     width = int(mask.shape[1]) if getattr(mask, "ndim", 0) == 2 else 0

@@ -35,6 +35,9 @@ deterministic validation → JSON/UI → corrections → downloads/backups
 
 Local photo analysis does not infer physique from head-to-height ratio. A body-type label
 entered manually or retained from an old result is descriptive and does not change sizes or stitches.
+The noninteractive `run_full_pipeline` used by the CLI and default evaluator adds ear,
+skirt or tail contour candidates to the template. These heuristics are uncalibrated;
+explicit CLI `--parts` overrides them. The Photo UI draft still leaves hints unchecked.
 
 Entity quantities drive total stitches, materials, time, and progress. StructureGeometry
 v2 attachments are projected into `assembly_plan`; legacy name-based assembly is used

@@ -7,7 +7,7 @@
 - 比例（身高/头径的倍数）来自人脸框，或无人脸时来自轮廓顶部的头部候选
 - 绝对尺度（头径是多少厘米）单张照片无参照无法得到；这里用 9cm
   作为内部比例参考，PipelineOrchestrator 随后按用户目标高度重新缩放
-- 部件列表仍是四部件模板。耳朵、裙摆、尾巴只作为确认页提示，默认不勾选
+- 草稿部件仍是四部件模板。确认页提示不预选；无交互生成可应用轮廓候选
 """
 from __future__ import annotations
 
@@ -196,12 +196,14 @@ def analyze(
     # geometry_observed means the caller already measured the photo. Do not
     # start a second extraction when that caller did not pass the subject.
     mask_pair = _mask_pair(image, subject, allow_extract=not geometry_observed)
-    possible_ears = False
-    possible_tail = False
+    # Absence of a usable observation is not evidence that a part is absent.
+    possible_ears: bool | None = None
+    possible_tail: bool | None = None
     silhouette_head: tuple[int, int, int, int] | None = None
     if mask_pair is not None:
         mask, small = mask_pair
-        possible_tail = _tail_hint(mask)
+        if mask.shape[0] >= 12 and mask.shape[1] >= 8 and mask.any():
+            possible_tail = _tail_hint(mask)
         if box is None:
             mask_head = _head_box_from_mask(mask)
             if mask_head is not None:
@@ -220,10 +222,13 @@ def analyze(
                 _scale_box(face_head, image.size, small.size), small.size[0], small.size[1])
         if ear_box is not None:
             possible_ears = _ear_hint(mask, ear_box)
+    rows = [i for i, width in enumerate(profile or []) if width > 0.08]
+    possible_skirt = (_has_bottom_flare(profile) if profile is not None
+                      and len(rows) >= 8 and rows[-1] - rows[0] + 1 >= 8 else None)
     candidate_meta: dict[str, Any] = {
         "parts_source": "default_template", "requires_subject_review": True,
         "subject_type": "unclassified",
-        "possible_skirt": bool(profile is not None and _has_bottom_flare(profile)),
+        "possible_skirt": possible_skirt,
         "possible_ears": possible_ears,
         "possible_tail": possible_tail,
     }

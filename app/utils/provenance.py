@@ -70,6 +70,9 @@ def provenance_lines(result: Mapping[str, Any] | None = None) -> list[str]:
     if meta.get("requires_subject_review") is True:
         if meta.get("parts_source") == "cli_explicit":
             lines.append("主体复核：尚未确认主体类型、头部与比例；部件为 CLI 显式选择，不代表完整人工复核。")
+        elif meta.get("parts_source") == "automatic_contour":
+            lines.append("主体复核：基础部件来自模板，其他部件由未经校准的轮廓提示自动添加；"
+                         "主体类型、头部、比例与部件均未由用户确认。")
         else:
             lines.append("主体复核：尚未确认主体类型、头部与部件；当前部件来自默认模板，不能视为照片识别结果。")
     elif confirmed_subject_scope(meta):

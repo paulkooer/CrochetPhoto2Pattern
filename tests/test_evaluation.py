@@ -181,7 +181,7 @@ def test_evaluation_aggregates_frozen_cases(tmp_path):
     assert skirt["parade_export"]["unsupported_constructions"] == [
         {"part": "裙子", "construction": "ring_start"}]
     assert skirt["parade_export"]["failures"] == []
-    assert report["report_schema_version"] == 5
+    assert report["report_schema_version"] == 6
     assert report["cases"][0]["rights"]["copyright_basis"] == "self_owned"
 
 
@@ -633,7 +633,7 @@ def test_default_runner_scores_crochetability_instead_of_raising(tmp_path, monke
     case = evaluate_dataset(tmp_path)["cases"][0]
     assert seen["enforce_crochetability"] is False
     assert case["error"] is None and case["crochetable"] is True
-    assert all(type(value) is bool for value in case["review_hints"].values())
+    assert all(value is None or type(value) is bool for value in case["review_hints"].values())
 
 
 def test_declared_ring_start_does_not_excuse_other_parade_failures(tmp_path):

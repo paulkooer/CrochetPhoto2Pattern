@@ -337,6 +337,9 @@ def main(argv=None) -> int:
         if result["vision_meta"].get("parts_source") == "cli_explicit":
             print("注意：主体类型、头部与比例未确认；部件为 CLI 显式选择，请在界面完成复核后使用。",
                   file=sys.stderr)
+        elif result["vision_meta"].get("parts_source") == "automatic_contour":
+            print("注意：部分部件按未经校准的轮廓提示自动添加，可能误判；主体、头部与比例未确认。",
+                  file=sys.stderr)
         else:
             print("注意：本地结果的主体类型未确认，部件来自默认模板；请在界面确认头部、部件和数量后使用。",
                   file=sys.stderr)

@@ -60,7 +60,9 @@ Unknown part names remain available for review. Remove mistaken labels or select
 
 - Photo upload, plus manual and 2D grid workflows.
 - Local photo analysis: candidate head-box checks and silhouette analysis without
-  an LLM API key. Parts are an unconfirmed template; silhouette flare only suggests a skirt.
+  an LLM API key. The Photo UI starts from an unconfirmed template and shows contour hints;
+  the noninteractive CLI automatically adds ear, skirt and tail candidates when detected.
+  These heuristics are uncalibrated and can be wrong.
 - GrabCut subject segmentation shared once per generation across palette, profile,
   and color bands, with repeatable initialization and fallback when extraction fails.
 - Optional pose landmarks on Python 3.11–3.12 for shoulder/hip/knee measurement; Linux
@@ -307,7 +309,9 @@ uv run crochet2pattern --batch-dir photos/ --out-dir patterns/ --workers 4
 
 The optional `--parts` argument currently requires the Chinese part names listed by
 `crochet2pattern --help`; English names are not accepted. The manual example above uses
-the default parts. Photo mode always uses local vision, regardless of provider environment variables. A pattern that violates stitch
+the default parts. Noninteractive photo mode adds detected contour candidates unless
+`--parts` is supplied; those candidates can be wrong and remain unreviewed. Photo mode
+always uses local vision, regardless of provider environment variables. A pattern that violates stitch
 arithmetic or the active gauge's shaping limit exits with code `2`. So does a head or body
 whose widest round has fewer than 18 stitches; the message names the option to change.
 Photo and mock modes map head ratios with the Q style by default (`--proportion-style q`);

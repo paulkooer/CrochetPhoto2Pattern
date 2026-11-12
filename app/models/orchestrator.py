@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from PIL import Image
@@ -40,6 +40,30 @@ class PhotoDraft:
     usage: dict
     vision_meta: dict
     trace: RunTrace
+
+
+def _automatic_contour_draft(draft: PhotoDraft) -> PhotoDraft:
+    """Use contour candidates in headless delivery without claiming user review.
+
+    The booleans are uncalibrated visual heuristics, not probabilities. The
+    interactive draft stays unchanged so its user can still choose each part.
+    """
+    if draft.vision_meta.get("source") not in {"default", "silhouette-head", "opencv-face"}:
+        return draft
+    flags = (("possible_ears", "耳朵"), ("possible_skirt", "裙子"), ("possible_tail", "尾巴"))
+    added = [name for flag, name in flags
+             if draft.vision_meta.get(flag) is True and name not in draft.analysis.parts]
+    if not added:
+        return draft
+    meta = deepcopy(draft.vision_meta)
+    meta.update(
+        parts_source="automatic_contour",
+        automatic_parts=added,
+        note=("基础部件来自模板，自动加入轮廓候选：" + "、".join(added)
+              + "；候选未经真实照片校准，可能误判，主体、头部及比例仍需核对。"),
+    )
+    analysis = draft.analysis.model_copy(update={"parts": [*draft.analysis.parts, *added]})
+    return replace(draft, analysis=analysis, vision_meta=meta)
 
 
 class PipelineOrchestrator:
@@ -305,6 +329,8 @@ class PipelineOrchestrator:
             progress_cb=progress_cb,
             budget_seconds=budget_seconds,
         )
+        if parts is None:
+            draft = _automatic_contour_draft(draft)
         trace = deepcopy(draft.trace)
         try:
             return self.generate_from_draft(
