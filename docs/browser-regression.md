@@ -35,6 +35,7 @@ CROCHET_POSE_MODEL="$task_browser_dir/unconfigured-pose.task" \
 ```sh
 CROCHET_PLAYWRIGHT_MODULE="$PWD/scripts/browser/node_modules/playwright" \
 node scripts/check_mask_canvas.cjs
+node --test scripts/browser/workflow_helpers.test.cjs
 node scripts/check_browser_workflow.cjs
 ```
 
@@ -90,6 +91,23 @@ node scripts/check_browser_workflow.cjs
 [browser 工作流](../.github/workflows/browser.yml) 安装锁定的 Playwright 与其 Chromium，
 运行独立画布及完整应用流程；合成证据和服务日志保留 7 天。PR 运行记录同时保留头提交
 和实际检出提交，不能把旧 SHA 的成功结果算作新 SHA 通过。
+
+### 异步同步与失败诊断
+
+运行提示的显示属于界面表现，不能据此判定 Python 已完成。同步 helper 核对连接状态、
+脚本 `notRunning` 状态及骨架元素消失；状态字段来自
+[Streamlit 1.67 的应用根节点](https://github.com/streamlit/streamlit/blob/1.67.0/frontend/app/src/App.tsx#L2878-L2887)。
+保留原有 300 ms 防抖等待和 45 秒上限。15 处上传先监听成功的上传响应，并在设置文件前
+观察下一轮脚本启动，然后等该轮结束；不会仅因为上一轮已经空闲就继续点导入按钮。
+
+下载在点击前监听事件，同时为点击和事件等待安装拒绝处理。点击失败时，后续关闭浏览器
+不会用未处理的下载等待异常覆盖原始点击错误；所有下载内容断言仍保留。
+事件监听顺序遵循 [Playwright 下载说明](https://playwright.dev/docs/downloads)。
+
+三个定向测试使用独立 Streamlit 小应用：延迟上传、在按钮渲染后暂停 Python，及人为制造
+不存在的下载按钮。它们验证真实的异步边界和错误传播；CI 在完整 30 条流程前运行这些测试。
+两种测试均不设置失败重试。完整报告保留原有入口文件 `harness_sha256`，新增
+`harness_files_sha256` 同时记录入口与共用 helper 的字节哈希，避免拆文件后漏记执行依赖。
 
 本套覆盖桌面 Chromium 的上述合成路径及 390 px 窄视口检查；Safari、Firefox、真实移动设备、真实照片交互、
 大文件与低内存压力测试仍需另行验证。它不改变 G3/G4，也不证明尺寸、耗线或实物效果。

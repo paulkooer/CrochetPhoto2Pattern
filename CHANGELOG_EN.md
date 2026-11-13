@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-13 Browser workflow synchronization
+
+- Wait for actual script state and the rerun caused by each upload, keeping existing timeouts and all 30 content checks. Preserve the original error when a download click fails. CI adds delayed-upload, slow-rerun and error-propagation regressions; reports also hash the shared helper. Application code and release gates are unchanged.
+
 ### Changed — 2026-11-13 Image dependency lock update
 
 - Update headless OpenCV to 4.14, NumPy on Python 3.11 to 2.4.6, and use locked NumPy 2.5.2 on 3.12+. Use equivalent module-level functions for two integer-array reductions to support NumPy 2 typing; segmentation and color strategies are unchanged.
