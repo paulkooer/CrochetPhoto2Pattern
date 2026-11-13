@@ -3,17 +3,21 @@ from dataclasses import asdict
 from typing import Any
 
 from ..schemas import (
+    PART_LABELS_ZH,
     CrochetPart,
     CrochetStitch,
     ImageAnalysis,
     PartData,
     PartGauge,
+    PartKind,
     PatternParams,
     StructureData,
+    part_kind_from_name,
 )
 from .assembly import _openings_by_part, build_assembly, opening_rows_by_part
 from .color_design import (
     PART_SPAN,
+    PART_SPAN_BY_KIND,
     color_blocks_for_part,
     refresh_color_instructions,
     round_color_plan,
@@ -32,7 +36,8 @@ from .head_opening import HEAD_OPENING_KEY, head_opening_target, leave_head_open
 from .materials import YarnSpec, _materials_and_summary, _safety_eye_mm
 from .materials import _materials as _materials  # Re-exported for existing callers.
 from .materials import yarn_requirements as yarn_requirements
-from .parts import _SKIN_PARTS, _part_name, _part_quantity, _part_rounds, _round_stitches
+from .parts import _SKIN_PARTS as _SKIN_PARTS  # Compatibility export for existing callers.
+from .parts import _part_name, _part_quantity, _part_rounds, _round_stitches
 from .profile_shaping import profile_to_rounds, rounds_to_notes
 from .time_estimate import (  # noqa: F401
     SECONDS_PER_ROUND_OVERHEAD,
@@ -65,7 +70,9 @@ HAT_DEPTH_RATIO = 0.6        # 帽深 ≈ 帽直径 × 0.6
 SKIRT_BODY_RATIO = 1.25      # 裙摆直径相对身体放大
 
 # 自端部起针的部件（R1 对应照片低处）：照片配色映射自底向上
-_BOTTOM_UP_PARTS = frozenset({"身体", "手臂", "腿部"})
+_BOTTOM_UP_KINDS = frozenset({PartKind.BODY, PartKind.ARMS, PartKind.LEGS})
+_BOTTOM_UP_PARTS = frozenset(PART_LABELS_ZH[kind] for kind in _BOTTOM_UP_KINDS)
+_SKIN_KINDS = frozenset({PartKind.HEAD, PartKind.ARMS, PartKind.LEGS, PartKind.EARS})
 
 
 
@@ -78,11 +85,12 @@ def _semantic_color(part_name: str, analysis) -> str | None:
     hair = getattr(analysis, "hair_color", None)
     top = getattr(analysis, "top_color", None)
     bottom = getattr(analysis, "bottom_color", None)
-    if part_name == "头部":
+    kind = part_kind_from_name(part_name)
+    if kind is PartKind.HEAD:
         return hair
-    if part_name in ("身体", "手臂"):
+    if kind in (PartKind.BODY, PartKind.ARMS):
         return top
-    if part_name in ("裙子", "腿部"):
+    if kind in (PartKind.SKIRT, PartKind.LEGS):
         return bottom or top
     return None
 
@@ -564,6 +572,8 @@ class CrochetParamsGenerator:
         struct_parts: dict[str, dict] = {
             p["name"]: p for p in prepared_structure.get("parts", [])
         }
+        struct_parts_by_kind = {kind: part for name, part in struct_parts.items()
+                                if (kind := part_kind_from_name(name)) is not None}
         head_d = analysis.head_diameter_cm
 
         crochet_parts: list[CrochetPart] = []
@@ -572,7 +582,8 @@ class CrochetParamsGenerator:
         # parts (the generation gate then reports an empty pattern).
         part_order = ([p["name"] for p in prepared_structure["parts"]]
                       if "parts" in prepared_structure else analysis.parts)
-        if head_opening_stitches is not None and "头部" not in part_order:
+        if (head_opening_stitches is not None
+                and PartKind.HEAD not in {part_kind_from_name(name) for name in part_order}):
             raise ValueError("头部留口需要图解包含独立头部")
         overrides: dict[str, Gauge] = {}
         if part_gauges is not None:
@@ -582,14 +593,16 @@ class CrochetParamsGenerator:
                 if name not in INDEPENDENT_GAUGE_PARTS or name not in part_order:
                     raise ValueError("独立密度仅支持当前图解中的帽子和独立裙筒")
                 selected = raw if isinstance(raw, Gauge) else explicit_part_gauge(raw)
-                if name == "裙子" and style.skirt_style == "attached" and selected != gauge:
+                if (part_kind_from_name(name) is PartKind.SKIRT
+                        and style.skirt_style == "attached" and selected != gauge):
                     raise ValueError("挑针接裙须沿用身体密度，请使用独立裙筒或恢复默认密度")
                 overrides[name] = selected
         head_ladder_unreachable = False
         for part_name in part_order:
             part_gauge = overrides.get(part_name, gauge)
             sp = struct_parts.get(part_name, {})
-            is_head = part_name == "头部"
+            kind = part_kind_from_name(part_name)
+            is_head = kind is PartKind.HEAD
             shape = sp.get("shape", "sphere" if is_head else "cylinder")
 
             if is_head or shape == "sphere":
@@ -597,15 +610,15 @@ class CrochetParamsGenerator:
                     part_name, sp, is_head, head_d, part_gauge, style, head_opening_stitches)
                 if is_head:
                     head_ladder_unreachable = ladder_unreachable
-            elif part_name == "裙子":
+            elif kind is PartKind.SKIRT:
                 part = CrochetParamsGenerator._skirt_part(
-                    part_name, sp, struct_parts, head_d, part_gauge, style)
-            elif part_name == "帽子" or shape == "cup":
+                    part_name, sp, struct_parts_by_kind, head_d, part_gauge, style)
+            elif kind is PartKind.HAT or shape == "cup":
                 part = CrochetParamsGenerator._cup_part(part_name, sp, head_d, part_gauge)
-            elif part_name == "身体" and body_profile:
+            elif kind is PartKind.BODY and body_profile:
                 part = CrochetParamsGenerator._profiled_body_part(
                     part_name, sp, head_d, part_gauge, body_profile, spans, head_opening_stitches)
-            elif part_name == "身体":
+            elif kind is PartKind.BODY:
                 part = CrochetParamsGenerator._body_part(part_name, sp, head_d, part_gauge)
             else:
                 part = CrochetParamsGenerator._limb_part(part_name, sp, head_d, part_gauge)
@@ -737,13 +750,13 @@ class CrochetParamsGenerator:
 
     @staticmethod
     def _skirt_part(
-        part_name: str, sp: dict[str, Any], struct_parts: dict[str, dict],
+        part_name: str, sp: dict[str, Any], struct_parts_by_kind: dict[PartKind, dict],
         head_d: float, part_gauge: Gauge, style: ShapingStyle,
     ) -> CrochetPart:
         # F1 修复：裙子必须腰部开口（闭口圆盘套不进身体）。
         # 构造方向：腰部环形开口起针 → 逐圈+6 展开到裙摆 → 直钩。
         length = sp.get("height_cm") or sp.get("length_cm") or 5.0
-        body_d = struct_parts.get("身体", {}).get("diameter_cm") or head_d * BODY_HEAD_RATIO
+        body_d = struct_parts_by_kind.get(PartKind.BODY, {}).get("diameter_cm") or head_d * BODY_HEAD_RATIO
         waist_st = _stitches_for_diameter(body_d, part_gauge)
         hem_st = _stitches_for_diameter(
             sp.get("diameter_cm") or body_d * SKIRT_BODY_RATIO, part_gauge)
@@ -856,7 +869,7 @@ class CrochetParamsGenerator:
         ref_st = _stitches_for_diameter(
             sp.get("diameter_cm") or head_d * BODY_HEAD_RATIO, part_gauge)
         body_span = (spans or PART_SPAN).get(
-            "身体", PART_SPAN["身体"])
+            PART_LABELS_ZH[PartKind.BODY], PART_SPAN_BY_KIND[PartKind.BODY])
         wall = profile_to_rounds(
             body_profile, body_span, height, part_gauge, ref_st,
             direction="bottom_up",
@@ -945,7 +958,7 @@ class CrochetParamsGenerator:
             type="cylinder",
             height_cm=actual_h,
             rounds=[CrochetStitch(**r) for r in rounds_raw],
-            color=sp.get("color", "skin" if part_name in _SKIN_PARTS else "body"),
+            color=sp.get("color", "skin" if part_kind_from_name(part_name) in _SKIN_KINDS else "body"),
             magic_ring=True,  # F-13：肢体底部小圆盘以魔法环起针
             opening_row=rounds_raw[-1]["row"],
             connection_state="open",
@@ -976,7 +989,7 @@ class CrochetParamsGenerator:
         n = len(mapped_rounds)
         # 钩织方向：身体/四肢自端部起针（R1=脚底/手端/胯部=照片低处），
         # 末圈才缝合到躯干——这些部件的照片色带映射必须自底向上。
-        bottom_up = part.name in _BOTTOM_UP_PARTS
+        bottom_up = part_kind_from_name(part.name) in _BOTTOM_UP_KINDS
         heights = [rd.height_range_cm for rd in mapped_rounds]
         colors, omitted_blocks = round_color_plan(
             blocks, span, n, bottom_up=bottom_up,
@@ -1050,7 +1063,7 @@ class CrochetParamsGenerator:
             stitch_attachments = prepare_attached_skirt(
                 part_dicts, body_rows=body_rows, assembly_plan=assembly_plan)
             for part in part_dicts:
-                if part["name"] == "裙子":
+                if part_kind_from_name(part["name"]) is PartKind.SKIRT:
                     part["height_cm"] = round(len(part["rounds"]) * gauge.row_h_cm, 1)
         for part in part_dicts:
             refresh_color_instructions(part)
