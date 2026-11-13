@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Generator part identity
+
+- Generator dispatch, semantic colors, bottom-up color direction and attached-skirt handling use `PartKind`. Saved Chinese names remain the wire format; English or custom legacy names are not reinterpreted. Existing serialized snapshot fixtures are unchanged.
+
 ### Changed — 2026-11-13 Generator shape dispatch
 
 - Move sphere, skirt, cup, profiled-body, body-cylinder and limb-cylinder generation into separate helpers. The main generator retains preparation, dispatch and shared postprocessing. Serialized results, branch priority, colors, openings, materials and assembly remain unchanged; the 102 frozen cases are preserved.
