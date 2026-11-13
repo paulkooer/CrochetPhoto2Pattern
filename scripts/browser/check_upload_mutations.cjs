@@ -1,47 +1,77 @@
-// Check that the immediate tail assertion rejects both early-return variants.
+// Require the intended assertions to reject early-return and correlation mutants.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const Module = require('node:module');
 const {spawnSync} = require('node:child_process');
 const helper = path.join(__dirname,'workflow_helpers.cjs');
+const protocol = path.join(__dirname,'streamlit_protocol.cjs');
 const anchor = '  await waitForUploadRun(page,after,fileId);\n';
+const variants = [
+  ...['no_run_wait','response_only'].map(name => ({
+    name,file:helper,pattern:'^uploaded input waits for its Python rerun',
+    failure:'upload() returned before its rerun rendered the final marker.',
+    assertion:'immediate final-marker',
+  })),
+  {
+    name:'start_after_action',file:protocol,
+    pattern:'^run correlation rejects a full run that starts before the upload request$',
+    from:'event.sequence > request.sequence',to:'event.sequence > after',
+    failure:'A full run starting before the upload request must not complete that upload.',
+    assertion:'request-order rejection',
+  },
+  {
+    name:'include_fragment_runs',file:protocol,
+    pattern:'^run correlation rejects a fragment run after the upload request$',
+    from:' && !event.fragments.length',to:'',
+    failure:'A fragment run must not complete a full-app upload.',
+    assertion:'fragment-run rejection',
+  },
+];
 
 if (process.env.CROCHET_UPLOAD_MUTANT) {
+  const variant = variants.find(entry => entry.name === process.env.CROCHET_UPLOAD_MUTANT);
+  assert(variant,'Unknown upload/correlation mutant.');
   const original = Module._load;
+  let mutant;
   Module._load = function(request,parent,...rest) {
-    if (request !== './workflow_helpers.cjs' || !parent.filename.endsWith('workflow_helpers.test.cjs')) {
+    if (request !== './' + path.basename(variant.file) || path.dirname(parent.filename) !== __dirname) {
       return original.call(this,request,parent,...rest);
     }
-    let source = fs.readFileSync(helper,'utf8');
-    assert(source.includes(anchor),'Upload completion mutator needs updating.');
-    if (process.env.CROCHET_UPLOAD_MUTANT === 'no_run_wait') source = source.replace(anchor,'');
-    else {
-      assert.equal(process.env.CROCHET_UPLOAD_MUTANT,'response_only');
+    if (mutant) return mutant.exports;
+    let source = fs.readFileSync(variant.file,'utf8');
+    if (variant.from) {
+      assert.equal(source.split(variant.from).length,2,'Run correlation mutator needs updating.');
+      source = source.replace(variant.from,variant.to);
+    } else if (variant.name === 'no_run_wait') {
+      assert(source.includes(anchor),'Upload completion mutator needs updating.');
+      source = source.replace(anchor,'');
+    } else {
+      assert.equal(variant.name,'response_only');
       const from = source.indexOf('  const fileId =');
       const to = source.indexOf('\n}\n\nasync function download',from);
       assert(from > 0 && to > from);
       source = source.slice(0,from) + source.slice(to);
     }
-    const mutant = new Module(helper,parent);
-    mutant.filename = helper;
+    mutant = new Module(variant.file,parent);
+    mutant.filename = variant.file;
     mutant.paths = Module._nodeModulePaths(__dirname);
-    mutant._compile(source,helper);
+    mutant._compile(source,variant.file);
     return mutant.exports;
   };
 }
 
 if (require.main === module) {
-  for (const name of ['no_run_wait','response_only']) {
+  for (const {name,pattern,failure,assertion} of variants) {
     const result = spawnSync(process.execPath,[
       '--require',__filename,'--test',
-      '--test-name-pattern=^uploaded input waits for its Python rerun',
+      `--test-name-pattern=${pattern}`,
       path.join(__dirname,'workflow_helpers.test.cjs'),
     ],{env:{...process.env,CROCHET_UPLOAD_MUTANT:name},encoding:'utf8',timeout:30000});
     const output = result.stdout + result.stderr;
     assert.equal(result.status,1,`${name} must fail its regression:\n${output}`);
-    assert(output.includes('upload() returned before its rerun rendered the final marker.'),
+    assert(output.includes(failure),
            `${name} failed for an unexpected reason:\n${output}`);
-    console.log(`PASS mutation killed: ${name}; immediate final-marker assertion failed as intended`);
+    console.log(`PASS mutation killed: ${name}; ${assertion} assertion failed as intended`);
   }
 }

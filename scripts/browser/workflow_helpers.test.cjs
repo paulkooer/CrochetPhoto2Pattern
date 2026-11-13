@@ -196,3 +196,29 @@ test('run correlation rejects stale requests, wrong file IDs, unrelated finishes
   assert.equal(completedUploadRun(events,1,'old'),null);
   assert.equal(completedUploadRun(events,7,'new'),null);
 });
+
+test('run correlation rejects a full run that starts before the upload request',() => {
+  const events = [
+    {sequence:2,type:'start',id:'before-request',fragments:[]},
+    {sequence:3,type:'request',fileIds:['new']},
+    {sequence:4,type:'finish',id:'before-request',status:0},
+  ];
+  assert.equal(completedUploadRun(events,1,'new'),null,
+               'A full run starting before the upload request must not complete that upload.');
+  events.push({sequence:5,type:'start',id:'after-request',fragments:[]},
+              {sequence:6,type:'finish',id:'after-request',status:0});
+  assert.equal(completedUploadRun(events,1,'new'),'after-request');
+});
+
+test('run correlation rejects a fragment run after the upload request',() => {
+  const events = [
+    {sequence:2,type:'request',fileIds:['new']},
+    {sequence:3,type:'start',id:'fragment-run',fragments:['fragment']},
+    {sequence:4,type:'finish',id:'fragment-run',status:0},
+  ];
+  assert.equal(completedUploadRun(events,1,'new'),null,
+               'A fragment run must not complete a full-app upload.');
+  events.push({sequence:5,type:'start',id:'full-run',fragments:[]},
+              {sequence:6,type:'finish',id:'full-run',status:0});
+  assert.equal(completedUploadRun(events,1,'new'),'full-run');
+});
