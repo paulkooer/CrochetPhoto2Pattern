@@ -36,6 +36,7 @@ CROCHET_POSE_MODEL="$task_browser_dir/unconfigured-pose.task" \
 CROCHET_PLAYWRIGHT_MODULE="$PWD/scripts/browser/node_modules/playwright" \
 node scripts/check_mask_canvas.cjs
 node --test scripts/browser/workflow_helpers.test.cjs
+node scripts/browser/check_upload_mutations.cjs
 node scripts/check_browser_workflow.cjs
 ```
 
@@ -97,17 +98,28 @@ node scripts/check_browser_workflow.cjs
 运行提示的显示属于界面表现，不能据此判定 Python 已完成。同步 helper 核对连接状态、
 脚本 `notRunning` 状态及骨架元素消失；状态字段来自
 [Streamlit 1.67 的应用根节点](https://github.com/streamlit/streamlit/blob/1.67.0/frontend/app/src/App.tsx#L2878-L2887)。
-保留原有 300 ms 防抖等待和 45 秒上限。15 处上传先监听成功的上传响应，并在设置文件前
-观察下一轮脚本启动，然后等该轮结束；不会仅因为上一轮已经空闲就继续点导入按钮。
+`notRunning` 仅用于检查当前界面空闲，不再用瞬时的 DOM `running` 变化识别上传刷新。
+每页在导航前注册 WebSocket 监听，15 处上传按下面的消息顺序等待：成功的上传响应给出
+文件 ID → 客户端 `rerun_script` 包含该 ID → 随后的完整运行 `new_session` → 同运行 ID 的
+成功 `script_finished`。旧请求、不同文件/运行的结束消息及被中断的运行不能放行。
+消息字段见 [Streamlit 1.67 协议](https://github.com/streamlit/streamlit/blob/1.67.0/proto/streamlit/proto/ForwardMsg.proto)。
+
+协议描述从实际安装的 Streamlit 提取，浏览器工具使用锁定的 protobuf.js 解码；它只增加
+Node 测试依赖，不改变应用依赖。这个适配面服务于当前锁定的 Streamlit 1.67 和顺序执行的
+单文件上传流程；升级框架须重新验证消息格式，不能把它当成任意并发/自动刷新的通用保证。
+服务端完成消息后再让出两个绘制帧并检查界面。原 300 ms 防抖不变；上传响应、运行完成、
+绘制及各界面条件分别有 45 秒上限，工作流整体仍为 15 分钟，不保证整条流程只需 45 秒。
 
 下载在点击前监听事件，同时为点击和事件等待安装拒绝处理。点击失败时，后续关闭浏览器
 不会用未处理的下载等待异常覆盖原始点击错误；所有下载内容断言仍保留。
 事件监听顺序遵循 [Playwright 下载说明](https://playwright.dev/docs/downloads)。
 
-三个定向测试使用独立 Streamlit 小应用：延迟上传、在按钮渲染后暂停 Python，及人为制造
-不存在的下载按钮。它们验证真实的异步边界和错误传播；CI 在完整 30 条流程前运行这些测试。
-两种测试均不设置失败重试。完整报告保留原有入口文件 `harness_sha256`，新增
-`harness_files_sha256` 同时记录入口与共用 helper 的字节哈希，避免拆文件后漏记执行依赖。
+七项回归包含：上传响应后仍未开始运行的受控窗口、慢运行尾部、无延迟夹具在正常及
+8 倍 CPU 降速下的首次/替换上传、HTTP 失败、运行标识匹配及下载错误传播。
+上传返回后用同步 DOM 读取断言末尾标记，不用会自行等待的定位器断言掩盖早返回。
+CI 还分别删除“运行完成等待”和改成“只等上传响应”，要求两种变异都由该末尾断言杀掉。
+这些检查在完整 30 条流程前执行，均不设置失败重试。完整报告保留 `harness_sha256`，
+`harness_files_sha256` 覆盖入口、helper、协议监听及描述提取脚本，并记录 Streamlit 协议版本。
 
 本套覆盖桌面 Chromium 的上述合成路径及 390 px 窄视口检查；Safari、Firefox、真实移动设备、真实照片交互、
 大文件与低内存压力测试仍需另行验证。它不改变 G3/G4，也不证明尺寸、耗线或实物效果。

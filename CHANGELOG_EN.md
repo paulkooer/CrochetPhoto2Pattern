@@ -10,7 +10,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Fixed — 2026-11-13 Browser workflow synchronization
 
-- Wait for actual script state and the rerun caused by each upload, keeping existing timeouts and all 30 content checks. Preserve the original error when a download click fails. CI adds delayed-upload, slow-rerun and error-propagation regressions; reports also hash the shared helper. Application code and release gates are unchanged.
+- Match uploaded file IDs, client rerun requests and server run identities before accepting successful completion, then check rendering. Preserve original download click errors. CI runs seven regressions and two early-return mutation checks, retaining all 30 workflow scenarios; reports also hash the shared protocol scripts. Application code, Python dependencies and release gates are unchanged.
 
 ### Changed — 2026-11-13 Image dependency lock update
 
