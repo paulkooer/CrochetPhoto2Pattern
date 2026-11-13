@@ -8,6 +8,8 @@
 |---|---|---|
 | System status, evidence, and release gates / 系统状态、证据与发布门禁 | [system-status.md](system-status.md) | [system-status.zh-CN.md](system-status.zh-CN.md) |
 | Release candidate evidence / 发布候选证据流程 | [release-process.md](release-process.md) | [release-process.zh-CN.md](release-process.zh-CN.md) |
+| Dependency update policy / 依赖更新口径 | [policy and pinned upstream sources](dependency-updates.md) | [规则范围与固定版本依据](dependency-updates.md) |
+| Open contribution follow-up / 尚未闭项的贡献待办 | [PR #15 — awaiting split](reviews/pr-15-followup.md) | [PR #15 — 等待拆分](reviews/pr-15-followup.md) |
 | Authorized real-photo evaluation / 授权真实照片评测 | [evaluation.en.md](evaluation.en.md) | [evaluation.md](evaluation.md) |
 | Third-party rights and takedown / 第三方权利与下架 | [policy](../THIRD_PARTY_CONTENT_EN.md) · [process](../NOTICE_AND_TAKEDOWN_EN.md) | [政策](../THIRD_PARTY_CONTENT.md) · [流程](../NOTICE_AND_TAKEDOWN.md) |
 | Physical trials and calibration / 实体试钩与校准 | [physical-trials.en.md](physical-trials.en.md) | [physical-trials.md](physical-trials.md) |
@@ -32,6 +34,7 @@ Root-level user and community documents are also bilingual:
 - [变更日志](../CHANGELOG.md) / [Changelog](../CHANGELOG_EN.md)
 
 ## Historical review material / 历史审查材料
+
 
 - [Archive index / 归档索引](archive/README.md) — dated reviews, probes, catalogs, and diagnostic comparisons / 带日期的审查、探测、样本清单与诊断对照。
 - [2026-11-11 系统审查处理记录 / audit disposition (Chinese)](archive/optimization-review-20261111.md)

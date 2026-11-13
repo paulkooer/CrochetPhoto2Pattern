@@ -20,13 +20,17 @@ existing receipt as historical evidence until then; do not describe it as coveri
 
    The generator refuses missing, incomplete, or unsuccessful latest checks and a different
    audit tree. Review `commit`, `tree`, `checks_completed_at`, and `run_refs` in the result.
+   The generator also writes `release-evidence.sha256`; commit both files together.
 4. Check the saved binding without network access or writes:
 
    ```bash
    python scripts/bind_release_evidence.py --status --commit <candidate-sha>
    ```
 
-   Exit 0 means that exact commit is covered; exit 1 means it is not. This compares committed
+   Exit 0 requires matching commit and tree, a valid receipt checksum, passing check groups,
+   a matching audit tree, and `covers_later_commits: false`. Exit 1 means these checks did not
+   pass. This offline check verifies local consistency; it does not authenticate GitHub runs
+   or recheck their current remote state. This compares committed
    identities, not uncommitted working files. A later commit that records the receipt is
    distinct from the candidate: use the candidate SHA when checking or reviewing it.
 5. Review G3 and G4 independently using the [photo evaluation](evaluation.en.md) and

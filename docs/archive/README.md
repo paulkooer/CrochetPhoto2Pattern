@@ -12,7 +12,6 @@ preserved byte for byte; Markdown navigation has been adjusted for this director
 
 ## Reviews / 审查记录
 
-- [2026-11-13 PR #15 split review proposal / 拆分评审建议（未发送草稿）](pr-15-review-20261113.md)
 - [2026-11-11 system review / 系统审查](optimization-review-20261111.md)
 - [2026-11-03 frontend review / 前端审视](frontend-design-review-20261103.md)
 - [2026-11-02 optimization review / 优化审查](optimization-review-20261102.md)

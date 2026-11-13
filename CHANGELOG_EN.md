@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-13 Release receipt consistency
+
+- Offline receipt status checks both candidate commit and tree, the scope flag, passing check groups, and the audit tree. Evidence generation writes a companion SHA-256 file; status and tests reject missing or mismatched checksums. This verifies local consistency, not remote-run authenticity or release readiness.
+- Status examples use the selected candidate SHA. Record the upstream security-update exception for type-only Dependabot ignores, and move PR #15's open split follow-up out of the historical archive.
+
 ### Changed — 2026-11-13 Stylesheet sections
 
 - Compose `build_css` from token, page, navigation, control, pattern, hero, section-heading, note, reduced-motion and print helpers. Preserve complete CSS bytes and dynamic token/ring variants.
