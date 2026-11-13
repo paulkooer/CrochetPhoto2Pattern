@@ -26,6 +26,7 @@ import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import cast
 
 REPO = "paulkooer/CrochetPhoto2Pattern"
 ROOT = Path(__file__).resolve().parents[1]
@@ -197,7 +198,7 @@ def _check_runs(sha: str) -> list[dict[str, object]]:
     runs = payload.get("check_runs")
     if not isinstance(runs, list):
         raise ValueError(f"{sha} 没有 check_runs")
-    if int(payload.get("total_count") or 0) > len(runs):
+    if int(cast("int | str", payload.get("total_count") or 0)) > len(runs):
         raise ValueError(f"{sha} 的检查超过 100 条，脚本需要分页")
     checked: list[dict[str, object]] = []
     for run in runs:
@@ -309,7 +310,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     required = json.loads(REQUIRED_PATH.read_text(encoding="utf-8"))
     expected = set(required["contexts"]) - {AUDIT_CONTEXT}
-    recorded = set(document["push_checks"])
+    recorded = set(cast(Mapping[str, str], document["push_checks"]))
     if recorded != expected:
         raise ValueError(
             "push 检查与 .github/required-checks.json 不一致："
