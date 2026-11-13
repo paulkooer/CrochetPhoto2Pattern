@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Trial tool modules
+
+- Move trial schemas, bounded JSON/file I/O, draft/fingerprint handling, external evidence, calibration analysis and CLI handling into `app.trial_tools`. `app.trials` remains a compatibility facade with the same public names and CLI entry point. Record/report schemas, fingerprint rules, calibration/holdout isolation and conservative release decisions retain their behavior.
+
 ### Changed — 2026-11-13 Evaluation stages
 
 - Separate one-image scoring, per-run accumulators and report aggregation from `evaluate_dataset`. Frozen-image reads, rights validation, failed-case accounting, report schema and release thresholds retain their behavior.
