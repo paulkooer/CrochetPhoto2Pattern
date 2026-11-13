@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Evaluation stages
+
+- Separate one-image scoring, per-run accumulators and report aggregation from `evaluate_dataset`. Frozen-image reads, rights validation, failed-case accounting, report schema and release thresholds retain their behavior.
+
 ### Changed — 2026-11-13 Assembly part identity
 
 - Assembly routing and default connection templates use `PartKind`; saved labels are resolved at the boundary. Existing prose, per-copy quantities, openings, custom names and one-piece target regions retain their behavior.
