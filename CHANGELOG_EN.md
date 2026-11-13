@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Image dependency lock update
+
+- Update headless OpenCV to 4.14, NumPy on Python 3.11 to 2.4.6, and use locked NumPy 2.5.2 on 3.12+. Use equivalent module-level functions for two integer-array reductions to support NumPy 2 typing; segmentation and color strategies are unchanged.
+
 ### Fixed — 2026-11-13 Release receipt consistency
 
 - Offline receipt status checks both candidate commit and tree, the scope flag, passing check groups, and the audit tree. Evidence generation writes a companion SHA-256 file; status and tests reject missing or mismatched checksums. This verifies local consistency, not remote-run authenticity or release readiness.
