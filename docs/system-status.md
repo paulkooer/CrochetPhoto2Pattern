@@ -28,11 +28,12 @@ its tree matches the candidate's tree. G3 and G4 stay blocked.
 Check whether the saved receipt covers a particular commit without network access or writes:
 
 ```bash
-python scripts/bind_release_evidence.py --status --commit HEAD
+python scripts/bind_release_evidence.py --status --commit <candidate-sha>
 ```
 
-Exit 1 means the selected commit is not covered. Exit 0 confirms the binding only; it does
-not mean all release gates pass.
+Use the exact candidate SHA recorded in the receipt. Exit 1 means the selected commit is not
+covered or the receipt is inconsistent. Exit 0 confirms local consistency and the Git binding;
+it does not mean all release gates pass or authenticate remote runs.
 
 
 See the [changelog](../CHANGELOG_EN.md) for changes. The [prior status snapshot](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.md) preserves the historical per-round verification records in Git.

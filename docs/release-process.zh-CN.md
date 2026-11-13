@@ -18,13 +18,16 @@
 
    生成器拒绝缺失、未完成或未成功的最新检查，也拒绝不同的审计树。核对结果中的
    `commit`、`tree`、`checks_completed_at` 和 `run_refs`。
+   生成器同时写入 `release-evidence.sha256`，两个文件须一起提交。
 4. 离线只读核对绑定：
 
    ```bash
    python scripts/bind_release_evidence.py --status --commit <candidate-sha>
    ```
 
-   退出码 0 表示确切提交被覆盖，1 表示未覆盖。这里只比较已提交的身份，不验证工作区
+   退出码 0 要求提交与树同时匹配、收据校验和正确、检查组通过、审计树匹配，且
+   `covers_later_commits` 为 false；1 表示未满足这些条件。离线检查只验证本地一致性，
+   不认证 GitHub 运行来源，也不重新查询远端检查状态。这里只比较已提交的身份，不验证工作区
    未提交内容。后续记录收据的提交与候选提交不同，核对和审阅时仍指定候选 SHA。
 5. 按[真实照片评测](evaluation.md)与[实体试钩](physical-trials.md)规范分别核对 G3、G4。
    G1/G2 绑定匹配不等于这些门禁通过；G1–G4 全部通过前不创建正式发布标签。
