@@ -1,6 +1,6 @@
 # Fable 5.2 复审修正交接
 
-Fable 指出的两点成立：旧版对瞬时 `running` 的依赖会漏检，原三项回归也未保护“本轮完成后才返回”。这两项保证已撤回并改为下面可验证的范围。此记录是修改与验证交接，等待 Fable 再审；#86、#87 均未合并。
+Fable 最新复审确认，旧版瞬时 `running` 依赖与即时末尾断言缺口均已修正，未发现阻断 #86 合并的缺陷。但其复审因权限分类器不可用而未完成，不能记为全部独立验证通过。此交接保留已验证结果及下面的适用前提；#86、#87 均未合并。
 
 ## 固定范围
 
@@ -8,12 +8,17 @@ Fable 指出的两点成立：旧版对瞬时 `running` 的依赖会漏检，原
 - 新实现：[PR #86](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/86)，提交 `d93e5b528d1569f4549ba31e51866f737244b01c`。本轮相对基线变更 13 个文件。
 - `app/`、既有 Python 测试、`pyproject.toml`、`uv.lock`、发布收据及校验和没有变化。Node 浏览器工具新增锁定的 `protobufjs@7.6.6`；协议字段描述由实际安装的 Streamlit 提取。
 - [验证清单](fable-browser-sync-checks.json)只绑定新实现提交；后续交接提交只改文档，不把旧 CI 或后来文档的提交冒充本次代码验证。
+- #86 保持 Fable 已复核的 `d93e5b5` 不变；关联测试补强单独见 [#88](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/88)，提交 `adeabbffd5086657cc1ab360c2439e7e1a091ae4`，尚未并入 #86/#87。#87 相对 #86 仅有五份文档/导航文件变化。
 
 ## 两项问题如何修正
 
 上传不再观察 DOM 的瞬时 `running`。每页先注册 WebSocket 监听，再导航到应用；每次上传按顺序匹配：HTTP 上传响应中的文件 ID、包含该 ID 的客户端 `rerun_script`、随后完整运行的 `new_session` 标识，以及相同运行 ID 的成功 `script_finished`。旧请求、错误文件、其他运行的完成消息及被中断运行不能放行。
 
-服务端完成后，再让出两个有超时限制的绘制帧并检查连接、`notRunning`、骨架与异常。这个适配面针对当前锁定的 Streamlit 1.67、Chromium、同页顺序单文件操作；没有承诺任意并发或自动刷新链已完全静止。各等待阶段仍有 45 秒上限，原 300 ms 防抖与工作流 15 分钟总上限不变。
+服务端完成后，再让出两个有超时限制的绘制帧并检查连接、`notRunning`、骨架与异常。这个适配面针对当前锁定的 Streamlit 1.67、Chromium、同页顺序单文件操作，且要求**上传前无未决重跑请求**；没有承诺任意并发或自动刷新链已完全静止。各等待阶段仍有 45 秒上限，原 300 ms 防抖与工作流 15 分钟总上限不变。
+
+当前协议关联的是上传请求之后开始的完整运行，不证明该运行消费了上传请求。若较早排队的请求尚未开始，其运行可能在上传请求之后才发 `new_session` 并成功结束，从而被接受。上传前的 `settle()` 只能观察界面空闲，不能证明服务端请求队列为空。此竞态目前仅有 Fable 的源码推断，未实跑坐实，也未在本轮修复。
+
+WebSocket 一旦关闭，该页监听记录会持续报错，即使随后重连，后续上传也会失败关闭。需要继续时应重新创建页面，在导航前注册监听；当前 helper 不支持同页重连后恢复上传。
 
 回归夹具增加了“上传响应已返回、刷新请求尚未执行”的受控窗口，以及运行末尾才输出的标记。`upload()` 返回后，测试先用同步 `page.evaluate` 读取末尾标记；没有定位器自动等待、后续点击或第二次 `settle` 替它补等。
 
@@ -35,6 +40,12 @@ CI 还实际执行两种变异：删除运行完成等待、仅等待上传响�
 
 本轮没有在本地另跑全量 Python 测试，也没有复用上一轮本地 dev+pdf 的数量冒充新结果。新提交的四版本完整测试以本轮远端记录为准。历史失败附件与旧结果保留在[旧交接提交](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/60f4fe5a97328d33c7ad3d71e78fdda0afecccac/docs/reviews/fable-browser-sync-checks.json)；原始三次失败的根因仍没有被证明。
 
+## 最新独立复审与测试补强
+
+Fable 在 `200c108` 实跑 7/7 回归、24/24 无延迟上传（正常/8 倍下 DOM 未出现 `running` 为 0/8 次）、2/2 早返回变异，并向 GitHub 核对 #86 的 13/13。完整 30 条流程、真实应用 8 倍探针、#87 的检查和运行次数，以及 CI 的 DOM 缺失计数，均未被其独立复核；上表仍是工程侧验证记录。
+
+后续 [#88](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/88) 增加两个关联事件序列：完整运行在上传请求前开始，以及请求之后仅有片段运行完成。它们都必须保持等待，直到后续完整运行结束。变异驱动实际放宽请求时序和移除片段过滤，并要求退出码 1 且出现各自指定的断言文本；原两种早返回变异仍执行。本地为 9/9、快速上传 24/24、四种变异 4/4 被杀。新增测试不证明上述排队竞态已被解决；其 CI 查看固定头提交 `adeabbf` 的 [PR 检查](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/88/checks)，不混入 `d93e5b5` 的验证数量。
+
 ## 再审入口
 
 ```sh
@@ -44,6 +55,8 @@ scripts/browser/node_modules/.bin/playwright install chromium
 node --test scripts/browser/workflow_helpers.test.cjs
 node scripts/browser/check_upload_mutations.cjs
 ```
+
+上述命令在 #86/#87 上仍执行七项回归与两种变异；检出 #88 的 `adeabbf` 后为九项回归与四种变异。
 
 完整应用运行见[浏览器说明](../browser-regression.md)。外部探针使用上传 helper 时，需要在 `page.goto` 前调用 `observeRuns(page)`（来自 `scripts/browser/streamlit_protocol.cjs`）；仓库主流程和回归夹具已注册。消息监听、协议提取及入口/helper 四份脚本的哈希与 Streamlit 版本均进入完整浏览器报告。
 

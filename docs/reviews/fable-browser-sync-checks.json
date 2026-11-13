@@ -17,6 +17,9 @@
   "synchronization_contract": {
     "framework": "locked Streamlit 1.67.0",
     "driver": "Chromium; listener registered before page navigation; sequential single-file actions",
+    "preconditions": [
+      "no pending rerun requests before upload"
+    ],
     "barrier": [
       "successful upload HTTP response file ID",
       "client rerun_script containing that ID after the action begins",
@@ -30,7 +33,8 @@
       "interrupted runs"
     ],
     "rendering": "two bounded rendering frames, then connected/notRunning/no-skeleton/no-exception checks",
-    "limits": "Not a universal guarantee for arbitrary parallel or automatic rerun chains."
+    "limits": "Matches a full run starting after the request, not proof that the run consumed that request. UI settle does not prove an empty server request queue. Not a universal guarantee for parallel or automatic rerun chains.",
+    "websocket_reconnection": "A close permanently fails the current page's observer; reconnecting that page does not restore uploads. Recreate the page and observe before navigation."
   },
   "scope": {
     "baseline": "d0d5a38237d78fa36ed169a898e126b496b74641",
@@ -413,8 +417,66 @@
     "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/blob/60f4fe5a97328d33c7ad3d71e78fdda0afecccac/docs/reviews/fable-browser-sync-checks.json",
     "scope": "historical d0d5a38 results only; do not reuse as new-head proof"
   },
+  "latest_independent_review": {
+    "source": "Fable report supplied by the user on 2026-11-13",
+    "reviewed_heads": {
+      "86": "d93e5b528d1569f4549ba31e51866f737244b01c",
+      "87": "200c108ef02a359e704355b9060ee2db63c28267"
+    },
+    "conclusion": "No defect found blocking #86 merge; review incomplete because reviewer reported persistent permission-classifier unavailability.",
+    "actually_verified": {
+      "regressions_passed": 7,
+      "fast_uploads": 24,
+      "fast_dom_running_absent": {
+        "cpu1": 0,
+        "cpu8": 8
+      },
+      "early_return_mutants_killed_by_exact_assertion": 2,
+      "pr86_successful_checks": 13,
+      "streamlit_version": "1.67.0"
+    },
+    "not_independently_verified": [
+      "full 30-scenario browser flow locally or in remote logs",
+      "real-app CPU8 stress probe",
+      "PR87 head 200c108 checks and workflow run attempts",
+      "code-head CI DOM-running-absence counts",
+      "queued earlier request race and proposed correlation mutants"
+    ],
+    "queued_request_race": "Source inference only, not experimentally established or fixed: an earlier queued request may start a full run after the upload request and be accepted."
+  },
+  "correlation_test_followup": {
+    "pull_request": 88,
+    "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/88",
+    "code_commit": "adeabbffd5086657cc1ab360c2439e7e1a091ae4",
+    "base_commit": "d93e5b528d1569f4549ba31e51866f737244b01c",
+    "changed_files": 3,
+    "scope": "Tests, mutation driver and CI step label only. Upload helper, protocol implementation, application and dependencies unchanged. Not included in #86/#87.",
+    "local": {
+      "regressions_passed": 9,
+      "fast_uploads": 24,
+      "fast_dom_running_absent": {
+        "cpu1": 0,
+        "cpu8": 10
+      },
+      "mutants_killed": 4,
+      "new_mutants": [
+        {
+          "name": "start_after_action",
+          "required_failure": "A full run starting before the upload request must not complete that upload."
+        },
+        {
+          "name": "include_fragment_runs",
+          "required_failure": "A fragment run must not complete a full-app upload."
+        }
+      ],
+      "required_exit_code": 1,
+      "ci_enforced": true
+    },
+    "ci_reference": "Check PR88 for exact-head checks; these results are separate from the pinned d93e5b5 code-head evidence above.",
+    "limits": "These event sequences protect request ordering and fragment exclusion, not the queued-earlier-request race."
+  },
   "remaining": {
-    "independent_review": "await Fable re-review of #86/#87; no merge",
+    "independent_review": "Fable found no #86 merge blocker but did not finish review; latest #87 scope clarification and #88 tests await review. No merge performed.",
     "earlier_prs": "#74–#85 not reviewed in Fable5.2",
     "g3": "blocked: authorized real photos and required thresholds",
     "g4": "blocked: physical calibration and disjoint holdout",
