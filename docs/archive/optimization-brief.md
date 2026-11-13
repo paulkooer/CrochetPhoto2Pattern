@@ -1,7 +1,7 @@
 # CrochetPhoto2Pattern 优化建议任务书（Optimization Brief）
 
 > **历史快照**：本文整理于较早审查轮次，测试数、Python版本和已实现清单不代表
-> 当前发布状态。权威结论见 [`system-status.md`](system-status.md)；本文仅保留为
+> 当前发布状态。权威结论见 [`system-status.md`](../system-status.md)；本文仅保留为
 > 优化决策与“不要重复提案”记录。
 
 > 交给优化顾问（AI 或人）的完整任务书。与 `audit-brief.md`（找 bug 的

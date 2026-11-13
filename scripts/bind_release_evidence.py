@@ -1,8 +1,9 @@
 """Write docs/release-evidence.json from one commit's GitHub check runs.
 
-The file binds G1/G2 to that commit. Later commits are not covered until this
-script is run again. pip-audit is recorded from another commit only when the
-trees match: security.yml does not run that job on every push to main.
+The file binds G1/G2 to that commit. Later commits are not covered; generate a
+new receipt only for a selected release candidate. pip-audit is recorded from
+another commit only when the trees match: security.yml does not run that job
+on every push to main.
 
 Each check name contributes only its latest run. Latest means the greatest
 created_at, or started_at when created_at is absent. That run must have
@@ -10,6 +11,10 @@ status completed, conclusion success, and head_sha equal to the requested
 commit. An unfinished latest run rejects the file instead of reusing an older
 success. --commit and --audit-commit are required, so a bare run cannot
 rewrite the file onto the previous binding.
+
+--status compares the saved binding with --commit (HEAD by default), without
+network access or writing evidence. Exit 1 means that commit is not covered;
+this binding check does not evaluate the other release gates.
 """
 from __future__ import annotations
 
@@ -216,12 +221,38 @@ def _commit_facts(sha: str) -> tuple[str, str, str]:
     return full, tree_sha, date[:10]
 
 
+def binding_status(document: Mapping[str, object], commit: str) -> dict[str, object]:
+    """A saved check run covers its exact commit, never a later commit."""
+    return {
+        "candidate_commit": commit,
+        "evidence_commit": document["commit"],
+        "covers_candidate_commit": document["commit"] == commit,
+        "checks_completed_at": document["checks_completed_at"],
+        "g3_real_photo": document["g3_real_photo"],
+        "g4_physical_trial": document["g4_physical_trial"],
+    }
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--commit", required=True)
-    parser.add_argument("--audit-commit", required=True)
-    parser.add_argument("--output", type=Path, default=EVIDENCE_PATH)
+    parser.add_argument("--status", action="store_true", help="Read the saved binding without writing it")
+    parser.add_argument("--commit", help="Required when writing; defaults to HEAD for --status")
+    parser.add_argument("--audit-commit", help="Required when writing")
+    parser.add_argument("--output", type=Path, default=EVIDENCE_PATH,
+                        help="Evidence file to write, or read with --status")
     args = parser.parse_args(argv)
+    if args.status:
+        if args.audit_commit:
+            parser.error("--audit-commit cannot be used with --status")
+        candidate = subprocess.check_output(
+            ["git", "rev-parse", "--verify", f"{args.commit or 'HEAD'}^{{commit}}"],
+            cwd=ROOT, text=True,
+        ).strip()
+        status = binding_status(json.loads(args.output.read_text(encoding="utf-8")), candidate)
+        print(json.dumps(status, ensure_ascii=False, indent=2))
+        return 0 if status["covers_candidate_commit"] else 1
+    if not args.commit or not args.audit_commit:
+        parser.error("--commit and --audit-commit are required when writing release evidence")
     commit, tree, commit_date = _commit_facts(args.commit)
     audit_commit, audit_tree, _audit_date = _commit_facts(args.audit_commit)
     document = build_evidence(

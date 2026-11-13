@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 状态快照：2026-11-11。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 状态快照：2026-11-13。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 
@@ -14,17 +14,22 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 
 ## 最近一次可复现验证
 
-正式 G1/G2 绑定见 [`docs/release-evidence.json`](release-evidence.json)，由
-`scripts/bind_release_evidence.py` 根据远端检查生成。发布证据绑定提交
-`ba65b8db92c12cab80f4e157a0b11c47bf64763c`（树 `b2c18d71cfd615504ecd00c9fdef0f64b406ea07`）。
-生成该文件时，这个提交是 `main`。证据不自动覆盖后续提交。
-该提交的 push 检查 12/12 通过。`security.yml` 的 push 有路径过滤，合并提交本身没有
-`pip-audit`；同一棵树的 PR #61 头提交 `9063635b2411e59d3b3647710d06fa792146c6ba` 含
-`pip-audit` 且 13/13 通过。
-`commit_date` 是提交日期，`checks_completed_at` 是所采用检查的最晚完成时间，`run_refs`
-保留运行编号和链接。生成器只认每个检查最新的一次运行；最新运行未完成或不是 success 时拒绝写文件。
-再次生成必须显式传入 `--commit` 和 `--audit-commit`。
+已保存的 G1/G2 发布证据见 [`docs/release-evidence.json`](release-evidence.json)。
+它是该文件 `commit` 字段所指提交的历史收据，不代表当前 `main` 状态；
+`checks_completed_at` 和 `run_refs` 记录所采用的远端检查时间与链接。后续提交不继承通过结论。
+
+仅在选定发布候选并完成检查后，按[发布流程](release-process.zh-CN.md)生成新收据。
+日常合并查看各自的 CI，不刷新发布证据，也不把证据哈希抄到本页。
+生成器只接受每项检查最新且成功完成的运行；使用另一个提交的 pip-audit 时，必须与候选树完全一致。
 G3 与 G4 仍是阻断。
+
+以下命令只读取证据并核对指定提交，不访问网络或改写文件：
+
+```bash
+python scripts/bind_release_evidence.py --status --commit HEAD
+```
+
+退出码 1 表示该提交未被证据覆盖；退出码 0 只表示绑定匹配，不代表全部发布门禁通过。
 
 
 变更历史见 [CHANGELOG](../CHANGELOG.md)；逐轮验证的[旧状态快照](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.zh-CN.md)保留在 Git 中，不再追加到当前状态页。
@@ -41,14 +46,14 @@ MediaPipe 未安装），与独立运行分开记录。该轮导出缓存为 **1
 验收方查询该 SHA 时没有公开远端 CI 结果；合并门禁以修复 PR 当前头提交的 Checks 为准。
 该验收轮次尚未执行真实浏览器；后续合成浏览器覆盖见上节。授权照片、实体试钩及
 浏览器其他平台与真实照片场景仍独立待办，Beta 定位及 G3/G4 不变。
-验收边界见[闭项交接](audit-fix-review-20261030.md)。
+验收边界见[闭项交接](archive/audit-fix-review-20261030.md)。
 
 ## 发布门禁
 
 | 门禁 | 当前状态 | 通过条件 |
 |---|---|---|
-| G1 可复现源码 | **见 [`docs/release-evidence.json`](release-evidence.json)** | 发布证据绑定提交 `ba65b8db92c12cab80f4e157a0b11c47bf64763c`。生成该文件时，这个提交是 `main`。证据不自动覆盖后续提交，须重新生成。新增功能不继承 `55280fb` 的独立 PASS |
-| G2 支持版本自动化 | **该提交 push 12/12 通过；pip-audit 见同一棵树** | Python 3.11–3.14、Docker、PDF、锁定及无锁 pose、Streamlit 下限、mypy 与浏览器冒烟在 push 上通过。合并提交本身没有 pip-audit。同一树的 PR #61 头提交 `9063635b2411e59d3b3647710d06fa792146c6ba` 为 13/13，含 pip-audit。要求的检查名见 `.github/required-checks.json` |
+| G1 可复现源码 | **须核对候选绑定** | 确切提交和树只记录在 [`release-evidence.json`](release-evidence.json)。新候选按[发布流程](release-process.zh-CN.md)生成证据；旧收据不覆盖后续提交，也不扩展既有独立验收范围 |
+| G2 支持版本自动化 | **见绑定候选的证据** | 候选的最新必需检查须全部成功；另一个提交的 pip-audit 必须同树。Python 版本、结论和运行链接以证据文件为准，必需检查名见 `.github/required-checks.json` |
 | G3 授权照片基线 | **阻断** | 至少30个分层 schema-v2 案例，逐图具备版权/被摄者证据，并满足 `docs/evaluation.md` 策略 v3 全部门槛。无交互自动路径可交付未经校准的轮廓候选；合成图能超过固定模板不代表真实照片达标 |
 | G4 实体试钩基线 | **阻断** | 校准集与图解哈希不重叠的独立验证集均满足 `docs/physical-trials.md` 口径 |
 | G5 发行包 | **本地通过** | wheel 内容、元数据、CLI 与包内数据检查通过 |

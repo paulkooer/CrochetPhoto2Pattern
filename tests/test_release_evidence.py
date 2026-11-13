@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from datetime import date, datetime
 from pathlib import Path
 
 import pytest
@@ -179,22 +180,40 @@ def test_commit_arguments_are_required(capsys):
     assert "--commit" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize(("candidate", "expected_code"), [("a" * 40, 0), ("d" * 40, 1)])
+def test_status_reads_saved_binding_without_network_or_writes(
+    tmp_path, monkeypatch, capsys, candidate, expected_code,
+):
+    bind = _binder()
+    document = _build(bind, _push(bind, "a" * 40))
+    evidence_path = tmp_path / "release-evidence.json"
+    evidence_path.write_text(json.dumps(document))
+    before = evidence_path.read_bytes()
+    monkeypatch.setattr(bind, "_gh_json", lambda _path: pytest.fail("status must work offline"))
+    monkeypatch.setattr(bind.subprocess, "check_output", lambda *a, **k: candidate + "\n")
+    assert bind.main(["--status", "--output", str(evidence_path)]) == expected_code
+    status = json.loads(capsys.readouterr().out)
+    assert status["covers_candidate_commit"] is (expected_code == 0)
+    assert status["candidate_commit"] == candidate
+    assert status["evidence_commit"] == document["commit"]
+    assert status["g3_real_photo"] == status["g4_physical_trial"] == "blocked"
+    assert evidence_path.read_bytes() == before
+
+
 def test_status_gates_cite_the_evidence_file_without_matching_head():
     evidence = json.loads((ROOT / "docs" / "release-evidence.json").read_text(encoding="utf-8"))
     zh = (ROOT / "docs" / "system-status.zh-CN.md").read_text(encoding="utf-8")
     en = (ROOT / "docs" / "system-status.md").read_text(encoding="utf-8")
     assert evidence["schema_version"] == 2
     assert "tested_at" not in evidence
-    assert evidence["commit_date"] == "2026-11-06"
-    assert evidence["checks_completed_at"] == "2026-11-06T06:06:33Z"
+    assert date.fromisoformat(evidence["commit_date"])
+    assert datetime.fromisoformat(evidence["checks_completed_at"])
     assert evidence["g3_real_photo"] == "blocked"
     assert evidence["g4_physical_trial"] == "blocked"
     assert evidence["covers_later_commits"] is False
     assert evidence["python"] == ["3.11", "3.12", "3.13", "3.14"]
     refs = evidence["run_refs"]
     assert set(refs) == set(evidence["push_checks"]) | {"pip-audit"}
-    assert refs["pip-audit"]["check_run_id"] == 127735998256
-    assert refs["pip-audit"]["run_id"] == 42170206948
     for ref in refs.values():
         assert isinstance(ref["check_run_id"], int)
         assert str(ref["run_id"]) in ref["url"]
@@ -203,9 +222,10 @@ def test_status_gates_cite_the_evidence_file_without_matching_head():
     for text, heading in ((zh, "## 发布门禁"), (en, "## Release gates")):
         gate = _section(text, heading)
         assert "release-evidence.json" in gate
-        assert evidence["commit"] in gate
+        assert "release-process" in gate
         assert "59f8737" not in gate
         assert "c8039b9" not in gate
-    assert evidence["commit"] in zh and evidence["commit"] in en
-    assert evidence["pip_audit"]["evidence_commit"] in zh
-    assert evidence["pip_audit"]["evidence_commit"] in en
+    for text in (zh, en):
+        assert "--status" in text
+        assert evidence["commit"] not in text
+        assert evidence["pip_audit"]["evidence_commit"] not in text

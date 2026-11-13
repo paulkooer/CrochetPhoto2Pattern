@@ -8,6 +8,12 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Repository and release evidence maintenance
+
+- Status pages link to the saved release receipt instead of repeating its commit hashes and check counts. The bilingual release process generates evidence only for a selected candidate; `bind_release_evidence.py --status` checks an exact commit offline without rewriting evidence. Existing evidence remains historical, and G3/G4 remain blocked.
+- Move dated review documents, public-pair catalogs, probes, and synthetic comparisons into `docs/archive/`, preserving JSON bytes and updating navigation and reproduction paths.
+- Ignore routine OpenCV major-version updates for both runtime and pose distributions while keeping 4.x updates enabled. OpenCV 5 requires an explicit API migration review.
+
 ### Fixed — 2026-11-12 Photo corrections and round references
 
 - Recalculate prior-derived part spans after a subject-mask correction, preserving pose measurements and reviewed head/body boxes in image coordinates. Background strips at the top and sides no longer overwrite definite foreground; the resulting segmentation still needs review.
@@ -148,7 +154,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 - The progress pair "重置进度 / 全部完成", undo/redo, the preview apply/cancel pair and the JSON editor pairs now sit left-aligned in horizontal containers (`st.columns(2)` spread content-width buttons half a panel apart). The two sidebar captions are merged into one line and chapter 5's duplicate "也可使用下方尺寸滑块或高级 JSON 编辑" is gone.
 - Widget keys, pattern/project/trial-bundle formats and behaviour are unchanged. README and the physical-trial docs now name the trial entry as it appears and place it under "打开已有工作".
 - Tests: new `tests/test_frontend_information_architecture.py` (sidebar order, both entries with history disabled, chapter-5 layering and download placement, a JSON draft surviving preview and cancel); browser regression adds the sidebar order, the collapsed advanced panel with downloads outside it, the draft flow and a 390 px sidebar drawer, for 21 flows in total.
-- `skin` / `body` placeholder colours were investigated only, with a written plan and no change to stored patterns or material totals; see the [frontend design review](docs/frontend-design-review-20261103.md) (Chinese).
+- `skin` / `body` placeholder colours were investigated only, with a written plan and no change to stored patterns or material totals; see the [frontend design review](docs/archive/frontend-design-review-20261103.md) (Chinese).
 
 ### Fixed — 2026-11-03 Declared Streamlit support floor
 
@@ -169,7 +175,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ### Changed — 2026-11-03 Emoji removed from UI chrome
 
-- Decorative emoji are removed from tabs, headings, sidebar titles, expander titles and buttons (about 60 places): the pattern-sheet concept reserves the marker yellow as the only highlight and yarn colours as the only other colour, and colourful emoji contradicted it. Status glyphs inside message bodies are unchanged. Tests, the browser script and the READMEs that quoted those labels are updated. Review notes: [Frontend design review](docs/frontend-design-review-20261103.md) (Chinese).
+- Decorative emoji are removed from tabs, headings, sidebar titles, expander titles and buttons (about 60 places): the pattern-sheet concept reserves the marker yellow as the only highlight and yarn colours as the only other colour, and colourful emoji contradicted it. Status glyphs inside message bodies are unchanged. Tests, the browser script and the READMEs that quoted those labels are updated. Review notes: [Frontend design review](docs/archive/frontend-design-review-20261103.md) (Chinese).
 
 ### Fixed — 2026-11-03 Review provenance
 
@@ -239,14 +245,14 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 - Separate progress when a graph instance ID collides with an ordinal ID for an extra copy. Structural edits match actual instances by ID and extra copies by ordinal, preventing completion from moving to another piece.
 - When a legacy project contains ambiguous completed rounds, retain the current workspace and offer explicit recovery of unambiguous progress and notes; the affected rounds must be checked against the physical work. Legacy undo snapshots are handled conservatively too. New projects with an identity collision include `progress_identity_version="2"` and need a supporting reader; other projects retain their existing format.
-- Map completed rounds directly and reuse the impact calculation to reduce preview work for large, sparsely completed patterns. See the [synthetic comparison](docs/progress-identity-review-20261102.md).
+- Map completed rounds directly and reuse the impact calculation to reduce preview work for large, sparsely completed patterns. See the [synthetic comparison](docs/archive/progress-identity-review-20261102.md).
 - Fix circular imports when a fresh Python process imports `app.schemas` or `app.utils.project` first. Gauge constraints remain shared, and the model package's existing re-exports stay available.
 
 ### Fixed / Changed — 2026-11-02 Material bounds and CLI rollback
 
 - Require finite ball weight, ball length and swatch weight of at least `0.000001`, and reject booleans in material measurements. Correct affected legacy files in the prior version and save a new project; normal decimals and numeric strings remain supported. Update the YarnSpec Schema and export cache to 14.
 - Back up existing CLI destinations in 1 MiB chunks. Ordinary rollback restores content, permission bits and modification time; metadata failure still attempts content recovery, and failed content recovery retains a backup and reports its path. A single-output symlink cycle now produces a preparation error. See [limits](docs/image-memory.md).
-- Reuse one per-color material aggregation during generation and refresh. See the [synthetic benchmark](docs/optimization-review-20261102.md) for measurements and output hashes.
+- Reuse one per-color material aggregation during generation and refresh. See the [synthetic benchmark](docs/archive/optimization-review-20261102.md) for measurements and output hashes.
 
 ### Fixed / Added — 2026-11-01 Unchanged submissions and material previews
 
@@ -685,7 +691,7 @@ formats may still evolve during Beta; incompatible changes must include migratio
   semantics. Fix Parade plain-round arithmetic, invalid starts, first-round colors,
   and dangling part separators. Require complete single-stream share payloads and
   symmetric byte limits; reject unknown backup versions and non-object history JSON.
-  Evidence: [review record (Chinese)](docs/optimization-review-20260907.md).
+  Evidence: [review record (Chinese)](docs/archive/optimization-review-20260907.md).
 
 - **Executable correctness is now a gate, not only a reported metric**: authorized-photo
   evaluation adds `min_parade_export_rate` (100% by default). A failed complete

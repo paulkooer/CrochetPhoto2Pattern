@@ -200,7 +200,7 @@ Markdown 和符号条共用有序表达式。只有聚合数据时，DSL 报告�
 
 本轮自主实现的是六针格点上的动态规划，不是 AmiGo 的复现：首圈固定，最小化整段量化轮廓的针数平方误差，等误差时减少总加减量。约束包括密度变化上限、加针源针数及两针并一针的消耗上限，保留原有圈数。仅适用于当前短针旋转体模型，不能推广为所有针法的约束。
 
-[18 例合成对照](profile-fit-comparison-20261014.json)含直筒、肩部、收腰，三种密度与两个方向。12 例严格改善，6 个直筒保持零误差；例如经典肩部误差 2556→864。该指标针对平滑、量化后的目标，不是原照片像素误差，也不证明识别或成品准确率提升。复现：
+[18 例合成对照](archive/profile-fit-comparison-20261014.json)含直筒、肩部、收腰，三种密度与两个方向。12 例严格改善，6 个直筒保持零误差；例如经典肩部误差 2556→864。该指标针对平滑、量化后的目标，不是原照片像素误差，也不证明识别或成品准确率提升。复现：
 
 ```bash
 .venv/bin/python -m scripts.diagnose_profile_fit --out /tmp/profile-fit.json
@@ -227,7 +227,7 @@ LLM 架构判断：核心生成器、密度、配色、校验和导出均无需�
 
 已下载原站的两张成品照片到临时目录，运行本地完整生成管线，再用同页图解和人工
 观察进行对照。原图解没有传给生成器；禁用云端 API 和可选姿态模型。这补充了原来
-只提取针数规则的测试。[机器报告](public-pair-probe-20261009.json)记录照片 URL、
+只提取针数规则的测试。[机器报告](archive/public-pair-probe-20261009.json)记录照片 URL、
 SHA-256、应用源码摘要、识别信息、生成部件及自检结果，仓库不包含照片或原图解全文。
 
 | 配对来源 | 实际结果 | 原图解带来的额外对照 |
@@ -257,8 +257,8 @@ SHA-256、应用源码摘要、识别信息、生成部件及自检结果，仓�
 ## 扩展至 10 个配对样本（2026-10-09）
 
 新增 8 例，连同前轮 2 例全部实际运行，覆盖 5 个发布站点、10 个不同图片哈希。
-[样本清单](public-pair-catalog-20261009.json)在运行前记录原站照片地址、人工部件标签、
-结构事实和场景分组；[完整结果](public-pair-probe-expanded-20261009.json)保留成功、
+[样本清单](archive/public-pair-catalog-20261009.json)在运行前记录原站照片地址、人工部件标签、
+结构事实和场景分组；[完整结果](archive/public-pair-probe-expanded-20261009.json)保留成功、
 失败与边界案例。原图仅存在本地临时目录，没有进入仓库。
 
 | 新增样本及原钩法 | 场景/结构差异 | 本地生成观察 |
@@ -290,7 +290,7 @@ SHA-256、应用源码摘要、识别信息、生成部件及自检结果，仓�
 
 ```bash
 .venv/bin/python -m scripts.probe_public_pairs \
-  --catalog docs/public-pair-catalog-20261009.json \
+  --catalog docs/archive/public-pair-catalog-20261009.json \
   --image-dir /private/tmp/crochet-pair-expansion \
   --out /private/tmp/public-pair-expanded.json
 ```
@@ -301,8 +301,8 @@ SHA-256、应用源码摘要、识别信息、生成部件及自检结果，仓�
 
 ## 配对样本驱动的首轮改进（2026-10-09）
 
-同一清单、同一 10 张图片重跑：[改进后原始报告](public-pair-probe-guarded-20261009.json)。
-原[扩展报告](public-pair-probe-expanded-20261009.json)保留作为修改前对照，不覆盖历史结果。
+同一清单、同一 10 张图片重跑：[改进后原始报告](archive/public-pair-probe-guarded-20261009.json)。
+原[扩展报告](archive/public-pair-probe-expanded-20261009.json)保留作为修改前对照，不覆盖历史结果。
 
 | 项目 | 修改前 | 修改后 |
 |---|---|---|
@@ -329,7 +329,7 @@ SHA-256、应用源码摘要、识别信息、生成部件及自检结果，仓�
 不同照片，来自 9 个站点**。原 10 例与本批 5 例的应用源码摘要一致，图片 SHA-256
 跨批去重为 15。应用和评测脚本本轮均未修改。
 
-[本批清单](public-pair-catalog-wave2-20261009.json)与[实际运行报告](public-pair-probe-wave2-20261009.json)
+[本批清单](archive/public-pair-catalog-wave2-20261009.json)与[实际运行报告](archive/public-pair-probe-wave2-20261009.json)
 独立保存。清单记录未下载成功的蘑菇候选：原站直接请求返回 HTTP 403，没有实测，
 不计入 15 例。没有用其他来源图片冒充该图解成品。
 
@@ -357,7 +357,7 @@ SHA-256、应用源码摘要、识别信息、生成部件及自检结果，仓�
 
 ```bash
 .venv/bin/python -m scripts.probe_public_pairs \
-  --catalog docs/public-pair-catalog-wave2-20261009.json \
+  --catalog docs/archive/public-pair-catalog-wave2-20261009.json \
   --image-dir /private/tmp/crochet-pair-wave2 \
   --out /private/tmp/public-pair-wave2.json
 ```
@@ -447,7 +447,7 @@ parade 导出跳过并留 warning。
 
 ## 2026-10-11：结构与局部配色候选补充
 
-新增 [7 个候选及访问状态](public-pattern-candidates-20261011.json)：5 个原站正文可读，
+新增 [7 个候选及访问状态](archive/public-pattern-candidates-20261011.json)：5 个原站正文可读，
 2 个仅核对原站搜索索引；后者不能声称完成页面或图片核验。本轮只提取结构事实，
 未取得照片处理许可、未运行新的网络照片，不合并进此前 15 张实测统计，不计 G3/G4。
 
@@ -461,7 +461,7 @@ parade 导出跳过并留 warning。
 | [Tiny Whale](https://www.planetjune.com/blog/free-crochet-patterns/tiny-whale/) | 连续主体末端压扁后穿过双层形成尾部 | 尾巴不必是独立圆柱；需要局部工作轴与开口语义 |
 | [小狗摇铃](https://www.lilleliis.com/amigurumi-crochet-freebies/puppy-rattle/) | 头、耳、口鼻和握柄结构 | 避免固定模板凭空补出身体、手臂和腿 |
 
-**已运行的独立反例：** [诊断 JSON](color-layout-diagnostic-20261011.json) 来自自行绘制的
+**已运行的独立反例：** [诊断 JSON](archive/color-layout-diagnostic-20261011.json) 来自自行绘制的
 两幅 160×160 黑白几何图，无第三方像素。输入两块分离黑斑与一块居中黑斑，逐带颜色
 占比相同；为排除抠图影响，显式提供全前景掩码。两图各有 1280 个黑像素，当前输出
 均仅剩白色。证明横带多数投票会丢掉少数色与横向位置；不代表真实熊猫照片成绩。
@@ -484,7 +484,7 @@ parade 导出跳过并留 warning。
 
 ### 后续实现：保留局部颜色观测
 
-[改进后对照](color-layout-observation-20261011.json) 保留原诊断的像素与供给掩码：
+[改进后对照](archive/color-layout-observation-20261011.json) 保留原诊断的像素与供给掩码：
 两幅图仍输出相同的白色整圈色带，但现在观测中均保留 1280 个黑像素；二维区域分别
 记录两个左右分离黑斑和一个中央黑斑。原始诊断 JSON 保留不覆盖，上述命令现在输出新版对照。
 
@@ -513,7 +513,7 @@ parade 导出跳过并留 warning。
 空行、混色行和短噪声继续使用原估计；相邻同色合并。设置 `refine_stripes=False` 可复现原算法。
 原始横带计数和二维局部色块不变，因此复核提示仍是保守提示，不能当作细化后的误差分数。
 
-**对照：** [9 个自绘反例](color-stripe-comparison-20261012.json) 使用三种图高、三个条纹位置、
+**对照：** [9 个自绘反例](archive/color-stripe-comparison-20261012.json) 使用三种图高、三个条纹位置、
 四像素宽黑条纹和全前景掩码，隔离分割误差。精确恢复条纹颜色及两个边界由 **0/9 → 9/9**。
 `tests/test_color_stripes.py` 另覆盖单像素横线、稀疏前景、少数色斑块、原始观测守恒及逐圈颜色查询。
 
@@ -533,7 +533,7 @@ parade 导出跳过并留 warning。
 保证钩织方向不会改变取色结果。对没有任何相交圈被分配该色的色段，图解及导出明确提示复核；
 同一颜色别处已出现也不会掩盖该色段的丢失。原始照片色带仍保留。
 
-[三个独立区间反例](round-color-comparison-20261012.json) 的不匹配高度占比：
+[三个独立区间反例](archive/round-color-comparison-20261012.json) 的不匹配高度占比：
 
 | 自绘区间案例 | 中点采样 | 覆盖量选色 |
 |---|---:|---:|
