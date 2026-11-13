@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Stylesheet sections
+
+- Compose `build_css` from token, page, navigation, control, pattern, hero, section-heading, note, reduced-motion and print helpers. Preserve complete CSS bytes and dynamic token/ring variants.
+
 ### Changed — 2026-11-13 Grid UI sections
 
 - Extract project restore, inputs, generation, history, editing, preview and downloads into rendering helpers. Preserve widget keys, text, call order, caching and state protection when preparation fails.
