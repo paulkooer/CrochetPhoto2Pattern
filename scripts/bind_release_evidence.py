@@ -19,6 +19,7 @@ this binding check does not evaluate the other release gates.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -221,16 +222,49 @@ def _commit_facts(sha: str) -> tuple[str, str, str]:
     return full, tree_sha, date[:10]
 
 
-def binding_status(document: Mapping[str, object], commit: str) -> dict[str, object]:
-    """A saved check run covers its exact commit, never a later commit."""
+def binding_status(document: Mapping[str, object], commit: str, tree: str, *,
+                   checksum_valid: bool) -> dict[str, object]:
+    """Check local receipt consistency and exact Git identity, without remote calls."""
+    errors = []
+    if not checksum_valid:
+        errors.append("receipt checksum missing or mismatched")
+    if document.get("schema_version") != 2:
+        errors.append("unsupported receipt schema")
+    for field in ("commit", "tree"):
+        value = document.get(field)
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{40}", value):
+            errors.append(f"invalid {field}")
+    if document.get("covers_later_commits") is not False:
+        errors.append("receipt must not cover later commits")
+    if document.get("checks") != dict.fromkeys((*PUSH_GROUPS, "pip_audit"), "pass"):
+        errors.append("required check groups are not all passing")
+    expected_push = dict.fromkeys((name for names in PUSH_GROUPS.values() for name in names), "pass")
+    if document.get("push_checks") != expected_push:
+        errors.append("required push checks are not all passing")
+    audit = document.get("pip_audit")
+    if (not isinstance(audit, Mapping) or audit.get("status") != "pass"
+            or audit.get("evidence_tree") != document.get("tree")):
+        errors.append("pip-audit does not pass on the receipt tree")
+    matches = document.get("commit") == commit and document.get("tree") == tree
     return {
         "candidate_commit": commit,
-        "evidence_commit": document["commit"],
-        "covers_candidate_commit": document["commit"] == commit,
-        "checks_completed_at": document["checks_completed_at"],
-        "g3_real_photo": document["g3_real_photo"],
-        "g4_physical_trial": document["g4_physical_trial"],
+        "candidate_tree": tree,
+        "evidence_commit": document.get("commit"),
+        "evidence_tree": document.get("tree"),
+        "receipt_valid": not errors,
+        "validation_errors": errors,
+        "covers_candidate_commit": matches and not errors,
+        "checks_completed_at": document.get("checks_completed_at"),
+        "g3_real_photo": document.get("g3_real_photo", "unknown"),
+        "g4_physical_trial": document.get("g4_physical_trial", "unknown"),
     }
+
+
+def write_evidence(document: Mapping[str, object], path: Path) -> None:
+    """Write the receipt and its byte checksum together on deliberate regeneration."""
+    raw = (json.dumps(document, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    path.write_bytes(raw)
+    path.with_suffix(".sha256").write_text(hashlib.sha256(raw).hexdigest() + "\n", encoding="utf-8")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -245,10 +279,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.audit_commit:
             parser.error("--audit-commit cannot be used with --status")
         candidate = subprocess.check_output(
-            ["git", "rev-parse", "--verify", f"{args.commit or 'HEAD'}^{{commit}}"],
+            ["git", "rev-parse", "--verify", "--end-of-options", f"{args.commit or 'HEAD'}^{{commit}}"],
             cwd=ROOT, text=True,
         ).strip()
-        status = binding_status(json.loads(args.output.read_text(encoding="utf-8")), candidate)
+        tree = subprocess.check_output(
+            ["git", "rev-parse", "--verify", f"{candidate}^{{tree}}"], cwd=ROOT, text=True,
+        ).strip()
+        raw = args.output.read_bytes()
+        document = json.loads(raw)
+        if not isinstance(document, dict):
+            parser.error("release receipt must be a JSON object")
+        checksum_path = args.output.with_suffix(".sha256")
+        checksum_valid = (
+            checksum_path.is_file()
+            and checksum_path.read_text(encoding="utf-8").strip() == hashlib.sha256(raw).hexdigest()
+        )
+        status = binding_status(document, candidate, tree, checksum_valid=checksum_valid)
         print(json.dumps(status, ensure_ascii=False, indent=2))
         return 0 if status["covers_candidate_commit"] else 1
     if not args.commit or not args.audit_commit:
@@ -270,8 +316,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"多出 {sorted(recorded - expected)}，缺少 {sorted(expected - recorded)}")
     print(f"commit {commit} tree {tree}")
     print(f"audit-commit {audit_commit} tree {audit_tree}")
-    args.output.write_text(
-        json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_evidence(document, args.output)
     print(f"wrote {args.output}")
     return 0
 

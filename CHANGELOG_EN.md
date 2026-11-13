@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-13 Release receipt consistency
+
+- Offline receipt status checks both candidate commit and tree, the scope flag, passing check groups, and the audit tree. Evidence generation writes a companion SHA-256 file; status and tests reject missing or mismatched checksums. This verifies local consistency, not remote-run authenticity or release readiness.
+- Status examples use the selected candidate SHA. Record the upstream security-update exception for type-only Dependabot ignores, and move PR #15's open split follow-up out of the historical archive.
+
 ### Changed — 2026-11-13 Repository and release evidence maintenance
 
 - Status pages link to the saved release receipt instead of repeating its commit hashes and check counts. The bilingual release process generates evidence only for a selected candidate; `bind_release_evidence.py --status` checks an exact commit offline without rewriting evidence. Existing evidence remains historical, and G3/G4 remain blocked.
