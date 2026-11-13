@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Status snapshot: 2026-11-11. Current behavior is defined by source code,
+> Status snapshot: 2026-11-13. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -14,17 +14,25 @@ project must not claim validated dimensions, material usage, time, or finished-i
 
 ## Latest reproducible validation
 
-The formal G1/G2 binding is [`docs/release-evidence.json`](release-evidence.json), written by
-`scripts/bind_release_evidence.py` from remote checks. The evidence binds commit
-`ba65b8db92c12cab80f4e157a0b11c47bf64763c` (tree `b2c18d71cfd615504ecd00c9fdef0f64b406ea07`).
-That commit was `main` when the file was generated. The evidence does not cover later commits.
-That commit's push checks are 12/12. `security.yml` path-filters pushes, so the merge commit
-itself has no `pip-audit` run. PR #61 head `9063635b2411e59d3b3647710d06fa792146c6ba` has the
-same tree, includes `pip-audit`, and is 13/13. `commit_date` is the commit date,
-`checks_completed_at` is the latest completion time among the adopted runs, and `run_refs`
-keeps the run ids and links. The generator accepts only the latest run of each check and
-refuses to write the file when that run is unfinished or not a success. Regenerating the file
-requires explicit `--commit` and `--audit-commit` arguments. G3 and G4 stay blocked.
+The saved G1/G2 evidence is [`docs/release-evidence.json`](release-evidence.json).
+It is a historical receipt for the exact `commit` in that file, not a status report for
+the current `main`. Its `checks_completed_at` and `run_refs` identify the adopted remote
+checks. Later commits do not inherit those passes.
+
+Generate a new receipt only after selecting and checking a release candidate, following
+the [release process](release-process.md). Routine merges use their own CI results and do
+not refresh this receipt or copy its hashes into this page. The generator rejects an
+unfinished or unsuccessful latest check, and accepts a separate pip-audit commit only when
+its tree matches the candidate's tree. G3 and G4 stay blocked.
+
+Check whether the saved receipt covers a particular commit without network access or writes:
+
+```bash
+python scripts/bind_release_evidence.py --status --commit HEAD
+```
+
+Exit 1 means the selected commit is not covered. Exit 0 confirms the binding only; it does
+not mean all release gates pass.
 
 
 See the [changelog](../CHANGELOG_EN.md) for changes. The [prior status snapshot](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.md) preserves the historical per-round verification records in Git.
@@ -44,14 +52,14 @@ results existed for that SHA when the reviewer queried it; merging requires the 
 current head checks. That acceptance round did not run real-browser tests; subsequent synthetic
 browser coverage is recorded above. Authorized photos, physical trials, other browser platforms
 and real-photo browser scenarios remain separate work; Beta status and G3/G4 are unchanged.
-See the [acceptance handoff](audit-fix-review-20261030.md).
+See the [acceptance handoff](archive/audit-fix-review-20261030.md).
 
 ## Release gates
 
 | Gate | Status | Pass condition |
 |---|---|---|
-| G1 Reproducible source | **See [`docs/release-evidence.json`](release-evidence.json)** | The evidence binds commit `ba65b8db92c12cab80f4e157a0b11c47bf64763c`, which was `main` when the file was generated. It does not cover later commits and must be regenerated for them. New features do not inherit the independent PASS for `55280fb` |
-| G2 Supported-version automation | **12/12 push checks on that commit; pip-audit on the same tree** | Python 3.11–3.14, Docker, PDF, locked and unlocked pose, Streamlit floor, mypy and browser smoke passed on the push. The merge commit itself has no pip-audit run. PR #61 head `9063635b2411e59d3b3647710d06fa792146c6ba` is the same tree and is 13/13, including pip-audit. Required context names are in `.github/required-checks.json` |
+| G1 Reproducible source | **Candidate binding must be checked** | The exact source commit and tree are recorded in [`release-evidence.json`](release-evidence.json). Follow the [release process](release-process.md) for a new candidate; the saved receipt does not cover later commits or extend an earlier independent acceptance |
+| G2 Supported-version automation | **See the bound candidate's evidence** | The latest required checks must succeed for the candidate. A separate pip-audit run requires an identical tree. Python versions, conclusions, and run links come from the evidence file; required context names are in `.github/required-checks.json` |
 | G3 Authorized-photo baseline | **Blocked** | at least 30 stratified schema-v2 cases with per-image rights/subject evidence, passing all `evaluation.en.md` policy-3 thresholds. The noninteractive path can deliver uncalibrated contour candidates; synthetic improvement over the fixed template does not establish real-photo accuracy |
 | G4 Physical-trial baseline | **Blocked** | isolated calibration and holdout pattern hashes pass `physical-trials.en.md` rules |
 | G5 Distribution package | **Locally passed** | wheel content, metadata, CLIs, and package data validated |

@@ -210,7 +210,7 @@ Reviewed original sources: [CYC symbols](https://www.craftyarncouncil.com/standa
 
 Our new dynamic program is an independent six-stitch-lattice fit, not an AmiGo implementation. It anchors the first round, preserves round count, and minimizes squared error against quantized targets under gauge and source-stitch constraints. Equal errors prefer less shaping. These constraints apply to the current single-crochet surface-of-revolution model only.
 
-[18 original synthetic cases](profile-fit-comparison-20261014.json): 12 improve, six straight profiles remain exact. Classic shoulder error falls from 2556 to 864. This does not establish photo-recognition or physical accuracy. Reproduce with `.venv/bin/python -m scripts.diagnose_profile_fit --out /tmp/profile-fit.json`.
+[18 original synthetic cases](archive/profile-fit-comparison-20261014.json): 12 improve, six straight profiles remain exact. Classic shoulder error falls from 2556 to 864. This does not establish photo-recognition or physical accuracy. Reproduce with `.venv/bin/python -m scripts.diagnose_profile_fit --out /tmp/profile-fit.json`.
 
 LLM removal assessment: generation, gauge, colors, validation and export already operate locally. Local vision plus human confirmation can be the main workflow. This change retains provider interfaces, required SDK dependencies and existing defaults; use `--local` explicitly when keys are configured. Complete removal would also cover packaging/lockfile, credentials UI, CLI/UI defaults, usage accounting and provider tests while preserving historical provenance. Local anatomy recognition remains incomplete.
 
@@ -324,7 +324,7 @@ model are skipped by the Parade exporter with a warning.
 
 ## Public photo/pattern pair probe (2026-10-09)
 
-The [recorded probe](public-pair-probe-20261009.json) runs two source-site finished-item
+The [recorded probe](archive/public-pair-probe-20261009.json) runs two source-site finished-item
 photos through the local pipeline, with cloud APIs and optional pose disabled. Pattern
 instructions are withheld from generation. Photos remain in temporary local storage;
 only URLs, image hashes, source-code fingerprint and observations are recorded.
@@ -337,9 +337,9 @@ Run `python -m scripts.probe_public_pairs --help` for reproduction arguments.
 
 ## Expanded public-pair probe (2026-10-09)
 
-The [catalog](public-pair-catalog-20261009.json) now contains 10 photos from five
+The [catalog](archive/public-pair-catalog-20261009.json) now contains 10 photos from five
 publishers, adding cat, pigeon, gummy worms, cupcakes, pretzel, bear, elephants and bee.
-The [actual run](public-pair-probe-expanded-20261009.json) completes all 10, with 10
+The [actual run](archive/public-pair-probe-expanded-20261009.json) completes all 10, with 10
 unique hashes and 10 valid stitch-arithmetic outputs. Canonical part sets match exactly
 in 0/6 scored single-animal cases. Four multi-subject/non-animal boundary cases are
 excluded from part metrics. This selected local-only development sample does not estimate
@@ -347,7 +347,7 @@ population accuracy or cloud-model performance. Unsupported anatomical features 
 separately. Manual inspection places the bear's detected face box on its legs and the
 pigeon's on its abdomen. Both inferred ratios reach the configured upper limit.
 
-Use `--catalog docs/public-pair-catalog-20261009.json --image-dir <local-images> --out <report>`
+Use `--catalog docs/archive/public-pair-catalog-20261009.json --image-dir <local-images> --out <report>`
 with `python -m scripts.probe_public_pairs`. Download URLs and filenames are in the catalog;
 images are not redistributed. Three new accounting tests, Ruff and script mypy pass.
 Application code is unchanged; the full application suite was not rerun.
@@ -355,7 +355,7 @@ Application code is unchanged; the full application suite was not rerun.
 
 ## First changes driven by the paired probe
 
-The [guarded rerun](public-pair-probe-guarded-20261009.json) uses the same 10 images.
+The [guarded rerun](archive/public-pair-probe-guarded-20261009.json) uses the same 10 images.
 Automatic skirt false additions fall from two to zero. Five of six detected head
 candidates are rejected for unsuitable position/relative size; default proportions are
 explicitly marked for review. Canonical part-set matches remain 0/6 and stitch validity
@@ -370,8 +370,8 @@ pipeline calls still emit unreviewed templates with explicit metadata and export
 Six original pattern pages were checked; five photo pairs were acquired and actually run:
 lilleliis elf and tree, Spin a Yarn mermaid, Cuddly Stitches jellyfish, Yarnhild lamb.
 Stitch by Fay mushroom remains a candidate after direct acquisition returned HTTP 403;
-no photo result is claimed. See the [catalog](public-pair-catalog-wave2-20261009.json)
-and [run](public-pair-probe-wave2-20261009.json). The accumulated sample has 15 distinct
+no photo result is claimed. See the [catalog](archive/public-pair-catalog-wave2-20261009.json)
+and [run](archive/public-pair-probe-wave2-20261009.json). The accumulated sample has 15 distinct
 photo hashes from nine sites; both latest batches share the same application source hash.
 The jellyfish uses a single-subject source photo with text retained, replacing the collage
 cover before labeling/running. All five pass arithmetic; none of three canonical-part
@@ -383,7 +383,7 @@ was not rerun for this acquisition-only batch.
 
 ## 2026-10-11: construction and local-color candidates
 
-The [candidate catalog](public-pattern-candidates-20261011.json) adds seven primary-source
+The [candidate catalog](archive/public-pattern-candidates-20261011.json) adds seven primary-source
 references: five readable origin pages and two indexed-origin-text references whose direct
 fetch failed or required browser verification. It records source URLs, structural facts,
 access limits and algorithm hypotheses. No new third-party photos were processed, no visual
@@ -394,7 +394,7 @@ The examples contrast sewn panda patches with in-round colorwork, flat-panel con
 two-sided snail shells, a continuous flattened whale tail and a puppy head on a rattle handle.
 See the linked catalog for each original source and evidence level.
 
-An [original synthetic diagnostic](color-layout-diagnostic-20261011.json) isolates a limitation:
+An [original synthetic diagnostic](archive/color-layout-diagnostic-20261011.json) isolates a limitation:
 two separate black patches and one central patch, each containing 1280 black pixels on a
 160×160 canvas, produce the same all-white horizontal bands even with a perfect supplied
 foreground mask. This is representation loss, not a real-photo score. Reproduce with:
@@ -410,7 +410,7 @@ production vision behavior was changed in this source-discovery round.
 
 ### Follow-up implementation: spatial color observations
 
-The [updated comparison](color-layout-observation-20261011.json) uses the same original
+The [updated comparison](archive/color-layout-observation-20261011.json) uses the same original
 pixels and supplied masks. Majority bands remain all white, but observations now preserve
 1280 black pixels in each image and distinguish two separate patches from one central patch.
 The historical diagnostic remains unchanged; the command above now emits the updated report.
@@ -444,7 +444,7 @@ Empty, ambiguous and short runs retain coarse estimates. `refine_stripes=False` 
 Raw band counts and spatial evidence remain unchanged, so review warnings remain conservative,
 not a score of refined-band error.
 
-The [reproducible comparison](color-stripe-comparison-20261012.json) uses nine original four-pixel
+The [reproducible comparison](archive/color-stripe-comparison-20261012.json) uses nine original four-pixel
 stripe fixtures with three heights and three positions, all with perfect supplied masks.
 Exact stripe color/boundary recovery changes from **0/9 to 9/9**. Regression tests additionally cover
 single-row noise, sparse foreground, minority patches, evidence preservation and round-color lookup.
@@ -463,7 +463,7 @@ it does not guarantee preservation of every stripe. Ties prefer the midpoint col
 Bottom-up parts reverse the completed top-down plan. Blocks with no overlapping round assigned their
 color trigger review notes in patterns and exports, even if the same color appears elsewhere.
 
-The [three original interval diagnostics](round-color-comparison-20261012.json) show mismatched-height
+The [three original interval diagnostics](archive/round-color-comparison-20261012.json) show mismatched-height
 fractions of 9.8% → 0.2% for a midpoint sliver, 75% → 55% for three colors within one round, and
 0% → 0% for a resolvable stripe. Run
 `.venv/bin/python -m scripts.diagnose_round_colors --out /private/tmp/round-colors.json`.

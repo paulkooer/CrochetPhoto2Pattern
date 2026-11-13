@@ -8,13 +8,13 @@
 当前实现先为结构实体保留 ID，再为额外副本分配不冲突的编号；编辑时区分结构实体 ID
 与额外副本的序号。旧工程如果保存了有歧义的完成圈次，系统不会猜测；用户可以明确选择
 只恢复其他进度和备注，随后对照实物重新勾选。旧撤销快照也按此保守处理。
-格式兼容与操作说明见[工程格式](project-format.md#名称相似的部件与进度隔离)。
+格式兼容与操作说明见[工程格式](../project-format.md#名称相似的部件与进度隔离)。
 
-合成旧工程及其[来源记录](../tests/fixtures/progress_instance_collision/provenance.json)
+合成旧工程及其[来源记录](../../tests/fixtures/progress_instance_collision/provenance.json)
 在修复前生成：源文件 SHA 与 `d619179447df1694d88abf89ad828cb86740c0d9` 对应，
 实际选择了第二份头部第 1 圈与帽子第 1 圈。文件只记录了重复身份，不能从中推断头部
 选择；测试在确认恢复后保留帽子和备注，不替两份头部任意一份补勾选。
-导入提示见[合成浏览器截图](images/progress-collision-recovery-synthetic.png)。
+导入提示见[合成浏览器截图](../images/progress-collision-recovery-synthetic.png)。
 
 另在独立解释器复核时发现，先导入 `app.schemas` 或 `app.utils.project` 会因包初始化
 顺序产生循环导入。密度边界现由独立的共享常量模块提供，保留既有模型包导出；新进程
@@ -43,7 +43,7 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/benchmark_progress_impact.py 
 ```
 
 两条命令均可加 `--completed all`；脚本输出源码 SHA、Python 版本、计时与报告 SHA，
-不使用私人资料。完整测试及浏览器验证状态以[系统状态](system-status.zh-CN.md)为准。
+不使用私人资料。完整测试及浏览器验证状态以[系统状态](../system-status.zh-CN.md)为准。
 
 ## 验证范围
 

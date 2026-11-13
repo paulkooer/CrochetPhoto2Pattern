@@ -1,6 +1,6 @@
 # 前端设计审视 · 2026-11-03
 
-[文档索引 / Documentation index](README.md)
+[文档索引 / Documentation index](../README.md)
 
 对 Streamlit 界面做了一轮"设计主管式"审视：先通读令牌与注入 CSS，再把应用跑起来用真实浏览器看，
 最后用 DOM 探测核实每一条视觉判断。结论先行：**「图解纸」概念本身成立**——纸面/墨色/记号扣黄的
@@ -15,7 +15,7 @@
   `scripts/check_browser_workflow.cjs` 同源；1440 px 与 390 px 两个视口；Streamlit 主区域是
   内部滚动容器，整页截图改用 6500 px 高视口。
 - 核实方式：对 Tab、Radio、指标、圈行读取 DOM 结构与计算样式；勾选圈次后读取
-  `<details open>` 状态；所有截图与探测脚本可按 [浏览器回归](browser-regression.md) 的启动方式重放。
+  `<details open>` 状态；所有截图与探测脚本可按 [浏览器回归](../browser-regression.md) 的启动方式重放。
 
 ## 已确认并修复
 
@@ -63,7 +63,7 @@
   `scripts/check_browser_workflow.cjs` 同步了新标签（Tab 名、"重置进度"），并对隔离测试服务
   （`CROCHET_HISTORY_MODE=single_user` + 临时 DB）跑完 16 条流程：全部通过，report status `pass`，
   无页面错误、无外部请求。
-- 后续已将这些探测纳入自动回归；当前流程范围与运行方式见[浏览器回归](browser-regression.md)。
+- 后续已将这些探测纳入自动回归；当前流程范围与运行方式见[浏览器回归](../browser-regression.md)。
 - 本轮未做实物试钩，也不涉及识别准确率；仅界面与交互。
 
 ## 2026-11-03 后续实现：信息架构调整
@@ -146,7 +146,7 @@
   照片局部色块表收进默认折叠的「来源与限制」；警告类提示仍在面板外直接可见。
 - 「高级编辑（JSON）」改为按需挂载（闩按标签页保存，重新生成后保持）：未启用时不渲染两段编辑器，
   也不在每次刷新时序列化整份图解/结构；未应用草稿的预览、取消与保留语义不变。
-- 照片页移除「多角度照片（规划中）」入口；路线图仍记录在 [flow.md](flow.md)。
+- 照片页移除「多角度照片（规划中）」入口；路线图仍记录在 [flow.md](../flow.md)。
 
 ### 验证
 
