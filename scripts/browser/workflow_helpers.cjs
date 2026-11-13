@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const {randomUUID} = require('node:crypto');
+const {runLog,waitForUploadRun} = require('./streamlit_protocol.cjs');
 const playwrightModule = process.env.CROCHET_PLAYWRIGHT_MODULE || path.join(__dirname,'node_modules/playwright');
 const {expect} = require(path.join(playwrightModule,'test'));
 
@@ -28,36 +28,21 @@ async function settle(page) {
 
 async function upload(page, holder, file) {
   await settle(page);
-  const token = randomUUID();
-  // Arm before setting the input: even a very short rerun must be observed.
-  await page.evaluate(token => {
-    const app = document.querySelector('[data-testid="stApp"]');
-    const watch = {started:false};
-    const observer = new MutationObserver(records => {
-      if (app.getAttribute('data-test-script-state') === 'running'
-          || records.some(record => record.oldValue === 'running')) watch.started = true;
-    });
-    observer.observe(app,{attributes:true,attributeOldValue:true,
-                          attributeFilter:['data-test-script-state']});
-    globalThis.__crochetUploadWatches ??= {};
-    globalThis.__crochetUploadWatches[token] = {watch,observer};
-  },token);
-  try {
-    const [response] = await Promise.all([
-      page.waitForResponse(response => response.request().method() === 'PUT'
-        && new URL(response.url()).pathname.includes('/_stcore/upload_file/'),{timeout:45000}),
-      holder.locator('input[type="file"]').setInputFiles(file),
-    ]);
-    assert(response.ok(),`Streamlit upload failed: HTTP ${response.status()}`);
-    await page.waitForFunction(token => globalThis.__crochetUploadWatches[token].watch.started,
-                               token,{timeout:45000});
-    await settle(page);
-  } finally {
-    await page.evaluate(token => {
-      globalThis.__crochetUploadWatches[token].observer.disconnect();
-      delete globalThis.__crochetUploadWatches[token];
-    },token).catch(() => {});
-  }
+  const after = runLog(page).sequence;
+  const [response] = await Promise.all([
+    page.waitForResponse(response => response.request().method() === 'PUT'
+      && new URL(response.url()).pathname.includes('/_stcore/upload_file/'),{timeout:45000}),
+    holder.locator('input[type="file"]').setInputFiles(file),
+  ]);
+  assert(response.ok(),`Streamlit upload failed: HTTP ${response.status()}`);
+  const fileId = decodeURIComponent(new URL(response.url()).pathname.split('/').at(-1));
+  await waitForUploadRun(page,after,fileId);
+  // Let the renderer process the received messages, then check current UI state.
+  await page.evaluate(() => new Promise((resolve,reject) => {
+    const timer = setTimeout(() => reject(new Error('Renderer did not resume within 45000ms.')),45000);
+    requestAnimationFrame(() => requestAnimationFrame(() => { clearTimeout(timer); resolve(); }));
+  }));
+  await settle(page);
 }
 
 async function download(page, locator, output) {

@@ -10,6 +10,7 @@ const playwrightModule = process.env.CROCHET_PLAYWRIGHT_MODULE || path.join(__di
 const {chromium} = require(playwrightModule);
 const {expect} = require(path.join(playwrightModule,'test'));
 const {reveal,settle,upload,download} = require('./browser/workflow_helpers.cjs');
+const {observeRuns,streamlitVersion} = require('./browser/streamlit_protocol.cjs');
 
 const baseURL = process.env.CROCHET_BROWSER_URL || 'http://127.0.0.1:18502';
 assert(['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseURL).hostname),
@@ -133,8 +134,10 @@ async function headProgress(page, scope, rid, checked) {
   const report = {
     source_commit:execFileSync('git', ['rev-parse','HEAD'], {cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     harness_sha256:createHash('sha256').update(await fs.readFile(__filename)).digest('hex'),
+    streamlit_wire_version:streamlitVersion,
     harness_files_sha256:Object.fromEntries(await Promise.all([
       'check_browser_workflow.cjs','browser/workflow_helpers.cjs',
+      'browser/streamlit_protocol.cjs','browser/streamlit_protocol.py',
     ].map(async file => [file,createHash('sha256').update(await fs.readFile(path.join(__dirname,file))).digest('hex')]))),
     working_tree_clean:!execFileSync('git',['status','--porcelain'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     github_head_commit:process.env.CROCHET_BROWSER_HEAD_SHA || null,
@@ -157,7 +160,10 @@ async function headProgress(page, scope, rid, checked) {
       report.blocked_external_requests.push(route.request().url());
       return route.abort();
     });
-    ctx.on('page', p => p.on('pageerror', e => report.page_errors.push(String(e))));
+    ctx.on('page', p => {
+      observeRuns(p);
+      p.on('pageerror', e => report.page_errors.push(String(e)));
+    });
     return ctx;
   }
   try {
