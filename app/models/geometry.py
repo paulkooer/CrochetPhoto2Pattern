@@ -264,7 +264,7 @@ def _mask_width_profile(mask, n_rows: int) -> list[float] | None:
         edges = np.diff(np.pad(row.astype(bool).astype(np.int8), (1, 1)))
         starts = np.flatnonzero(edges == 1)
         ends = np.flatnonzero(edges == -1)
-        row_widths.append(float((ends - starts).max()) if len(starts) else 0.0)
+        row_widths.append(float(np.max(ends - starts)) if len(starts) else 0.0)
     widths = [float(np.mean(row_widths[height * i // n_rows:height * (i + 1) // n_rows]))
               for i in range(n_rows)]
     peak = max(widths)

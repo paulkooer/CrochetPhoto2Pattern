@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Image dependency lock update
+
+- Update headless OpenCV to 4.14, NumPy on Python 3.11 to 2.4.6, and use locked NumPy 2.5.2 on 3.12+. Use equivalent module-level functions for two integer-array reductions to support NumPy 2 typing; segmentation and color strategies are unchanged.
+
 ### Changed — 2026-11-13 Repository and release evidence maintenance
 
 - Status pages link to the saved release receipt instead of repeating its commit hashes and check counts. The bilingual release process generates evidence only for a selected candidate; `bind_release_evidence.py --status` checks an exact commit offline without rewriting evidence. Existing evidence remains historical, and G3/G4 remain blocked.
