@@ -8,6 +8,7 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from ..schemas import PART_LABELS_ZH, PartKind, part_kind_from_name
 from .parts import _ONE_PIECE_NAME, _part_name, _part_rounds, _round_stitches, same_round
 
 # 末圈注记里的闭合语义："收口/勒紧收口/无痕收口"=已闭合；"不收口/勿收口/
@@ -27,14 +28,14 @@ def joining_round(part: Mapping[str, Any]) -> dict | None:
     if part.get("connection_state") == "open":
         return next((rd for rd in rounds if same_round(rd.get("row"), selected)), None)
     row = (next(rd for rd in rounds if rd["row"] == selected) if selected is not None
-           else rounds[0] if _part_name(part) == "裙子" else rounds[-1])
+           else rounds[0] if part_kind_from_name(_part_name(part)) is PartKind.SKIRT else rounds[-1])
     return None if _CLOSING_RE.search(str(row.get("notes") or "")) else row
 
 
 def opening_rows_by_part(parts: Sequence[Mapping[str, Any]]) -> dict[str, int]:
     return {_part_name(p): row["row"] for p in parts
             if (row := joining_round(p)) is not None and "row" in row
-            and (_part_name(p) != "头部" or p.get("opening_row") is not None)}
+            and (part_kind_from_name(_part_name(p)) is not PartKind.HEAD or p.get("opening_row") is not None)}
 
 
 def _openings_by_part(parts: Sequence[Mapping[str, Any]]) -> dict[str, int]:
@@ -73,16 +74,24 @@ def build_assembly(part_names, skirt_style: str = "ring",
     quantities = quantities or {}
     openings = openings or {}
     opening_rows = opening_rows or {}
+    part_kinds = {part_kind_from_name(name) for name in part_names}
+    openings_by_kind = {kind: value for name, value in openings.items()
+                        if (kind := part_kind_from_name(name)) is not None}
+    rows_by_kind = {kind: value for name, value in opening_rows.items()
+                    if (kind := part_kind_from_name(name)) is not None}
+
+    def saved_name(name: str | PartKind) -> str:
+        return PART_LABELS_ZH[name] if isinstance(name, PartKind) else name
 
     def head_connection() -> str:
-        head_n = openings.get("头部")
-        if head_n is None or "头部" not in opening_rows:
+        head_n = openings_by_kind.get(PartKind.HEAD)
+        if head_n is None or PartKind.HEAD not in rows_by_kind:
             return ("用隐形缝合法将头部接合到身体顶部；"
                     "头颈缝合处塞棉紧实，防止头部前倾"
                     "（AmiguRoom 俄语熊评论区试钩共识）")
-        head_row = f"第 {opening_rows['头部']} 圈" if "头部" in opening_rows else "末圈"
-        body_row = f"第 {opening_rows['身体']} 圈" if "身体" in opening_rows else "末圈"
-        body_n = openings.get("身体")
+        head_row = f"第 {rows_by_kind[PartKind.HEAD]} 圈" if PartKind.HEAD in rows_by_kind else "末圈"
+        body_row = f"第 {rows_by_kind[PartKind.BODY]} 圈" if PartKind.BODY in rows_by_kind else "末圈"
+        body_n = openings_by_kind.get(PartKind.BODY)
         target = f"身体顶部{body_row}开口（{body_n} 针）" if body_n else "身体顶部（开口待核对）"
         note = f"将头部{head_row}颈口（{head_n} 针）与{target}缝合；"
         if body_n is not None and head_n != body_n:
@@ -95,11 +104,12 @@ def build_assembly(part_names, skirt_style: str = "ring",
         if stitch_attachments is not None:
             plan = LoopAttachmentPlan.model_validate(stitch_attachments)
             for connection in plan.connections:
-                if connection.source_part == "裙子":
+                if part_kind_from_name(connection.source_part) is PartKind.SKIRT:
                     return attachment_steps(connection)
         return "接裙位置待核对：旧图解未记录精确基底圈及预留圈，请先核对或重新生成后再钩织。"
 
-    def opening_note(name: str) -> str:
+    def opening_note(name: str | PartKind) -> str:
+        name = saved_name(name)
         n = openings.get(name)
         if not n:
             return ""
@@ -107,7 +117,8 @@ def build_assembly(part_names, skirt_style: str = "ring",
         flat = "，小开口可捏扁缝合" if n <= 6 else ""
         return f"（开口 {n} 针{flat}）"
 
-    def placement(name: str, paired: str, single: str, many: str) -> str:
+    def placement(name: str | PartKind, paired: str, single: str, many: str) -> str:
+        name = saved_name(name)
         quantity = max(1, int(quantities.get(name, 1)))
         if quantity == 1:
             return single
@@ -117,14 +128,14 @@ def build_assembly(part_names, skirt_style: str = "ring",
 
     one_piece = _ONE_PIECE_NAME in part_names
     steps: list[str] = ["按各部件标注数量分别完成并填充棉花"]
-    if "身体" in part_names or one_piece:
+    if PartKind.BODY in part_kinds or one_piece:
         steps.append(
             "可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始"
             "减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；"
             "3 岁以下儿童玩偶勿用）")
     if one_piece:
         steps.append("一体件钩完头部后先填充头部再继续钩身体（分阶段填充）")
-    if "头部" in part_names or one_piece:
+    if PartKind.HEAD in part_kinds or one_piece:
         steps.append("头部安装安全眼（第2/3高度处）")
         steps.append("用黑色毛线绣鼻子和嘴巴")
         steps.append(
@@ -136,40 +147,40 @@ def build_assembly(part_names, skirt_style: str = "ring",
     # Old backups have no graph.  Keep their established name-based behavior
     # rather than pretending to infer missing connection nodes during import.
     if assembly_plan is None:
-        if "头部" in part_names and "身体" in part_names and not one_piece:
+        if PartKind.HEAD in part_kinds and PartKind.BODY in part_kinds and not one_piece:
             steps.append(head_connection())
-        if "手臂" in part_names:
+        if PartKind.ARMS in part_kinds:
             steps.append(placement(
-                "手臂", f"手臂对称缝合到身体两侧上方{opening_note('手臂')}",
-                f"手臂缝合到身体一侧上方{opening_note('手臂')}",
-                f"均匀缝合到身体上部{opening_note('手臂')}"))
-        if "腿部" in part_names:
+                PartKind.ARMS, f"手臂对称缝合到身体两侧上方{opening_note(PartKind.ARMS)}",
+                f"手臂缝合到身体一侧上方{opening_note(PartKind.ARMS)}",
+                f"均匀缝合到身体上部{opening_note(PartKind.ARMS)}"))
+        if PartKind.LEGS in part_kinds:
             steps.append(placement(
-                "腿部", f"腿部对称缝合到身体底部{opening_note('腿部')}",
-                f"腿部缝合到身体底部{opening_note('腿部')}",
-                f"均匀缝合到身体底部{opening_note('腿部')}"))
-        if "耳朵" in part_names:
+                PartKind.LEGS, f"腿部对称缝合到身体底部{opening_note(PartKind.LEGS)}",
+                f"腿部缝合到身体底部{opening_note(PartKind.LEGS)}",
+                f"均匀缝合到身体底部{opening_note(PartKind.LEGS)}"))
+        if PartKind.EARS in part_kinds:
             steps.append(placement(
-                "耳朵", "耳朵对称缝合在头部两侧",
+                PartKind.EARS, "耳朵对称缝合在头部两侧",
                 "耳朵缝合在头部一侧", "均匀缝合在头部周围"))
-        if "帽子" in part_names:
-            hat_n = openings.get("帽子")
+        if PartKind.HAT in part_kinds:
+            hat_n = openings_by_kind.get(PartKind.HAT)
             hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
             steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
-        if "裙子" in part_names:
+        if PartKind.SKIRT in part_kinds:
             if skirt_style == "attached":
                 steps.append(skirt_connection())
             else:
-                skirt_n = openings.get("裙子")
+                skirt_n = openings_by_kind.get(PartKind.SKIRT)
                 skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
                 steps.append(f"裙筒腰部{skirt_open}套入身体后缝合固定"
                              "（腰部为开口起针）")
-        if "尾巴" in part_names:
+        if PartKind.TAIL in part_kinds:
             steps.append("尾巴缝合在身体后方")
         return "\n".join(f"{i}. {s}" for i, s in enumerate(steps, 1))
 
     def effective_name(name: str) -> str:
-        if one_piece and name in ("头部", "身体"):
+        if one_piece and part_kind_from_name(name) in (PartKind.HEAD, PartKind.BODY):
             return _ONE_PIECE_NAME
         return name
 
@@ -200,13 +211,13 @@ def build_assembly(part_names, skirt_style: str = "ring",
     # Familiar prose is valid only for the actual template edge configuration.
     # An edited anchor/method must reach the generic per-instance instructions.
     defaults = {
-        "头部": ("身体", "sewn", "bottom", {"top"}),
-        "手臂": ("身体", "sewn", "inner_end", {"upper_left", "upper_right"}),
-        "腿部": ("身体", "sewn", "top", {"bottom_left", "bottom_right"}),
-        "耳朵": ("头部", "sewn", "base", {"side_left", "side_right"}),
-        "帽子": ("头部", "worn", "opening", {"top"}),
-        "裙子": ("身体", "crocheted_or_sewn", "opening", {"waist"}),
-        "尾巴": ("身体", "sewn", "base", {"back"}),
+        PartKind.HEAD: (PartKind.BODY, "sewn", "bottom", {"top"}),
+        PartKind.ARMS: (PartKind.BODY, "sewn", "inner_end", {"upper_left", "upper_right"}),
+        PartKind.LEGS: (PartKind.BODY, "sewn", "top", {"bottom_left", "bottom_right"}),
+        PartKind.EARS: (PartKind.HEAD, "sewn", "base", {"side_left", "side_right"}),
+        PartKind.HAT: (PartKind.HEAD, "worn", "opening", {"top"}),
+        PartKind.SKIRT: (PartKind.BODY, "crocheted_or_sewn", "opening", {"waist"}),
+        PartKind.TAIL: (PartKind.BODY, "sewn", "base", {"back"}),
     }
     instances_by_source: dict[str, set[str]] = {}
     for (source, *_), connections in grouped.items():
@@ -221,7 +232,9 @@ def build_assembly(part_names, skirt_style: str = "ring",
     for (source, target, method, original_target), connections in grouped.items():
         connected_sources.add(source)
         target_label = (f"一体件{original_target}段" if target == _ONE_PIECE_NAME else target)
-        default = defaults.get(source)
+        source_kind = part_kind_from_name(source)
+        target_kind = part_kind_from_name(target)
+        default = defaults.get(source_kind) if source_kind is not None else None
         anchors = {str(item.get("target_anchor") or "") for item in connections}
         quantity = max(1, int(quantities.get(source, 1)))
         distinct_instances = {item.get("source_instance_id") for item in connections}
@@ -229,41 +242,47 @@ def build_assembly(part_names, skirt_style: str = "ring",
             not str(item.get("source_instance_id") or "").endswith(suffix)
             or str(item.get("target_anchor") or "").endswith(suffix)
             for item in connections for suffix in ("_left", "_right"))
-        canonical = (default is not None and original_target == default[0]
+        canonical = (default is not None and part_kind_from_name(original_target) is default[0]
                      and method == default[1] and anchors == default[3]
                      and len(anchors) == len(connections) == quantity
                      and len(distinct_instances) == quantity and same_sides
                      and len(instances_by_source[source]) == quantity
                      and all(item.get("self_anchor") == default[2] for item in connections))
-        if canonical and source == "头部" and target == "身体":
+        if canonical and source_kind is PartKind.HEAD and target_kind is PartKind.BODY:
             steps.append(head_connection())
-        elif canonical and source == "手臂" and target in ("身体", _ONE_PIECE_NAME):
+        elif canonical and source_kind is PartKind.ARMS and (target_kind is PartKind.BODY
+                                                            or target == _ONE_PIECE_NAME):
             steps.append(placement(
-                "手臂", f"手臂对称缝合到{target_label}两侧上方{opening_note('手臂')}",
-                f"手臂缝合到{target_label}一侧上方{opening_note('手臂')}",
-                f"均匀缝合到{target_label}上部{opening_note('手臂')}"))
-        elif canonical and source == "腿部" and target in ("身体", _ONE_PIECE_NAME):
+                PartKind.ARMS, f"手臂对称缝合到{target_label}两侧上方{opening_note(PartKind.ARMS)}",
+                f"手臂缝合到{target_label}一侧上方{opening_note(PartKind.ARMS)}",
+                f"均匀缝合到{target_label}上部{opening_note(PartKind.ARMS)}"))
+        elif canonical and source_kind is PartKind.LEGS and (target_kind is PartKind.BODY
+                                                            or target == _ONE_PIECE_NAME):
             steps.append(placement(
-                "腿部", f"腿部对称缝合到{target_label}底部{opening_note('腿部')}",
-                f"腿部缝合到{target_label}底部{opening_note('腿部')}",
-                f"均匀缝合到{target_label}底部{opening_note('腿部')}"))
-        elif canonical and source == "耳朵" and target in ("头部", _ONE_PIECE_NAME):
+                PartKind.LEGS, f"腿部对称缝合到{target_label}底部{opening_note(PartKind.LEGS)}",
+                f"腿部缝合到{target_label}底部{opening_note(PartKind.LEGS)}",
+                f"均匀缝合到{target_label}底部{opening_note(PartKind.LEGS)}"))
+        elif canonical and source_kind is PartKind.EARS and (target_kind is PartKind.HEAD
+                                                            or target == _ONE_PIECE_NAME):
             steps.append(placement(
-                "耳朵", "耳朵对称缝合在头部两侧",
+                PartKind.EARS, "耳朵对称缝合在头部两侧",
                 "耳朵缝合在头部一侧", "均匀缝合在头部周围"))
-        elif canonical and source == "帽子" and target in ("头部", _ONE_PIECE_NAME):
-            hat_n = openings.get("帽子")
+        elif canonical and source_kind is PartKind.HAT and (target_kind is PartKind.HEAD
+                                                           or target == _ONE_PIECE_NAME):
+            hat_n = openings_by_kind.get(PartKind.HAT)
             hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
             steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
-        elif canonical and source == "裙子" and target in ("身体", _ONE_PIECE_NAME):
+        elif canonical and source_kind is PartKind.SKIRT and (target_kind is PartKind.BODY
+                                                             or target == _ONE_PIECE_NAME):
             if skirt_style == "attached":
                 steps.append(skirt_connection())
             else:
-                skirt_n = openings.get("裙子")
+                skirt_n = openings_by_kind.get(PartKind.SKIRT)
                 skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
                 steps.append(f"裙筒腰部{skirt_open}套入{target_label}后缝合固定"
                              "（腰部为开口起针）")
-        elif canonical and source == "尾巴" and target in ("身体", _ONE_PIECE_NAME):
+        elif canonical and source_kind is PartKind.TAIL and (target_kind is PartKind.BODY
+                                                           or target == _ONE_PIECE_NAME):
             steps.append(f"尾巴缝合在{target_label}后方")
         else:
             labels = list(dict.fromkeys(
@@ -304,9 +323,9 @@ def build_assembly(part_names, skirt_style: str = "ring",
                     f"{source}{action}{target_label}的{'、'.join(labels)}{opening}")
                 steps.extend(details)
 
-    roots = {_ONE_PIECE_NAME, "身体"}
-    if "身体" not in part_names and not one_piece:
-        roots.add("头部")
+    roots = {_ONE_PIECE_NAME, PART_LABELS_ZH[PartKind.BODY]}
+    if PartKind.BODY not in part_kinds and not one_piece:
+        roots.add(PART_LABELS_ZH[PartKind.HEAD])
     for name in sorted(part_names - roots - connected_sources):
         steps.append(f"{name}未设置连接关系，暂按独立部件保留")
     return "\n".join(f"{i}. {s}" for i, s in enumerate(steps, 1))

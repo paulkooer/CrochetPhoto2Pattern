@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Assembly part identity
+
+- Assembly routing and default connection templates use `PartKind`; saved labels are resolved at the boundary. Existing prose, per-copy quantities, openings, custom names and one-piece target regions retain their behavior.
+
 ### Changed — 2026-11-13 Generator part identity
 
 - Generator dispatch, semantic colors, bottom-up color direction and attached-skirt handling use `PartKind`. Saved Chinese names remain the wire format; English or custom legacy names are not reinterpreted. Existing serialized snapshot fixtures are unchanged.
