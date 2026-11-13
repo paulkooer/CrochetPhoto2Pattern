@@ -5,6 +5,7 @@ import base64
 import json
 
 import streamlit as st
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from app.models.gauge import gauge_from_ui
 from app.models.grid_pattern import (
@@ -140,14 +141,7 @@ def _show_grid_error(action: str, exc: Exception) -> None:
     st.error(f"{action}失败，原有图案和撤销/重做记录保持不变：{md_safe(exc)}")
 
 
-def render_tab_grid() -> None:
-    st.subheader("制作平面像素图案")
-    st.markdown(
-        "<p class='sheet-note'>将照片整理成彩色针目网格，适合平面嵌花钩织、"
-        "C2C 或十字绣。每格代表 1 针，符号对应一种毛线颜色。</p>",
-        unsafe_allow_html=True,
-    )
-
+def _render_grid_project_restore() -> None:
     with st.expander("恢复可编辑网格工程", expanded=False):
         project_file = st.file_uploader(
             "上传此前下载的网格工程 JSON",
@@ -174,6 +168,8 @@ def render_tab_grid() -> None:
     if restore_notice:
         st.success(f"✅ {restore_notice}，撤销/重做历史已重新开始。")
 
+
+def _render_grid_inputs() -> tuple[UploadedFile | None, int, int, float, bool, str]:
     col_g1, col_g2 = st.columns([1, 1])
     with col_g1:
         grid_file = st.file_uploader(
@@ -214,7 +210,13 @@ def render_tab_grid() -> None:
             format_func={"lanczos": "平滑（照片）", "nearest": "锐利（像素画）"}.get,
             key="grid_resample",
         )
+    return grid_file, grid_width, n_colors, aspect, dither, resample
 
+
+def _render_grid_from_upload(
+    grid_file: UploadedFile | None, grid_width: int, n_colors: int,
+    aspect: float, dither: bool, resample: str,
+) -> None:
     if grid_file:
         grid_image = load_uploaded_image_cached(grid_file)
         if grid_image is not None:
@@ -260,236 +262,267 @@ def render_tab_grid() -> None:
                 except Exception as exc:
                     _show_grid_error("网格生成", exc)
 
+
+def _render_grid_history() -> None:
+    undo_stack = st.session_state.setdefault("grid_undo_stack", [])
+    redo_stack = st.session_state.setdefault("grid_redo_stack", [])
+    history_c1, history_c2 = st.columns(2)
+    with history_c1:
+        if st.button(
+            "↶ 撤销修色", key="grid_undo", width="stretch",
+            disabled=not undo_stack,
+        ):
+            try:
+                restored = _restore_grid_history("undo")
+            except Exception as exc:
+                _show_grid_error("网格撤销", exc)
+            else:
+                if restored:
+                    st.rerun()
+    with history_c2:
+        if st.button(
+            "↷ 重做修色", key="grid_redo", width="stretch",
+            disabled=not redo_stack,
+        ):
+            try:
+                restored = _restore_grid_history("redo")
+            except Exception as exc:
+                _show_grid_error("网格重做", exc)
+            else:
+                if restored:
+                    st.rerun()
+
+
+def _render_grid_editor(view: dict) -> None:
+    with st.expander("网格修色（不重新量化图片）", expanded=False):
+        edit_mode = st.radio(
+            "编辑范围", ["单格", "矩形", "全图换色"], horizontal=True,
+            key="grid_edit_mode")
+        # 普通 rerun 只读两个整数/短色板；GridPattern（最多 8 万个
+        # GridCell）仅在点击“应用”时恢复，保持预渲染缓存的性能收益。
+        payload = view["pattern_payload"]
+        palette_entries = payload["palette"]
+        palette_names = [entry["name"] for entry in palette_entries]
+        if edit_mode == "单格":
+            edit_c1, edit_c2 = st.columns(2)
+            with edit_c1:
+                crochet_row = int(st.number_input(
+                    "行号（从成品底部向上）", min_value=1,
+                    max_value=int(view["height"]), value=1, step=1,
+                    key="grid_edit_row"))
+            with edit_c2:
+                crochet_col = int(st.number_input(
+                    "列号（从左向右）", min_value=1,
+                    max_value=int(view["width"]), value=1, step=1,
+                    key="grid_edit_col"))
+            image_row_start = int(view["height"]) - crochet_row
+            image_row_end = image_row_start
+            image_col_start = crochet_col - 1
+            image_col_end = image_col_start
+            current_index = int(
+                payload["cells"][image_row_start][image_col_start])
+            current_name = palette_names[current_index]
+            color_label = f"替换颜色（当前：{current_name}）"
+            color_key = f"grid_edit_color_{crochet_row}_{crochet_col}"
+            apply_label = "应用到该格"
+            edit_description = f"R{crochet_row} / C{crochet_col}"
+        elif edit_mode == "矩形":
+            row_c1, row_c2 = st.columns(2)
+            with row_c1:
+                crochet_row_start = int(st.number_input(
+                    "起始行（从底部向上）", min_value=1,
+                    max_value=int(view["height"]), value=1, step=1,
+                    key="grid_region_row_start"))
+            with row_c2:
+                crochet_row_end = int(st.number_input(
+                    "结束行（含，端点顺序不限）", min_value=1,
+                    max_value=int(view["height"]), value=1, step=1,
+                    key="grid_region_row_end"))
+            col_c1, col_c2 = st.columns(2)
+            with col_c1:
+                crochet_col_start = int(st.number_input(
+                    "起始列（从左向右）", min_value=1,
+                    max_value=int(view["width"]), value=1, step=1,
+                    key="grid_region_col_start"))
+            with col_c2:
+                crochet_col_end = int(st.number_input(
+                    "结束列（含，端点顺序不限）", min_value=1,
+                    max_value=int(view["width"]), value=1, step=1,
+                    key="grid_region_col_end"))
+            crochet_row_start, crochet_row_end = sorted(
+                (crochet_row_start, crochet_row_end))
+            crochet_col_start, crochet_col_end = sorted(
+                (crochet_col_start, crochet_col_end))
+            image_row_start = int(view["height"]) - crochet_row_end
+            image_row_end = int(view["height"]) - crochet_row_start
+            image_col_start = crochet_col_start - 1
+            image_col_end = crochet_col_end - 1
+            current_index = int(
+                payload["cells"][image_row_start][image_col_start])
+            color_label = "矩形替换颜色"
+            color_key = (
+                f"grid_region_color_{crochet_row_start}_"
+                f"{crochet_row_end}_{crochet_col_start}_{crochet_col_end}")
+            apply_label = "应用到矩形区域"
+            edit_description = (
+                f"R{crochet_row_start}–R{crochet_row_end} / "
+                f"C{crochet_col_start}–C{crochet_col_end}")
+        else:
+            source_name = st.selectbox("要替换的颜色", palette_names, key="grid_replace_source")
+            selected_name = st.selectbox("替换为", palette_names, key="grid_replace_target")
+            source_index = palette_names.index(source_name)
+            source_count = sum(row.count(source_index) for row in payload["cells"])
+            st.caption(f"当前图案中有 {source_count} 格使用此颜色；"
+                       "未使用的原色仍保留在色板，图例显示 0 格。")
+            apply_label = "替换全图颜色"
+            edit_description = f"全图（原色：{source_name}）"
+
+        if edit_mode != "全图换色":
+            selected_name = st.selectbox(
+                color_label,
+                palette_names,
+                index=current_index,
+                key=color_key,
+            )
+        if st.button(apply_label, key="grid_apply_cell"):
+            try:
+                editable_pattern = grid_pattern_from_payload(payload)
+                selected_index = palette_names.index(selected_name)
+                if edit_mode == "单格":
+                    changed = recolor_grid_cell(
+                        editable_pattern,
+                        image_row_start,
+                        image_col_start,
+                        selected_index,
+                    )
+                elif edit_mode == "矩形":
+                    changed = recolor_grid_region(
+                        editable_pattern,
+                        image_row_start,
+                        image_row_end,
+                        image_col_start,
+                        image_col_end,
+                        selected_index,
+                    )
+                else:
+                    changed = replace_grid_color(editable_pattern, source_index, selected_index)
+                if changed:
+                    _record_grid_edit(editable_pattern,
+                                      f"{edit_description} 中 {changed} 格已改为{selected_name}")
+            except Exception as exc:
+                _show_grid_error("网格修色", exc)
+            else:
+                if changed:
+                    st.rerun()
+                else:
+                    st.info("所选范围没有需要改变的颜色，没有产生修改。")
+        edit_notice = st.session_state.pop("grid_edit_notice", None)
+        if edit_notice is not None:
+            st.success(
+                f"✅ 网格修色：{edit_notice}；"
+                "已同步到预览、图例和下载文件。")
+        st.caption(
+            f"仅可换成当前毛线色板中的颜色；行号与文字符号图一致。"
+            f"撤销/重做各保留最近 {_GRID_HISTORY_LIMIT} 步。")
+
+
+def _render_grid_preview(view: dict) -> None:
+    col_v1, col_v2 = st.columns([3, 1])
+    with col_v1:
+        st.subheader("彩色网格预览")
+        # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>（实测 1.60）；
+        # st.markdown unsafe_allow_html 不净化，内联 SVG 无空行时不经
+        # markdown 重排。components.v1.html 已过弃用线；定高与滚动由
+        # html_box 写进内容。
+        if view.get("svg"):
+            st.markdown(html_box(view["svg"], 600, scroll=True),
+                        unsafe_allow_html=True)
+        elif view.get("preview_png"):
+            # 大网格：位图预览（本地生成的 PNG，data URL 内嵌，非外部来源），
+            # 沿用同一定高滚动框。
+            encoded = base64.b64encode(view["preview_png"]).decode("ascii")
+            st.markdown(html_box(
+                f'<img src="data:image/png;base64,{encoded}" '
+                f'alt="网格位图预览" style="image-rendering:pixelated;max-width:100%;">',
+                600, scroll=True), unsafe_allow_html=True)
+            st.caption(f"大网格（{view['width']}×{view['height']} 格）以位图预览、不显示符号；"
+                       "符号见下方文字符号图，或下载 SVG 获取带符号的矢量图（点击时生成）。")
+    with col_v2:
+        st.subheader("颜色图例")
+        # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown。
+        # 升级前遗留的会话缓存只有 Markdown 图例，回退显示而不是 KeyError。
+        st.markdown(view.get("legend_html") or view.get("legend", ""),
+                    unsafe_allow_html=True)
+
+    st.subheader("文字符号图表")
+    with st.expander("展开查看 / 复制到聊天", expanded=False):
+        st.code(view["chart"], language="")
+    with st.expander("C2C 逐行指令（对角行）", expanded=False):
+        st.code(view.get("c2c")
+                or "旧版缓存网格未包含 C2C 指令；重新生成后可用。",
+                language="")
+
+
+def _render_grid_downloads(view: dict) -> None:
+    # Downloads（复用已渲染的字符串，不再二次渲染）
+    col_d1, col_d2, col_d3 = st.columns(3)
+    with col_d1:
+        st.download_button(
+            "下载 SVG 网格图",
+            _svg_download_data(view),
+            file_name="tapestry_grid.svg",
+            mime="image/svg+xml",
+        )
+    with col_d2:
+        st.download_button(
+            ("下载完整 Markdown 图解"
+             if view.get("markdown") else "下载 Markdown 图例"),
+            view.get("markdown") or view["legend"],
+            file_name=("tapestry_pattern.md"
+                       if view.get("markdown") else "tapestry_legend.md"),
+            mime="text/markdown",
+        )
+    with col_d3:
+        if view.get("project_json"):
+            st.download_button(
+                "下载可编辑工程",
+                view["project_json"],
+                file_name="tapestry_grid_project.json",
+                mime="application/json",
+            )
+        else:
+            st.caption("旧缓存需重新生成后才能保存工程")
+
+
+def _render_grid_results(view: dict) -> None:
+    _clamp_note = (f"（原始比例需 {view['clamped_from']:,} 行，已达单元上限，"
+                   f"已钳至 {view['height']:,} 行——建议先裁剪图片）"
+                   if view.get("clamped_from") else "")
+    st.success(f"✅ 网格大小：{view['width']} 列 × {view['height']} 行，"
+               f"色板 {view['n_colors']} 种颜色 {_clamp_note}")
+
+    if view.get("pattern_payload"):
+        _render_grid_history()
+        _render_grid_editor(view)
+    else:
+        st.caption("当前为旧版缓存网格；重新生成后可使用裁剪和网格修色。")
+
+    _render_grid_preview(view)
+    _render_grid_downloads(view)
+
+
+def render_tab_grid() -> None:
+    st.subheader("制作平面像素图案")
+    st.markdown(
+        "<p class='sheet-note'>将照片整理成彩色针目网格，适合平面嵌花钩织、"
+        "C2C 或十字绣。每格代表 1 针，符号对应一种毛线颜色。</p>",
+        unsafe_allow_html=True,
+    )
+
+    _render_grid_project_restore()
+    grid_file, grid_width, n_colors, aspect, dither, resample = _render_grid_inputs()
+    _render_grid_from_upload(grid_file, grid_width, n_colors, aspect, dither, resample)
+
     if "grid_view" in st.session_state:
         view = st.session_state.grid_view
-        _clamp_note = (f"（原始比例需 {view['clamped_from']:,} 行，已达单元上限，"
-                       f"已钳至 {view['height']:,} 行——建议先裁剪图片）"
-                       if view.get("clamped_from") else "")
-        st.success(f"✅ 网格大小：{view['width']} 列 × {view['height']} 行，"
-                   f"色板 {view['n_colors']} 种颜色 {_clamp_note}")
-
-        if view.get("pattern_payload"):
-            undo_stack = st.session_state.setdefault("grid_undo_stack", [])
-            redo_stack = st.session_state.setdefault("grid_redo_stack", [])
-            history_c1, history_c2 = st.columns(2)
-            with history_c1:
-                if st.button(
-                    "↶ 撤销修色", key="grid_undo", width="stretch",
-                    disabled=not undo_stack,
-                ):
-                    try:
-                        restored = _restore_grid_history("undo")
-                    except Exception as exc:
-                        _show_grid_error("网格撤销", exc)
-                    else:
-                        if restored:
-                            st.rerun()
-            with history_c2:
-                if st.button(
-                    "↷ 重做修色", key="grid_redo", width="stretch",
-                    disabled=not redo_stack,
-                ):
-                    try:
-                        restored = _restore_grid_history("redo")
-                    except Exception as exc:
-                        _show_grid_error("网格重做", exc)
-                    else:
-                        if restored:
-                            st.rerun()
-
-            with st.expander("网格修色（不重新量化图片）", expanded=False):
-                edit_mode = st.radio(
-                    "编辑范围", ["单格", "矩形", "全图换色"], horizontal=True,
-                    key="grid_edit_mode")
-                # 普通 rerun 只读两个整数/短色板；GridPattern（最多 8 万个
-                # GridCell）仅在点击“应用”时恢复，保持预渲染缓存的性能收益。
-                payload = view["pattern_payload"]
-                palette_entries = payload["palette"]
-                palette_names = [entry["name"] for entry in palette_entries]
-                if edit_mode == "单格":
-                    edit_c1, edit_c2 = st.columns(2)
-                    with edit_c1:
-                        crochet_row = int(st.number_input(
-                            "行号（从成品底部向上）", min_value=1,
-                            max_value=int(view["height"]), value=1, step=1,
-                            key="grid_edit_row"))
-                    with edit_c2:
-                        crochet_col = int(st.number_input(
-                            "列号（从左向右）", min_value=1,
-                            max_value=int(view["width"]), value=1, step=1,
-                            key="grid_edit_col"))
-                    image_row_start = int(view["height"]) - crochet_row
-                    image_row_end = image_row_start
-                    image_col_start = crochet_col - 1
-                    image_col_end = image_col_start
-                    current_index = int(
-                        payload["cells"][image_row_start][image_col_start])
-                    current_name = palette_names[current_index]
-                    color_label = f"替换颜色（当前：{current_name}）"
-                    color_key = f"grid_edit_color_{crochet_row}_{crochet_col}"
-                    apply_label = "应用到该格"
-                    edit_description = f"R{crochet_row} / C{crochet_col}"
-                elif edit_mode == "矩形":
-                    row_c1, row_c2 = st.columns(2)
-                    with row_c1:
-                        crochet_row_start = int(st.number_input(
-                            "起始行（从底部向上）", min_value=1,
-                            max_value=int(view["height"]), value=1, step=1,
-                            key="grid_region_row_start"))
-                    with row_c2:
-                        crochet_row_end = int(st.number_input(
-                            "结束行（含，端点顺序不限）", min_value=1,
-                            max_value=int(view["height"]), value=1, step=1,
-                            key="grid_region_row_end"))
-                    col_c1, col_c2 = st.columns(2)
-                    with col_c1:
-                        crochet_col_start = int(st.number_input(
-                            "起始列（从左向右）", min_value=1,
-                            max_value=int(view["width"]), value=1, step=1,
-                            key="grid_region_col_start"))
-                    with col_c2:
-                        crochet_col_end = int(st.number_input(
-                            "结束列（含，端点顺序不限）", min_value=1,
-                            max_value=int(view["width"]), value=1, step=1,
-                            key="grid_region_col_end"))
-                    crochet_row_start, crochet_row_end = sorted(
-                        (crochet_row_start, crochet_row_end))
-                    crochet_col_start, crochet_col_end = sorted(
-                        (crochet_col_start, crochet_col_end))
-                    image_row_start = int(view["height"]) - crochet_row_end
-                    image_row_end = int(view["height"]) - crochet_row_start
-                    image_col_start = crochet_col_start - 1
-                    image_col_end = crochet_col_end - 1
-                    current_index = int(
-                        payload["cells"][image_row_start][image_col_start])
-                    color_label = "矩形替换颜色"
-                    color_key = (
-                        f"grid_region_color_{crochet_row_start}_"
-                        f"{crochet_row_end}_{crochet_col_start}_{crochet_col_end}")
-                    apply_label = "应用到矩形区域"
-                    edit_description = (
-                        f"R{crochet_row_start}–R{crochet_row_end} / "
-                        f"C{crochet_col_start}–C{crochet_col_end}")
-                else:
-                    source_name = st.selectbox("要替换的颜色", palette_names, key="grid_replace_source")
-                    selected_name = st.selectbox("替换为", palette_names, key="grid_replace_target")
-                    source_index = palette_names.index(source_name)
-                    source_count = sum(row.count(source_index) for row in payload["cells"])
-                    st.caption(f"当前图案中有 {source_count} 格使用此颜色；"
-                               "未使用的原色仍保留在色板，图例显示 0 格。")
-                    apply_label = "替换全图颜色"
-                    edit_description = f"全图（原色：{source_name}）"
-
-                if edit_mode != "全图换色":
-                    selected_name = st.selectbox(
-                        color_label,
-                        palette_names,
-                        index=current_index,
-                        key=color_key,
-                    )
-                if st.button(apply_label, key="grid_apply_cell"):
-                    try:
-                        editable_pattern = grid_pattern_from_payload(payload)
-                        selected_index = palette_names.index(selected_name)
-                        if edit_mode == "单格":
-                            changed = recolor_grid_cell(
-                                editable_pattern,
-                                image_row_start,
-                                image_col_start,
-                                selected_index,
-                            )
-                        elif edit_mode == "矩形":
-                            changed = recolor_grid_region(
-                                editable_pattern,
-                                image_row_start,
-                                image_row_end,
-                                image_col_start,
-                                image_col_end,
-                                selected_index,
-                            )
-                        else:
-                            changed = replace_grid_color(editable_pattern, source_index, selected_index)
-                        if changed:
-                            _record_grid_edit(editable_pattern,
-                                              f"{edit_description} 中 {changed} 格已改为{selected_name}")
-                    except Exception as exc:
-                        _show_grid_error("网格修色", exc)
-                    else:
-                        if changed:
-                            st.rerun()
-                        else:
-                            st.info("所选范围没有需要改变的颜色，没有产生修改。")
-                edit_notice = st.session_state.pop("grid_edit_notice", None)
-                if edit_notice is not None:
-                    st.success(
-                        f"✅ 网格修色：{edit_notice}；"
-                        "已同步到预览、图例和下载文件。")
-                st.caption(
-                    f"仅可换成当前毛线色板中的颜色；行号与文字符号图一致。"
-                    f"撤销/重做各保留最近 {_GRID_HISTORY_LIMIT} 步。")
-        else:
-            st.caption("当前为旧版缓存网格；重新生成后可使用裁剪和网格修色。")
-
-        col_v1, col_v2 = st.columns([3, 1])
-        with col_v1:
-            st.subheader("彩色网格预览")
-            # 不用 st.html：其 DOMPurify 净化器剥掉整个 <svg>（实测 1.60）；
-            # st.markdown unsafe_allow_html 不净化，内联 SVG 无空行时不经
-            # markdown 重排。components.v1.html 已过弃用线；定高与滚动由
-            # html_box 写进内容。
-            if view.get("svg"):
-                st.markdown(html_box(view["svg"], 600, scroll=True),
-                            unsafe_allow_html=True)
-            elif view.get("preview_png"):
-                # 大网格：位图预览（本地生成的 PNG，data URL 内嵌，非外部来源），
-                # 沿用同一定高滚动框。
-                encoded = base64.b64encode(view["preview_png"]).decode("ascii")
-                st.markdown(html_box(
-                    f'<img src="data:image/png;base64,{encoded}" '
-                    f'alt="网格位图预览" style="image-rendering:pixelated;max-width:100%;">',
-                    600, scroll=True), unsafe_allow_html=True)
-                st.caption(f"大网格（{view['width']}×{view['height']} 格）以位图预览、不显示符号；"
-                           "符号见下方文字符号图，或下载 SVG 获取带符号的矢量图（点击时生成）。")
-        with col_v2:
-            st.subheader("颜色图例")
-            # 屏幕版图例带真实色块（色名→色表 RGB）；下载版仍用纯 Markdown。
-            # 升级前遗留的会话缓存只有 Markdown 图例，回退显示而不是 KeyError。
-            st.markdown(view.get("legend_html") or view.get("legend", ""),
-                        unsafe_allow_html=True)
-
-        st.subheader("文字符号图表")
-        with st.expander("展开查看 / 复制到聊天", expanded=False):
-            st.code(view["chart"], language="")
-        with st.expander("C2C 逐行指令（对角行）", expanded=False):
-            st.code(view.get("c2c")
-                    or "旧版缓存网格未包含 C2C 指令；重新生成后可用。",
-                    language="")
-
-        # Downloads（复用已渲染的字符串，不再二次渲染）
-        col_d1, col_d2, col_d3 = st.columns(3)
-        with col_d1:
-            st.download_button(
-                "下载 SVG 网格图",
-                _svg_download_data(view),
-                file_name="tapestry_grid.svg",
-                mime="image/svg+xml",
-            )
-        with col_d2:
-            st.download_button(
-                ("下载完整 Markdown 图解"
-                 if view.get("markdown") else "下载 Markdown 图例"),
-                view.get("markdown") or view["legend"],
-                file_name=("tapestry_pattern.md"
-                           if view.get("markdown") else "tapestry_legend.md"),
-                mime="text/markdown",
-            )
-        with col_d3:
-            if view.get("project_json"):
-                st.download_button(
-                    "下载可编辑工程",
-                    view["project_json"],
-                    file_name="tapestry_grid_project.json",
-                    mime="application/json",
-                )
-            else:
-                st.caption("旧缓存需重新生成后才能保存工程")
+        _render_grid_results(view)
