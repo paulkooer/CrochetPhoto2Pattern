@@ -1,0 +1,517 @@
+{
+  "artifact_kind": "engineering_review_verification",
+  "is_release_evidence": false,
+  "observed_on": "2026-11-13",
+  "baseline_commit": "b9ebe8ff09bda5eda74fe6fae79b5183945910f5",
+  "code_commit": "d0d5a38237d78fa36ed169a898e126b496b74641",
+  "code_tree": "57691728e8edb2f03e9656263fe219e9d65332d0",
+  "pull_request": {
+    "number": 86,
+    "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/86",
+    "base_branch": "docs/fable-round2-handoff-20261113",
+    "branch": "fix/browser-workflow-synchronization-20261113",
+    "draft": false,
+    "merged": false
+  },
+  "application_dependencies_tests_and_release_receipt_unchanged_from_baseline": true,
+  "targeted_regressions": {
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "mode": "real Chromium + synthetic Streamlit fixture; delayed upload, slow rerun with hidden toolbar, missing download click",
+    "legacy_control": {
+      "exit_code": 1,
+      "tests": 3,
+      "failed": 3,
+      "source_commit": "b9ebe8ff09bda5eda74fe6fae79b5183945910f5",
+      "method": "Use baseline reveal/settle/download functions and original direct setInputFiles action in the same test suite; run in a separate process via Module._load hook",
+      "symptoms": [
+        "upload returns before HTTP completion",
+        "settle returns running with a hidden status widget",
+        "closing a failed download leaves an unhandled rejection"
+      ]
+    }
+  },
+  "local": {
+    "hygiene_tests": 14,
+    "ruff": "passed",
+    "mypy": "passed: app tests receipt script and synchronization fixture",
+    "node_syntax": "passed",
+    "full_python_suite": "not rerun locally this round; app/tests/lock unchanged",
+    "browser_runs": [
+      {
+        "source_commit": "b9ebe8ff09bda5eda74fe6fae79b5183945910f5",
+        "harness_sha256": "226e1cc92cc9a1382a4ee510a5ae9a51bf04406e348d493557d2c949dcfb3bcc",
+        "harness_files_sha256": {
+          "check_browser_workflow.cjs": "226e1cc92cc9a1382a4ee510a5ae9a51bf04406e348d493557d2c949dcfb3bcc",
+          "browser/workflow_helpers.cjs": "383fdb28626e3a64cbc90d8d941a0dab05b1556b0d33ed8ab0e7a6075f330e05"
+        },
+        "working_tree_clean": false,
+        "github_head_commit": "b9ebe8ff09bda5eda74fe6fae79b5183945910f5",
+        "input": "synthetic SVG/PNG, grid project and CLI-generated manual garment pattern",
+        "checks": [
+          {
+            "name": "sidebar lists the gauge first and groups the existing-work entries",
+            "status": "pass"
+          },
+          {
+            "name": "whole-grid colour replacement updates downloads and supports undo and redo",
+            "status": "pass"
+          },
+          {
+            "name": "upload PNG and prepare local photo review",
+            "status": "pass"
+          },
+          {
+            "name": "embedded canvas add/erase/undo/reset reaches the Streamlit app",
+            "status": "pass"
+          },
+          {
+            "name": "complete subject/proportion/parts review and generate",
+            "status": "pass"
+          },
+          {
+            "name": "result page folds sources by default and moves coordinates into the structure JSON",
+            "status": "pass"
+          },
+          {
+            "name": "marker styles and repeated progress changes preserve the open, full-width part panel",
+            "status": "pass"
+          },
+          {
+            "name": "download backup/JSON/Markdown/PDF and compare actual contents",
+            "status": "pass"
+          },
+          {
+            "name": "legacy custom structure IDs survive import, rendering and backup export",
+            "status": "pass"
+          },
+          {
+            "name": "unrecognized review markers remain in backup without false confirmation",
+            "status": "pass"
+          },
+          {
+            "name": "placeholder colors are clear in the result and Markdown while backup values stay unchanged",
+            "status": "pass"
+          },
+          {
+            "name": "first history save, undo and save keep the same stored record",
+            "status": "pass"
+          },
+          {
+            "name": "project download contains the current progress and personal notes",
+            "status": "pass"
+          },
+          {
+            "name": "manual-to-photo history load keeps two pages progress/notes isolated",
+            "status": "pass"
+          },
+          {
+            "name": "fresh browser context restores project, then re-exports identical work",
+            "status": "pass"
+          },
+          {
+            "name": "invalid import preserves the active project, progress and notes",
+            "status": "pass"
+          },
+          {
+            "name": "preview exact 16-stitch head opening, restore project in new context, then close again",
+            "status": "pass"
+          },
+          {
+            "name": "independent 26x28 hat with 30x32 body, unchanged work, trial gate and fresh project recovery",
+            "status": "pass"
+          },
+          {
+            "name": "weighed 30x32 sample stays bound after trial default changes to 26x28, with fixed hat and fresh recovery",
+            "status": "pass"
+          },
+          {
+            "name": "material preview/cancel/apply and unchanged material/size after undo retain redo, provenance, notes and progress",
+            "status": "pass"
+          },
+          {
+            "name": "advanced JSON editors stay unmounted until the enable button is clicked",
+            "status": "pass"
+          },
+          {
+            "name": "advanced JSON panel starts collapsed, keeps a draft through preview and cancel, and downloads stay applied until regeneration",
+            "status": "pass"
+          },
+          {
+            "name": "colour panel previews the affected rounds and the worked-yarn notice, cancel is read-only, and apply/undo/redo keep stitches and completed rounds",
+            "status": "pass"
+          },
+          {
+            "name": "per-copy colour reaches the Markdown export and survives a project restore with progress",
+            "status": "pass"
+          },
+          {
+            "name": "colour panel renders inside a 390 px viewport without horizontal overflow",
+            "status": "pass"
+          },
+          {
+            "name": "switching custom names restores their own swatches and shared display-colour changes are previewed",
+            "status": "pass"
+          },
+          {
+            "name": "custom display swatch stays with its name through Markdown, PDF, Parade, undo, redo and project restore",
+            "status": "pass"
+          },
+          {
+            "name": "legacy collision requires recovery, then separate copy progress survives a fresh project restore",
+            "status": "pass"
+          },
+          {
+            "name": "390 px viewport keeps the title on one line and the header opaque without Deploy",
+            "status": "pass"
+          },
+          {
+            "name": "390 px viewport opens the sidebar drawer with the same gauge-first outline",
+            "status": "pass"
+          }
+        ],
+        "page_errors": [],
+        "physical_validation": false,
+        "browser": "156.0.8078.4",
+        "status": "pass"
+      },
+      {
+        "source_commit": "d0d5a38237d78fa36ed169a898e126b496b74641",
+        "harness_sha256": "226e1cc92cc9a1382a4ee510a5ae9a51bf04406e348d493557d2c949dcfb3bcc",
+        "harness_files_sha256": {
+          "check_browser_workflow.cjs": "226e1cc92cc9a1382a4ee510a5ae9a51bf04406e348d493557d2c949dcfb3bcc",
+          "browser/workflow_helpers.cjs": "383fdb28626e3a64cbc90d8d941a0dab05b1556b0d33ed8ab0e7a6075f330e05"
+        },
+        "working_tree_clean": true,
+        "github_head_commit": "d0d5a38237d78fa36ed169a898e126b496b74641",
+        "input": "synthetic SVG/PNG, grid project and CLI-generated manual garment pattern",
+        "checks": [
+          {
+            "name": "sidebar lists the gauge first and groups the existing-work entries",
+            "status": "pass"
+          },
+          {
+            "name": "whole-grid colour replacement updates downloads and supports undo and redo",
+            "status": "pass"
+          },
+          {
+            "name": "upload PNG and prepare local photo review",
+            "status": "pass"
+          },
+          {
+            "name": "embedded canvas add/erase/undo/reset reaches the Streamlit app",
+            "status": "pass"
+          },
+          {
+            "name": "complete subject/proportion/parts review and generate",
+            "status": "pass"
+          },
+          {
+            "name": "result page folds sources by default and moves coordinates into the structure JSON",
+            "status": "pass"
+          },
+          {
+            "name": "marker styles and repeated progress changes preserve the open, full-width part panel",
+            "status": "pass"
+          },
+          {
+            "name": "download backup/JSON/Markdown/PDF and compare actual contents",
+            "status": "pass"
+          },
+          {
+            "name": "legacy custom structure IDs survive import, rendering and backup export",
+            "status": "pass"
+          },
+          {
+            "name": "unrecognized review markers remain in backup without false confirmation",
+            "status": "pass"
+          },
+          {
+            "name": "placeholder colors are clear in the result and Markdown while backup values stay unchanged",
+            "status": "pass"
+          },
+          {
+            "name": "first history save, undo and save keep the same stored record",
+            "status": "pass"
+          },
+          {
+            "name": "project download contains the current progress and personal notes",
+            "status": "pass"
+          },
+          {
+            "name": "manual-to-photo history load keeps two pages progress/notes isolated",
+            "status": "pass"
+          },
+          {
+            "name": "fresh browser context restores project, then re-exports identical work",
+            "status": "pass"
+          },
+          {
+            "name": "invalid import preserves the active project, progress and notes",
+            "status": "pass"
+          },
+          {
+            "name": "preview exact 16-stitch head opening, restore project in new context, then close again",
+            "status": "pass"
+          },
+          {
+            "name": "independent 26x28 hat with 30x32 body, unchanged work, trial gate and fresh project recovery",
+            "status": "pass"
+          },
+          {
+            "name": "weighed 30x32 sample stays bound after trial default changes to 26x28, with fixed hat and fresh recovery",
+            "status": "pass"
+          },
+          {
+            "name": "material preview/cancel/apply and unchanged material/size after undo retain redo, provenance, notes and progress",
+            "status": "pass"
+          },
+          {
+            "name": "advanced JSON editors stay unmounted until the enable button is clicked",
+            "status": "pass"
+          },
+          {
+            "name": "advanced JSON panel starts collapsed, keeps a draft through preview and cancel, and downloads stay applied until regeneration",
+            "status": "pass"
+          },
+          {
+            "name": "colour panel previews the affected rounds and the worked-yarn notice, cancel is read-only, and apply/undo/redo keep stitches and completed rounds",
+            "status": "pass"
+          },
+          {
+            "name": "per-copy colour reaches the Markdown export and survives a project restore with progress",
+            "status": "pass"
+          },
+          {
+            "name": "colour panel renders inside a 390 px viewport without horizontal overflow",
+            "status": "pass"
+          },
+          {
+            "name": "switching custom names restores their own swatches and shared display-colour changes are previewed",
+            "status": "pass"
+          },
+          {
+            "name": "custom display swatch stays with its name through Markdown, PDF, Parade, undo, redo and project restore",
+            "status": "pass"
+          },
+          {
+            "name": "legacy collision requires recovery, then separate copy progress survives a fresh project restore",
+            "status": "pass"
+          },
+          {
+            "name": "390 px viewport keeps the title on one line and the header opaque without Deploy",
+            "status": "pass"
+          },
+          {
+            "name": "390 px viewport opens the sidebar drawer with the same gauge-first outline",
+            "status": "pass"
+          }
+        ],
+        "page_errors": [],
+        "physical_validation": false,
+        "browser": "156.0.8078.4",
+        "status": "pass"
+      }
+    ],
+    "executed_file_hashes_match_code_commit": true,
+    "comparison": {
+      "baseline": "b9ebe8ff09bda5eda74fe6fae79b5183945910f5",
+      "baseline_harness_sha256": "e1629aba74a29f8395abb5d63cff274bdd113280b4bea43ebe961cc02c0b963a",
+      "harness_reconstructs_exactly_after_reversing_sync_changes": true,
+      "uploads_wrapped": 15,
+      "existing_scenarios_and_assertions_unchanged": true
+    }
+  },
+  "remote": {
+    "passed_jobs": 13,
+    "first_attempt": true,
+    "workflows": [
+      {
+        "id": 43401831774,
+        "name": "dependency-security",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43401831774",
+        "jobs": [
+          {
+            "id": 131806319484,
+            "name": "pip-audit",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "run_metadata": {
+          "id": 43401831774,
+          "head_sha": "d0d5a38237d78fa36ed169a898e126b496b74641",
+          "run_attempt": 1,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      {
+        "id": 43401831811,
+        "name": "extras",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43401831811",
+        "jobs": [
+          {
+            "id": 131806319036,
+            "name": "pose-unlocked (3.12)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319207,
+            "name": "pose-unlocked (3.11)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319228,
+            "name": "optional-extras (pose)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319520,
+            "name": "optional-extras (pdf)",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "run_metadata": {
+          "id": 43401831811,
+          "head_sha": "d0d5a38237d78fa36ed169a898e126b496b74641",
+          "run_attempt": 1,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      {
+        "id": 43401831839,
+        "name": "browser",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43401831839",
+        "jobs": [
+          {
+            "id": 131806320100,
+            "name": "browser-smoke",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "run_metadata": {
+          "id": 43401831839,
+          "head_sha": "d0d5a38237d78fa36ed169a898e126b496b74641",
+          "run_attempt": 1,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      },
+      {
+        "id": 43401831759,
+        "name": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43401831759",
+        "jobs": [
+          {
+            "id": 131806318830,
+            "name": "docker",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319125,
+            "name": "streamlit-floor",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319160,
+            "name": "test (3.13)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319169,
+            "name": "test (3.14)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319374,
+            "name": "test (3.12)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319381,
+            "name": "test (3.11)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131806319384,
+            "name": "type-check",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "run_metadata": {
+          "id": 43401831759,
+          "head_sha": "d0d5a38237d78fa36ed169a898e126b496b74641",
+          "run_attempt": 1,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    ],
+    "python_312_dev": {
+      "passed": 2966,
+      "skipped": 23,
+      "coverage_percent": 93.53,
+      "elapsed_seconds": 292.58,
+      "job_id": 131806319374
+    },
+    "browser_targeted_tests": 3,
+    "browser_scenarios": 30
+  },
+  "original_failure_artifacts": [
+    {
+      "pr": 78,
+      "artifact_id": 14012048187,
+      "zip_sha256": "8d1cb334cc711a73c3730311b2d79f8f8ea05073bc42e88e0cc509fc2296570f",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByRole('button', { name: '下载工程 JSON', exact: true })\n\n    at download (/home/runner/work/CrochetPhoto2Pattern/CrochetPhoto2Pattern/scripts/check_browser_workflow.cjs:135:17)\n    at async /home/runner/work/CrochetPhoto2Pattern/CrochetPhoto2Pattern/scripts/check_browser_workflow.cjs:698:5",
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43370355836/artifacts/14012048187"
+    },
+    {
+      "pr": 80,
+      "artifact_id": 14013469804,
+      "zip_sha256": "5a2e91e963f69e3fc79477a73ebf286fff5576f801d3dbe724778eab67e3d174",
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('tabpanel', { name: '照片分析（本地）', exact: true }).locator('[class*=\"st-key-hist_save_\"]').first()\n\n    at resultId (/home/runner/work/CrochetPhoto2Pattern/CrochetPhoto2Pattern/scripts/check_browser_workflow.cjs:125:16)\n    at /home/runner/work/CrochetPhoto2Pattern/CrochetPhoto2Pattern/scripts/check_browser_workflow.cjs:511:30",
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43374699240/artifacts/14013469804"
+    },
+    {
+      "pr": 82,
+      "artifact_id": 14015511372,
+      "zip_sha256": "132b6e1ae9c6cf6caf4b92f1f432fcacb8e9270cda6903b2452c6fe93c374175",
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('tabpanel', { name: '照片分析（本地）', exact: true }).locator('[class*=\"st-key-hist_save_\"]').first()\n\n    at resultId (/home/runner/work/CrochetPhoto2Pattern/CrochetPhoto2Pattern/scripts/check_browser_workflow.cjs:125:16)\n    at /home/runner/work/CrochetPhoto2Pattern/CrochetPhoto2Pattern/scripts/check_browser_workflow.cjs:638:31",
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43378550953/artifacts/14015511372"
+    }
+  ],
+  "remaining": {
+    "g3": "blocked: authorized stratified real-photo cases and thresholds",
+    "g4": "blocked: physical calibration and disjoint holdout",
+    "pr15": "open awaiting contributor split",
+    "implementation_prs": "await Fable review and merge"
+  },
+  "scope_note": "All recorded results bind these exact commits or recorded executed-file hashes. Later handoff-only changes are excluded. Repeated browser passes do not prove absence of every future intermittent failure."
+}
