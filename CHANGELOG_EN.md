@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-13 Grid UI sections
+
+- Extract project restore, inputs, generation, history, editing, preview and downloads into rendering helpers. Preserve widget keys, text, call order, caching and state protection when preparation fails.
+
 ### Changed — 2026-11-13 Trial tool modules
 
 - Move trial schemas, bounded JSON/file I/O, draft/fingerprint handling, external evidence, calibration analysis and CLI handling into `app.trial_tools`. `app.trials` remains a compatibility facade with the same public names and CLI entry point. Record/report schemas, fingerprint rules, calibration/holdout isolation and conservative release decisions retain their behavior.
