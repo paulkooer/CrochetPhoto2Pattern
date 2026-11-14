@@ -39,6 +39,10 @@ jobs:
           uv sync --locked --extra dev --extra pdf
           npm ci --prefix scripts/browser
           scripts/browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Check synchronization with delayed uploads and reruns
+        run: node --test scripts/browser/*.test.cjs
+      - name: Protect upload completion and run correlation assertions against mutations
+        run: node scripts/browser/check_upload_mutations.cjs
       - name: Exercise standalone canvas and full local app
         env:
           CROCHET_HISTORY_DB: ${{ runner.temp }}/browser-history.sqlite
@@ -47,7 +51,7 @@ jobs:
         run: |
           set -e
           node scripts/check_mask_canvas.cjs
-          .venv/bin/python -m streamlit run app/main.py --server.address=127.0.0.1 --server.port=18502 --server.headless=true --browser.gatherUsageStats=false > "$RUNNER_TEMP/browser-server.log" 2>&1 &
+          .venv/bin/python scripts/browser/serve_app.py app/main.py --server.address=127.0.0.1 --server.port=18502 --server.headless=true --browser.gatherUsageStats=false > "$RUNNER_TEMP/browser-server.log" 2>&1 &
           task_server_pid=$!
           trap 'kill "$task_server_pid" 2>/dev/null || true' EXIT
           for attempt in $(seq 1 45); do

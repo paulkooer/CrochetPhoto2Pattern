@@ -8,6 +8,11 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Fixed — 2026-11-14 Browser upload content correlation
+
+- Require a successful full run to acknowledge the target file ID and actual byte SHA-256, rejecting an older queued rerun that only starts after the upload request. The isolated test launcher installs the acknowledgement adapter; production application code is unchanged. Path inputs use one byte snapshot for hashing and uploading.
+- Preserve original download errors and every existing scenario. Add 23 synchronization/correlation tests, eight specified-assertion mutation checks, and two fresh-session import/export cycles of an old-source trial ZIP, for 31 browser scenarios. The fix branches directly from main, independently of the pending refactors and dependency updates; G3/G4 and release evidence retain their existing meaning.
+
 ### Changed — 2026-11-13 Image dependency lock update
 
 - Update headless OpenCV to 4.14, NumPy on Python 3.11 to 2.4.6, and use locked NumPy 2.5.2 on 3.12+. Use equivalent module-level functions for two integer-array reductions to support NumPy 2 typing; segmentation and color strategies are unchanged.
