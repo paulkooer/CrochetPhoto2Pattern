@@ -17,6 +17,7 @@
 | Part-level yarn colour selection V1 / 部件级选色 V1 | [Specification and acceptance checklist](part-color-selection.en.md) | [规格与验收清单](part-color-selection.md) |
 | External rule references / 外部规则参考证据 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
 | Real-browser regression / 真实浏览器回归 | [Setup and evidence scope](browser-regression.md) | [运行方式与验证范围](browser-regression.md) |
+| Upload correlation and stacked PR review / 上传关联与堆叠 PR 复核 | [Scope and merge order (Chinese)](reviews/upload-and-stack-20261114.md) | [范围与合并顺序](reviews/upload-and-stack-20261114.md) |
 | Image memory and batch concurrency / 图片内存与批量并发 | [Measurements and reproduction (Chinese)](image-memory.md) | [测量范围与复现](image-memory.md) |
 | Single-image 3D design / 单图 3D 重建设计 | [3d-reconstruction-design.en.md](3d-reconstruction-design.en.md) | [3d-reconstruction-design.md](3d-reconstruction-design.md) |
 
