@@ -153,7 +153,7 @@ def vertical_color_bands(image: Image.Image, n_bands: int = 10, *,
         for i in range(n_bands):
             y0, y1 = h * i // n_bands, h * (i + 1) // n_bands
             ids = pixel_ids[(ys >= y0) & (ys < y1)]
-            colors.append(str(yarn_names[np.bincount(ids).argmax()]) if len(ids) else None)
+            colors.append(str(yarn_names[np.argmax(np.bincount(ids))]) if len(ids) else None)
         # Empty bands inherit the nearest observed band, never the background.
         # Ties choose the preceding band, independently of scan direction.
         observed = [i for i, color in enumerate(colors) if color is not None]
