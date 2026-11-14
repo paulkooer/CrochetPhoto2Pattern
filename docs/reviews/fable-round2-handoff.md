@@ -1,8 +1,31 @@
 # Fable 第二轮后续复核交接
 
-本批工程修改已按步骤拆成独立 PR；以下记录是提交复核的证据，不是 Fable 的验收结论，也不是发布许可。除已独立认可的 #73 外，本批实现保留在待审 PR 中。
+本批工程修改已按步骤拆成独立 PR。浏览器独立修复 #89 已经 Fable 复核并合入 main；#74–#84 的其余实现仍待各自复核和合并。下方历史验证记录固定在其所列提交，不是发布许可。
 
-## 复核范围与入口
+## 2026-11-14 浏览器合并收尾
+
+[#89](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/89) 在固定头
+`f8b62f29aa6a9c180fdce0cb01caff0589c83433` 经 Fable 复核通过，无未闭 P1/P2，
+随后从 Draft 转为 Ready，并以 squash 合入 main：
+[`dac0db8595d2e126092393db98ab134aa9081ef9`](https://github.com/paulkooer/CrochetPhoto2Pattern/commit/dac0db8595d2e126092393db98ab134aa9081ef9)。
+合并树与已审头的树逐字节一致；没有把累计重构分支合入 main。
+
+- 合并前 13/13 必需检查通过；[浏览器运行 43593491623](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43593491623) 为 23/23 回归、8/8 指定断言变异、5/5 延迟消息轮次和 31/31 完整流程。
+- [Fable 的复核记录](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/89#pullrequestreview-5904711699) 使用作者同账号，GitHub 状态为 COMMENTED，并非 APPROVED。main 当时要求 0 个正式批准；按正常保护规则合并，未改规则或绕过检查。
+- 合并后的 [CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43607428667)、[extras](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43607428618) 和[浏览器](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43607428643) 均通过。这些运行独立于合并前的候选验证。
+- #86、#87、#88 已关闭为被 #89 取代，均未合并，原始分支与 head 保留用于历史核查。
+- 本 PR #85 仍为交接文档 Draft，基于集成分支；不以合并 #85 的方式接受整条重构链。
+- #74 已将新 main 合入依赖分支，产生新头 `b725a6cf2a614f658cb246db266931c4ddf92c17`。冲突仅在两份 CHANGELOG，双方条目均保留；`app/` 与 `uv.lock` 和原 #74 完全一致，浏览器工具和 main 完全一致。新一轮 [CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43608023536)、[extras](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43608023509)、[安全审计](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43608023555)和[浏览器](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43608023604)已触发，最终结果以这些运行及 #74 页面为准；本次未合并 #74。
+
+建议下一步分别复核 #84、#75、#74，再按 #76 → #83 逐层处理。每次 squash 后记录旧父提交，仅将下一层自身提交重放到新 main，重新定向 PR、检查全部差异并跑新 head 的必需检查。旧 CI 不覆盖整理后的提交。
+
+下方[验证清单](fable-round2-checks.json)保留 2026-11-13 的原始快照，尤其其中 #74 的 `915bebb` 及旧浏览器运行不代表新 head 的验证；它也不证明当前 main 或新的 #85 文档头通过相同测试。本节与 PR 页面记录后续状态。
+
+浏览器同步这一轮到此收口。固定等待优化、`npm ci --ignore-scripts`、Streamlit 内部接口启动自检和夹具显式转发队列属于后续独立改进，均不阻塞此次合并。可长期访问的候选证据以上述 CI 运行和固定头复核为准，本机 `/private/tmp/` 报告仅保留为历史开发路径。
+
+G3 真实照片、G4 实体试钩及 #15 的贡献者拆分继续未闭；本次未更新发布收据、降低门槛或创建正式发布。
+
+## 原始复核范围与入口
 
 基线为 #73 合并后的 `60084d09db40d8f5d068980b99c632f736fc5de8`。所有实现的联合代码提交为 `72289b54e06cc24a32a8d48d70853fd38b5c291b`，位于 `review/fable-round2-integration-20261113`。其后的交接提交只维护本文、验证清单和文档导航；没有把这些结果写成新的发布收据。
 
@@ -76,4 +99,4 @@ git diff --check
 
 ## 仍未闭项
 
-G3 仍按 11-12 确定的全自动评测口径，需要至少 30 个分层、逐图有版权/被摄者证据的真实照片案例并满足既定阈值；G4 仍需实体试钩的校准集与不重叠独立验证集。本批没有收集或虚构这些证据，也没有放宽门槛。#15 等待外部拆分；本批新实现等待独立复核及合并。正式发布继续阻断。
+G3 仍按 11-12 确定的全自动评测口径，需要至少 30 个分层、逐图有版权/被摄者证据的真实照片案例并满足既定阈值；G4 仍需实体试钩的校准集与不重叠独立验证集。本批没有收集或虚构这些证据，也没有放宽门槛。#15 等待外部拆分；除上方已记录合并的 #89 外，其余实现等待独立复核及合并。正式发布继续阻断。
