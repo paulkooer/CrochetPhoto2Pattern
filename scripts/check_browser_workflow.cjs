@@ -10,7 +10,7 @@ const playwrightModule = process.env.CROCHET_PLAYWRIGHT_MODULE || path.join(__di
 const {chromium} = require(playwrightModule);
 const {expect} = require(path.join(playwrightModule,'test'));
 const {reveal,settle,upload,download} = require('./browser/workflow_helpers.cjs');
-const {observeRuns,streamlitVersion} = require('./browser/streamlit_protocol.cjs');
+const {observeRuns,runLog,streamlitVersion} = require('./browser/streamlit_protocol.cjs');
 
 const baseURL = process.env.CROCHET_BROWSER_URL || 'http://127.0.0.1:18502';
 assert(['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseURL).hostname),
@@ -135,6 +135,7 @@ async function headProgress(page, scope, rid, checked) {
     source_commit:execFileSync('git', ['rev-parse','HEAD'], {cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     harness_sha256:createHash('sha256').update(await fs.readFile(__filename)).digest('hex'),
     streamlit_wire_version:streamlitVersion,
+    server_app_file:null,
     harness_files_sha256:Object.fromEntries(await Promise.all([
       'check_browser_workflow.cjs','browser/workflow_helpers.cjs',
       'browser/streamlit_protocol.cjs','browser/streamlit_protocol.py',
@@ -198,6 +199,9 @@ async function headProgress(page, scope, rid, checked) {
                cells:[[0,0],[0,1]]},
     }));
     await upload(gridPage, key(gridPanel,'grid_project_uploader'), gridFile);
+    report.server_app_file = runLog(gridPage).serverAppFile;
+    assert.equal(report.server_app_file,await fs.realpath(path.join(__dirname,'../app/__init__.py')),
+                 'Server must import app from the checkout recorded in this report.');
     await clickKey(gridPage,gridPanel,'grid_restore_project');
     const gridMode = key(gridPanel,'grid_edit_mode');
     await reveal(gridMode);
@@ -568,7 +572,7 @@ async function headProgress(page, scope, rid, checked) {
     record('preview exact 16-stitch head opening, restore project in new context, then close again');
 
     const garmentInput = path.join(output,'garment-input.json');
-    execFileSync(path.join(__dirname,'../.venv/bin/python'),[
+    execFileSync(process.env.CROCHET_TEST_PYTHON || path.join(__dirname,'../.venv/bin/python'),[
       '-m','app.cli','--parts','头部,身体,手臂,帽子,裙子','--head','5.7','--height','36',
       '--gauge','custom','--stitches','30','--rows','32','--out',garmentInput,'--quiet',
     ],{cwd:path.join(__dirname,'..')});

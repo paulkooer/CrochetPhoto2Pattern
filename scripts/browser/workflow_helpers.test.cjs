@@ -220,7 +220,7 @@ test('run correlation rejects a fragment run after the upload request',() => {
     {sequence:2,type:'request',fileIds:['new']},
     {sequence:3,type:'start',id:'fragment-run',fragments:['fragment']},
     {sequence:3.5,type:'ack',id:'fragment-run',fileId:'new',sha256:digest},
-    {sequence:4,type:'finish',id:'fragment-run',status:0},
+    {sequence:4,type:'finish',id:'fragment-run',status:3},
   ];
   assert.equal(completed(events,1,'new'),null,
                'A fragment run must not complete a full-app upload.');
@@ -228,6 +228,40 @@ test('run correlation rejects a fragment run after the upload request',() => {
               {sequence:5.5,type:'ack',id:'full-run',fileId:'new',sha256:digest},
               {sequence:6,type:'finish',id:'full-run',status:0});
   assert.equal(completed(events,1,'new'),'full-run');
+});
+
+test('delayed older run messages cannot release upload before its content is rendered',async () => {
+  for (let round = 0; round < 5; round++) {
+    const page = await newPage();
+    try {
+      await page.goto(baseURL + '/?delay_forward=1&slow_tail=1');
+      await settle(page);
+      await expect(page.locator('.st-key-sync_tail')).toHaveText('initial');
+      await settle(page);
+      await page.route('**/_stcore/upload_file/**',async route => {
+        await delay(250);
+        await route.continue();
+      });
+      const after = runLog(page).sequence;
+      await page.getByRole('button',{name:'Queue older rerun',exact:true}).click();
+      await upload(page,page.locator('.st-key-sync_file'),{
+        name:'queued.json',mimeType:'application/json',buffer:Buffer.from('{"queued":true}'),
+      });
+      // Read immediately. A waiting assertion would hide a premature return.
+      assert.equal(await tailNow(page),'queued.json:{"queued":true}',
+                   'Delayed older run released upload() before target content rendered.');
+      const events = runLog(page).events.filter(event => event.sequence > after);
+      const target = events.find(event => event.type === 'request' && event.fileIds.length);
+      const older = events.find(event => event.type === 'start');
+      assert(target && older && target.sequence < older.sequence,
+             'Fault injection must deliver the older start after the target request.');
+      const olderFinish = events.find(event => event.type === 'finish' && event.id === older.id);
+      assert.equal(olderFinish?.status,0,'The older run must finish successfully.');
+      assert(!events.some(event => event.type === 'ack' && event.id === older.id),
+             'The older run must not acknowledge the target upload.');
+      console.log(`delayed older-run messages: round ${round + 1}/5 retained target content`);
+    } finally { await page.close(); }
+  }
 });
 
 test('queued browser rerun finishes while target upload rerun is held',async () => {

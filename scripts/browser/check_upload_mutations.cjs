@@ -21,11 +21,11 @@ const variants = [
     assertion:'request-order rejection',
   },
   {
-    name:'include_fragment_runs',file:protocol,
-    pattern:'^run correlation rejects a fragment run after the upload request$',
+    name:'include_fragment_runs',file:protocol,testFile:'streamlit_protocol.test.cjs',
+    pattern:'^content acknowledgement rejects fragment-with-full-run-status$',
     from:' && !event.fragments.length',to:'',
     failure:'A fragment run must not complete a full-app upload.',
-    assertion:'fragment-run rejection',
+    assertion:'defensive fragment-ID rejection (synthetic full-run status)',
   },
   {
     name:'ignore_content_ack',file:protocol,testFile:'streamlit_protocol.test.cjs',
@@ -33,6 +33,20 @@ const variants = [
     from:' && acknowledged',to:'',
     failure:'A queued older run must not complete the upload without its content acknowledgement.',
     assertion:'queued-request content rejection',
+  },
+  {
+    name:'ignore_content_ack_browser',file:protocol,
+    pattern:'^delayed older run messages cannot release upload before its content is rendered$',
+    from:' && acknowledged',to:'',
+    failure:'Delayed older run released upload() before target content rendered.',
+    assertion:'real-browser immediate content marker under delayed server messages',
+  },
+  {
+    name:'ignore_request_file_id',file:protocol,testFile:'streamlit_protocol.test.cjs',
+    pattern:'^content acknowledgement requires a request carrying the target file ID$',
+    from:'\n    && event.fileIds.includes(fileId)',to:'',
+    failure:'An acknowledgement without a request carrying the target file must not complete the upload.',
+    assertion:'target-file request rejection',
   },
   {
     name:'ignore_digest',file:protocol,testFile:'streamlit_protocol.test.cjs',

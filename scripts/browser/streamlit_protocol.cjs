@@ -16,7 +16,7 @@ const decodeBack = payload => back.decode(payload);
 
 function observeRuns(page) {
   if (logs.has(page)) return;
-  const log = {sequence:0,events:[],sockets:0,error:null};
+  const log = {sequence:0,events:[],sockets:0,error:null,serverAppFile:null};
   logs.set(page,log);
   const record = event => {
     log.events.push({...event,sequence:++log.sequence});
@@ -45,11 +45,17 @@ function observeRuns(page) {
           record({type:'finish',id:run.script_run_id,status:message.script_finished});
         }
         if (message.parent_message) {
-          const ack = JSON.parse(message.parent_message.message);
-          if (ack.type === 'crochet_browser_upload_ack_v1') {
+          // Other Streamlit parent messages need not use our JSON protocol.
+          let ack;
+          try { ack = JSON.parse(message.parent_message.message); } catch { return; }
+          if (ack?.type === 'crochet_browser_upload_ack_v1') {
             assert(run?.script_run_id,'Upload acknowledgement has no run identity.');
-            assert(typeof ack.file_id === 'string' && /^[a-f0-9]{64}$/.test(ack.sha256),
+            assert(typeof ack.file_id === 'string' && /^[a-f0-9]{64}$/.test(ack.sha256)
+                   && typeof ack.app_file === 'string' && path.isAbsolute(ack.app_file),
                    'Malformed upload content acknowledgement.');
+            assert(!log.serverAppFile || log.serverAppFile === ack.app_file,
+                   'Server app import changed during this page session.');
+            log.serverAppFile = ack.app_file;
             record({type:'ack',id:run.script_run_id,fileId:ack.file_id,sha256:ack.sha256});
           }
         }

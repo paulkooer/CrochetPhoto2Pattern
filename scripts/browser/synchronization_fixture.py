@@ -7,6 +7,7 @@ from urllib.parse import parse_qs
 
 import streamlit as st
 from streamlit.proto.ClientState_pb2 import ClientState
+from streamlit.proto.ForwardMsg_pb2 import ForwardMsg
 from streamlit.runtime.app_session import AppSession
 
 # In this isolated fixture only, hold a client rerun request before a new run
@@ -22,6 +23,25 @@ if not hasattr(AppSession, "_browser_sync_original_rerun"):
         session_class._browser_sync_original_rerun(self, client_state)
 
     session_class._handle_rerun_script_request = delayed_request
+
+# Fault injection for the content-ack regression. Delay server messages in FIFO
+# order except the upload-URL reply, so a target request can reach the observer
+# before an older run's start/finish. This is not a physical-link simulation.
+if not hasattr(AppSession, "_browser_sync_original_forward"):
+    forward_class = cast(Any, AppSession)
+    forward_class._browser_sync_original_forward = AppSession._enqueue_forward_msg
+
+    def delayed_forward(self: AppSession, message: ForwardMsg) -> None:
+        original = forward_class._browser_sync_original_forward
+        if (parse_qs(self._client_state.query_string).get("delay_forward") == ["1"]
+                and message.WhichOneof("type") != "file_urls_response"):
+            self._event_loop.call_soon_threadsafe(
+                self._event_loop.call_later, 1.0, original, self, message,
+            )
+        else:
+            original(self, message)
+
+    forward_class._enqueue_forward_msg = delayed_forward
 
 st.set_page_config(page_title="Browser synchronization fixture")
 uploaded = st.file_uploader("Synthetic input", type=["json"], key="sync_file")

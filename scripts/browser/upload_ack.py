@@ -9,11 +9,14 @@ import hashlib
 import json
 import threading
 from functools import wraps
+from pathlib import Path
 
 from streamlit.elements.widgets.file_uploader import FileUploaderMixin
 from streamlit.proto.ForwardMsg_pb2 import ForwardMsg
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 from streamlit.runtime.scriptrunner.script_runner import ScriptRunner, ScriptRunnerEvent
+
+import app
 
 ACK_TYPE = "crochet_browser_upload_ack_v1"
 
@@ -54,6 +57,7 @@ def install_upload_ack() -> None:
             message = ForwardMsg()
             message.parent_message.message = json.dumps({
                 "type": ACK_TYPE, "file_id": uploaded.file_id, "sha256": digest,
+                "app_file": str(Path(app.__file__).resolve()),
             })
             message.metadata.run.script_run_id = run.script_run_id
             message.metadata.run.fragment_ids.extend(run.fragment_ids)
