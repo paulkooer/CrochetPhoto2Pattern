@@ -1,6 +1,6 @@
 # Fable 5.2 复审修正交接
 
-Fable 最新复审确认，旧版瞬时 `running` 依赖与即时末尾断言缺口均已修正，未发现阻断 #86 合并的缺陷。但其复审因权限分类器不可用而未完成，不能记为全部独立验证通过。此交接保留已验证结果及下面的适用前提；#86、#87 均未合并。
+Fable 此前复审确认，旧版瞬时 `running` 依赖与即时末尾断言缺口均已修正，未发现阻断 #86 合并的缺陷。但其复审因权限分类器不可用而未完成，不能记为全部独立验证通过。此交接保留已验证结果及下面的适用前提；#86、#87 均未合并。
 
 ## 固定范围
 
@@ -19,6 +19,8 @@ Fable 最新复审确认，旧版瞬时 `running` 依赖与即时末尾断言缺
 当前协议关联的是上传请求之后开始的完整运行，不证明该运行消费了上传请求。若较早排队的请求尚未开始，其运行可能在上传请求之后才发 `new_session` 并成功结束，从而被接受。上传前的 `settle()` 只能观察界面空闲，不能证明服务端请求队列为空。此竞态目前仅有 Fable 的源码推断，未实跑坐实，也未在本轮修复。
 
 WebSocket 一旦关闭，该页监听记录会持续报错，即使随后重连，后续上传也会失败关闭。需要继续时应重新创建页面，在导航前注册监听；当前 helper 不支持同页重连后恢复上传。
+
+发送/接收消息的解码异常、消息处理中的断言异常，以及页面关闭，也会把同一 `log.error` 置位，使该页后续上传持续失败关闭。关闭事件的报错包含 `during upload`，但事件也可能发生在上传开始前；文案不能用来判断故障发生的时点。本轮只补充说明，不改已复核的错误处理或文案。
 
 回归夹具增加了“上传响应已返回、刷新请求尚未执行”的受控窗口，以及运行末尾才输出的标记。`upload()` 返回后，测试先用同步 `page.evaluate` 读取末尾标记；没有定位器自动等待、后续点击或第二次 `settle` 替它补等。
 
@@ -44,7 +46,13 @@ CI 还实际执行两种变异：删除运行完成等待、仅等待上传响�
 
 Fable 在 `200c108` 实跑 7/7 回归、24/24 无延迟上传（正常/8 倍下 DOM 未出现 `running` 为 0/8 次）、2/2 早返回变异，并向 GitHub 核对 #86 的 13/13。完整 30 条流程、真实应用 8 倍探针、#87 的检查和运行次数，以及 CI 的 DOM 缺失计数，均未被其独立复核；上表仍是工程侧验证记录。
 
+2026-11-14 的增量复审只读完 `822c79d` 的说明与五份相关源码，未发现表述与源码不符；没有实跑。Fable 的 Bash 权限分类器持续限流，本地又未检出 #88，因此 `adeabbf` 的改动完全未被独立审到。“五份文档变化”和全部验证数字也未被本轮独立核实；不能将本轮记为独立复审通过。
+
 后续 [#88](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/88) 增加两个关联事件序列：完整运行在上传请求前开始，以及请求之后仅有片段运行完成。它们都必须保持等待，直到后续完整运行结束。变异驱动实际放宽请求时序和移除片段过滤，并要求退出码 1 且出现各自指定的断言文本；原两种早返回变异仍执行。本地为 9/9、快速上传 24/24、四种变异 4/4 被杀。新增测试不证明上述排队竞态已被解决；其 CI 查看固定头提交 `adeabbf` 的 [PR 检查](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/88/checks)，不混入 `d93e5b5` 的验证数量。
+
+无需 Bash 的只读入口：固定提交 [adeabbf](https://github.com/paulkooer/CrochetPhoto2Pattern/commit/adeabbffd5086657cc1ab360c2439e7e1a091ae4) 的完整差异，以及[两个新增事件序列](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/adeabbffd5086657cc1ab360c2439e7e1a091ae4/scripts/browser/workflow_helpers.test.cjs#L217)、[四种变异驱动](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/adeabbffd5086657cc1ab360c2439e7e1a091ae4/scripts/browser/check_upload_mutations.cjs)、[CI 步骤](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/adeabbffd5086657cc1ab360c2439e7e1a091ae4/.github/workflows/browser.yml)。GitHub 连接器可读取提交、工作流元数据与作业日志；读取资料不等于独立重跑测试。
+
+工程侧于 2026-11-14 重新向 GitHub 核对 `822c79d` 与 `adeabbf`：各四条流水线、13/13，头提交和 `run_attempt=1` 均匹配。检查清单的 `review_access_verification` 给出固定运行 ID；这些是现有运行的重新读取，不是本轮新跑的 CI，也不是 Fable 的验证结果。
 
 ## 再审入口
 

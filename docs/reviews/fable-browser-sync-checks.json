@@ -34,7 +34,13 @@
     ],
     "rendering": "two bounded rendering frames, then connected/notRunning/no-skeleton/no-exception checks",
     "limits": "Matches a full run starting after the request, not proof that the run consumed that request. UI settle does not prove an empty server request queue. Not a universal guarantee for parallel or automatic rerun chains.",
-    "websocket_reconnection": "A close permanently fails the current page's observer; reconnecting that page does not restore uploads. Recreate the page and observe before navigation."
+    "websocket_reconnection": "A close permanently fails the current page's observer; reconnecting that page does not restore uploads. Recreate the page and observe before navigation.",
+    "persistent_error_sources": [
+      "WebSocket close",
+      "page close",
+      "sent/received message decode or assertion errors"
+    ],
+    "close_diagnostic_limit": "The current error says during upload even if the close happened before an upload; diagnostic wording does not establish event timing. Behavior and strings unchanged."
   },
   "scope": {
     "baseline": "d0d5a38237d78fa36ed169a898e126b496b74641",
@@ -418,31 +424,17 @@
     "scope": "historical d0d5a38 results only; do not reuse as new-head proof"
   },
   "latest_independent_review": {
-    "source": "Fable report supplied by the user on 2026-11-13",
-    "reviewed_heads": {
-      "86": "d93e5b528d1569f4549ba31e51866f737244b01c",
-      "87": "200c108ef02a359e704355b9060ee2db63c28267"
-    },
-    "conclusion": "No defect found blocking #86 merge; review incomplete because reviewer reported persistent permission-classifier unavailability.",
-    "actually_verified": {
-      "regressions_passed": 7,
-      "fast_uploads": 24,
-      "fast_dom_running_absent": {
-        "cpu1": 0,
-        "cpu8": 8
-      },
-      "early_return_mutants_killed_by_exact_assertion": 2,
-      "pr86_successful_checks": 13,
-      "streamlit_version": "1.67.0"
-    },
+    "source": "Fable report supplied by the user on 2026-11-14",
+    "reviewed_head": "822c79d9cd7b3800eee1398cdfe4c3bc78d90a81",
+    "mode": "Read-only source/document comparison; no execution",
+    "actually_verified": "No mismatch found between #87 scope explanations and the five source/document files read.",
+    "pr88": "Entire adeabbf change remains independently unreviewed: classifier throttling blocked git fetch/show, gh and tests; checkout did not include #88.",
     "not_independently_verified": [
-      "full 30-scenario browser flow locally or in remote logs",
-      "real-app CPU8 stress probe",
-      "PR87 head 200c108 checks and workflow run attempts",
-      "code-head CI DOM-running-absence counts",
-      "queued earlier request race and proposed correlation mutants"
+      "PR87 five-file documentation-only diff",
+      "9/9, 24/24, 4/4, 13/13, 30/30 and first-attempt claims",
+      "queued earlier request race"
     ],
-    "queued_request_race": "Source inference only, not experimentally established or fixed: an earlier queued request may start a full run after the upload request and be accepted."
+    "conclusion": "Incomplete independent review, not an independent pass."
   },
   "correlation_test_followup": {
     "pull_request": 88,
@@ -476,11 +468,134 @@
     "limits": "These event sequences protect request ordering and fragment exclusion, not the queued-earlier-request race."
   },
   "remaining": {
-    "independent_review": "Fable found no #86 merge blocker but did not finish review; latest #87 scope clarification and #88 tests await review. No merge performed.",
+    "independent_review": "Fable compared #87 explanations at 822c79d with source only; #88 adeabbf entirely unreviewed independently. New doc clarification and fixed-head test review remain open. No merge performed.",
     "earlier_prs": "#74–#85 not reviewed in Fable5.2",
     "g3": "blocked: authorized real photos and required thresholds",
     "g4": "blocked: physical calibration and disjoint holdout",
     "pr15": "open awaiting contributor split"
   },
-  "scope_note": "Evidence binds the exact implementation SHA and executed-file hashes. Later handoff changes are documentation only; this is not release evidence."
+  "scope_note": "Evidence binds the exact implementation SHA and executed-file hashes. Later handoff changes are documentation only; this is not release evidence.",
+  "previous_independent_review": {
+    "source": "Fable report supplied by the user on 2026-11-13",
+    "reviewed_heads": {
+      "86": "d93e5b528d1569f4549ba31e51866f737244b01c",
+      "87": "200c108ef02a359e704355b9060ee2db63c28267"
+    },
+    "conclusion": "No defect found blocking #86 merge; review incomplete because reviewer reported persistent permission-classifier unavailability.",
+    "actually_verified": {
+      "regressions_passed": 7,
+      "fast_uploads": 24,
+      "fast_dom_running_absent": {
+        "cpu1": 0,
+        "cpu8": 8
+      },
+      "early_return_mutants_killed_by_exact_assertion": 2,
+      "pr86_successful_checks": 13,
+      "streamlit_version": "1.67.0"
+    },
+    "not_independently_verified": [
+      "full 30-scenario browser flow locally or in remote logs",
+      "real-app CPU8 stress probe",
+      "PR87 head 200c108 checks and workflow run attempts",
+      "code-head CI DOM-running-absence counts",
+      "queued earlier request race and proposed correlation mutants"
+    ],
+    "queued_request_race": "Source inference only, not experimentally established or fixed: an earlier queued request may start a full run after the upload request and be accepted."
+  },
+  "review_access_verification": {
+    "observed_on": "2026-11-14",
+    "source": "GitHub connector API; reread existing fixed-head runs, not new executions",
+    "independent_review": false,
+    "runs": [
+      {
+        "pr": 88,
+        "id": 43456423642,
+        "name": "extras",
+        "head_sha": "adeabbffd5086657cc1ab360c2439e7e1a091ae4",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456423642"
+      },
+      {
+        "pr": 88,
+        "id": 43456423859,
+        "name": "browser",
+        "head_sha": "adeabbffd5086657cc1ab360c2439e7e1a091ae4",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456423859"
+      },
+      {
+        "pr": 88,
+        "id": 43456423666,
+        "name": "dependency-security",
+        "head_sha": "adeabbffd5086657cc1ab360c2439e7e1a091ae4",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456423666"
+      },
+      {
+        "pr": 88,
+        "id": 43456423709,
+        "name": "CI",
+        "head_sha": "adeabbffd5086657cc1ab360c2439e7e1a091ae4",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456423709"
+      },
+      {
+        "pr": 87,
+        "id": 43456486433,
+        "name": "CI",
+        "head_sha": "822c79d9cd7b3800eee1398cdfe4c3bc78d90a81",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456486433"
+      },
+      {
+        "pr": 87,
+        "id": 43456486587,
+        "name": "dependency-security",
+        "head_sha": "822c79d9cd7b3800eee1398cdfe4c3bc78d90a81",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456486587"
+      },
+      {
+        "pr": 87,
+        "id": 43456486416,
+        "name": "extras",
+        "head_sha": "822c79d9cd7b3800eee1398cdfe4c3bc78d90a81",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456486416"
+      },
+      {
+        "pr": 87,
+        "id": 43456486553,
+        "name": "browser",
+        "head_sha": "822c79d9cd7b3800eee1398cdfe4c3bc78d90a81",
+        "run_attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43456486553"
+      }
+    ],
+    "passed_jobs_per_head": {
+      "822c79d": 13,
+      "adeabbf": 13
+    },
+    "pr88_changed_files": [
+      ".github/workflows/browser.yml",
+      "scripts/browser/check_upload_mutations.cjs",
+      "scripts/browser/workflow_helpers.test.cjs"
+    ]
+  }
 }
