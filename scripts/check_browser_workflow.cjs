@@ -9,6 +9,8 @@ const {createHash} = require('node:crypto');
 const playwrightModule = process.env.CROCHET_PLAYWRIGHT_MODULE || path.join(__dirname,'browser/node_modules/playwright');
 const {chromium} = require(playwrightModule);
 const {expect} = require(path.join(playwrightModule,'test'));
+const {reveal,settle,upload,download} = require('./browser/workflow_helpers.cjs');
+const {observeRuns,runLog,streamlitVersion} = require('./browser/streamlit_protocol.cjs');
 
 const baseURL = process.env.CROCHET_BROWSER_URL || 'http://127.0.0.1:18502';
 assert(['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseURL).hostname),
@@ -25,23 +27,8 @@ const syntheticSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height
 <rect x="174" y="420" width="36" height="170" rx="15" fill="#303030"/>
 </svg>`;
 
-async function reveal(locator) {
-  for (const details of await locator.locator('xpath=ancestor::details').all()) {
-    if (await details.getAttribute('open') === null) {
-      await details.locator(':scope > summary').click();
-    }
-  }
-}
-
-async function settle(page) {
-  // Give the websocket update a turn, then wait for visible computation to finish.
-  await page.waitForTimeout(300);
-  await page.locator('[data-testid="stStatusWidget"]').waitFor({state: 'hidden', timeout: 45000});
-  assert.equal(await page.locator('[data-testid="stException"]').count(), 0,
-               'Streamlit reported an uncaught application exception.');
-}
-
 async function clickKey(page, scope, name) {
+  await settle(page);
   const holder = key(scope,name);
   await holder.waitFor({state:'attached'});
   await reveal(holder);
@@ -129,17 +116,6 @@ async function resultId(scope, previousId) {
                              .slice('st-key-hist_save_'.length));
 }
 
-async function download(page, locator, output) {
-  await reveal(locator);
-  const waiting = page.waitForEvent('download', {timeout:45000});
-  await locator.click();
-  const value = await waiting;
-  assert.equal(await value.failure(), null);
-  await value.saveAs(output);
-  await settle(page);
-  return fs.readFile(output);
-}
-
 async function headProgress(page, scope, rid, checked) {
   const input = headCheck(scope,rid);
   await reveal(input);
@@ -158,6 +134,13 @@ async function headProgress(page, scope, rid, checked) {
   const report = {
     source_commit:execFileSync('git', ['rev-parse','HEAD'], {cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     harness_sha256:createHash('sha256').update(await fs.readFile(__filename)).digest('hex'),
+    streamlit_wire_version:streamlitVersion,
+    server_app_file:null,
+    harness_files_sha256:Object.fromEntries(await Promise.all([
+      'check_browser_workflow.cjs','browser/workflow_helpers.cjs',
+      'browser/streamlit_protocol.cjs','browser/streamlit_protocol.py',
+      'browser/serve_app.py','browser/upload_ack.py',
+    ].map(async file => [file,createHash('sha256').update(await fs.readFile(path.join(__dirname,file))).digest('hex')]))),
     working_tree_clean:!execFileSync('git',['status','--porcelain'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     github_head_commit:process.env.CROCHET_BROWSER_HEAD_SHA || null,
     base_url:baseURL, input:'synthetic SVG/PNG, grid project and CLI-generated manual garment pattern',
@@ -179,7 +162,10 @@ async function headProgress(page, scope, rid, checked) {
       report.blocked_external_requests.push(route.request().url());
       return route.abort();
     });
-    ctx.on('page', p => p.on('pageerror', e => report.page_errors.push(String(e))));
+    ctx.on('page', p => {
+      observeRuns(p);
+      p.on('pageerror', e => report.page_errors.push(String(e)));
+    });
     return ctx;
   }
   try {
@@ -212,7 +198,10 @@ async function headProgress(page, scope, rid, checked) {
                palette:[{name:'红色',rgb:[255,0,0]},{name:'蓝色',rgb:[0,120,215]}],
                cells:[[0,0],[0,1]]},
     }));
-    await key(gridPanel,'grid_project_uploader').locator('input[type="file"]').setInputFiles(gridFile);
+    await upload(gridPage, key(gridPanel,'grid_project_uploader'), gridFile);
+    report.server_app_file = runLog(gridPage).serverAppFile;
+    assert.equal(report.server_app_file,await fs.realpath(path.join(__dirname,'../app/__init__.py')),
+                 'Server must import app from the checkout recorded in this report.');
     await clickKey(gridPage,gridPanel,'grid_restore_project');
     const gridMode = key(gridPanel,'grid_edit_mode');
     await reveal(gridMode);
@@ -254,7 +243,7 @@ async function headProgress(page, scope, rid, checked) {
     await expect(photoTab).toHaveAttribute('aria-selected','true');
     await photoTab.click();
     const photoPanel = page.getByRole('tabpanel', {name:'照片分析（本地）',exact:true});
-    await key(photoPanel,'photo_uploader').locator('input[type="file"]').setInputFiles(photo);
+    await upload(page, key(photoPanel,'photo_uploader'), photo);
     await key(photoPanel,'btn_photo').getByRole('button').waitFor({state:'visible'});
     await clickKey(page,photoPanel,'btn_photo');
     const enable = photoPanel.locator('[class*="st-key-review_mask_enabled_"] input');
@@ -392,7 +381,7 @@ async function headProgress(page, scope, rid, checked) {
     const legacyPage = lastPage = await legacyContext.newPage();
     await legacyPage.goto(baseURL);
     const legacySidebar = legacyPage.locator('[data-testid="stSidebar"]');
-    await key(legacySidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(legacyPath);
+    await upload(legacyPage, key(legacySidebar,'open_backup_file'), legacyPath);
     await clickKey(legacyPage,legacySidebar,'open_backup_apply');
     const legacyPanel = legacyPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const legacyId = await resultId(legacyPanel);
@@ -414,7 +403,7 @@ async function headProgress(page, scope, rid, checked) {
     const uncertainPage = lastPage = await uncertainContext.newPage();
     await uncertainPage.goto(baseURL);
     const uncertainSidebar = uncertainPage.locator('[data-testid="stSidebar"]');
-    await key(uncertainSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(uncertainPath);
+    await upload(uncertainPage, key(uncertainSidebar,'open_backup_file'), uncertainPath);
     await clickKey(uncertainPage,uncertainSidebar,'open_backup_apply');
     const uncertainPanel = uncertainPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const uncertainId = await resultId(uncertainPanel);
@@ -504,8 +493,7 @@ async function headProgress(page, scope, rid, checked) {
     const fresh = lastPage = await freshContext.newPage();
     await fresh.goto(baseURL);
     const freshSidebar = fresh.locator('[data-testid="stSidebar"]');
-    const uploader = key(freshSidebar,'open_backup_file').locator('input[type="file"]');
-    await uploader.setInputFiles(projectFile);
+    await upload(fresh, key(freshSidebar,'open_backup_file'), projectFile);
     await clickKey(fresh,freshSidebar,'open_backup_apply');
     const restored = fresh.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const restoredId = await resultId(restored);
@@ -523,7 +511,7 @@ async function headProgress(page, scope, rid, checked) {
     await fresh.screenshot({path:path.join(output,'project-restored.png'),fullPage:true});
     record('fresh browser context restores project, then re-exports identical work');
 
-    await uploader.setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{broken')});
+    await upload(fresh, key(freshSidebar,'open_backup_file'), {name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{broken')});
     await expect(freshSidebar.getByText('broken.json',{exact:true})).toBeVisible({timeout:45000});
     await settle(fresh);
     await clickKey(fresh,freshSidebar,'open_backup_apply');
@@ -559,7 +547,7 @@ async function headProgress(page, scope, rid, checked) {
     const reopened = lastPage = await openContext.newPage();
     await reopened.goto(baseURL);
     const openSidebar = reopened.locator('[data-testid="stSidebar"]');
-    await key(openSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(openProjectFile);
+    await upload(reopened, key(openSidebar,'open_backup_file'), openProjectFile);
     await clickKey(reopened,openSidebar,'open_backup_apply');
     const openPanel = reopened.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const reopenedId = await resultId(openPanel);
@@ -584,7 +572,7 @@ async function headProgress(page, scope, rid, checked) {
     record('preview exact 16-stitch head opening, restore project in new context, then close again');
 
     const garmentInput = path.join(output,'garment-input.json');
-    execFileSync(path.join(__dirname,'../.venv/bin/python'),[
+    execFileSync(process.env.CROCHET_TEST_PYTHON || path.join(__dirname,'../.venv/bin/python'),[
       '-m','app.cli','--parts','头部,身体,手臂,帽子,裙子','--head','5.7','--height','36',
       '--gauge','custom','--stitches','30','--rows','32','--out',garmentInput,'--quiet',
     ],{cwd:path.join(__dirname,'..')});
@@ -593,7 +581,7 @@ async function headProgress(page, scope, rid, checked) {
     const garmentPage = lastPage = await garmentContext.newPage();
     await garmentPage.goto(baseURL);
     const garmentSidebar = garmentPage.locator('[data-testid="stSidebar"]');
-    await key(garmentSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(garmentInput);
+    await upload(garmentPage, key(garmentSidebar,'open_backup_file'), garmentInput);
     await clickKey(garmentPage,garmentSidebar,'open_backup_apply');
     const garmentPanel = garmentPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const garmentId = await resultId(garmentPanel);
@@ -632,7 +620,7 @@ async function headProgress(page, scope, rid, checked) {
     const mixedPage = lastPage = await mixedContext.newPage();
     await mixedPage.goto(baseURL);
     const mixedSidebar = mixedPage.locator('[data-testid="stSidebar"]');
-    await key(mixedSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(mixedProjectFile);
+    await upload(mixedPage, key(mixedSidebar,'open_backup_file'), mixedProjectFile);
     await clickKey(mixedPage,mixedSidebar,'open_backup_apply');
     const mixedPanel = mixedPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const recoveredId = await resultId(mixedPanel);
@@ -700,7 +688,7 @@ async function headProgress(page, scope, rid, checked) {
     const samplePage = lastPage = await sampleContext.newPage();
     await samplePage.goto(baseURL);
     const sampleSidebar = samplePage.locator('[data-testid="stSidebar"]');
-    await key(sampleSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(sampleProject);
+    await upload(samplePage, key(sampleSidebar,'open_backup_file'), sampleProject);
     await clickKey(samplePage,sampleSidebar,'open_backup_apply');
     const samplePanel = samplePage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
     const sampleId = await resultId(samplePanel);
@@ -888,7 +876,7 @@ async function headProgress(page, scope, rid, checked) {
       const colourPage = lastPage = await colourContext.newPage();
       await colourPage.goto(baseURL);
       const colourSidebar = colourPage.locator('[data-testid="stSidebar"]');
-      await key(colourSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(colourProject);
+      await upload(colourPage, key(colourSidebar,'open_backup_file'), colourProject);
       await clickKey(colourPage,colourSidebar,'open_backup_apply');
       const colourRestorePanel = colourPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
       const colourRestoreId = await resultId(colourRestorePanel);
@@ -906,7 +894,7 @@ async function headProgress(page, scope, rid, checked) {
       await narrowPage.goto(baseURL);
       await narrowPage.getByRole('button',{name:'Expand sidebar',exact:true}).click();
       const narrowSidebar = narrowPage.locator('[data-testid="stSidebar"]');
-      await key(narrowSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(perCopyFile);
+      await upload(narrowPage, key(narrowSidebar,'open_backup_file'), perCopyFile);
       await clickKey(narrowPage,narrowSidebar,'open_backup_apply');
       const narrowPanel = narrowPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
       const narrowId = await resultId(narrowPanel);
@@ -1012,7 +1000,7 @@ async function headProgress(page, scope, rid, checked) {
       const swatchPage = lastPage = await swatchContext.newPage();
       await swatchPage.goto(baseURL);
       const swatchSidebar = swatchPage.locator('[data-testid="stSidebar"]');
-      await key(swatchSidebar, 'open_backup_file').locator('input[type="file"]').setInputFiles(swatchProject);
+      await upload(swatchPage, key(swatchSidebar, 'open_backup_file'), swatchProject);
       await clickKey(swatchPage, swatchSidebar, 'open_backup_apply');
       const swatchRestorePanel = swatchPage.getByRole('tabpanel', {name: '照片分析（本地）', exact: true});
       const swatchRestoreId = await resultId(swatchRestorePanel);
@@ -1022,6 +1010,57 @@ async function headProgress(page, scope, rid, checked) {
       await swatchContext.close();
       lastPage = page;
       record('custom display swatch stays with its name through Markdown, PDF, Parade, undo, redo and project restore');
+    }
+
+    // Import a ZIP produced by actual old source, then export and reopen it in
+    // another context. Check complete normalized records and exact source bytes.
+    {
+      const legacyFile = path.join(__dirname,'../tests/fixtures/trial_4a19d70/measured.zip');
+      const inspectTrial = file => JSON.parse(execFileSync(
+        process.env.CROCHET_TEST_PYTHON || path.join(__dirname,'../.venv/bin/python'),[
+          '-c',`import json, sys
+from pathlib import Path
+from app.utils.trial_bundle import decode_trial_bundle
+b = decode_trial_bundle(Path(sys.argv[1]).read_bytes())
+print(json.dumps({"source": b.source.hex(), "record": b.record.model_dump(mode="json"),
+                  "draft": b.draft.model_dump(mode="json") if b.draft else None}))`,file,
+        ],{cwd:path.join(__dirname,'..'),encoding:'utf8'}));
+      const expected = inspectTrial(legacyFile);
+      assert.equal(expected.record.pattern.sha256,'a287bc76903cee5447f86dbd1e468c6dd9efb93cdc63c9f50ad427b0b746cc39');
+      // Frozen independently by executing the archived main (60084d0) importer.
+      // Its active backup normalizes old schema/assembly prose; the trial ZIP
+      // must still retain the exact old source. See the fixture README.
+      const sorted = value => Array.isArray(value) ? value.map(sorted) : value && typeof value === 'object'
+        ? Object.fromEntries(Object.keys(value).sort().map(key => [key,sorted(value[key])])) : value;
+      let input = legacyFile;
+      for (let cycle = 0; cycle < 2; cycle++) {
+        const legacyContext = await context();
+        const legacyPage = lastPage = await legacyContext.newPage();
+        await legacyPage.goto(baseURL);
+        const legacySidebar = legacyPage.getByTestId('stSidebar');
+        const uploader = key(legacySidebar,'trial_open_file');
+        await reveal(uploader);
+        await upload(legacyPage,uploader,input);
+        await clickKey(legacyPage,legacySidebar,'trial_open_apply');
+        const panel = legacyPage.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
+        const id = await resultId(panel);
+        const measured = panel.locator('[class*="st-key-trial_fields_result_"][class*="_measured"]').first();
+        await reveal(measured);
+        await expect(measured.getByRole('checkbox')).toBeChecked();
+        assert.equal(Number(await panel.getByRole('spinbutton',{name:'实测 10 cm 针数',exact:true}).inputValue()),18);
+        assert.equal(Number(await panel.getByRole('spinbutton',{name:'实测 10 cm 行数',exact:true}).inputValue()),24);
+        const backup = JSON.parse(await download(legacyPage,key(panel,`dl_backup_${id}`).getByRole('button'),
+          path.join(output,`legacy-trial-pattern-${cycle}.json`)));
+        assert.equal(createHash('sha256').update(JSON.stringify(sorted(backup.params))).digest('hex'),
+          '7444d67081ccddd7490cfe2d106cf97c5017232179c9551a462cf3ae8ac997d2');
+        const exported = path.join(output,`legacy-trial-${cycle}.zip`);
+        await download(legacyPage,key(panel,'trial_download_result').getByRole('button'),exported);
+        assert.deepEqual(inspectTrial(exported),expected);
+        input = exported;
+        await legacyContext.close();
+      }
+      lastPage = page;
+      record('old-source trial ZIP restores saved swatch and exact pattern bytes through two browser export cycles');
     }
 
     // The legacy fixture saved one ambiguous head completion plus an unrelated hat completion.
@@ -1035,7 +1074,7 @@ async function headProgress(page, scope, rid, checked) {
       const collisionHeadIndex = collisionInput.params.parts.findIndex(part=>part.name==='头部');
       const collisionHatIndex = collisionInput.params.parts.findIndex(part=>part.name==='帽子');
       const collisionHeadRounds = collisionInput.params.parts[collisionHeadIndex].rounds.length;
-      await key(collisionSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(collisionFile);
+      await upload(collisionPage, key(collisionSidebar,'open_backup_file'), collisionFile);
       await clickKey(collisionPage,collisionSidebar,'open_backup_apply');
       await expect(collisionSidebar.getByText(/无法区分属于哪份实体/)).toBeVisible();
       await collisionPage.screenshot({path:path.join(output,'collision-recovery-choice.png'),fullPage:true});
@@ -1071,7 +1110,7 @@ async function headProgress(page, scope, rid, checked) {
       const collisionFresh = lastPage = await collisionFreshContext.newPage();
       await collisionFresh.goto(baseURL);
       const freshSidebar = collisionFresh.locator('[data-testid="stSidebar"]');
-      await key(freshSidebar,'open_backup_file').locator('input[type="file"]').setInputFiles(collisionProject);
+      await upload(collisionFresh, key(freshSidebar,'open_backup_file'), collisionProject);
       await clickKey(collisionFresh,freshSidebar,'open_backup_apply');
       const freshPanel = collisionFresh.getByRole('tabpanel',{name:'照片分析（本地）',exact:true});
       const freshId = await resultId(freshPanel);
