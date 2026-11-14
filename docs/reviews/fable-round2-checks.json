@@ -1,0 +1,1760 @@
+{
+  "artifact_kind": "engineering_review_verification",
+  "is_release_evidence": false,
+  "observed_on": "2026-11-13",
+  "baseline_commit": "60084d09db40d8f5d068980b99c632f736fc5de8",
+  "code_commit": "72289b54e06cc24a32a8d48d70853fd38b5c291b",
+  "code_tree": "7bcf9c5056271d1b02f5bf07551fd13620256257",
+  "scope": "Pinned implementation commits only; later handoff documentation is excluded from these recorded runs. No G3/G4 acceptance.",
+  "pull_requests": [
+    {
+      "number": 74,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/74",
+      "head": "915bebbc7220ed1bbd7beaa5fc09f4b13370acf6",
+      "branch": "dependabot/uv/python-minor-patch-d97917f946",
+      "base": "main",
+      "state": "open",
+      "draft": false,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43391801547,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43391801547",
+          "jobs": [
+            {
+              "id": 131773264087,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43391801432,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43391801432",
+          "jobs": [
+            {
+              "id": 131773264130,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773264398,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773264408,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773264478,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43391801366,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43391801366",
+          "jobs": [
+            {
+              "id": 131773263586,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773263936,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773263980,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773263981,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773263991,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773264106,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131773264286,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43391801364,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43391801364",
+          "jobs": [
+            {
+              "id": 131773263888,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 75,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/75",
+      "head": "7b049a9fcb10d637ea655a72865aeb813edd48ff",
+      "branch": "fix/release-receipt-validation-20261113",
+      "base": "main",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43367109910,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367109910",
+          "jobs": [
+            {
+              "id": 131694013569,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43367109987,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367109987",
+          "jobs": [
+            {
+              "id": 131694013461,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43367109967,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367109967",
+          "jobs": [
+            {
+              "id": 131694014141,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694014435,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694014461,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694014553,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43367109942,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367109942",
+          "jobs": [
+            {
+              "id": 131694013421,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694013618,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694013646,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694013686,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694013689,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694013734,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131694013747,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 76,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/76",
+      "head": "ee2bc3205c680747acee631c1cc6af5df13f7063",
+      "branch": "test/generator-output-snapshots-20261113",
+      "base": "main",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43367952138,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367952138",
+          "jobs": [
+            {
+              "id": 131696726448,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43367952137,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367952137",
+          "jobs": [
+            {
+              "id": 131696726440,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726672,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726707,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726750,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43367952011,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367952011",
+          "jobs": [
+            {
+              "id": 131696725839,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726062,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726131,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726149,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726163,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726174,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131696726199,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43367952046,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43367952046",
+          "jobs": [
+            {
+              "id": 131696725997,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 77,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/77",
+      "head": "d26d89d20d3ec1dfae1ac03b9194a2a73789719e",
+      "branch": "refactor/generator-shapes-20261113",
+      "base": "test/generator-output-snapshots-20261113",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43369272004,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43369272004",
+          "jobs": [
+            {
+              "id": 131700961950,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43369271945,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43369271945",
+          "jobs": [
+            {
+              "id": 131700961707,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700961938,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700961969,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700962075,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43369271999,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43369271999",
+          "jobs": [
+            {
+              "id": 131700961667,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43369271983,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43369271983",
+          "jobs": [
+            {
+              "id": 131700962008,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700962166,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700962275,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700962276,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700962325,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700962326,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131700962340,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 78,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/78",
+      "head": "9a6e28414de024be723714de0eb8608e35074835",
+      "branch": "refactor/generator-part-identity-20261113",
+      "base": "refactor/generator-shapes-20261113",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43370355836,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43370355836",
+          "jobs": [
+            {
+              "id": 131730782755,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43370355770,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43370355770",
+          "jobs": [
+            {
+              "id": 131704415023,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704415213,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704415229,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704415308,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704415338,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704415362,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704415365,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43370355746,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43370355746",
+          "jobs": [
+            {
+              "id": 131704414738,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43370355745,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43370355745",
+          "jobs": [
+            {
+              "id": 131704414685,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704414832,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704414948,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131704415108,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 79,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/79",
+      "head": "1792648456b3318928303514a195d7101fae689a",
+      "branch": "refactor/assembly-part-identity-20261113",
+      "base": "refactor/generator-part-identity-20261113",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43372899406,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43372899406",
+          "jobs": [
+            {
+              "id": 131712582530,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43372899461,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43372899461",
+          "jobs": [
+            {
+              "id": 131712583208,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583382,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583458,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583572,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43372899400,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43372899400",
+          "jobs": [
+            {
+              "id": 131712582541,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43372899587,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43372899587",
+          "jobs": [
+            {
+              "id": 131712583234,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583440,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583443,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583451,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583485,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583505,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131712583567,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 80,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/80",
+      "head": "466ee8b690c2f5a8c9adaf521c8b41adfef866a1",
+      "branch": "refactor/evaluation-stages-20261113",
+      "base": "refactor/assembly-part-identity-20261113",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43374699240,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43374699240",
+          "jobs": [
+            {
+              "id": 131730807099,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43374699266,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43374699266",
+          "jobs": [
+            {
+              "id": 131718340309,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43374699232,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43374699232",
+          "jobs": [
+            {
+              "id": 131718340412,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718340765,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718340777,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718340789,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43374699265,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43374699265",
+          "jobs": [
+            {
+              "id": 131718340597,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718340882,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718340924,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718340930,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718340963,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718341014,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131718341145,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 81,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/81",
+      "head": "884523657b46298e38ed0863c23f2941d07ab687",
+      "branch": "refactor/trial-tools-modules-20261113",
+      "base": "refactor/evaluation-stages-20261113",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43377895016,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43377895016",
+          "jobs": [
+            {
+              "id": 131728589711,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43377894948,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43377894948",
+          "jobs": [
+            {
+              "id": 131728589885,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728590037,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728590139,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728590233,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43377895007,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43377895007",
+          "jobs": [
+            {
+              "id": 131728589648,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728589920,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728589961,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728589981,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728589983,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728589991,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131728590018,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43377894968,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43377894968",
+          "jobs": [
+            {
+              "id": 131728589631,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 82,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/82",
+      "head": "642830fe4c23124938170b27e7f886d546c16509",
+      "branch": "refactor/grid-ui-sections-20261113",
+      "base": "refactor/trial-tools-modules-20261113",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43378551086,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43378551086",
+          "jobs": [
+            {
+              "id": 131730686378,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730686587,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730686590,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730686596,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43378551007,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43378551007",
+          "jobs": [
+            {
+              "id": 131730686796,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730687117,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730687123,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730687233,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730687413,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730688076,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131730688482,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43378550924,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43378550924",
+          "jobs": [
+            {
+              "id": 131730686466,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43378550953,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43378550953",
+          "jobs": [
+            {
+              "id": 131771214392,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 83,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/83",
+      "head": "e38e39a6c8e7536ecbdf59207dd7e9a71b178006",
+      "branch": "refactor/stylesheet-sections-20261113",
+      "base": "refactor/grid-ui-sections-20261113",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43379834703,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43379834703",
+          "jobs": [
+            {
+              "id": 131734765262,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734765453,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734765492,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734765622,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43379834464,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43379834464",
+          "jobs": [
+            {
+              "id": 131734764788,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43379835111,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43379835111",
+          "jobs": [
+            {
+              "id": 131734767144,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734767215,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734767297,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734767308,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734767328,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734767338,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131734767352,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43379834589,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43379834589",
+          "jobs": [
+            {
+              "id": 131734765230,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    },
+    {
+      "number": 84,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/pull/84",
+      "head": "edc73e2876498ea4f5d7e293301fbbffc0c816af",
+      "branch": "chore/actions-runtime-updates-20261113",
+      "base": "main",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "workflows": [
+        {
+          "id": 43390733154,
+          "name": "browser",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43390733154",
+          "jobs": [
+            {
+              "id": 131769720187,
+              "name": "browser-smoke",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43390732870,
+          "name": "extras",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43390732870",
+          "jobs": [
+            {
+              "id": 131769720237,
+              "name": "pose-unlocked (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769720678,
+              "name": "optional-extras (pdf)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769720757,
+              "name": "optional-extras (pose)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769720813,
+              "name": "pose-unlocked (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43390733249,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43390733249",
+          "jobs": [
+            {
+              "id": 131769720758,
+              "name": "test (3.14)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769720907,
+              "name": "test (3.13)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769720960,
+              "name": "test (3.11)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769721052,
+              "name": "docker",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769721098,
+              "name": "streamlit-floor",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769721169,
+              "name": "test (3.12)",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 131769721597,
+              "name": "type-check",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "id": 43390732888,
+          "name": "dependency-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43390732888",
+          "jobs": [
+            {
+              "id": 131769720246,
+              "name": "pip-audit",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ],
+      "passed_jobs": 13
+    }
+  ],
+  "integration": {
+    "branch": "review/fable-round2-integration-20261113",
+    "code_commit": "72289b54e06cc24a32a8d48d70853fd38b5c291b",
+    "passed_jobs": 13,
+    "workflows": [
+      {
+        "run_id": 43393464325,
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43393464325",
+        "jobs": [
+          {
+            "id": 131778670084,
+            "name": "type-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778670373,
+            "name": "docker",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778670402,
+            "name": "streamlit-floor",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778670542,
+            "name": "test (3.14)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778670579,
+            "name": "test (3.13)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778670594,
+            "name": "test (3.11)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778670965,
+            "name": "test (3.12)",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "run_id": 43393473309,
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43393473309",
+        "jobs": [
+          {
+            "id": 131778699809,
+            "name": "pose-unlocked (3.11)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778700177,
+            "name": "pose-unlocked (3.12)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778700189,
+            "name": "optional-extras (pdf)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 131778700203,
+            "name": "optional-extras (pose)",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "run_id": 43393480843,
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43393480843",
+        "jobs": [
+          {
+            "id": 131778723706,
+            "name": "browser-smoke",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "run_id": 43393520250,
+        "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43393520250",
+        "jobs": [
+          {
+            "id": 131778859169,
+            "name": "pip-audit",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  "local": {
+    "code_commit": "72289b54e06cc24a32a8d48d70853fd38b5c291b",
+    "code_tree": "7bcf9c5056271d1b02f5bf07551fd13620256257",
+    "pytest": {
+      "passed": 2987,
+      "skipped": 2,
+      "coverage_percent": 94.61,
+      "elapsed_seconds": 262
+    },
+    "ruff": "pass",
+    "mypy_app_tests_receipt_script": "pass",
+    "wheel_build": "pass",
+    "browser": {
+      "source_commit": "72289b54e06cc24a32a8d48d70853fd38b5c291b",
+      "harness_sha256": "e1629aba74a29f8395abb5d63cff274bdd113280b4bea43ebe961cc02c0b963a",
+      "working_tree_clean": true,
+      "github_head_commit": "72289b54e06cc24a32a8d48d70853fd38b5c291b",
+      "input": "synthetic SVG/PNG, grid project and CLI-generated manual garment pattern",
+      "checks": [
+        {
+          "name": "sidebar lists the gauge first and groups the existing-work entries",
+          "status": "pass"
+        },
+        {
+          "name": "whole-grid colour replacement updates downloads and supports undo and redo",
+          "status": "pass"
+        },
+        {
+          "name": "upload PNG and prepare local photo review",
+          "status": "pass"
+        },
+        {
+          "name": "embedded canvas add/erase/undo/reset reaches the Streamlit app",
+          "status": "pass"
+        },
+        {
+          "name": "complete subject/proportion/parts review and generate",
+          "status": "pass"
+        },
+        {
+          "name": "result page folds sources by default and moves coordinates into the structure JSON",
+          "status": "pass"
+        },
+        {
+          "name": "marker styles and repeated progress changes preserve the open, full-width part panel",
+          "status": "pass"
+        },
+        {
+          "name": "download backup/JSON/Markdown/PDF and compare actual contents",
+          "status": "pass"
+        },
+        {
+          "name": "legacy custom structure IDs survive import, rendering and backup export",
+          "status": "pass"
+        },
+        {
+          "name": "unrecognized review markers remain in backup without false confirmation",
+          "status": "pass"
+        },
+        {
+          "name": "placeholder colors are clear in the result and Markdown while backup values stay unchanged",
+          "status": "pass"
+        },
+        {
+          "name": "first history save, undo and save keep the same stored record",
+          "status": "pass"
+        },
+        {
+          "name": "project download contains the current progress and personal notes",
+          "status": "pass"
+        },
+        {
+          "name": "manual-to-photo history load keeps two pages progress/notes isolated",
+          "status": "pass"
+        },
+        {
+          "name": "fresh browser context restores project, then re-exports identical work",
+          "status": "pass"
+        },
+        {
+          "name": "invalid import preserves the active project, progress and notes",
+          "status": "pass"
+        },
+        {
+          "name": "preview exact 16-stitch head opening, restore project in new context, then close again",
+          "status": "pass"
+        },
+        {
+          "name": "independent 26x28 hat with 30x32 body, unchanged work, trial gate and fresh project recovery",
+          "status": "pass"
+        },
+        {
+          "name": "weighed 30x32 sample stays bound after trial default changes to 26x28, with fixed hat and fresh recovery",
+          "status": "pass"
+        },
+        {
+          "name": "material preview/cancel/apply and unchanged material/size after undo retain redo, provenance, notes and progress",
+          "status": "pass"
+        },
+        {
+          "name": "advanced JSON editors stay unmounted until the enable button is clicked",
+          "status": "pass"
+        },
+        {
+          "name": "advanced JSON panel starts collapsed, keeps a draft through preview and cancel, and downloads stay applied until regeneration",
+          "status": "pass"
+        },
+        {
+          "name": "colour panel previews the affected rounds and the worked-yarn notice, cancel is read-only, and apply/undo/redo keep stitches and completed rounds",
+          "status": "pass"
+        },
+        {
+          "name": "per-copy colour reaches the Markdown export and survives a project restore with progress",
+          "status": "pass"
+        },
+        {
+          "name": "colour panel renders inside a 390 px viewport without horizontal overflow",
+          "status": "pass"
+        },
+        {
+          "name": "switching custom names restores their own swatches and shared display-colour changes are previewed",
+          "status": "pass"
+        },
+        {
+          "name": "custom display swatch stays with its name through Markdown, PDF, Parade, undo, redo and project restore",
+          "status": "pass"
+        },
+        {
+          "name": "legacy collision requires recovery, then separate copy progress survives a fresh project restore",
+          "status": "pass"
+        },
+        {
+          "name": "390 px viewport keeps the title on one line and the header opaque without Deploy",
+          "status": "pass"
+        },
+        {
+          "name": "390 px viewport opens the sidebar drawer with the same gauge-first outline",
+          "status": "pass"
+        }
+      ],
+      "page_errors": [],
+      "blocked_external_requests": [],
+      "physical_validation": false,
+      "browser": "156.0.8078.4",
+      "status": "pass"
+    },
+    "comparison_receipts": {
+      "shapes": {
+        "helpers": [
+          "_sphere_part",
+          "_skirt_part",
+          "_cup_part",
+          "_profiled_body_part",
+          "_body_part",
+          "_limb_part"
+        ],
+        "branch_bodies_equal_ignoring_type_annotation_and_warning_transfer": true,
+        "snapshot_fixtures_unchanged": true,
+        "full_suite": "2963 passed, 2 skipped",
+        "coverage": 94.52
+      },
+      "assembly": {
+        "cases": 6144,
+        "all_outputs_equal": true
+      },
+      "evaluation": {
+        "complete_reports_compared": 16,
+        "all_equal": true,
+        "synthetic_inputs_only": true,
+        "clock_fixed_for_comparison": true
+      },
+      "trials": {
+        "public_names_preserved": 69,
+        "functions_ast_and_signatures_equal": 26,
+        "model_schemas_equal": 9,
+        "complete_reports_equal": 18,
+        "cli_help_equal": true,
+        "draft_json_equal": true,
+        "synthetic_inputs_only": true
+      },
+      "grid": {
+        "expanded_orchestration_ast_equals_original": true,
+        "helper_count": 8,
+        "old_function_lines": 353,
+        "new_function_lines": 15
+      },
+      "css": {
+        "complete_css_bytes_equal": true,
+        "css_bytes": 16410,
+        "dynamic_variants_equal": 19,
+        "helper_count": 10
+      }
+    },
+    "function_sizes": {
+      "generate_params": {
+        "before": 381,
+        "after": 142
+      },
+      "evaluate_dataset": {
+        "before": 338,
+        "after": 19
+      },
+      "render_tab_grid": {
+        "before": 353,
+        "after": 15
+      },
+      "build_css": {
+        "before": 548,
+        "after": 19
+      }
+    },
+    "runtime": {
+      "python": "3.12.13",
+      "opencv": "4.14.0",
+      "numpy": "2.5.2"
+    }
+  },
+  "prior_browser_failures": [
+    {
+      "pr": 78,
+      "run_id": 43370355836,
+      "same_head_retry": "success",
+      "symptom": "download failed after prior workflow scenarios passed"
+    },
+    {
+      "pr": 80,
+      "run_id": 43374699240,
+      "same_head_retry": "success",
+      "symptom": "fresh-project restore result locator timeout"
+    },
+    {
+      "pr": 82,
+      "run_id": 43378550953,
+      "same_head_retry": "success",
+      "symptom": "fresh-project restore result locator timeout"
+    }
+  ],
+  "remaining": {
+    "g3": "blocked: >=30 authorized stratified real photos and required thresholds",
+    "g4": "blocked: physical calibration and disjoint holdout validation",
+    "pr15": "open: split reply published; contribution unmerged",
+    "new_implementation_prs": "await independent review and merge"
+  }
+}

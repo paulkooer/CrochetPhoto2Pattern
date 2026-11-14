@@ -10,6 +10,7 @@
 | Release candidate evidence / 发布候选证据流程 | [release-process.md](release-process.md) | [release-process.zh-CN.md](release-process.zh-CN.md) |
 | Dependency update policy / 依赖更新口径 | [policy and pinned upstream sources](dependency-updates.md) | [规则范围与固定版本依据](dependency-updates.md) |
 | Open contribution follow-up / 尚未闭项的贡献待办 | [PR #15 — awaiting split](reviews/pr-15-followup.md) | [PR #15 — 等待拆分](reviews/pr-15-followup.md) |
+| Fable follow-up review / Fable 后续待审交接 | [Scope and pinned verification (Chinese)](reviews/fable-round2-handoff.md) | [范围与固定提交验证](reviews/fable-round2-handoff.md) |
 | Authorized real-photo evaluation / 授权真实照片评测 | [evaluation.en.md](evaluation.en.md) | [evaluation.md](evaluation.md) |
 | Third-party rights and takedown / 第三方权利与下架 | [policy](../THIRD_PARTY_CONTENT_EN.md) · [process](../NOTICE_AND_TAKEDOWN_EN.md) | [政策](../THIRD_PARTY_CONTENT.md) · [流程](../NOTICE_AND_TAKEDOWN.md) |
 | Physical trials and calibration / 实体试钩与校准 | [physical-trials.en.md](physical-trials.en.md) | [physical-trials.md](physical-trials.md) |
