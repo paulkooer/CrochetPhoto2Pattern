@@ -7,6 +7,8 @@ updates:
       interval: "weekly"
     # OpenCV 5 removes the CascadeClassifier API used by local vision.
     # Keep 4.x updates enabled; major API migrations need separate review.
+    # Type filters are skipped for security-only jobs; do not add versions here.
+    # Pinned upstream implementation and tests: docs/dependency-updates.md.
     ignore:
       - dependency-name: "opencv-python-headless"
         update-types: ["version-update:semver-major"]

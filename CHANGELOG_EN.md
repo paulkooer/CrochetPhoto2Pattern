@@ -7,6 +7,11 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 formats may still evolve during Beta; incompatible changes must include migration notes.
 
 ## Unreleased
+### Fixed — 2026-11-13 Release receipt consistency
+
+- Offline receipt status checks both candidate commit and tree, the scope flag, passing check groups, and the audit tree. Evidence generation writes a companion SHA-256 file; status and tests reject missing or mismatched checksums. This verifies local consistency, not remote-run authenticity or release readiness.
+- Status examples use the selected candidate SHA. Record the upstream security-update exception for type-only Dependabot ignores, and move PR #15's open split follow-up out of the historical archive.
+
 
 ### Fixed — 2026-11-14 Browser upload content correlation
 

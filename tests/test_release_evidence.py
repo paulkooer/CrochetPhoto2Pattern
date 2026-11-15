@@ -1,6 +1,7 @@
 """G1/G2 cite release-evidence.json. The file is not required to equal HEAD."""
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from datetime import date, datetime
@@ -187,10 +188,11 @@ def test_status_reads_saved_binding_without_network_or_writes(
     bind = _binder()
     document = _build(bind, _push(bind, "a" * 40))
     evidence_path = tmp_path / "release-evidence.json"
-    evidence_path.write_text(json.dumps(document))
+    bind.write_evidence(document, evidence_path)
     before = evidence_path.read_bytes()
     monkeypatch.setattr(bind, "_gh_json", lambda _path: pytest.fail("status must work offline"))
-    monkeypatch.setattr(bind.subprocess, "check_output", lambda *a, **k: candidate + "\n")
+    monkeypatch.setattr(bind.subprocess, "check_output",
+                        lambda argv, **k: ("b" * 40 if argv[-1].endswith("^{tree}") else candidate) + "\n")
     assert bind.main(["--status", "--output", str(evidence_path)]) == expected_code
     status = json.loads(capsys.readouterr().out)
     assert status["covers_candidate_commit"] is (expected_code == 0)
@@ -200,11 +202,49 @@ def test_status_reads_saved_binding_without_network_or_writes(
     assert evidence_path.read_bytes() == before
 
 
+@pytest.mark.parametrize(
+    "mutation", ["commit", "tree", "covers_later_commits", "checks", "bytes", "checksum"],
+)
+def test_status_rejects_changed_identity_unsafe_scope_or_changed_receipt(
+    tmp_path, monkeypatch, capsys, mutation,
+):
+    bind = _binder()
+    document = _build(bind, _push(bind, "a" * 40))
+    path = tmp_path / "release-evidence.json"
+    bind.write_evidence(document, path)
+    candidate = "a" * 40
+    if mutation == "commit":
+        document["commit"] = candidate = "d" * 40
+    elif mutation == "tree":
+        document["tree"] = "e" * 40
+    elif mutation == "covers_later_commits":
+        document["covers_later_commits"] = True
+    elif mutation == "checks":
+        document["checks"]["ci"] = "fail"
+    bind.write_evidence(document, path)
+    if mutation == "bytes":
+        path.write_bytes(path.read_bytes() + b"\n")
+    elif mutation == "checksum":
+        path.with_suffix(".sha256").unlink()
+    monkeypatch.setattr(bind, "_gh_json", lambda _path: pytest.fail("status must work offline"))
+    candidate_tree = "f" * 40 if mutation == "commit" else "b" * 40
+    def local_git(argv, **kwargs):
+        return (candidate_tree if argv[-1].endswith("^{tree}") else candidate) + "\n"
+
+    monkeypatch.setattr(bind.subprocess, "check_output", local_git)
+    before = path.read_bytes()
+    assert bind.main(["--status", "--output", str(path)]) == 1
+    assert json.loads(capsys.readouterr().out)["covers_candidate_commit"] is False
+    assert path.read_bytes() == before
+
+
 def test_status_gates_cite_the_evidence_file_without_matching_head():
     evidence = json.loads((ROOT / "docs" / "release-evidence.json").read_text(encoding="utf-8"))
     zh = (ROOT / "docs" / "system-status.zh-CN.md").read_text(encoding="utf-8")
     en = (ROOT / "docs" / "system-status.md").read_text(encoding="utf-8")
     assert evidence["schema_version"] == 2
+    raw = (ROOT / "docs" / "release-evidence.json").read_bytes()
+    assert (ROOT / "docs" / "release-evidence.sha256").read_text().strip() == hashlib.sha256(raw).hexdigest()
     assert "tested_at" not in evidence
     assert date.fromisoformat(evidence["commit_date"])
     assert datetime.fromisoformat(evidence["checks_completed_at"])
