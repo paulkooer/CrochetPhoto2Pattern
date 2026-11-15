@@ -7,11 +7,20 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 formats may still evolve during Beta; incompatible changes must include migration notes.
 
 ## Unreleased
-
 ### Fixed — 2026-11-13 Release receipt consistency
 
 - Offline receipt status checks both candidate commit and tree, the scope flag, passing check groups, and the audit tree. Evidence generation writes a companion SHA-256 file; status and tests reject missing or mismatched checksums. This verifies local consistency, not remote-run authenticity or release readiness.
 - Status examples use the selected candidate SHA. Record the upstream security-update exception for type-only Dependabot ignores, and move PR #15's open split follow-up out of the historical archive.
+
+
+### Fixed — 2026-11-14 Browser upload content correlation
+
+- Require a successful full run to acknowledge the target file ID and actual byte SHA-256, rejecting an older queued rerun that only starts after the upload request. The isolated test launcher installs the acknowledgement adapter; production application code is unchanged. Path inputs use one byte snapshot for hashing and uploading.
+- Preserve original download errors and every existing scenario. Add 23 synchronization/correlation tests, eight specified-assertion mutation checks, and two fresh-session import/export cycles of an old-source trial ZIP, for 31 browser scenarios. The fix branches directly from main, independently of the pending refactors and dependency updates; G3/G4 and release evidence retain their existing meaning.
+
+### Changed — 2026-11-13 Image dependency lock update
+
+- Update headless OpenCV to 4.14, NumPy on Python 3.11 to 2.4.6, and use locked NumPy 2.5.2 on 3.12+. Use equivalent module-level functions for two integer-array reductions to support NumPy 2 typing; segmentation and color strategies are unchanged.
 
 ### Changed — 2026-11-13 Repository and release evidence maintenance
 

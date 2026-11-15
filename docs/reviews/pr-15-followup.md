@@ -1,9 +1,10 @@
-# PR #15 待办：等待拆分
+# PR #15 后续待办：按主题拆分
 
 [当前系统状态](../system-status.zh-CN.md) · [PR #15](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/15)
 
 **尚未闭项。** [拆分回复已发送](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/15#issuecomment-6844025531)，
-原 PR 保持开放，等待拆分后的提交及独立评审。本文件是当前待办，不是实现验收记录。
+原 PR 已于 2026-11-15 关闭为被替代，保留讨论及实现参考；四项拆分待办仍待提交与独立评审。
+本文件是当前待办，不是实现验收记录。
 
 核查日期：2026-11-13。核查对象：PR 头提交 `83761e25549d402b62ca350adb6ef487a777280e`。
 本记录依据 PR 说明、32 个变更文件的清单，以及 `structure_designer.py`、`color_design.py`、
@@ -11,7 +12,7 @@
 
 ## 处理建议
 
-选择拆分评审，原 PR 暂保留。以下四个主题分别基于最新 `main` 提交，逐项验证：
+继续按主题拆分评审。以下四个主题分别基于最新 `main` 提交，逐项验证：
 
 | 主题 | 需要验证的边界 |
 | --- | --- |
