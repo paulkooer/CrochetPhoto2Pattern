@@ -1,5 +1,7 @@
 import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -319,6 +321,23 @@ def test_analyze_directory_keeps_drafts_out_of_completed_metrics(tmp_path):
     assert report["summary"]["records"] == 2
     assert report["summary"]["completed"] == 1
     assert report["summary"]["drafts"] == 1
+
+
+def test_script_entry_point_help_matches_module():
+    root = Path(__file__).resolve().parents[1]
+    script = subprocess.run(
+        [sys.executable, "app/trials.py", "--help"],
+        cwd=root, capture_output=True, text=True, timeout=30,
+    )
+    module = subprocess.run(
+        [sys.executable, "-m", "app.trials", "--help"],
+        cwd=root, capture_output=True, text=True, timeout=30,
+    )
+    assert script.returncode == 0, script.stderr
+    assert module.returncode == 0, module.stderr
+    assert script.stdout == module.stdout
+    assert "usage: crochet2pattern-trials" in script.stdout
+    assert script.stderr == module.stderr == ""
 
 
 def test_cli_init_and_insufficient_analysis_exit_codes(tmp_path):
