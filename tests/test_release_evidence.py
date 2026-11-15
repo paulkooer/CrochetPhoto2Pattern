@@ -271,7 +271,7 @@ def test_status_gates_cite_the_evidence_file_without_matching_head():
     evidence = json.loads((ROOT / "docs" / "release-evidence.json").read_text(encoding="utf-8"))
     zh = (ROOT / "docs" / "system-status.zh-CN.md").read_text(encoding="utf-8")
     en = (ROOT / "docs" / "system-status.md").read_text(encoding="utf-8")
-    assert evidence["schema_version"] == 2
+    assert evidence["schema_version"] in (2, 3)
     raw = (ROOT / "docs" / "release-evidence.json").read_bytes()
     assert (ROOT / "docs" / "release-evidence.sha256").read_text().strip() == hashlib.sha256(raw).hexdigest()
     assert "tested_at" not in evidence
@@ -282,7 +282,14 @@ def test_status_gates_cite_the_evidence_file_without_matching_head():
     assert evidence["covers_later_commits"] is False
     assert evidence["python"] == ["3.11", "3.12", "3.13", "3.14"]
     refs = evidence["run_refs"]
-    assert set(refs) == set(evidence["push_checks"]) | {"pip-audit"}
+    expected_refs = set(evidence["push_checks"]) | {"pip-audit"}
+    if evidence["schema_version"] == 3:
+        bind = _binder()
+        full = evidence["full_validation"]
+        assert set(full) == {*bind.FULL_CONTEXTS, bind.AUDIT_FULL_CONTEXT}
+        assert all(value == "pass" for value in full.values())
+        expected_refs.update(full)
+    assert set(refs) == expected_refs
     for ref in refs.values():
         assert isinstance(ref["check_run_id"], int)
         assert str(ref["run_id"]) in ref["url"]

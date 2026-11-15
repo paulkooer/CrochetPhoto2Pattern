@@ -1,0 +1,4 @@
+{
+  "zh": ["为 0.2.0-beta.3 的确切 main 候选重新生成 schema-3 G1/G2 收据和校验和，包含同提交的依赖审计及四项完整验证标记；收据不覆盖后续提交，G3/G4 仍未通过。"],
+  "en": ["Regenerate the schema-3 G1/G2 receipt and checksum for the exact 0.2.0-beta.3 main candidate, including its own dependency audit and four full-validation markers; the receipt does not cover later commits, and G3/G4 remain unmet."]
+}
