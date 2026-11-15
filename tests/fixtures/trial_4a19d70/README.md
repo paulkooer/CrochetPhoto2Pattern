@@ -25,3 +25,19 @@ Frozen checksums:
 ZIP metadata timestamps need not match when regenerating; tests use these exact
 frozen bytes to check raw evidence preservation separately from normalized session
 identity. Do not regenerate this fixture with the current importer or generator.
+
+Browser compatibility baseline (2026-11-14): execute an isolated `git archive` of
+`app/` at main `60084d09db40d8f5d068980b99c632f736fc5de8`, decode this ZIP,
+call `import_backup(json.loads(bundle.source), "check")`, then
+`PatternResult.from_result(result).to_backup()["params"]`. Parse that JSON in Node,
+recursively sort object keys (preserving arrays), and hash `JSON.stringify` UTF-8:
+
+- Normalized active params SHA-256:
+  `7444d67081ccddd7490cfe2d106cf97c5017232179c9551a462cf3ae8ac997d2`.
+
+The active importer already adds schema defaults and fixes the stale assembly
+prose from a 48-stitch waist to the actual 36-stitch opening. Compare the active
+backup with this frozen main baseline, rather than expecting an unnormalized
+4a19d70 backup. Separately, both browser ZIP export cycles must preserve the
+exact original `pattern.json` bytes, complete normalized trial record and draft.
+No physical-trial evidence is supplied by this synthetic compatibility check.
