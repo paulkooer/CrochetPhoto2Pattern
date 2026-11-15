@@ -2,7 +2,18 @@
 
 本记录区分已完成的合并收尾与历史开发验证。相关运行方式见[浏览器回归](../browser-regression.md)。
 
-## 最终收尾（2026-11-15）
+## 本轮维护收口（2026-11-15）
+
+- #84 以 `0f98385` squash 合入 main。受检头 `1e70447` 的 13/13 必需检查通过，包含真实 Docker/容器冒烟及 upload-artifact v7 上传的浏览器产物。[CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43670966546) · [浏览器](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43670966551)。
+- #75 以 `294cbe1` squash 合入 main。同步 #84 并保留两份 CHANGELOG 的已有条目；同时更正迁移后的 #15 文档，明确原 PR 已关闭、四项拆分待办仍未完成。受检头 `63496f0` 的 13/13 必需检查通过。[CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43671865294) · [浏览器](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43671865287)。
+- #91 保留原候选 `bfec332` 的 15 个应用/测试文件字节，与原栈顶 `e38e39a` 相同；只同步基线、合并 CHANGELOG 条目并补充本记录和中英文状态日期。生成器夹具未重新生成。
+- Codex 开发方定向复核：试钩迁移的 36 个函数/类 AST 一致；将辅助函数展开后，评测与网格入口 AST 与 `462b904` 一致；生成的 CSS 仍为 16,410 字节，SHA-256 为 `fa8df6938b493c792a757f6e1790c1a6a9f561fcd336b4cd8683a7fb5be2a0a3`。这不证明所有输入上的行为等价。
+- #84/#75/#91 组合应用树在隔离检出、核对应用导入来源后，本地全量 **2987 passed、2 skipped，105.93 秒**，包含 102 组既有生成器快照；Ruff、mypy（240 个源文件，含收据脚本）通过。文档更新另跑相关检查；合并使用各 PR 新 head 的必需检查，不沿用旧候选的 CI。
+- Fable 本轮只核对了 #91 的字节一致声明，没有逐行复核整个重构。以上复核由开发方完成；维护者指示继续收口，合并决策据此及新 head 检查作出。没有新增独立验收或正式 APPROVED，原有保护规则未变。
+
+G3 的 30 张分层授权照片及 G4 的实体试钩仍未交付；不以本轮测试替代，不刷新绑定 `ba65b8d` 的历史发布收据。后续优先补真实材料，暂不继续拆分长函数。
+
+## 已合并基线（2026-11-15，本轮收口前）
 
 - #89 在 Fable 固定头 `f8b62f2` 复核通过后，以 `dac0db8` squash 合入 main；合并树与已审头相同。候选[浏览器运行 43593491623](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43593491623)记录 23/23 回归、8/8 指定断言变异、5/5 延迟消息轮次及 31/31 完整流程。[独立复核记录](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/89#pullrequestreview-5904711699)因使用作者同账号而为 COMMENTED；main 要求的正式批准数为 0，保护规则未更改。
 - #74 在新 head `b725a6c` 的 13/13 检查通过后，以 `ed14d2b` 合入 main。合并后 [CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696265)、[extras](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696524)、[安全审计](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696306)及[浏览器](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696297)均首次通过。用户选择稍后补做 1–2 张授权真实照片的升级前后对比；当前结果仅覆盖合成测试。

@@ -65,14 +65,8 @@ def ring_mark_svg(size: int = 88, animate: bool = True) -> str:
     return "".join(parts)
 
 
-def build_css() -> str:
-    """Full stylesheet as a string (tested against the token module)."""
+def _token_css() -> str:
     t = theme
-    ring_delays = "\n".join(
-        f".sheet-hero__mark .ring:nth-of-type({i + 1}) "
-        f"{{ animation-delay: {(_MARK_ROUNDS - i) * 110}ms; }}"
-        for i in range(_MARK_ROUNDS)
-    )
     return f"""
 <style>
 :root {{
@@ -93,86 +87,94 @@ def build_css() -> str:
     --mono: {t.FONT_MONO};
 }}
 
-/* ── Ground ─────────────────────────────────────────────────────────── */
-.stApp {{
+"""
+
+
+def _page_css() -> str:
+    return """/* ── Ground ─────────────────────────────────────────────────────────── */
+.stApp {
     background: var(--paper);
     color: var(--ink);
-}}
+}
 /* Fixed app bar: paper, so content scrolling under it reads as the page edge.
    Transparent let the toolbar collide with the first lines on phones. */
-[data-testid="stHeader"] {{
+[data-testid="stHeader"] {
     background: var(--paper);
-}}
+}
 [data-testid="stMainBlockContainer"],
-.block-container {{
+.block-container {
     max-width: 1120px;
     padding-top: 1.25rem;
     padding-bottom: 5rem;
-}}
+}
 
 /* ── Type ───────────────────────────────────────────────────────────── */
-h1, h2, h3, h4 {{
+h1, h2, h3, h4 {
     font-family: var(--serif);
     color: var(--ink);
     letter-spacing: 0;
     font-variant-numeric: lining-nums tabular-nums;
-}}
+}
 [data-testid="stMarkdownContainer"] > p,
-[data-testid="stMarkdownContainer"] li {{
+[data-testid="stMarkdownContainer"] li {
     line-height: 1.75;
-}}
-[data-testid="stMarkdownContainer"] > p {{
+}
+[data-testid="stMarkdownContainer"] > p {
     max-width: 44em;
-}}
-[data-testid="stCaptionContainer"] {{
+}
+[data-testid="stCaptionContainer"] {
     color: var(--ink-soft);
-}}
-[data-testid="stCaptionContainer"] p {{
+}
+[data-testid="stCaptionContainer"] p {
     line-height: 1.6;
-}}
-a, a:visited {{
+}
+a, a:visited {
     color: var(--ink);
     text-decoration-color: var(--edge);
-}}
-hr {{
+}
+hr {
     border-color: var(--rule);
     margin: 1.75rem 0;
-}}
+}
 
-/* ── Desk (sidebar) ─────────────────────────────────────────────────── */
-[data-testid="stSidebar"] {{
+"""
+
+
+def _navigation_css() -> str:
+    return """/* ── Desk (sidebar) ─────────────────────────────────────────────────── */
+[data-testid="stSidebar"] {
     background: var(--desk);
     border-right: 1px solid var(--rule);
-}}
-[data-testid="stSidebar"] h2 {{
+}
+[data-testid="stSidebar"] h2 {
     font-size: 1.15rem;
-}}
-[data-testid="stSidebar"] h3 {{
+}
+[data-testid="stSidebar"] h3 {
     font-size: 1rem;
-}}
+}
 /* One rule separates the creation settings from the existing-work group; the
    page-wide 1.75rem hr margin read as a blank band in the narrow column. */
-[data-testid="stSidebar"] hr {{
+[data-testid="stSidebar"] hr {
     margin: 1.1rem 0;
-}}
+}
 
 /* ── Binder tabs: the open one wears the marker ─────────────────────── */
 /* Streamlit ≥ 1.60 renders tabs as div[data-testid="stTab"][role="tab"]
    inside [role="tablist"] with a react-aria SelectionIndicator underline;
    the former baseweb tab-list / button[role="tab"] hooks no longer exist. */
-[data-testid="stTabs"] [role="tablist"] {{
+[data-testid="stTabs"] [role="tablist"] {
     gap: 0.3rem;
     padding: 0;
     background: transparent;
     border-bottom: 1px solid var(--edge);
     box-shadow: none;
-}}
+}
 [data-testid="stTabs"] .react-aria-SelectionIndicator,
 [data-testid="stTabs"] [data-baseweb="tab-highlight"],
-[data-testid="stTabs"] [data-baseweb="tab-border"] {{
+[data-testid="stTabs"] [data-baseweb="tab-border"] {
     display: none;
-}}
-[data-testid="stTabs"] [role="tab"] {{
+}
+[data-testid="stTabs"] [role="tab"] {
     margin-bottom: -1px;
     padding: 0.55rem 0.95rem;
     border: 1px solid transparent;
@@ -183,26 +185,30 @@ hr {{
     font-family: var(--sans);
     font-weight: 600;
     cursor: pointer;
-}}
-[data-testid="stTabs"] [role="tab"]:hover {{
+}
+[data-testid="stTabs"] [role="tab"]:hover {
     color: var(--ink);
     background: var(--sheet);
-}}
-[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
     background: var(--marker);
     color: var(--ink);
     border-color: var(--edge);
     border-bottom-color: var(--marker);
-}}
-[data-testid="stTabs"] [role="tab"] p {{
+}
+[data-testid="stTabs"] [role="tab"] p {
     font-family: var(--sans);
     color: inherit;
-}}
+}
 
-/* ── Controls: sans, ruled, no lift ─────────────────────────────────── */
+"""
+
+
+def _controls_css() -> str:
+    return """/* ── Controls: sans, ruled, no lift ─────────────────────────────────── */
 .stButton > button,
 .stDownloadButton > button,
-[data-testid="stFormSubmitButton"] > button {{
+[data-testid="stFormSubmitButton"] > button {
     font-family: var(--sans);
     font-weight: 600;
     border-radius: 3px;
@@ -211,61 +217,61 @@ hr {{
     color: var(--ink);
     box-shadow: none;
     transition: border-color 120ms ease, background-color 120ms ease;
-}}
+}
 .stButton > button:hover,
 .stDownloadButton > button:hover,
-[data-testid="stFormSubmitButton"] > button:hover {{
+[data-testid="stFormSubmitButton"] > button:hover {
     border-color: var(--ink);
     background: var(--paper);
     color: var(--ink);
-}}
+}
 .stButton > button:disabled,
-.stDownloadButton > button:disabled {{
+.stDownloadButton > button:disabled {
     border-color: var(--rule);
     color: var(--ink-soft);
-}}
+}
 [data-testid="stBaseButton-primary"],
-.stButton > button[kind="primary"] {{
+.stButton > button[kind="primary"] {
     background: var(--ink);
     border-color: var(--ink);
     color: var(--paper);
-}}
+}
 [data-testid="stBaseButton-primary"]:hover,
-.stButton > button[kind="primary"]:hover {{
+.stButton > button[kind="primary"]:hover {
     background: var(--ink-hover);
     border-color: var(--ink-hover);
     color: var(--paper);
-}}
+}
 /* 禁用的主按钮不能仍显示为可点击的墨色（被门禁拦下的生成按钮等） */
 [data-testid="stBaseButton-primary"]:disabled,
-.stButton > button[kind="primary"]:disabled {{
+.stButton > button[kind="primary"]:disabled {
     background: var(--sheet);
     border-color: var(--rule);
     color: var(--ink-soft);
     cursor: not-allowed;
-}}
+}
 .stButton > button:focus-visible,
 .stDownloadButton > button:focus-visible,
-[data-testid="stTabs"] [role="tab"]:focus-visible {{
+[data-testid="stTabs"] [role="tab"]:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
-}}
+}
 
 /* Chosen option wears the marker (radio). Streamlit ≥ 1.60 marks the option
    as label[data-testid="stRadioOption"][data-selected="true"]. */
 [data-testid="stRadio"] label[data-testid="stRadioOption"],
-[data-testid="stRadio"] label[data-baseweb="radio"] {{
+[data-testid="stRadio"] label[data-baseweb="radio"] {
     padding: 0.2rem 0.6rem 0.2rem 0.35rem;
     border-radius: 3px;
     transition: background-color 120ms ease;
-}}
+}
 [data-testid="stRadio"] label[data-testid="stRadioOption"][data-selected="true"],
-[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {{
+[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
     background: var(--marker-soft);
-}}
+}
 
 /* Uploader: an empty sheet of graph paper (1 cell = 1 stitch) */
-[data-testid="stFileUploaderDropzone"] {{
+[data-testid="stFileUploaderDropzone"] {
     background-color: var(--sheet);
     background-image:
         linear-gradient(var(--grid) 1px, transparent 1px),
@@ -273,82 +279,86 @@ hr {{
     background-size: 14px 14px;
     border: 1px dashed var(--edge);
     border-radius: 3px;
-}}
+}
 
 /* Progress: done = marker */
-[data-testid="stProgress"] [role="progressbar"] > div {{
+[data-testid="stProgress"] [role="progressbar"] > div {
     background: var(--track);
-}}
-[data-testid="stProgress"] [role="progressbar"] > div > div {{
+}
+[data-testid="stProgress"] [role="progressbar"] > div > div {
     background: var(--marker);
-}}
+}
 
 /* Alerts: white sheet, status-coloured left rule */
-[data-testid="stAlertContainer"] {{
+[data-testid="stAlertContainer"] {
     background: var(--sheet);
     border: 1px solid var(--rule);
     border-left: 3px solid currentColor;
     border-radius: 3px;
-}}
+}
 
 /* Code and DSL blocks */
-[data-testid="stCode"] pre {{
+[data-testid="stCode"] pre {
     background: var(--sheet);
     border: 1px solid var(--rule);
     border-radius: 3px;
-}}
+}
 
 /* Disclosures: ruled sheets, no shadow */
-[data-testid="stExpander"] details {{
+[data-testid="stExpander"] details {
     border: 1px solid var(--rule);
     border-radius: 3px;
     background: var(--sheet);
     box-shadow: none;
-}}
-[data-testid="stExpander"] summary {{
+}
+[data-testid="stExpander"] summary {
     padding: 0.65rem 0.9rem;
-}}
-[data-testid="stExpander"] summary p {{
+}
+[data-testid="stExpander"] summary p {
     font-family: var(--sans);
     font-weight: 600;
-}}
+}
 
 /* Metrics: a spec strip, not cards */
-[data-testid="stMetric"] {{
+[data-testid="stMetric"] {
     padding: 0.5rem 0 0.35rem;
     border-top: 2px solid var(--ink);
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-}}
-[data-testid="stMetricLabel"] p {{
+}
+[data-testid="stMetricLabel"] p {
     font-family: var(--sans);
     font-size: 0.85rem;
     color: var(--ink-soft);
-}}
-[data-testid="stMetricValue"] {{
+}
+[data-testid="stMetricValue"] {
     font-family: var(--serif);
     font-size: 1.75rem;
     font-variant-numeric: lining-nums tabular-nums;
     color: var(--ink);
-}}
+}
 
-/* ── The sheet: one part's round-by-round pattern ───────────────────── */
-[class*="st-key-sheet_part_"] details {{
+"""
+
+
+def _pattern_css() -> str:
+    return """/* ── The sheet: one part's round-by-round pattern ───────────────────── */
+[class*="st-key-sheet_part_"] details {
     border-color: var(--edge);
-}}
-[class*="st-key-sheet_part_"] details > summary p {{
+}
+[class*="st-key-sheet_part_"] details > summary p {
     font-family: var(--serif);
     font-size: 1.1rem;
     font-weight: 700;
     font-variant-numeric: lining-nums tabular-nums;
-}}
-[class*="st-key-sheet_part_"] details details > summary p {{
+}
+[class*="st-key-sheet_part_"] details details > summary p {
     font-family: var(--sans);
     font-size: 1rem;
     font-weight: 600;
-}}
-[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label {{
+}
+[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label {
     display: flex;
     width: 100%;
     align-items: baseline;
@@ -363,34 +373,38 @@ hr {{
     transition: background-size 220ms ease-out;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-}}
-[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label:has(input:checked) {{
+}
+[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label:has(input:checked) {
     background-size: 100% 100%;
-}}
-[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label p {{
+}
+[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label p {
     font-family: var(--serif);
     font-size: 1.05rem;
     line-height: 1.6;
     font-variant-numeric: lining-nums tabular-nums;
     margin: 0;
-}}
-[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] {{
+}
+[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] {
     margin-bottom: 0;
     width: 100%;
-}}
+}
 /* Streamlit sizes the checkbox's element container to its content; a sheet
    row runs edge to edge so the marker sweep and the rule read as one ruled
    line. The container carries the widget key class (chk_<rid>_…). */
-[class*="st-key-sheet_part_"] [class*="st-key-chk_"] {{
+[class*="st-key-sheet_part_"] [class*="st-key-chk_"] {
     width: 100%;
     align-self: stretch;
-}}
-[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] > label {{
+}
+[class*="st-key-sheet_part_"] [data-testid="stCheckbox"] > label {
     width: 100%;
     flex: 1 1 auto;
-}}
+}
 
-/* ── Hero: mark + title, one drawn moment ───────────────────────────── */
+"""
+
+
+def _hero_css(ring_delays: str) -> str:
+    return f"""/* ── Hero: mark + title, one drawn moment ───────────────────────────── */
 .sheet-hero {{
     display: grid;
     grid-template-columns: 88px 1fr;
@@ -473,8 +487,12 @@ header.sheet-hero h1.sheet-hero__title {{
     }}
 }}
 
-/* ── Numbered section headings (the result is a sequence 1→5) ───────── */
-.sheet-h {{
+"""
+
+
+def _section_heading_css() -> str:
+    return """/* ── Numbered section headings (the result is a sequence 1→5) ───────── */
+.sheet-h {
     display: flex;
     align-items: baseline;
     gap: 0.75rem;
@@ -486,8 +504,8 @@ header.sheet-hero h1.sheet-hero__title {{
     font-weight: 700;
     line-height: 1.3;
     color: var(--ink);
-}}
-.sheet-h__n {{
+}
+.sheet-h__n {
     flex: none;
     min-width: 1.65rem;
     height: 1.65rem;
@@ -499,16 +517,20 @@ header.sheet-hero h1.sheet-hero__title {{
     text-align: center;
     font-variant-numeric: lining-nums tabular-nums;
     transform: translateY(-0.2rem);
-}}
+}
 
-/* ── Notes, empty state, yarn chips ─────────────────────────────────── */
-.sheet-note {{
+"""
+
+
+def _notes_css() -> str:
+    return """/* ── Notes, empty state, yarn chips ─────────────────────────────────── */
+.sheet-note {
     margin: -0.25rem 0 1rem;
     max-width: 44em;
     color: var(--ink-soft);
     line-height: 1.7;
-}}
-.sheet-empty {{
+}
+.sheet-empty {
     padding: 2.4rem 1.25rem;
     border: 1px solid var(--rule);
     border-radius: 3px;
@@ -516,8 +538,8 @@ header.sheet-hero h1.sheet-hero__title {{
     color: var(--ink-soft);
     text-align: center;
     line-height: 1.8;
-}}
-.yarn-chip {{
+}
+.yarn-chip {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -528,46 +550,54 @@ header.sheet-hero h1.sheet-hero__title {{
     color: var(--ink);
     font-family: var(--sans);
     font-size: 0.86rem;
-}}
-.yarn-chip__swatch {{
+}
+.yarn-chip__swatch {
     display: inline-block;
     width: 14px;
     height: 14px;
     border-radius: 2px;
     border: 1px solid rgba(29, 36, 64, 0.35);
-}}
-.yarn-chip--unknown .yarn-chip__swatch {{
+}
+.yarn-chip--unknown .yarn-chip__swatch {
     background:
         linear-gradient(135deg, transparent 46%, var(--edge) 46%, var(--edge) 54%, transparent 54%);
-}}
-.yarn-qty {{
+}
+.yarn-qty {
     margin-left: 0.5rem;
     color: var(--ink-soft);
     font-size: 0.9rem;
     font-variant-numeric: lining-nums tabular-nums;
-}}
+}
 
-/* ── Motion: only answer the maker ──────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {{
-    .sheet-hero__mark .ring {{
+"""
+
+
+def _motion_css() -> str:
+    return """/* ── Motion: only answer the maker ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .sheet-hero__mark .ring {
         animation: none;
         stroke-dashoffset: 0 !important;
-    }}
-    .sheet-hero__mark .magic {{
+    }
+    .sheet-hero__mark .magic {
         animation: none;
         opacity: 1;
-    }}
+    }
     [class*="st-key-sheet_part_"] [data-testid="stCheckbox"] label,
     [data-testid="stRadio"] label[data-testid="stRadioOption"],
     [data-testid="stRadio"] label[data-baseweb="radio"],
     .stButton > button,
-    .stDownloadButton > button {{
+    .stDownloadButton > button {
         transition: none;
-    }}
-}}
+    }
+}
 
-/* ── Print: the sheet goes on paper ─────────────────────────────────── */
-@media print {{
+"""
+
+
+def _print_css() -> str:
+    return """/* ── Print: the sheet goes on paper ─────────────────────────────────── */
+@media print {
     [data-testid="stSidebar"],
     [data-testid="stHeader"],
     [data-testid="stTabs"] [data-baseweb="tab-list"],
@@ -579,40 +609,61 @@ header.sheet-hero h1.sheet-hero__title {{
     .stDownloadButton,
     .stSlider,
     .stTextArea,
-    [data-testid="stFileUploader"] {{
+    [data-testid="stFileUploader"] {
         display: none !important;
-    }}
-    .stApp {{
+    }
+    .stApp {
         background: #ffffff !important;
         color: #000000 !important;
-    }}
+    }
     [data-testid="stMainBlockContainer"],
-    .block-container {{
+    .block-container {
         max-width: 100%;
         padding: 0;
         margin: 0;
-    }}
-    .sheet-hero {{
+    }
+    .sheet-hero {
         border-bottom-color: #000000;
-    }}
-    .sheet-hero__mark .ring {{
+    }
+    .sheet-hero__mark .ring {
         animation: none;
         stroke-dashoffset: 0 !important;
-    }}
-    .sheet-hero__mark .magic {{
+    }
+    .sheet-hero__mark .magic {
         animation: none;
         opacity: 1;
-    }}
+    }
     [data-testid="stExpander"] details,
     [data-testid="stAlertContainer"],
-    [data-testid="stCode"] pre {{
+    [data-testid="stCode"] pre {
         box-shadow: none !important;
         border-color: #bbbbbb !important;
         background: #ffffff !important;
-    }}
-}}
+    }
+}
 </style>
 """
+
+
+def build_css() -> str:
+    """Full stylesheet as a string (tested against the token module)."""
+    ring_delays = "\n".join(
+        f".sheet-hero__mark .ring:nth-of-type({i + 1}) "
+        f"{{ animation-delay: {(_MARK_ROUNDS - i) * 110}ms; }}"
+        for i in range(_MARK_ROUNDS)
+    )
+    return "".join((
+        _token_css(),
+        _page_css(),
+        _navigation_css(),
+        _controls_css(),
+        _pattern_css(),
+        _hero_css(ring_delays),
+        _section_heading_css(),
+        _notes_css(),
+        _motion_css(),
+        _print_css(),
+    ))
 
 
 def apply_design_system() -> None:

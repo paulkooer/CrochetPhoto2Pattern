@@ -28,1161 +28,234 @@ from app.models.gauge import BASE_GRAMS_PER_STITCH, BASE_STITCH_AREA_CM2
 from app.utils.counts import integer_count
 from app.utils.numbers import finite_float
 
-TRIAL_SCHEMA_VERSION = Literal[2]
-TRIAL_REPORT_SCHEMA_VERSION = 3
-EXTERNAL_EVIDENCE_SCHEMA_VERSION = Literal[1]
-MAX_PATTERN_BYTES = 20 * 1024 * 1024
-MAX_TRIAL_BYTES = 512 * 1024
-MAX_EXTERNAL_EVIDENCE_BYTES = 1024 * 1024
-MAX_TRIAL_FILES = 500
-MIN_CALIBRATION_TRIALS = 5
-MIN_DISTINCT_PATTERNS = 3
-MIN_VALIDATION_TRIALS = 3
-MIN_DISTINCT_VALIDATION_PATTERNS = 2
-MIN_DISTINCT_MAKERS = 2
-MAX_RELATIVE_MEDIAN_ABSOLUTE_DEVIATION = 0.25
-CURATED_EXTERNAL_EVIDENCE_NAME = "external-trial-evidence.json"
-
-
-class TrialDataError(ValueError):
-    """A pattern or trial record is invalid and cannot be analyzed safely."""
-
-
-class _StrictModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
-
-# 与 schemas.py 同一约定：布尔值不是测量值，截断小数不是整数。试钩记录
-# 会进入校准统计，静默强转（true→1、2.9→2）会污染所有下游中位数。
-TrialInt = Annotated[int, BeforeValidator(integer_count)]
-TrialFloat = Annotated[float, BeforeValidator(finite_float)]
-
-
-class TrialGauge(_StrictModel):
-    stitches_per_10cm: TrialFloat = Field(ge=6.0, le=40.0)
-    rows_per_10cm: TrialFloat = Field(ge=8.0, le=50.0)
-
-
-class PatternSource(_StrictModel):
-    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    # Missing versions identify legacy records, whose design independence is
-    # unknown until their exact source snapshot has been checked and upgraded.
-    design_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
-    design_fingerprint_version: Literal["1"] | None = None
-    application_version: str = Field(min_length=1, max_length=80)
-    target_height_cm: TrialFloat = Field(gt=0.0, le=200.0)
-    gauge: TrialGauge
-    total_stitches: TrialInt = Field(gt=0)
-    total_physical_rounds: TrialInt = Field(gt=0)
-    estimated_time_minutes: TrialInt = Field(gt=0)
-
-    @model_validator(mode="after")
-    def _fingerprint_contract(self) -> PatternSource:
-        if self.design_fingerprint_version is not None and self.design_fingerprint is None:
-            raise ValueError("versioned design identity requires a fingerprint")
-        return self
-
-
-class SwatchMeasurement(_StrictModel):
-    measured: bool = False
-    stitches_per_10cm: TrialFloat = Field(ge=6.0, le=40.0)
-    rows_per_10cm: TrialFloat = Field(ge=8.0, le=50.0)
-    hook_mm: TrialFloat | None = Field(default=None, gt=0.0, le=20.0)
-    yarn_brand: str | None = Field(default=None, max_length=100)
-    yarn_line: str | None = Field(default=None, max_length=100)
-    yarn_lot: str | None = Field(default=None, max_length=100)
-    fiber: str | None = Field(default=None, max_length=200)
-
-
-class TrialObservation(_StrictModel):
-    completed_on: date
-    overall_height_cm: TrialFloat = Field(gt=0.0, le=300.0)
-    yarn_used_grams: TrialFloat = Field(gt=0.0, le=5000.0)
-    yarn_used_meters: TrialFloat | None = Field(default=None, gt=0.0, le=100_000.0)
-    active_minutes: TrialInt = Field(gt=0, le=100_000)
-    time_scope: Literal["round_crochet_baseline", "full_project"]
-    pattern_modified: bool
-    modifications: list[str] = Field(default_factory=list, max_length=50)
-    notes: str | None = Field(default=None, max_length=2000)
-
-    @field_validator("completed_on")
-    @classmethod
-    def _not_in_future(cls, value: date) -> date:
-        if value > date.today():
-            raise ValueError("completed_on cannot be in the future")
-        return value
-
-    @model_validator(mode="after")
-    def _modification_details(self) -> TrialObservation:
-        if self.pattern_modified and not self.modifications:
-            raise ValueError("modified trials must describe at least one modification")
-        if not self.pattern_modified and self.modifications:
-            raise ValueError("unmodified trials must not list modifications")
-        return self
-
-
-class TrialRecord(_StrictModel):
-    schema_version: Literal[TRIAL_SCHEMA_VERSION]
-    trial_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-    maker_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-    status: Literal["draft", "completed"]
-    cohort: Literal["calibration", "validation"] = "calibration"
-    pattern: PatternSource
-    swatch: SwatchMeasurement
-    observation: TrialObservation | None = None
-
-    @model_validator(mode="after")
-    def _completed_contract(self) -> TrialRecord:
-        if self.status == "completed":
-            if self.observation is None:
-                raise ValueError("completed trials require observation")
-            if not self.swatch.measured:
-                raise ValueError("completed trials require a measured swatch")
-        elif self.observation is not None:
-            raise ValueError("draft trials must not contain observation")
-        return self
-
-
-class ExternalObservation(_StrictModel):
-    """A small set of factual measurements published by an external source.
-
-    Pattern instructions, photographs, user names, and free-form project notes are
-    intentionally outside this contract. External observations provide context
-    only and can never become production calibration inputs.
-    """
-
-    observation_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-    project_label: str = Field(min_length=1, max_length=120)
-    project_type: Literal["amigurumi", "other_crochet"]
-    measurement_scope: Literal["single_item", "pair", "source_aggregate"]
-    finished_height_cm: TrialFloat | None = Field(default=None, gt=0.0, le=300.0)
-    finished_length_cm: TrialFloat | None = Field(default=None, gt=0.0, le=300.0)
-    yarn_used_grams: TrialFloat | None = Field(default=None, gt=0.0, le=5000.0)
-    yarn_used_meters: TrialFloat | None = Field(default=None, gt=0.0, le=100_000.0)
-    completion_minutes_median: TrialInt | None = Field(default=None, gt=0, le=100_000)
-    completion_minutes_min: TrialInt | None = Field(default=None, gt=0, le=100_000)
-    completion_minutes_max: TrialInt | None = Field(default=None, gt=0, le=100_000)
-    stitches_per_10cm: TrialFloat | None = Field(default=None, ge=1.0, le=100.0)
-    hook_mm: TrialFloat | None = Field(default=None, gt=0.0, le=30.0)
-
-    @model_validator(mode="after")
-    def _measurement_contract(self) -> ExternalObservation:
-        measurements = (
-            self.finished_height_cm,
-            self.finished_length_cm,
-            self.yarn_used_grams,
-            self.yarn_used_meters,
-            self.completion_minutes_median,
-            self.stitches_per_10cm,
-            self.hook_mm,
-        )
-        if all(value is None for value in measurements):
-            raise ValueError("external observations require at least one measurement")
-        if (self.completion_minutes_min is None) != (self.completion_minutes_max is None):
-            raise ValueError("completion time range requires both min and max")
-        if self.completion_minutes_min is not None:
-            assert self.completion_minutes_max is not None
-            if self.completion_minutes_min > self.completion_minutes_max:
-                raise ValueError("completion time min cannot exceed max")
-            if (
-                self.completion_minutes_median is not None
-                and not self.completion_minutes_min
-                <= self.completion_minutes_median
-                <= self.completion_minutes_max
-            ):
-                raise ValueError("completion time median must fall within min and max")
-        return self
-
-
-class ExternalEvidenceSource(_StrictModel):
-    source_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-    title: str = Field(min_length=1, max_length=200)
-    publisher: str = Field(min_length=1, max_length=120)
-    source_url: str = Field(pattern=r"^https://[^\s]+$", max_length=1000)
-    accessed_on: date
-    evidence_kind: Literal[
-        "platform_timer_aggregate",
-        "author_worked_sample",
-        "published_pattern_specification",
-    ]
-    verification: Literal["source_claim", "raw_records_reviewed", "user_authorized_export"]
-    declared_sample_size: TrialInt | None = Field(default=None, gt=0, le=1_000_000)
-    raw_records_available: bool
-    methodology_available: bool
-    reuse_basis: Literal[
-        "public_facts_with_attribution",
-        "open_license",
-        "user_authorized_export",
-    ]
-    license_identifier: str | None = Field(default=None, max_length=100)
-    calibration_allowed: Literal[False] = False
-    observations: list[ExternalObservation] = Field(min_length=1, max_length=100)
-
-    @field_validator("accessed_on")
-    @classmethod
-    def _access_not_in_future(cls, value: date) -> date:
-        if value > date.today():
-            raise ValueError("accessed_on cannot be in the future")
-        return value
-
-    @model_validator(mode="after")
-    def _source_contract(self) -> ExternalEvidenceSource:
-        if self.reuse_basis == "open_license" and not self.license_identifier:
-            raise ValueError("open-license evidence requires license_identifier")
-        ids = [observation.observation_id for observation in self.observations]
-        if len(ids) != len(set(ids)):
-            raise ValueError("observation_id values must be unique within a source")
-        return self
-
-
-class ExternalEvidenceBundle(_StrictModel):
-    schema_version: Literal[EXTERNAL_EVIDENCE_SCHEMA_VERSION]
-    created_on: date
-    sources: list[ExternalEvidenceSource] = Field(min_length=1, max_length=100)
-
-    @field_validator("created_on")
-    @classmethod
-    def _created_not_in_future(cls, value: date) -> date:
-        if value > date.today():
-            raise ValueError("created_on cannot be in the future")
-        return value
-
-    @model_validator(mode="after")
-    def _unique_sources(self) -> ExternalEvidenceBundle:
-        ids = [source.source_id for source in self.sources]
-        if len(ids) != len(set(ids)):
-            raise ValueError("source_id values must be unique")
-        return self
-
-
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise TrialDataError(f"JSON contains duplicate key: {key}")
-        result[key] = value
-    return result
-
-
-def _read_bytes(path: Path, max_bytes: int) -> bytes:
-    if not path.is_file():
-        raise TrialDataError(f"file does not exist: {path}")
-    if path.stat().st_size > max_bytes:
-        raise TrialDataError(f"file exceeds {max_bytes} byte limit: {path.name}")
-    with path.open("rb") as handle:
-        blob = handle.read(max_bytes + 1)
-    if len(blob) > max_bytes:
-        raise TrialDataError(f"file exceeds {max_bytes} byte limit: {path.name}")
-    return blob
-
-
-def _finite_json_number(value: str) -> float:
-    number = float(value)
-    if not math.isfinite(number):
-        raise TrialDataError("JSON numbers must be finite")
-    return number
-
-
-def decode_trial_json(blob: bytes, *, max_bytes: int = MAX_TRIAL_BYTES) -> Any:
-    """Bounded decoding shared by local files and in-memory trial bundles."""
-    if len(blob) > max_bytes:
-        raise TrialDataError(f"file exceeds {max_bytes} byte limit")
-    try:
-        return json.loads(
-            blob.decode("utf-8-sig"),
-            object_pairs_hook=_reject_duplicate_keys,
-            parse_constant=_finite_json_number,
-            parse_float=_finite_json_number,
-        )
-    except TrialDataError:
-        raise
-    except Exception as exc:
-        raise TrialDataError(f"invalid trial JSON: {exc}") from exc
-
-
-def _read_json(path: Path, max_bytes: int) -> Any:
-    return decode_trial_json(_read_bytes(path, max_bytes), max_bytes=max_bytes)
-
-
-def _application_version() -> str:
-    try:
-        return version("crochet-photo2pattern")
-    except PackageNotFoundError:
-        return "source-tree"
-
-
-def _part_quantity(part: dict[str, Any]) -> int:
-    try:
-        return max(1, integer_count(part.get("quantity", 1)))
-    except ValueError:
-        raise TrialDataError("pattern part quantity must be an integer") from None
-
-
-def _pattern_counts(parts: list[dict[str, Any]]) -> tuple[int, int]:
-    total_stitches = 0
-    total_rounds = 0
-    for part in parts:
-        if not isinstance(part, dict):
-            raise TrialDataError("pattern parts must be JSON objects")
-        rounds = part.get("rounds") or []
-        if not isinstance(rounds, list) or not rounds:
-            raise TrialDataError("every pattern part must contain rounds")
-        quantity = _part_quantity(part)
-        total_rounds += len(rounds) * quantity
-        for crochet_round in rounds:
-            try:
-                # integer_count also catches the OverflowError that raw int()
-                # raises on JSON Infinity/1e400 payloads.
-                stitches = integer_count(crochet_round["stitches"])
-            except (KeyError, TypeError, ValueError):
-                raise TrialDataError("every pattern round must contain integer stitches") from None
-            if stitches <= 0:
-                raise TrialDataError("pattern round stitches must be positive")
-            total_stitches += stitches * quantity
-    return total_stitches, total_rounds
-
-
-def create_trial_draft(
-    pattern_path: str | Path,
-    *,
-    trial_id: str,
-    maker_id: str,
-    cohort: Literal["calibration", "validation"] = "calibration",
-) -> dict[str, Any]:
-    """Create an editable draft bound to an exact generated pattern file."""
-    path = Path(pattern_path).expanduser().resolve()
-    return create_trial_draft_from_bytes(_read_bytes(path, MAX_PATTERN_BYTES),
-                                         trial_id=trial_id, maker_id=maker_id, cohort=cohort)
-
-
-def _fingerprint_hash(core: dict[str, Any]) -> str:
-    encoded = json.dumps(core, sort_keys=True, ensure_ascii=False,
-                         separators=(",", ":"), allow_nan=False).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
-
-
-def _legacy_design_fingerprint(params: dict[str, Any]) -> str:
-    """Frozen unversioned algorithm, used only to verify existing saved records."""
-    gauge = params.get("gauge") or {}
-    parts = params.get("parts") or []
-    core = {
-        "gauge": [gauge.get("stitches_per_10cm"), gauge.get("rows_per_10cm")],
-        "parts": [
-            {
-                "name": part.get("name"),
-                "quantity": part.get("quantity", 1),
-                "rounds": [
-                    [rd.get("stitches"), rd.get("increase") or 0, rd.get("decrease") or 0]
-                    for rd in (part.get("rounds") or []) if isinstance(rd, dict)
-                ],
-            }
-            for part in parts if isinstance(part, dict)
-        ],
-    }
-    return _fingerprint_hash(core)
-
-
-def _design_fingerprint(params: dict[str, Any]) -> str:
-    """Conservative identity of gauge and the multiset of physical round sequences.
-
-    Part labels/order and equivalent grouping of identical copies do not create
-    new designs. Preserve round order and multiplicity; normalize numeric spelling.
-    This count-based identity does not establish complete physical equivalence.
-    """
-    gauge = TrialGauge.model_validate(params.get("gauge") or {})
-    from app.models.gauge import INDEPENDENT_TRIAL_MESSAGE, has_independent_gauge
-
-    if has_independent_gauge(params):
-        raise TrialDataError(INDEPENDENT_TRIAL_MESSAGE)
-    sequences: Counter[str] = Counter()
-    for part in params.get("parts") or []:
-        rounds = [[integer_count(rd["stitches"]), integer_count(rd.get("increase", 0)),
-                   integer_count(rd.get("decrease", 0))] for rd in part["rounds"]]
-        signature = json.dumps(rounds, separators=(",", ":"))
-        sequences[signature] += _part_quantity(part)
-    return _fingerprint_hash({
-        "version": "1",
-        "gauge": [gauge.stitches_per_10cm, gauge.rows_per_10cm],
-        "parts": [[json.loads(signature), count] for signature, count in sorted(sequences.items())],
-    })
-
-
-def create_trial_draft_from_bytes(
-    blob: bytes, *, trial_id: str, maker_id: str,
-    cohort: Literal["calibration", "validation"] = "calibration",
-) -> dict[str, Any]:
-    """Hash the same bounded bytes used to derive metadata; no temporary file."""
-    payload = decode_trial_json(blob, max_bytes=MAX_PATTERN_BYTES)
-    if not isinstance(payload, dict):
-        raise TrialDataError("pattern JSON root must be an object")
-    params = payload.get("params", payload)
-    if not isinstance(params, dict):
-        raise TrialDataError("pattern params must be an object")
-    parts = params.get("parts") or []
-    if not isinstance(parts, list) or not parts:
-        raise TrialDataError("pattern has no parts")
-    total_stitches, total_rounds = _pattern_counts(parts)
-    gauge = params.get("gauge") or {}
-    analysis = payload.get("analysis") or {}
-    try:
-        source = PatternSource(
-            sha256=hashlib.sha256(blob).hexdigest(),
-            design_fingerprint=_design_fingerprint(params),
-            design_fingerprint_version="1",
-            application_version=_application_version(),
-            target_height_cm=finite_float(analysis["height_cm"]),
-            gauge=TrialGauge.model_validate(gauge),
-            total_stitches=total_stitches,
-            total_physical_rounds=total_rounds,
-            estimated_time_minutes=integer_count(params["estimated_time_minutes"]),
-        )
-        draft = TrialRecord(
-            schema_version=2,  # == TRIAL_SCHEMA_VERSION
-            trial_id=trial_id,
-            maker_id=maker_id,
-            status="draft",
-            cohort=cohort,
-            pattern=source,
-            swatch=SwatchMeasurement(
-                measured=False,
-                stitches_per_10cm=source.gauge.stitches_per_10cm,
-                rows_per_10cm=source.gauge.rows_per_10cm,
-            ),
-        )
-    except TrialDataError:
-        raise
-    except Exception as exc:
-        raise TrialDataError(f"pattern is missing required trial metadata: {exc}") from exc
-    return draft.model_dump(mode="json")
-
-
-def upgrade_trial_record_from_bytes(blob: bytes, record: TrialRecord) -> TrialRecord:
-    """Verify every source field before migrating legacy identity; retain measurements."""
-    record = TrialRecord.model_validate(record.model_dump())
-    expected = create_trial_draft_from_bytes(blob, trial_id=record.trial_id,
-                                             maker_id=record.maker_id, cohort=record.cohort)["pattern"]
-    expected["application_version"] = record.pattern.application_version
-    stored = record.pattern.model_dump(mode="json")
-    comparable = dict(expected)
-    if record.pattern.design_fingerprint_version is None:
-        if record.pattern.design_fingerprint is not None:
-            payload = decode_trial_json(blob, max_bytes=MAX_PATTERN_BYTES)
-            legacy = _legacy_design_fingerprint(payload.get("params", payload))
-            if legacy != record.pattern.design_fingerprint:
-                raise TrialDataError("试钩记录与原图解不匹配：旧设计指纹无效")
-        comparable["design_fingerprint"] = stored["design_fingerprint"]
-        comparable["design_fingerprint_version"] = None
-    if comparable != stored:
-        raise TrialDataError("试钩记录与原图解不匹配，请恢复同一次下载的记录包")
-    return TrialRecord.model_validate({**record.model_dump(mode="json"), "pattern": expected})
-
-
-def load_trial_records(records_dir: str | Path) -> list[TrialRecord]:
-    root = Path(records_dir).expanduser().resolve()
-    if not root.is_dir():
-        raise TrialDataError(f"trial directory does not exist: {root}")
-    files = sorted(root.glob("*.trial.json"))
-    if not files:
-        raise TrialDataError(f"no *.trial.json files found in {root}")
-    if len(files) > MAX_TRIAL_FILES:
-        raise TrialDataError(f"trial directory exceeds {MAX_TRIAL_FILES} records")
-    records: list[TrialRecord] = []
-    for path in files:
-        resolved = path.resolve()
-        try:
-            resolved.relative_to(root)
-        except ValueError as exc:
-            raise TrialDataError(f"trial record escapes directory: {path.name}") from exc
-        try:
-            records.append(TrialRecord.model_validate(_read_json(resolved, MAX_TRIAL_BYTES)))
-        except TrialDataError:
-            raise
-        except Exception as exc:
-            raise TrialDataError(f"invalid trial record {path.name}: {exc}") from exc
-    ids = [record.trial_id for record in records]
-    if len(set(ids)) != len(ids):
-        raise TrialDataError("trial_id values must be unique across the directory")
-    return records
-
-
-def load_external_evidence(path: str | Path) -> ExternalEvidenceBundle:
-    """Load a bounded, provenance-bearing external evidence bundle."""
-    resolved = Path(path).expanduser().resolve()
-    try:
-        return ExternalEvidenceBundle.model_validate(
-            _read_json(resolved, MAX_EXTERNAL_EVIDENCE_BYTES)
-        )
-    except TrialDataError:
-        raise
-    except Exception as exc:
-        raise TrialDataError(f"invalid external evidence {resolved.name}: {exc}") from exc
-
-
-def load_curated_external_evidence() -> ExternalEvidenceBundle:
-    """Load the attribution-preserving evidence shipped inside the wheel."""
-    resource = (
-        resource_files("app")
-        .joinpath("data")
-        .joinpath(CURATED_EXTERNAL_EVIDENCE_NAME)
-    )
-    try:
-        blob = resource.read_bytes()
-        if len(blob) > MAX_EXTERNAL_EVIDENCE_BYTES:
-            raise TrialDataError(
-                f"curated evidence exceeds {MAX_EXTERNAL_EVIDENCE_BYTES} byte limit"
-            )
-        payload = json.loads(
-            blob.decode("utf-8"),
-            object_pairs_hook=_reject_duplicate_keys,
-        )
-        return ExternalEvidenceBundle.model_validate(payload)
-    except TrialDataError:
-        raise
-    except Exception as exc:
-        raise TrialDataError(f"invalid packaged curated evidence: {exc}") from exc
-
-
-def summarize_external_evidence(bundle: ExternalEvidenceBundle) -> dict[str, Any]:
-    """Return attributed context without deriving any calibration candidates."""
-    timed_context: list[dict[str, Any]] = []
-    yarn_context: list[dict[str, Any]] = []
-    kinds: dict[str, int] = {}
-    project_types: dict[str, int] = {}
-    total_observations = 0
-    sources: list[dict[str, Any]] = []
-    for source in bundle.sources:
-        kinds[source.evidence_kind] = kinds.get(source.evidence_kind, 0) + 1
-        total_observations += len(source.observations)
-        sources.append({
-            "source_id": source.source_id,
-            "title": source.title,
-            "publisher": source.publisher,
-            "source_url": source.source_url,
-            "accessed_on": source.accessed_on.isoformat(),
-            "evidence_kind": source.evidence_kind,
-            "verification": source.verification,
-            "declared_sample_size": source.declared_sample_size,
-            "raw_records_available": source.raw_records_available,
-            "methodology_available": source.methodology_available,
-            "reuse_basis": source.reuse_basis,
-        })
-        for observation in source.observations:
-            project_types[observation.project_type] = (
-                project_types.get(observation.project_type, 0) + 1
-            )
-            identity = {
-                "source_id": source.source_id,
-                "observation_id": observation.observation_id,
-                "project_label": observation.project_label,
-                "project_type": observation.project_type,
-                "measurement_scope": observation.measurement_scope,
-            }
-            if observation.completion_minutes_median is not None:
-                timed_context.append({
-                    **identity,
-                    "finished_height_cm": observation.finished_height_cm,
-                    "finished_length_cm": observation.finished_length_cm,
-                    "completion_minutes_median": observation.completion_minutes_median,
-                    "completion_minutes_min": observation.completion_minutes_min,
-                    "completion_minutes_max": observation.completion_minutes_max,
-                })
-            if (
-                observation.yarn_used_grams is not None
-                or observation.yarn_used_meters is not None
-            ):
-                yarn_context.append({
-                    **identity,
-                    "finished_height_cm": observation.finished_height_cm,
-                    "finished_length_cm": observation.finished_length_cm,
-                    "yarn_used_grams": observation.yarn_used_grams,
-                    "yarn_used_meters": observation.yarn_used_meters,
-                    "stitches_per_10cm": observation.stitches_per_10cm,
-                    "hook_mm": observation.hook_mm,
-                })
-    return {
-        "external_evidence_schema_version": bundle.schema_version,
-        "created_on": bundle.created_on.isoformat(),
-        "policy": {
-            "used_for_calibration": False,
-            "automatic_changes_applied": False,
-            "reason": (
-                "External sources are not bound to an exact generated pattern hash, "
-                "verified stitch count, and controlled local trial protocol."
-            ),
-        },
-        "coverage": {
-            "sources": len(bundle.sources),
-            "observations": total_observations,
-            "source_kinds": dict(sorted(kinds.items())),
-            "project_types": dict(sorted(project_types.items())),
-        },
-        "sources": sources,
-        "amigurumi_timed_context": [
-            item for item in timed_context if item["project_type"] == "amigurumi"
-        ],
-        "yarn_context": yarn_context,
-        "limitations": [
-            "Published figures remain source claims unless raw_records_reviewed is set.",
-            "Size alone does not control for stitch count, yarn, skill, details, or seaming.",
-            "Do not infer per-stitch constants from this contextual report.",
-        ],
-    }
-
-
-def _median(values: Iterable[float]) -> float | None:
-    data = list(values)
-    return round(float(statistics.median(data)), 6) if data else None
-
-
-def _median_absolute_deviation(values: list[float]) -> float | None:
-    if not values:
-        return None
-    center = statistics.median(values)
-    return round(float(statistics.median(abs(value - center) for value in values)), 6)
-
-
-def _distribution(values: list[float]) -> dict[str, float | None | int]:
-    return {
-        "count": len(values),
-        "median": _median(values),
-        "median_absolute_deviation": _median_absolute_deviation(values),
-        "min": round(min(values), 6) if values else None,
-        "max": round(max(values), 6) if values else None,
-    }
-
-
-def analyze_trials(
-    records: list[TrialRecord],
-    external_evidence: ExternalEvidenceBundle | None = None,
-) -> dict[str, Any]:
-    completed = [record for record in records if record.status == "completed"]
-    unmodified = [
-        record
-        for record in completed
-        if record.observation is not None and not record.observation.pattern_modified
-    ]
-    eligible = [record for record in unmodified if record.cohort == "calibration"]
-    validation_eligible = [
-        record for record in unmodified if record.cohort == "validation"
-    ]
-    time_eligible = [
-        record
-        for record in eligible
-        if record.observation is not None
-        and record.observation.time_scope == "round_crochet_baseline"
-    ]
-    validation_time_eligible = [
-        record
-        for record in validation_eligible
-        if record.observation is not None
-        and record.observation.time_scope == "round_crochet_baseline"
-    ]
-    def identities(group: list[TrialRecord]) -> set[str]:
-        return {record.pattern.design_fingerprint for record in group
-                if record.pattern.design_fingerprint_version == "1"
-                and record.pattern.design_fingerprint is not None}
-
-    def unverified(group: list[TrialRecord]) -> int:
-        return sum(record.pattern.design_fingerprint_version != "1" for record in group)
-
-    distinct_patterns = identities(eligible)
-    distinct_time_patterns = identities(time_eligible)
-    validation_patterns = identities(validation_eligible)
-    validation_time_patterns = identities(validation_time_eligible)
-    distinct_makers = {record.maker_id for record in eligible}
-    distinct_time_makers = {record.maker_id for record in time_eligible}
-    validation_makers = {record.maker_id for record in validation_eligible}
-    validation_time_makers = {
-        record.maker_id for record in validation_time_eligible
-    }
-    cohort_pattern_overlap = distinct_patterns & validation_patterns
-    source_overlap = ({record.pattern.sha256 for record in eligible}
-                      & {record.pattern.sha256 for record in validation_eligible})
-    identity_complete = not unverified(unmodified)
-    grams_blockers: list[str] = []
-    time_blockers: list[str] = []
-    validation_blockers: list[str] = []
-    for group, group_blockers in ((eligible, grams_blockers), (time_eligible, time_blockers),
-                                 (validation_eligible, validation_blockers)):
-        unknown = unverified(group)
-        if unknown:
-            group_blockers.append(
-                f"design identity missing or outdated in {unknown} records; "
-                "reopen the original trial bundle or use migrate with the exact source pattern")
-    if len(eligible) < MIN_CALIBRATION_TRIALS:
-        grams_blockers.append(
-            f"need at least {MIN_CALIBRATION_TRIALS} completed unmodified trials; have {len(eligible)}"
-        )
-    if len(distinct_patterns) < MIN_DISTINCT_PATTERNS:
-        grams_blockers.append(
-            f"need at least {MIN_DISTINCT_PATTERNS} distinct pattern hashes; have {len(distinct_patterns)}"
-        )
-    if len(distinct_makers) < MIN_DISTINCT_MAKERS:
-        grams_blockers.append(
-            f"need at least {MIN_DISTINCT_MAKERS} distinct calibration makers; "
-            f"have {len(distinct_makers)}"
-        )
-    if len(time_eligible) < MIN_CALIBRATION_TRIALS:
-        time_blockers.append(
-            f"need at least {MIN_CALIBRATION_TRIALS} unmodified "
-            "round_crochet_baseline time trials; "
-            f"have {len(time_eligible)}"
-        )
-    if len(distinct_time_patterns) < MIN_DISTINCT_PATTERNS:
-        time_blockers.append(
-            f"need at least {MIN_DISTINCT_PATTERNS} distinct pattern hashes for time; "
-            f"have {len(distinct_time_patterns)}"
-        )
-    if len(distinct_time_makers) < MIN_DISTINCT_MAKERS:
-        time_blockers.append(
-            f"need at least {MIN_DISTINCT_MAKERS} distinct calibration makers for time; "
-            f"have {len(distinct_time_makers)}"
-        )
-    if len(validation_eligible) < MIN_VALIDATION_TRIALS:
-        validation_blockers.append(
-            f"need at least {MIN_VALIDATION_TRIALS} completed unmodified validation trials; "
-            f"have {len(validation_eligible)}"
-        )
-    if len(validation_patterns) < MIN_DISTINCT_VALIDATION_PATTERNS:
-        validation_blockers.append(
-            f"need at least {MIN_DISTINCT_VALIDATION_PATTERNS} distinct validation "
-            f"pattern hashes; have {len(validation_patterns)}"
-        )
-    if len(validation_makers) < MIN_DISTINCT_MAKERS:
-        validation_blockers.append(
-            f"need at least {MIN_DISTINCT_MAKERS} distinct validation makers; "
-            f"have {len(validation_makers)}"
-        )
-    if len(validation_time_eligible) < MIN_VALIDATION_TRIALS:
-        validation_blockers.append(
-            f"need at least {MIN_VALIDATION_TRIALS} validation "
-            "round_crochet_baseline time trials; "
-            f"have {len(validation_time_eligible)}"
-        )
-    if len(validation_time_patterns) < MIN_DISTINCT_VALIDATION_PATTERNS:
-        validation_blockers.append(
-            f"need at least {MIN_DISTINCT_VALIDATION_PATTERNS} distinct validation "
-            f"pattern hashes for time; have {len(validation_time_patterns)}"
-        )
-    if len(validation_time_makers) < MIN_DISTINCT_MAKERS:
-        validation_blockers.append(
-            f"need at least {MIN_DISTINCT_MAKERS} distinct validation makers for time; "
-            f"have {len(validation_time_makers)}"
-        )
-    if cohort_pattern_overlap or source_overlap:
-        validation_blockers.append(
-            "calibration and validation cohorts must use disjoint pattern hashes; "
-            f"design overlap={len(cohort_pattern_overlap)}, source overlap={len(source_overlap)}"
-        )
-    if unverified(eligible):
-        validation_blockers.append(
-            "calibration design identity is incomplete; holdout independence is unverified")
-    height_ratios: list[float] = []
-    time_ratios: list[float] = []
-    stitch_gauge_ratios: list[float] = []
-    row_gauge_ratios: list[float] = []
-    normalized_base_grams: list[float] = []
-    implied_seconds_per_stitch: list[float] = []
-    meters_per_100g: list[float] = []
-    validation_height_ratios: list[float] = []
-    validation_normalized_base_grams: list[float] = []
-    validation_implied_seconds_per_stitch: list[float] = []
-    validation_baseline_time_ratios: list[float] = []
-    validation_full_project_time_ratios: list[float] = []
-    cases: list[dict[str, Any]] = []
-
-    for record in completed:
-        observation = record.observation
-        assert observation is not None
-        height_ratio = observation.overall_height_cm / record.pattern.target_height_cm
-        time_ratio = observation.active_minutes / record.pattern.estimated_time_minutes
-        stitch_ratio = (
-            record.swatch.stitches_per_10cm / record.pattern.gauge.stitches_per_10cm
-        )
-        row_ratio = record.swatch.rows_per_10cm / record.pattern.gauge.rows_per_10cm
-        height_ratios.append(height_ratio)
-        time_ratios.append(time_ratio)
-        stitch_gauge_ratios.append(stitch_ratio)
-        row_gauge_ratios.append(row_ratio)
-
-        unmodified_eligible = not observation.pattern_modified
-        calibration_eligible = unmodified_eligible and record.cohort == "calibration"
-        validation_record_eligible = (
-            unmodified_eligible and record.cohort == "validation"
-        )
-        time_calibration_eligible = (
-            calibration_eligible
-            and observation.time_scope == "round_crochet_baseline"
-        )
-        time_validation_eligible = (
-            validation_record_eligible
-            and observation.time_scope == "round_crochet_baseline"
-        )
-        normalized_grams: float | None = None
-        if unmodified_eligible:
-            stitch_area = (
-                10.0 / record.swatch.stitches_per_10cm
-                * 10.0 / record.swatch.rows_per_10cm
-            )
-            grams_per_stitch = observation.yarn_used_grams / record.pattern.total_stitches
-            normalized_grams = grams_per_stitch * BASE_STITCH_AREA_CM2 / stitch_area
-        if calibration_eligible:
-            assert normalized_grams is not None
-            normalized_base_grams.append(normalized_grams)
-            if observation.yarn_used_meters is not None:
-                meters_per_100g.append(
-                    observation.yarn_used_meters / observation.yarn_used_grams * 100.0
-                )
-        elif validation_record_eligible:
-            assert normalized_grams is not None
-            validation_height_ratios.append(height_ratio)
-            validation_normalized_base_grams.append(normalized_grams)
-
-        implied_seconds: float | None = None
-        if time_calibration_eligible or time_validation_eligible:
-            residual_seconds = (
-                observation.active_minutes * 60
-                - record.pattern.total_physical_rounds * SECONDS_PER_ROUND_OVERHEAD
-            )
-            implied_seconds = max(
-                0.0, residual_seconds / record.pattern.total_stitches
-            )
-        if time_calibration_eligible:
-            assert implied_seconds is not None
-            implied_seconds_per_stitch.append(implied_seconds)
-        elif time_validation_eligible:
-            assert implied_seconds is not None
-            validation_implied_seconds_per_stitch.append(implied_seconds)
-            validation_baseline_time_ratios.append(time_ratio)
-        elif validation_record_eligible:
-            validation_full_project_time_ratios.append(time_ratio)
-        cases.append({
-            "trial_id": record.trial_id,
-            "maker_id": record.maker_id,
-            "cohort": record.cohort,
-            "pattern_sha256": record.pattern.sha256,
-            "design_fingerprint": record.pattern.design_fingerprint,
-            "design_fingerprint_version": record.pattern.design_fingerprint_version,
-            "pattern_modified": observation.pattern_modified,
-            "calibration_eligible": calibration_eligible,
-            "validation_eligible": validation_record_eligible,
-            "time_scope": observation.time_scope,
-            "time_calibration_eligible": time_calibration_eligible,
-            "time_validation_eligible": time_validation_eligible,
-            "height_ratio_actual_to_target": round(height_ratio, 6),
-            "time_ratio_actual_to_estimate": round(time_ratio, 6),
-            "stitch_gauge_ratio_actual_to_pattern": round(stitch_ratio, 6),
-            "row_gauge_ratio_actual_to_pattern": round(row_ratio, 6),
-        })
-
-    for label, values, plausible_range, metric_blockers in (
-        ("normalized yarn grams", normalized_base_grams, (0.005, 0.5), grams_blockers),
-        ("implied stitch seconds", implied_seconds_per_stitch, (0.5, 60.0), time_blockers),
-    ):
-        center = _median(values)
-        deviation = _median_absolute_deviation(values)
-        if center is None or deviation is None:
-            continue
-        if not plausible_range[0] <= center <= plausible_range[1]:
-            metric_blockers.append(
-                f"{label} median {center} is outside plausible range {plausible_range}"
-            )
-        elif center == 0 or deviation / center > MAX_RELATIVE_MEDIAN_ABSOLUTE_DEVIATION:
-            metric_blockers.append(
-                f"{label} relative median absolute deviation exceeds "
-                f"{MAX_RELATIVE_MEDIAN_ABSOLUTE_DEVIATION:.0%}"
-            )
-    blockers = grams_blockers + [
-        blocker for blocker in time_blockers if blocker not in grams_blockers
-    ]
-    ready = not blockers
-    grams_ready = not grams_blockers
-    time_ready = not time_blockers
-    validation_sample_ready = not validation_blockers
-    candidate_grams = _median(normalized_base_grams) if grams_ready else None
-    candidate_seconds = _median(implied_seconds_per_stitch) if time_ready else None
-    candidate_meters = (
-        _median(meters_per_100g) if grams_ready and meters_per_100g else None
-    )
-    return {
-        "report_schema_version": TRIAL_REPORT_SCHEMA_VERSION,
-        "generated_at": datetime.now(UTC).isoformat(),
-        "application_version": _application_version(),
-        "summary": {
-            "records": len(records),
-            "drafts": len(records) - len(completed),
-            "completed": len(completed),
-            "calibration_eligible": len(eligible),
-            "time_calibration_eligible": len(time_eligible),
-            "validation_eligible": len(validation_eligible),
-            "time_validation_eligible": len(validation_time_eligible),
-            "distinct_patterns": len(distinct_patterns),
-            "distinct_time_patterns": len(distinct_time_patterns),
-            "distinct_validation_patterns": len(validation_patterns),
-            "distinct_validation_time_patterns": len(validation_time_patterns),
-            "distinct_makers": len(distinct_makers),
-            "distinct_time_makers": len(distinct_time_makers),
-            "distinct_validation_makers": len(validation_makers),
-            "distinct_validation_time_makers": len(validation_time_makers),
-            "unverified_design_records": unverified(unmodified),
-            "calibration_ready": ready,
-            "blockers": blockers,
-            "independent_validation_sample_ready": validation_sample_ready,
-        },
-        "observed": {
-            "height_ratio_actual_to_target": _distribution(height_ratios),
-            "time_ratio_actual_to_estimate": _distribution(time_ratios),
-            "stitch_gauge_ratio_actual_to_pattern": _distribution(stitch_gauge_ratios),
-            "row_gauge_ratio_actual_to_pattern": _distribution(row_gauge_ratios),
-            "normalized_base_grams_per_stitch": _distribution(normalized_base_grams),
-            "implied_seconds_per_stitch": _distribution(implied_seconds_per_stitch),
-            "observed_meters_per_100g": _distribution(meters_per_100g),
-        },
-        "recommendations": {
-            "automatic_changes_applied": False,
-            "base_grams_per_stitch": {
-                "current": BASE_GRAMS_PER_STITCH,
-                "candidate": candidate_grams,
-                "ready": grams_ready,
-                "blockers": grams_blockers,
-            },
-            "seconds_per_stitch": {
-                "current": SECONDS_PER_STITCH,
-                "candidate": candidate_seconds,
-                "ready": time_ready,
-                "blockers": time_blockers,
-                "assumed_round_overhead_seconds": SECONDS_PER_ROUND_OVERHEAD,
-            },
-            "meters_per_100g": {
-                "candidate": candidate_meters,
-                "note": "Only trials with measured yarn length contribute.",
-            },
-        },
-        "independent_validation": {
-            "sample_ready": validation_sample_ready,
-            "automatic_pass_assigned": False,
-            "blockers": validation_blockers,
-            "cohort_pattern_hashes_disjoint": (
-                identity_complete and not (cohort_pattern_overlap or source_overlap)),
-            "design_identity_complete": identity_complete,
-            "observed": {
-                "height_ratio_actual_to_target": _distribution(
-                    validation_height_ratios
-                ),
-                "normalized_base_grams_per_stitch": _distribution(
-                    validation_normalized_base_grams
-                ),
-                "grams_ratio_to_current_constant": _distribution([
-                    value / BASE_GRAMS_PER_STITCH
-                    for value in validation_normalized_base_grams
-                ]),
-                "implied_seconds_per_stitch": _distribution(
-                    validation_implied_seconds_per_stitch
-                ),
-                "seconds_ratio_to_current_constant": _distribution([
-                    value / SECONDS_PER_STITCH
-                    for value in validation_implied_seconds_per_stitch
-                ]),
-                "round_crochet_time_ratio_actual_to_estimate": _distribution(
-                    validation_baseline_time_ratios
-                ),
-                "full_project_time_ratio_to_baseline_estimate": _distribution(
-                    validation_full_project_time_ratios
-                ),
-            },
-            "note": (
-                "Sample readiness proves holdout size and independence only. "
-                "It does not declare the current or candidate constants accurate."
-            ),
-        },
-        "external_evidence": (
-            summarize_external_evidence(external_evidence)
-            if external_evidence is not None
-            else {
-                "attached": False,
-                "policy": {
-                    "used_for_calibration": False,
-                    "automatic_changes_applied": False,
-                },
-            }
-        ),
-        "cases": cases,
-    }
-
-
-def analyze_trial_directory(
-    records_dir: str | Path,
-    external_evidence_path: str | Path | None = None,
-    *,
-    curated_external_evidence: bool = False,
-) -> dict[str, Any]:
-    if external_evidence_path is not None and curated_external_evidence:
-        raise TrialDataError("choose either custom or curated external evidence")
-    if curated_external_evidence:
-        external = load_curated_external_evidence()
-    elif external_evidence_path is not None:
-        external = load_external_evidence(external_evidence_path)
-    else:
-        external = None
-    return analyze_trials(load_trial_records(records_dir), external)
-
-
-def write_json(payload: dict[str, Any], destination: str | Path) -> Path:
-    path = Path(destination)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return path
-
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="crochet2pattern-trials",
-        description="创建实体试钩记录并分析尺寸、用线和工时偏差",
-    )
-    commands = parser.add_subparsers(dest="command", required=True)
-    init = commands.add_parser("init", help="从图解 JSON 创建绑定哈希的试钩草稿")
-    init.add_argument("--pattern", required=True)
-    init.add_argument("--trial-id", required=True)
-    init.add_argument("--maker-id", required=True, help="稳定的匿名制作者 ID")
-    init.add_argument(
-        "--cohort",
-        choices=("calibration", "validation"),
-        default="calibration",
-        help="校准集或独立留出验证集；默认 calibration",
-    )
-    init.add_argument("--out", required=True, help="建议使用 *.trial.json")
-    init.add_argument("--force", action="store_true", help="允许覆盖已有草稿文件")
-    migrate = commands.add_parser("migrate", help="核对原图解后升级旧试钩记录的设计身份，保留测量")
-    migrate.add_argument("--pattern", required=True, help="与旧记录 SHA 完全一致的原图解 JSON")
-    migrate.add_argument("--record", required=True, help="原始 *.trial.json")
-    migrate.add_argument("--out", required=True, help="升级后的新记录文件，不可覆盖输入文件")
-    migrate.add_argument("--force", action="store_true", help="允许覆盖已有输出，不允许覆盖输入")
-    analyze = commands.add_parser("analyze", help="分析目录内全部 *.trial.json")
-    analyze.add_argument("--records", required=True)
-    analyze.add_argument("--out", help="JSON 报告路径；省略则输出到 stdout")
-    external_context = analyze.add_mutually_exclusive_group()
-    external_context.add_argument(
-        "--external-evidence",
-        help="外部证据 JSON；只附加背景，不参与校准",
-    )
-    external_context.add_argument(
-        "--curated-external-evidence",
-        action="store_true",
-        help="附加发行包内置精选证据；只作背景，不参与校准",
-    )
-    analyze.add_argument(
-        "--allow-insufficient",
-        action="store_true",
-        help="样本不足时返回 0；报告仍保持 calibration_ready=false",
-    )
-    analyze.add_argument(
-        "--require-validation",
-        action="store_true",
-        help="独立验证集样本不足或与校准图解重叠时返回 2",
-    )
-    external = commands.add_parser(
-        "external-report",
-        help="验证并汇总外部试钩证据；不需要本地试钩记录",
-    )
-    evidence_source = external.add_mutually_exclusive_group(required=True)
-    evidence_source.add_argument("--evidence", help="用户提供的外部证据 JSON")
-    evidence_source.add_argument(
-        "--curated",
-        action="store_true",
-        help="使用发行包内置、带来源边界的精选证据",
-    )
-    external.add_argument("--out", help="JSON 报告路径；省略则输出到 stdout")
-    return parser
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    try:
-        if args.command == "init":
-            output_path = Path(args.out)
-            if output_path.exists() and not args.force:
-                raise TrialDataError(f"refusing to overwrite existing trial: {output_path}")
-            draft = create_trial_draft(
-                args.pattern,
-                trial_id=args.trial_id,
-                maker_id=args.maker_id,
-                cohort=args.cohort,
-            )
-            path = write_json(draft, output_path)
-            print(f"试钩草稿: {path}", file=sys.stderr)
-            return 0
-        if args.command == "migrate":
-            output_path = Path(args.out).resolve()
-            for value in (args.pattern, args.record):
-                source_path = Path(value).resolve()
-                if output_path == source_path or (output_path.exists() and output_path.samefile(source_path)):
-                    raise TrialDataError("升级输出不可覆盖原图解或原记录，请选择新文件")
-            if output_path.exists() and not args.force:
-                raise TrialDataError(f"refusing to overwrite existing trial: {output_path}")
-            try:
-                record = TrialRecord.model_validate(_read_json(Path(args.record), MAX_TRIAL_BYTES))
-            except ValueError as exc:
-                raise TrialDataError(f"invalid trial record: {exc}") from exc
-            blob = _read_bytes(Path(args.pattern), MAX_PATTERN_BYTES)
-            upgraded = upgrade_trial_record_from_bytes(blob, record)
-            from app.utils.output_files import write_outputs
-
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            write_outputs({output_path: upgraded.model_dump_json(indent=2).encode("utf-8")})
-            print(f"试钩记录已升级: {output_path}", file=sys.stderr)
-            return 0
-        if args.command == "external-report":
-            evidence = (
-                load_curated_external_evidence()
-                if args.curated
-                else load_external_evidence(args.evidence)
-            )
-            report = summarize_external_evidence(evidence)
-            if args.out:
-                path = write_json(report, args.out)
-                print(f"外部证据报告: {path}", file=sys.stderr)
-            else:
-                print(json.dumps(report, ensure_ascii=False, indent=2))
-            coverage = report["coverage"]
-            print(
-                f"外部证据: sources={coverage['sources']} · "
-                f"observations={coverage['observations']} · calibration=false",
-                file=sys.stderr,
-            )
-            return 0
-        report = analyze_trial_directory(
-            args.records,
-            args.external_evidence,
-            curated_external_evidence=args.curated_external_evidence,
-        )
-    except (TrialDataError, OSError) as exc:
-        # write_json 的目标路径不可写也走同一条友好错误出口，而不是 traceback。
-        label = "试钩数据无效" if isinstance(exc, TrialDataError) else "试钩文件读写失败"
-        print(f"{label}: {exc}", file=sys.stderr)
-        return 1
-    if args.out:
-        try:
-            path = write_json(report, args.out)
-        except OSError as exc:
-            print(f"试钩文件读写失败: {exc}", file=sys.stderr)
-            return 1
-        print(f"试钩报告: {path}", file=sys.stderr)
-    else:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-    summary = report["summary"]
-    print(
-        f"试钩分析: completed={summary['completed']} · "
-        f"eligible={summary['calibration_eligible']} · "
-        f"time_eligible={summary['time_calibration_eligible']} · "
-        f"ready={summary['calibration_ready']} · "
-        f"validation_ready={summary['independent_validation_sample_ready']}",
-        file=sys.stderr,
-    )
-    analysis_ready = summary["calibration_ready"] and (
-        not args.require_validation
-        or summary["independent_validation_sample_ready"]
-    )
-    return 0 if analysis_ready or args.allow_insufficient else 2
+from .trial_tools.analysis import (
+    _distribution as _distribution,
+)
+from .trial_tools.analysis import (
+    _median as _median,
+)
+from .trial_tools.analysis import (
+    _median_absolute_deviation as _median_absolute_deviation,
+)
+from .trial_tools.analysis import (
+    analyze_trial_directory as analyze_trial_directory,
+)
+from .trial_tools.analysis import (
+    analyze_trials as analyze_trials,
+)
+from .trial_tools.cli import (
+    build_parser as build_parser,
+)
+from .trial_tools.cli import (
+    main as main,
+)
+from .trial_tools.drafts import (
+    _design_fingerprint as _design_fingerprint,
+)
+from .trial_tools.drafts import (
+    _fingerprint_hash as _fingerprint_hash,
+)
+from .trial_tools.drafts import (
+    _legacy_design_fingerprint as _legacy_design_fingerprint,
+)
+from .trial_tools.drafts import (
+    _part_quantity as _part_quantity,
+)
+from .trial_tools.drafts import (
+    _pattern_counts as _pattern_counts,
+)
+from .trial_tools.drafts import (
+    create_trial_draft as create_trial_draft,
+)
+from .trial_tools.drafts import (
+    create_trial_draft_from_bytes as create_trial_draft_from_bytes,
+)
+from .trial_tools.drafts import (
+    upgrade_trial_record_from_bytes as upgrade_trial_record_from_bytes,
+)
+from .trial_tools.external import (
+    load_curated_external_evidence as load_curated_external_evidence,
+)
+from .trial_tools.external import (
+    load_external_evidence as load_external_evidence,
+)
+from .trial_tools.external import (
+    summarize_external_evidence as summarize_external_evidence,
+)
+from .trial_tools.io import (
+    _application_version as _application_version,
+)
+from .trial_tools.io import (
+    _finite_json_number as _finite_json_number,
+)
+from .trial_tools.io import (
+    _read_bytes as _read_bytes,
+)
+from .trial_tools.io import (
+    _read_json as _read_json,
+)
+from .trial_tools.io import (
+    _reject_duplicate_keys as _reject_duplicate_keys,
+)
+from .trial_tools.io import (
+    decode_trial_json as decode_trial_json,
+)
+from .trial_tools.io import (
+    load_trial_records as load_trial_records,
+)
+from .trial_tools.io import (
+    write_json as write_json,
+)
+from .trial_tools.schemas import (
+    CURATED_EXTERNAL_EVIDENCE_NAME as CURATED_EXTERNAL_EVIDENCE_NAME,
+)
+from .trial_tools.schemas import (
+    EXTERNAL_EVIDENCE_SCHEMA_VERSION as EXTERNAL_EVIDENCE_SCHEMA_VERSION,
+)
+from .trial_tools.schemas import (
+    MAX_EXTERNAL_EVIDENCE_BYTES as MAX_EXTERNAL_EVIDENCE_BYTES,
+)
+from .trial_tools.schemas import (
+    MAX_PATTERN_BYTES as MAX_PATTERN_BYTES,
+)
+from .trial_tools.schemas import (
+    MAX_RELATIVE_MEDIAN_ABSOLUTE_DEVIATION as MAX_RELATIVE_MEDIAN_ABSOLUTE_DEVIATION,
+)
+from .trial_tools.schemas import (
+    MAX_TRIAL_BYTES as MAX_TRIAL_BYTES,
+)
+from .trial_tools.schemas import (
+    MAX_TRIAL_FILES as MAX_TRIAL_FILES,
+)
+from .trial_tools.schemas import (
+    MIN_CALIBRATION_TRIALS as MIN_CALIBRATION_TRIALS,
+)
+from .trial_tools.schemas import (
+    MIN_DISTINCT_MAKERS as MIN_DISTINCT_MAKERS,
+)
+from .trial_tools.schemas import (
+    MIN_DISTINCT_PATTERNS as MIN_DISTINCT_PATTERNS,
+)
+from .trial_tools.schemas import (
+    MIN_DISTINCT_VALIDATION_PATTERNS as MIN_DISTINCT_VALIDATION_PATTERNS,
+)
+from .trial_tools.schemas import (
+    MIN_VALIDATION_TRIALS as MIN_VALIDATION_TRIALS,
+)
+from .trial_tools.schemas import (
+    TRIAL_REPORT_SCHEMA_VERSION as TRIAL_REPORT_SCHEMA_VERSION,
+)
+from .trial_tools.schemas import (
+    TRIAL_SCHEMA_VERSION as TRIAL_SCHEMA_VERSION,
+)
+from .trial_tools.schemas import (
+    ExternalEvidenceBundle as ExternalEvidenceBundle,
+)
+from .trial_tools.schemas import (
+    ExternalEvidenceSource as ExternalEvidenceSource,
+)
+from .trial_tools.schemas import (
+    ExternalObservation as ExternalObservation,
+)
+from .trial_tools.schemas import (
+    PatternSource as PatternSource,
+)
+from .trial_tools.schemas import (
+    SwatchMeasurement as SwatchMeasurement,
+)
+from .trial_tools.schemas import (
+    TrialDataError as TrialDataError,
+)
+from .trial_tools.schemas import (
+    TrialFloat as TrialFloat,
+)
+from .trial_tools.schemas import (
+    TrialGauge as TrialGauge,
+)
+from .trial_tools.schemas import (
+    TrialInt as TrialInt,
+)
+from .trial_tools.schemas import (
+    TrialObservation as TrialObservation,
+)
+from .trial_tools.schemas import (
+    TrialRecord as TrialRecord,
+)
+from .trial_tools.schemas import (
+    _StrictModel as _StrictModel,
+)
+
+__all__ = [
+    "Annotated",
+    "Any",
+    "BASE_GRAMS_PER_STITCH",
+    "BASE_STITCH_AREA_CM2",
+    "BaseModel",
+    "BeforeValidator",
+    "CURATED_EXTERNAL_EVIDENCE_NAME",
+    "ConfigDict",
+    "Counter",
+    "EXTERNAL_EVIDENCE_SCHEMA_VERSION",
+    "ExternalEvidenceBundle",
+    "ExternalEvidenceSource",
+    "ExternalObservation",
+    "Field",
+    "Iterable",
+    "Literal",
+    "MAX_EXTERNAL_EVIDENCE_BYTES",
+    "MAX_PATTERN_BYTES",
+    "MAX_RELATIVE_MEDIAN_ABSOLUTE_DEVIATION",
+    "MAX_TRIAL_BYTES",
+    "MAX_TRIAL_FILES",
+    "MIN_CALIBRATION_TRIALS",
+    "MIN_DISTINCT_MAKERS",
+    "MIN_DISTINCT_PATTERNS",
+    "MIN_DISTINCT_VALIDATION_PATTERNS",
+    "MIN_VALIDATION_TRIALS",
+    "PackageNotFoundError",
+    "Path",
+    "PatternSource",
+    "SECONDS_PER_ROUND_OVERHEAD",
+    "SECONDS_PER_STITCH",
+    "SwatchMeasurement",
+    "TRIAL_REPORT_SCHEMA_VERSION",
+    "TRIAL_SCHEMA_VERSION",
+    "TrialDataError",
+    "TrialFloat",
+    "TrialGauge",
+    "TrialInt",
+    "TrialObservation",
+    "TrialRecord",
+    "UTC",
+    "analyze_trial_directory",
+    "analyze_trials",
+    "annotations",
+    "argparse",
+    "build_parser",
+    "create_trial_draft",
+    "create_trial_draft_from_bytes",
+    "date",
+    "datetime",
+    "decode_trial_json",
+    "field_validator",
+    "finite_float",
+    "hashlib",
+    "integer_count",
+    "json",
+    "load_curated_external_evidence",
+    "load_external_evidence",
+    "load_trial_records",
+    "main",
+    "math",
+    "model_validator",
+    "resource_files",
+    "statistics",
+    "summarize_external_evidence",
+    "sys",
+    "upgrade_trial_record_from_bytes",
+    "version",
+    "write_json",
+]
 
 
 if __name__ == "__main__":

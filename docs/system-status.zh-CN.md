@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 状态快照：2026-11-13。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 状态快照：2026-11-15。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 

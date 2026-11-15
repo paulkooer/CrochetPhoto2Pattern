@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Status snapshot: 2026-11-13. Current behavior is defined by source code,
+> Status snapshot: 2026-11-15. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
