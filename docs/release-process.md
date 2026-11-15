@@ -49,3 +49,24 @@ historical bindings and are not rewritten by this migration.
 The [status pages](system-status.md) link to the receipt and this process. They do not copy
 the candidate or audit hashes, run counts, or run ids. A future receipt update should not
 require editing those pages or hard-coded test expectations.
+
+## Engineering Beta prereleases
+
+A maintainer-authorized engineering Beta may be published before G3/G4 pass. Increment the
+PEP 440 Beta version and lockfile together, update both language entry points, collect the
+changelog, and merge through the normal protected-branch PR process. Obtain all required
+checks and full-validation markers for the exact selected candidate before generating its
+G1/G2 receipt. This exception permits a prerelease, not a stable release or a claim that
+G3/G4 passed.
+
+Create the Beta tag at that checked candidate and mark the GitHub Release as `prerelease`;
+do not mark it as the latest stable release. The release notes must disclose failed or
+missing photo/physical evidence and link the selected candidate's checks. Attach the matching
+receipt and checksum with the distribution hashes. A later documentation commit may record
+that receipt on main, but is not the tagged candidate. The source archive can contain an
+older historical receipt; the separately attached receipt must identify the tagged SHA exactly.
+
+Build distributions from the selected committed source and inspect their contents. Exclude
+private photos, filenames, per-image manifests/reports and local recovery archives from Git
+and every release attachment. Physical-trial starter kits must use manual-only patterns and
+honest maker identities; drafts and software checks do not constitute physical validation.

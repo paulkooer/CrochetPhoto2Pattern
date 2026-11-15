@@ -7,6 +7,27 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 formats may still evolve during Beta; incompatible changes must include migration notes.
 
 ## Unreleased
+
+## 0.2.0-beta.3 - 2026-11-15
+
+### Changed — 2026-11-15
+
+<!-- fragment: 6eb62751039d778b12245ce6d988089b5fd6463ebdb0a0a0919509e75cbdc736 -->
+- Prepare the 0.2.0-beta.3 engineering prerelease, collect pending changes and document exact-candidate receipt and artifact handling; G3/G4 remain unmet and stable-release gates are unchanged.
+- Rerun strict evaluation on the 30-image primary and 34-image extension datasets and publish de-identified gaps; personal originals, filenames and per-image reports are excluded from Git and Beta assets. Prepare five calibration and three independent-design validation drafts for the sole real maker; a second maker is still needed.
+
+<!-- fragment: 4e809b22215d32f0fc0b2bfbb482f8aa950c65ae35ddfb747b324881df9cf6f8 -->
+- Use per-PR bilingual changelog fragments collected during release preparation. Documentation-only PRs preserve all 13 required check names while omitting heavy tests; newly generated release receipts also require full-validation markers, so documentation placeholders cannot stand in for release validation.
+
+<!-- fragment: 501c364e72da322f99b75f095732dcdcf6aac48df774dee1c0628f5768bddf69 -->
+- Record exploratory photo-evaluation and review boundaries: strict G3 thresholds remain unmet, G4 needs physical trials, and independent acceptance of #91 remains assigned to Fable.
+
+### Fixed — 2026-11-15
+
+<!-- fragment: 6392c5436ce60c8f13c73e20321ad34a91423b92cd72d50cd66bb0cc59ba160e -->
+- Restore script-path execution of `python app/trials.py --help`, check parity with the module entry point, and include `app/trial_tools/` in the static layering guard.
+- Record Fable's independent acceptance within the #91 handoff scope and its two low-severity findings; this is a comment-only record with no formal GitHub APPROVE, and G3/G4 still block release.
+
 ### Changed — 2026-11-15 Generator, evaluation, trial and UI module organization
 
 - Consolidate former #77–#83: extract shape generators, use `PartKind` in generation and assembly, separate evaluation stages and trial tools, and organize grid UI and stylesheet sections. Preserve saved names, complete output snapshots, record formats, widget order and CSS bytes; G3/G4 thresholds remain unchanged.

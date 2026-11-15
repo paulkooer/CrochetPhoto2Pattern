@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.md)
 
-[![CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml/badge.svg)](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml) [![Version: 0.2.0 beta 2](https://img.shields.io/badge/version-0.2.0--beta.2-orange.svg)](CHANGELOG.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml/badge.svg)](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/workflows/ci.yml) [![Version: 0.2.0 beta 3](https://img.shields.io/badge/version-0.2.0--beta.3-orange.svg)](CHANGELOG.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > 本地视觉与规则驱动的 Amigurumi 钩织图解生成器：照片分析、人工确认、逐圈生成。
 
