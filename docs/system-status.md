@@ -2,7 +2,7 @@
 
 [简体中文](system-status.zh-CN.md) | **English** | [Documentation index](README.md)
 
-> Status snapshot: 2026-11-13. Current behavior is defined by source code,
+> Status snapshot: 2026-11-15. Current behavior is defined by source code,
 > `pyproject.toml`, `uv.lock`, and reproducible checks. Audit briefs are historical snapshots.
 
 ## Current conclusion
@@ -28,11 +28,12 @@ its tree matches the candidate's tree. G3 and G4 stay blocked.
 Check whether the saved receipt covers a particular commit without network access or writes:
 
 ```bash
-python scripts/bind_release_evidence.py --status --commit HEAD
+python scripts/bind_release_evidence.py --status --commit <candidate-sha>
 ```
 
-Exit 1 means the selected commit is not covered. Exit 0 confirms the binding only; it does
-not mean all release gates pass.
+Use the exact candidate SHA recorded in the receipt. Exit 1 means the selected commit is not
+covered or the receipt is inconsistent. Exit 0 confirms local consistency and the Git binding;
+it does not mean all release gates pass or authenticate remote runs.
 
 
 See the [changelog](../CHANGELOG_EN.md) for changes. The [prior status snapshot](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.md) preserves the historical per-round verification records in Git.

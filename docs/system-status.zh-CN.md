@@ -2,7 +2,7 @@
 
 **简体中文** | [English](system-status.md) | [文档索引 / Documentation index](README.md)
 
-> 状态快照：2026-11-13。代码行为以当前源码、`pyproject.toml`、锁文件和
+> 状态快照：2026-11-15。代码行为以当前源码、`pyproject.toml`、锁文件和
 > 可复现验证结果为准；`audit-brief*.md`、`handoff-review.md` 与
 > `optimization-brief.md` 是对应审查轮次的历史快照，不用于判断当前测试数量或发布状态。
 
@@ -26,10 +26,11 @@ G3 与 G4 仍是阻断。
 以下命令只读取证据并核对指定提交，不访问网络或改写文件：
 
 ```bash
-python scripts/bind_release_evidence.py --status --commit HEAD
+python scripts/bind_release_evidence.py --status --commit <candidate-sha>
 ```
 
-退出码 1 表示该提交未被证据覆盖；退出码 0 只表示绑定匹配，不代表全部发布门禁通过。
+请指定收据中记录的确切候选 SHA。退出码 1 表示该提交未被覆盖或收据不一致；
+退出码 0 只表示本地一致性与 Git 绑定匹配，不代表全部发布门禁通过，也不认证远端运行来源。
 
 
 变更历史见 [CHANGELOG](../CHANGELOG.md)；逐轮验证的[旧状态快照](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.zh-CN.md)保留在 Git 中，不再追加到当前状态页。
