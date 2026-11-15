@@ -46,9 +46,16 @@ did not meet release thresholds; annotation confirmation and stratified coverage
 It is not an accepted G3 baseline. Originals and per-image reports remain private and local.
 G4 still needs independent physical-trial records bound to exact patterns.
 
-Independent acceptance by Fable remains pending for the evaluation, trial-tool and grid refactors
-in #91, merged as `d2effababe7a7af4ba332207a55bbd46e9c454f8`. The historical acceptance below
-does not extend to that commit or subsequent maintenance.
+Fable supplied an [independent acceptance record](reviews/fable-91-acceptance-20261115.md) on
+2026-11-15 for the evaluation, trial-tool and grid refactors in #91, merged as
+`d2effababe7a7af4ba332207a55bbd46e9c454f8` against baseline
+`294cbe118b4f0546bf40b656d2e176f509097162`. Within the handoff scope, no behavior changes were
+found apart from two low-severity findings: a script-path entry regression and missing static
+layering coverage for the new package. The report confirms identical `app/` trees at the reviewed
+commit and then-current main `0b91f49`, so its conclusion also applies there. This is a comment-only
+acceptance record with no formal GitHub APPROVE. Other #91 changes, real-browser validation and
+full real-photo evaluation were outside its scope; later fixes require their own review.
+The historical acceptance below retains its original scope.
 
 ## Independently accepted merged baseline
 

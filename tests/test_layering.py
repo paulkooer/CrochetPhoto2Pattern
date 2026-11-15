@@ -11,6 +11,7 @@ _HEADLESS = [
     *sorted((_APP / "models").rglob("*.py")),
     *sorted((_APP / "utils").rglob("*.py")),
     *sorted((_APP / "services").rglob("*.py")),
+    *sorted((_APP / "trial_tools").rglob("*.py")),
     *(_APP / name for name in ("__init__.py", "cli.py", "evaluation.py", "trials.py",
                                "schemas.py", "gauge_constraints.py")),
 ]
