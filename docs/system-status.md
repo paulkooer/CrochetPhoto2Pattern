@@ -7,7 +7,7 @@
 
 ## Current conclusion
 
-CrochetPhoto2Pattern is a **0.2.0-beta.2 engineering candidate**. Stitch arithmetic, input
+CrochetPhoto2Pattern is a **0.2.0-beta.3 engineering candidate**. Stitch arithmetic, input
 gates, exports, and packaging have substantial automated coverage. An authorized
 real-photo baseline and an independent physical-trial baseline are still missing, so the
 project must not claim validated dimensions, material usage, time, or finished-item crochetability.
@@ -45,6 +45,13 @@ An exploratory local evaluation now uses owner-authorized finished-work photos. 
 did not meet release thresholds; annotation confirmation and stratified coverage remain open.
 It is not an accepted G3 baseline. Originals and per-image reports remain private and local.
 G4 still needs independent physical-trial records bound to exact patterns.
+
+The latest strict reruns cover 30-image and 34-image datasets; both fail quality gates, and
+the extension still lacks four half-body/close-up cases. See the
+[de-identified gap list and single-maker G4 plan](reviews/g3-g4-next-steps-20261115.en.md).
+Private originals, filenames and per-image reports are excluded from Git and Beta artifacts.
+The trial starter kit contains manual-only patterns and drafts for one real maker;
+G4's second-maker requirement remains open.
 
 Fable supplied an [independent acceptance record](reviews/fable-91-acceptance-20261115.md) on
 2026-11-15 for the evaluation, trial-tool and grid refactors in #91, merged as
