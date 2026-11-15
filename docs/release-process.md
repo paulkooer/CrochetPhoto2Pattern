@@ -6,6 +6,15 @@ Routine merges use their own CI results. `release-evidence.json` is a receipt fo
 selected candidate, and is regenerated only when preparing another candidate. Keep the
 existing receipt as historical evidence until then; do not describe it as covering `main`.
 
+Before selecting a candidate, collect the [bilingual changelog fragments](../changelog.d/README.md)
+with `python scripts/changelog_fragments.py collect --date YYYY-MM-DD --write` and commit
+both logs plus fragment removals. New receipts use schema 3 and require successful
+`full-validation (CI)`, `full-validation (extras)`, `full-validation (browser)` and
+`full-validation (security)` markers in addition to the 13 required contexts. Documentation-only
+PR placeholders omit these markers and cannot establish release coverage. Main pushes, manual
+and scheduled workflows validate fully. Existing schema-2 receipts remain readable as exact
+historical bindings and are not rewritten by this migration.
+
 1. Select an exact, committed candidate and record its full SHA. Inspect that candidate's
    latest remote checks against `.github/required-checks.json`.
 2. Identify the successful pip-audit commit. Use the candidate itself when its audit ran;

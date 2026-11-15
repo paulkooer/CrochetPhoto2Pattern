@@ -1,0 +1,26 @@
+name: Change scope
+
+on:
+  workflow_call:
+    outputs:
+      run_full:
+        description: Whether runtime validation is required
+        value: ${{ jobs.scope.outputs.run_full }}
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run_full: ${{ steps.scope.outputs.run_full }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: scope
+        run: python3 scripts/ci_scope.py
+      - name: Validate bilingual changelog fragments
+        run: python3 scripts/changelog_fragments.py check

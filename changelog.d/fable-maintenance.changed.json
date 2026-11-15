@@ -1,0 +1,4 @@
+{
+  "zh": ["改用每个 PR 的中英双语 changelog 片段，发布准备时汇总。纯文档 PR 保留 13 个必需检查名并跳过重型测试；发布收据新生成时必须另有完整验证标记，文档占位通过不能作为发布验证。"],
+  "en": ["Use per-PR bilingual changelog fragments collected during release preparation. Documentation-only PRs preserve all 13 required check names while omitting heavy tests; newly generated release receipts also require full-validation markers, so documentation placeholders cannot stand in for release validation."]
+}

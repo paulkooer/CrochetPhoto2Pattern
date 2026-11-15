@@ -12,6 +12,10 @@ commit. An unfinished latest run rejects the file instead of reusing an older
 success. --commit and --audit-commit are required, so a bare run cannot
 rewrite the file onto the previous binding.
 
+New schema-3 receipts also require full-validation markers: a successful
+documentation-only placeholder must never be treated as a runtime test pass.
+Historical schema-2 receipts remain readable without being regenerated.
+
 --status compares the saved binding with --commit (HEAD by default), without
 network access or writing evidence. Exit 1 means that commit is not covered;
 this binding check does not evaluate the other release gates.
@@ -43,6 +47,8 @@ PUSH_GROUPS = {
     "pose": ("optional-extras (pose)", "pose-unlocked (3.11)", "pose-unlocked (3.12)"),
 }
 AUDIT_CONTEXT = "pip-audit"
+FULL_CONTEXTS = ("full-validation (CI)", "full-validation (extras)", "full-validation (browser)")
+AUDIT_FULL_CONTEXT = "full-validation (security)"
 
 
 def _text(run: Mapping[str, object], key: str) -> str:
@@ -141,14 +147,16 @@ def build_evidence(*, commit: str, tree: str, commit_date: str,
     push_conclusions = {name: str(run["conclusion"]) for name, run in push.items()}
     for group, names in PUSH_GROUPS.items():
         _require_success(push_conclusions, names, group)
+    _require_success(push_conclusions, FULL_CONTEXTS, "full runtime validation")
     audit = latest_runs(audit_runs, head_sha=audit_commit)
     audit_conclusions = {name: str(run["conclusion"]) for name, run in audit.items()}
-    _require_success(audit_conclusions, (AUDIT_CONTEXT,), "pip-audit")
+    _require_success(audit_conclusions, (AUDIT_CONTEXT, AUDIT_FULL_CONTEXT), "pip-audit")
     accepted = [push[name] for names in PUSH_GROUPS.values() for name in names]
-    accepted.append(audit[AUDIT_CONTEXT])
+    accepted.extend(push[name] for name in FULL_CONTEXTS)
+    accepted.extend(audit[name] for name in (AUDIT_CONTEXT, AUDIT_FULL_CONTEXT))
     run_refs = {str(run["name"]): ref for run in accepted if (ref := _run_ref(run))}
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "commit": commit,
         "tree": tree,
         "commit_date": commit_date,
@@ -162,14 +170,14 @@ def build_evidence(*, commit: str, tree: str, commit_date: str,
             "pip_audit": "pass",
         },
         "push_checks": {name: "pass" for names in PUSH_GROUPS.values() for name in names},
+        "full_validation": dict.fromkeys((*FULL_CONTEXTS, AUDIT_FULL_CONTEXT), "pass"),
         "pip_audit": {
             "status": "pass",
             "evidence_commit": audit_commit,
             "evidence_tree": audit_tree,
             "on_bound_commit": audit_commit == commit,
             "note": (
-                "security.yml 只在改动 pyproject.toml、uv.lock 或该工作流时对 push 运行 "
-                "pip-audit。这里的通过来自同一棵树的检查，不一定是绑定提交自己的 push job。"
+                "这里的完整审计通过来自同一棵树的检查，不一定是绑定提交自己的 push job。"
                 if audit_commit != commit else
                 "pip-audit 在绑定提交上通过。"
             ),
@@ -229,8 +237,11 @@ def binding_status(document: Mapping[str, object], commit: str, tree: str, *,
     errors = []
     if not checksum_valid:
         errors.append("receipt checksum missing or mismatched")
-    if document.get("schema_version") != 2:
+    if document.get("schema_version") not in (2, 3):
         errors.append("unsupported receipt schema")
+    if (document.get("schema_version") == 3 and
+            document.get("full_validation") != dict.fromkeys((*FULL_CONTEXTS, AUDIT_FULL_CONTEXT), "pass")):
+        errors.append("full validation markers are not all passing")
     for field in ("commit", "tree"):
         value = document.get(field)
         if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{40}", value):

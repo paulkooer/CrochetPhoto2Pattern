@@ -49,7 +49,7 @@ uv run --locked --extra dev --extra pose pytest -q
 4. **保护评测数据权利。** 真实照片评测必须遵守 `docs/evaluation.md` 的逐图授权、
    被摄者同意、用途、保留和哈希记录要求。原图与包含个人信息的报告不得进入仓库。
 5. **保持兼容与可迁移。** 修改备份、分享、图解 JSON 或试钩记录格式时，增加版本、
-   兼容读取或清晰迁移说明，并更新测试和 CHANGELOG。
+   兼容读取或清晰迁移说明，并更新测试和 changelog 片段。
 6. **保持分层方向。** `app/models`、`app/utils`、`app/services` 及 CLI/评测/试钩入口
    不导入 `app.ui` 或 Streamlit；界面层调用它们，反之不行（`tests/test_layering.py` 守卫）。
 
@@ -60,7 +60,10 @@ uv run --locked --extra dev --extra pose pytest -q
 - 新行为带测试，修复缺陷先覆盖可复现案例。
 - 新增测试按所覆盖的模块或行为命名并归档，避免以审查轮次命名新测试文件。
 - 若改变功能、安装、隐私、数据格式或发布门禁，同步更新 README、相关 `docs/`、
-  `CHANGELOG.md` 或 `docs/system-status.zh-CN.md`。
+  状态文档，并新增 [中英双语 changelog 片段](changelog.d/README.md)。
+- 每个 PR 使用独立片段；两份总 CHANGELOG 仅在发布准备时汇总。
+- 纯文档 PR 保留 13 个必需检查名，但省略重型测试；push、手动和定时运行仍全量验证。
+  发布证据还须有完整验证标记，文档占位成功不能代表运行时通过。
 - 确保 `git diff --check` 通过，且没有无关生成文件和本机路径。
 
 提交 Pull Request 即表示你有权提交相关内容，并同意其按本仓库的 MIT License 发布。

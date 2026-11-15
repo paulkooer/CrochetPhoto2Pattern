@@ -14,16 +14,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/change-scope.yml
+
   docker:
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+      - name: Check scope decision
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          RUN_FULL: ${{ needs.changes.outputs.run_full }}
+        run: python3 scripts/ci_scope.py --guard
 
       # 构建但不推送；load 进本地 daemon 后实际运行容器做冒烟，防止 Dockerfile /
       # 依赖图腐化只在部署时才暴露（此前只构建不运行，审核 F-18）。
       - uses: docker/setup-buildx-action@v4
+        if: needs.changes.outputs.run_full == 'true'
       - uses: docker/build-push-action@v7
+        if: needs.changes.outputs.run_full == 'true'
         with:
           context: .
           push: false
@@ -33,6 +45,7 @@ jobs:
           cache-to: type=gha,mode=minimal
 
       - name: Container smoke (health, non-root, production flags)
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           docker run -d --name app -p 8501:8501 crochet-photo2pattern:ci
           for i in $(seq 1 45); do
@@ -66,29 +79,41 @@ jobs:
           EOF
 
       - name: Container logs on failure
-        if: failure()
+        if: needs.changes.outputs.run_full == 'true' && (failure())
         run: docker logs app || true
 
   type-check:
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - name: Check scope decision
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          RUN_FULL: ${{ needs.changes.outputs.run_full }}
+        run: python3 scripts/ci_scope.py --guard
 
       - name: Install uv
+        if: needs.changes.outputs.run_full == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
           enable-cache: true
 
       - name: Sync locked dependencies
+        if: needs.changes.outputs.run_full == 'true'
         run: uv sync --locked --extra dev
 
       # 当前基线：app 全包 0 错误（37 文件）；配置见 pyproject [tool.mypy]
       - name: Type check (mypy)
+        if: needs.changes.outputs.run_full == 'true'
         run: uv run --locked --extra dev mypy app tests
 
   test:
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # .python-version 只服务本地默认值；远程矩阵必须显式覆盖，否则 uv 会让
@@ -101,32 +126,43 @@ jobs:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v7
+      - name: Check scope decision
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          RUN_FULL: ${{ needs.changes.outputs.run_full }}
+        run: python3 scripts/ci_scope.py --guard
 
       # setup-uv 负责 UV_PYTHON 指定解释器的安装与 uv 自身的缓存：
       # 旧组合 setup-python(cache: pip) + pip install uv 的 pip 缓存对
       # uv 装出来的 .venv 完全无效（白缓存）。
       - name: Install uv
+        if: needs.changes.outputs.run_full == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
       - name: Sync locked dependencies
+        if: needs.changes.outputs.run_full == 'true'
         run: uv sync --locked --extra dev
 
       - name: Lint
-        run: uv run --locked --extra dev ruff check app tests
+        if: needs.changes.outputs.run_full == 'true'
+        run: >-
+          uv run --locked --extra dev ruff check app tests
+          scripts/ci_scope.py scripts/changelog_fragments.py scripts/bind_release_evidence.py
 
       # 四个版本都运行全量测试；只在默认的 3.12 收集覆盖率，减少重复开销。
       - name: Test with coverage
-        if: matrix.python-version == '3.12'
+        if: needs.changes.outputs.run_full == 'true' && (matrix.python-version == '3.12')
         run: uv run --locked --extra dev pytest -v --cov=app --cov-report=term-missing --cov-fail-under=80
 
       - name: Test
-        if: matrix.python-version != '3.12'
+        if: needs.changes.outputs.run_full == 'true' && (matrix.python-version != '3.12')
         run: uv run --locked --extra dev pytest -v
 
       - name: Build wheel (packaging check)
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           uv build --wheel --out-dir dist/
           python3 - <<'EOF'
@@ -166,12 +202,20 @@ jobs:
   # （实测 1.40.0／1.48.0／1.66.0 均不可解析）。所以这个作业是声明可安装性的
   # 证据，而不只是字符串比对。
   streamlit-floor:
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      - name: Check scope decision
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          RUN_FULL: ${{ needs.changes.outputs.run_full }}
+        run: python3 scripts/ci_scope.py --guard
 
       - name: Install uv
+        if: needs.changes.outputs.run_full == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
@@ -179,10 +223,12 @@ jobs:
 
       # 改了依赖声明却没有重新锁定时会在此失败（pyproject 与 uv.lock 脱节）
       - name: Check lock file matches pyproject.toml
+        if: needs.changes.outputs.run_full == 'true'
         run: uv lock --check
 
       # 下限从 pyproject 读取，不在 workflow 里再写一份常量：改了下限自动跟着测
       - name: Read the declared Streamlit floor
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           uv run --no-project --python 3.12 python - <<'EOF' >> "$GITHUB_ENV"
           import re
@@ -197,11 +243,13 @@ jobs:
 
       # 关键步骤：固定下限、其余依赖交给解析器，证明声明的范围真的可安装
       - name: Install declared floor plus project dependencies from PyPI
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           uv venv --python 3.12 "$RUNNER_TEMP/floor"
           uv pip install --python "$RUNNER_TEMP/floor/bin/python" "streamlit==$FLOOR" -e ".[dev]"
 
       - name: Assert the floor environment
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           "$RUNNER_TEMP/floor/bin/python" - <<'EOF'
           import importlib.metadata as md
@@ -214,6 +262,7 @@ jobs:
           EOF
 
       - name: Boot the app on the floor version
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           "$RUNNER_TEMP/floor/bin/python" -m streamlit run app/main.py \
             --server.address=127.0.0.1 --server.port=18505 --server.headless=true \
@@ -229,9 +278,30 @@ jobs:
 
       # 界面在最低版本上的真实行为：启动、结果页、按钮操作与关键导入路径
       - name: Floor UI smoke (boot, result page, buttons, import paths)
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           "$RUNNER_TEMP/floor/bin/python" -m pytest -q tests/test_app_smoke.py tests/test_dependency_floor.py
 
       - name: Floor server log on failure
-        if: failure()
+        if: needs.changes.outputs.run_full == 'true' && (failure())
         run: cat "$RUNNER_TEMP/floor-server.log" || true
+
+  full-validation:
+    name: full-validation (CI)
+    needs: [changes, docker, type-check, test, streamlit-floor]
+    if: ${{ !cancelled() && needs.changes.outputs.run_full == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Attest that every full job succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ["RESULTS"])
+          failed = {name: job["result"] for name, job in results.items() if job["result"] != "success"}
+          if failed:
+              raise SystemExit(f"Full validation did not pass: {failed}")
+          print("Every runtime job completed successfully")
+          PY

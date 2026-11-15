@@ -6,12 +6,7 @@ on:
     - cron: "23 4 * * 1"
   push:
     branches: [main, master]
-    paths:
-      - pyproject.toml
-      - uv.lock
-      - .github/workflows/security.yml
-  # 对所有 PR 运行：依赖漏洞门禁不能只在改动锁文件的 PR 上触发，
-  # 否则一个绿色 PR 会被误读为“依赖已审计”。审计本身很快（固定清单，--no-deps）。
+  # Documentation-only PRs use placeholders; every main push runs the audit.
   pull_request:
 
 permissions:
@@ -22,22 +17,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/change-scope.yml
+
   pip-audit:
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v7
+      - name: Check scope decision
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          RUN_FULL: ${{ needs.changes.outputs.run_full }}
+        run: python3 scripts/ci_scope.py --guard
 
       # setup-uv 同时负责 UV_PYTHON 解释器安装与 uv 自身缓存
       - name: Install uv
+        if: needs.changes.outputs.run_full == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
           enable-cache: true
 
       - name: Export locked dependency set
+        if: needs.changes.outputs.run_full == 'true'
         # 把 uv.lock 的完整解析结果（含 dev/pdf/pose 全部 extra、所有平台 marker）
         # 导出为固定版本清单，直接审计锁文件声明的依赖，而不是审计某个运行环境。
         run: >-
@@ -45,6 +52,7 @@ jobs:
           --format requirements.txt -o audit-requirements.txt
 
       - name: Assert audit coverage
+        if: needs.changes.outputs.run_full == 'true'
         # 防回归守卫（见历史事故）：曾经在 `uv run --with` 叠加环境下用
         # pip-audit 的 `--local` 标志只审计叠加层，审计 0 个包却报“无已知漏洞”。
         # 这里强制要求导出清单至少包含一个固定包，否则直接失败。
@@ -57,9 +65,30 @@ jobs:
           fi
 
       - name: Audit locked dependencies
+        if: needs.changes.outputs.run_full == 'true'
         # --no-deps：清单已是完整解析结果，不再联网解析，只审计其中的固定版本；
         # 工具版本固定且通过临时 overlay 安装，不改 pyproject/uv.lock。
         # 发现已知漏洞时 pip-audit 返回非零，任务失败。
         run: >-
           uv run --with pip-audit==2.10.1
           pip-audit --requirement audit-requirements.txt --no-deps --progress-spinner off
+
+  full-validation:
+    name: full-validation (security)
+    needs: [changes, pip-audit]
+    if: ${{ !cancelled() && needs.changes.outputs.run_full == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Attest that every full job succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ["RESULTS"])
+          failed = {name: job["result"] for name, job in results.items() if job["result"] != "success"}
+          if failed:
+              raise SystemExit(f"Full validation did not pass: {failed}")
+          print("Every runtime job completed successfully")
+          PY

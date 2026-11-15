@@ -5,6 +5,14 @@
 日常合并查看各自的 CI。`release-evidence.json` 是一个已选定候选的收据，仅在准备下一个
 发布候选时重新生成。在此之前保留旧收据作为历史证据，不把它描述成当前 `main` 的验证结果。
 
+选定候选之前，按[片段说明](../changelog.d/README.md)运行
+`python scripts/changelog_fragments.py collect --date YYYY-MM-DD --write`，一起提交两份
+日志和片段删除记录。新收据使用 schema 3，除 13 个必需检查外，还要求
+`full-validation (CI)`、`full-validation (extras)`、`full-validation (browser)` 和
+`full-validation (security)` 全部通过。纯文档 PR 的占位成功不含这些标记，不能作为
+发布覆盖证据；主分支 push、手动和定时运行仍全量验证。旧 schema-2 收据继续按确切
+历史绑定读取，本次迁移不改写旧证据。
+
 1. 选定一个已提交的候选，记录完整 SHA，按 `.github/required-checks.json` 核查该提交
    最新的远端检查。
 2. 找到成功的 pip-audit 提交。候选本身运行了审计时直接使用它；否则审计提交必须与候选
