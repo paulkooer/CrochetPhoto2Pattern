@@ -14,7 +14,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/change-scope.yml
+
   browser-smoke:
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -25,25 +30,36 @@ jobs:
       CROCHET_BROWSER_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v7
+      - name: Check scope decision
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          RUN_FULL: ${{ needs.changes.outputs.run_full }}
+        run: python3 scripts/ci_scope.py --guard
       - uses: astral-sh/setup-uv@v7
+        if: needs.changes.outputs.run_full == 'true'
         with:
           python-version: "3.12"
           enable-cache: true
       - uses: actions/setup-node@v7
+        if: needs.changes.outputs.run_full == 'true'
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: scripts/browser/package-lock.json
       - name: Install locked test tools
+        if: needs.changes.outputs.run_full == 'true'
         run: |
           uv sync --locked --extra dev --extra pdf
           npm ci --prefix scripts/browser
           scripts/browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Check synchronization with delayed uploads and reruns
+        if: needs.changes.outputs.run_full == 'true'
         run: node --test scripts/browser/*.test.cjs
       - name: Protect upload completion and run correlation assertions against mutations
+        if: needs.changes.outputs.run_full == 'true'
         run: node scripts/browser/check_upload_mutations.cjs
       - name: Exercise standalone canvas and full local app
+        if: needs.changes.outputs.run_full == 'true'
         env:
           CROCHET_HISTORY_DB: ${{ runner.temp }}/browser-history.sqlite
           CROCHET_POSE_MODEL: ${{ runner.temp }}/unconfigured-pose.task
@@ -61,7 +77,7 @@ jobs:
           curl -fsS "$CROCHET_BROWSER_URL/_stcore/health"
           node scripts/check_browser_workflow.cjs
       - name: Preserve synthetic evidence and failure diagnostics
-        if: always()
+        if: needs.changes.outputs.run_full == 'true' && (always())
         uses: actions/upload-artifact@v7
         with:
           name: browser-smoke
@@ -69,3 +85,23 @@ jobs:
             ${{ runner.temp }}/browser-evidence/
             ${{ runner.temp }}/browser-server.log
           retention-days: 7
+
+  full-validation:
+    name: full-validation (browser)
+    needs: [changes, browser-smoke]
+    if: ${{ !cancelled() && needs.changes.outputs.run_full == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Attest that every full job succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ["RESULTS"])
+          failed = {name: job["result"] for name, job in results.items() if job["result"] != "success"}
+          if failed:
+              raise SystemExit(f"Full validation did not pass: {failed}")
+          print("Every runtime job completed successfully")
+          PY

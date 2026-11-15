@@ -27,5 +27,5 @@ For generator, evaluation, trial and browser synchronization changes record the 
 - [ ] `ruff check .`、相关测试与 `git diff --check` 通过 / Checks pass
 - [ ] 无密钥、`.env`、私人图片、个人信息或许可不清的数据 / No secrets or unauthorized/private data
 - [ ] 未把自动化正确性描述为实体可钩性证据 / Automation is not presented as physical evidence
-- [ ] 中英文 README、相关文档、CHANGELOG 和状态已同步 / Both-language user docs are updated where needed
+- [ ] 中英文文档与状态按需更新，并新增双语 changelog 片段 / Update user docs as needed and add a bilingual changelog fragment
 - [ ] 格式变化有版本、兼容读取或迁移说明 / Format changes include versioning, compatibility, or migration

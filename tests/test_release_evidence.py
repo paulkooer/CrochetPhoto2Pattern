@@ -64,11 +64,12 @@ def _push(bind, head: str, overrides: dict[str, list[dict[str, object]]] | None 
         for name in names:
             default = _attempt(name, "success", at="2026-11-06T00:00:00Z", head=head)
             runs.extend(overrides.get(name) or [default])
+    runs.extend(_run(name, "success", head) for name in bind.FULL_CONTEXTS)
     return runs
 
 
 def _audit(head: str) -> list[dict[str, object]]:
-    return [_attempt("pip-audit", "success", at="2026-11-06T00:00:00Z", head=head)]
+    return [_run(name, "success", head) for name in ("pip-audit", "full-validation (security)")]
 
 
 def _build(bind, push: list[dict[str, object]], *, head: str = "a" * 40, audit_head: str = "c" * 40):
@@ -81,13 +82,13 @@ def test_builder_accepts_same_tree_audit_and_rejects_a_different_tree():
     bind = _binder()
     sha = "a" * 40
     audit_sha = "c" * 40
-    push = [_run(name, "success", sha) for names in bind.PUSH_GROUPS.values() for name in names]
-    audit = [_run("pip-audit", "success", audit_sha)]
+    push = _push(bind, sha)
+    audit = _audit(audit_sha)
     tree = "b" * 40
     document = bind.build_evidence(
         commit=sha, tree=tree, commit_date="2026-11-06", push_runs=push,
         audit_commit=audit_sha, audit_tree=tree, audit_runs=audit)
-    assert document["schema_version"] == 2
+    assert document["schema_version"] == 3
     assert document["commit_date"] == "2026-11-06"
     assert document["checks_completed_at"] == "2026-11-06T00:00:00Z"
     assert document["run_refs"] == {}
@@ -153,6 +154,34 @@ def test_latest_success_is_accepted():
     assert document["checks"]["ci"] == "pass"
     assert document["checks_completed_at"] == done
     assert document["run_refs"]["docker"] == {"check_run_id": 99, "run_id": 421, "url": url}
+
+
+@pytest.mark.parametrize("conclusion", [None, "skipped", "failure"])
+def test_documentation_placeholders_cannot_generate_release_evidence(conclusion):
+    bind = _binder()
+    head = "a" * 40
+    push = [run for run in _push(bind, head) if run["name"] != "full-validation (browser)"]
+    if conclusion:
+        push.append(_run("full-validation (browser)", conclusion, head))
+    with pytest.raises(ValueError, match="full runtime validation"):
+        _build(bind, push, head=head)
+
+
+def test_successful_pip_audit_placeholder_without_full_audit_is_refused():
+    bind = _binder()
+    head = "a" * 40
+    with pytest.raises(ValueError, match="full-validation"):
+        bind.build_evidence(commit=head, tree="b" * 40, commit_date="2026-11-15",
+                            push_runs=_push(bind, head), audit_commit=head, audit_tree="b" * 40,
+                            audit_runs=[_run("pip-audit", "success", head)])
+
+
+def test_new_receipt_offline_status_requires_full_markers():
+    bind = _binder()
+    document = _build(bind, _push(bind, "a" * 40))
+    assert bind.binding_status(document, "a" * 40, "b" * 40, checksum_valid=True)["receipt_valid"]
+    del document["full_validation"]
+    assert not bind.binding_status(document, "a" * 40, "b" * 40, checksum_valid=True)["receipt_valid"]
 
 
 def test_success_without_status_or_head_sha_is_refused():

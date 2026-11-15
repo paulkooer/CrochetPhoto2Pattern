@@ -56,7 +56,7 @@ The pose extra is supported only on Python 3.11–3.12 and requires `libEGL.so.1
    subject-consent, purpose, retention, and hash rules in
    [docs/evaluation.en.md](docs/evaluation.en.md).
 5. **Preserve compatibility.** Version backup/share/pattern/trial format changes, support
-   backward reading or document a migration, and update tests and the changelog.
+   backward reading or document a migration, and update tests and a changelog fragment.
 6. **Keep the layering direction.** `app/models`, `app/utils`, `app/services` and the
    CLI/evaluation/trial entry points never import `app.ui` or Streamlit; the UI calls them,
    not the reverse (guarded by `tests/test_layering.py`).
@@ -74,3 +74,11 @@ The pose extra is supported only on Python 3.11–3.12 and requires `libEGL.so.1
 
 By submitting a pull request, you confirm that you have the right to contribute the
 material and agree that it is released under this repository's MIT License.
+
+## Changelog and documentation CI
+
+Add one [bilingual changelog fragment](changelog.d/README.md) per PR; collect the shared
+changelogs only during release preparation. Documentation-only PRs preserve all 13 required
+check names with lightweight successful jobs, omitting runtime tests. Push, manual and
+scheduled runs validate fully. Release evidence additionally requires full-validation
+markers; documentation placeholders do not establish runtime validation.
