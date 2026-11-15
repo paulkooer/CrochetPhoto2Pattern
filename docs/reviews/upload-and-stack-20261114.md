@@ -1,11 +1,19 @@
 # 上传关联与 PR 依赖收口（2026-11-14）
 
-这是本轮工程处理记录。Fable 已复核通过 #88 `adeabbf`；#89 `baf9962` 的内容确认机制
-无 P1 问题，但有两项 P2 建议在合并前处理。以下本地修补仍待独立复核。不自动合并 PR，
-不改变 required approvals、正式发布证据或 G3/G4。新的浏览器修复直接以 main 为基线，
-不要求先合入生成器、评测、试钩或 UI 重构。相关运行方式见[浏览器回归](../browser-regression.md)。
+本记录区分已完成的合并收尾与历史开发验证。相关运行方式见[浏览器回归](../browser-regression.md)。
 
-## 合并顺序与固定范围
+## 最终收尾（2026-11-15）
+
+- #89 在 Fable 固定头 `f8b62f2` 复核通过后，以 `dac0db8` squash 合入 main；合并树与已审头相同。候选[浏览器运行 43593491623](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43593491623)记录 23/23 回归、8/8 指定断言变异、5/5 延迟消息轮次及 31/31 完整流程。[独立复核记录](https://github.com/paulkooer/CrochetPhoto2Pattern/pull/89#pullrequestreview-5904711699)因使用作者同账号而为 COMMENTED；main 要求的正式批准数为 0，保护规则未更改。
+- #74 在新 head `b725a6c` 的 13/13 检查通过后，以 `ed14d2b` 合入 main。合并后 [CI](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696265)、[extras](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696524)、[安全审计](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696306)及[浏览器](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43664696297)均首次通过。用户选择稍后补做 1–2 张授权真实照片的升级前后对比；当前结果仅覆盖合成测试。
+- #85、#86、#87、#88 已关闭为被取代，均未通过这些累计分支合入 main。#15 的旧混合 PR 已关闭并保留原分支与讨论；继续开发时，按原拆分建议分别提交色度种子、受光面配色、耳朵测量/耳型和装配/CLI 预览。
+- #76 在新 head `0a2ca77` 的 13/13 检查通过后，以 `dc8bdfb` 合入 main；只增加五个测试/夹具文件，102 项本地完整输出快照通过，未重新生成夹具。后续 #77–#83 改为汇总成一个待审 PR，替换七层堆叠；只整理提交结构，尚未批准重构代码。
+- #75 与旧 main 的 CHANGELOG 插入存在冲突，#84 也需要在最新 main 上更新检查；二者继续单独待审。汇总重构只维护一份中英文 CHANGELOG 条目，避免七层反复争用顶部插入点。
+
+本机临时报表不作为长期证据入口；以下保留历史验证的来源限制，持久通过证据使用上述固定提交、CI 运行与复核记录。临时输出清理前保存在本地恢复归档，未将其作为发布收据提交。
+G3 真实照片与 G4 实体试钩继续未完成，正式发布仍受阻；本次未刷新历史发布收据或放宽门槛。
+
+## 历史合并顺序与固定范围
 
 通过 GitHub 连接器重新读取 main 和 #74–#88 的 base/head。main 仍为
 `60084d09db40d8f5d068980b99c632f736fc5de8`，所有原 PR 保持待审。
@@ -28,10 +36,10 @@
 | #87 | ef2b5d4 | #86，历史协议边界和证据文档 |
 | #88 | adeabbf | #86，请求顺序与片段运行测试 |
 
-执行规则：先按 #76 → #83 逐项复核；每次 squash 后，记录旧父提交，
-把下一条分支仅有的本步骤提交重放到新 main、重新定向 PR，再检查完整差异及新 head 的全部必需检查。
-不可仅修改 PR base 就认为旧堆叠提交已经消失。#74/#75/#84 与这条链分别决策。
-集成分支用于组合回归，不作为把整条链一次合入 main 的入口。#15 仍等待既定拆分。
+此处表格固定记录原始 head，不表示当前状态。原逐层 squash 建议已由上方最终收尾策略取代：
+先固定 #76 快照，再将 #77–#83 汇总为一个待审 PR。main 的线性历史规则保留，不采用普通合并提交。
+不可只改 PR base 就认为旧堆叠提交已经消失；汇总结果仍须检查完整差异及新 head 的全部必需检查。
+集成分支仅保留为历史组合验证参考。
 
 浏览器独立修复保留 #86/#88 有效的测试和同步改进，并解决下述竞态；不移植 #74 的
 Python 锁文件、#75 的收据修改或 #84 的 Actions 大版本。旧 #86/#88 在新 PR 复核并合入前
@@ -90,7 +98,7 @@ helper 返回后立即读取目标内容标记。这是人为控制消息到达�
 以上集成结果不能算作 main 或后续提交的远端通过证明。
 
 更正旧包标准化基线后的旧集成报告记录 **31/31 通过**，包含两次旧试钩包跨上下文恢复，
-报告保存于本机 `/private/tmp/crochet-review-20261114-integrated-v2/report.json`。
+该临时集成报告已退出长期证据入口；最终候选结果见[浏览器运行 43593491623](https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43593491623)。
 这份报告记录 `source_commit=adeabbf`、`working_tree_clean=false`，但没有实际 `app.__file__`。
 旧入口在借用其他检出环境时可能导入该环境的可编辑安装，因此该报告的应用来源未确认，
 不再据此认定通过的是所记提交的应用代码。旧的独立工作树本地结果也适用这一限制。
@@ -100,8 +108,7 @@ Fable 直接核验 #89 CI 日志中的 31/31（3 次首次尝试），未本地�
 ### Fable P2/P3 修补后的本地复验
 
 本次开始时主检出为 `fix/upload-content-ack-20261114` 的 `9bb66cd`，并未切到 `adeabbf`。
-修补在该检出完成；同一份测试工具补丁复制到 #89 的现有工作树
-`/private/tmp/crochet-upload-main-20261114` 验证，未复制或修改 `app/`。
+修补在该检出完成；同一份测试工具补丁复制到 #89 的独立工作树验证，未复制或修改 `app/`。
 
 | 检查 | 本次结果与范围 |
 | --- | --- |
@@ -111,13 +118,12 @@ Fable 直接核验 #89 CI 日志中的 31/31（3 次首次尝试），未本地�
 | 仓库卫生、导入顺序及应用冒烟 | 主检出 64 passed；没有重新声称全量 Python / 覆盖率数字 |
 | 静态检查 | 修改的 Python 脚本 Ruff 通过，两个检出 `git diff --check` 通过 |
 
-新的完整流程报告保存在
-`/private/tmp/crochet-fable-p2-20261114/evidence/report.json`：
+当时的临时完整流程报告记录：
 `source_commit=baf996291cf9bbd4ad0ad934545f5ad921d501a8`、`working_tree_clean=false`、
-`github_head_commit=null`、`server_app_file=/private/tmp/crochet-upload-main-20261114/app/__init__.py`。
+`github_head_commit=null`，实际 `server_app_file` 指向该独立工作树的 `app/__init__.py`。
 报告的全部 `harness_files_sha256` 已与主检出的本次修补逐一比较一致；
 工作树 `app/` 与 `baf9962` 的差异为空。该结果是本地未提交补丁的开发验证，
-不能替代新 head 的远端 CI 或独立复核。未提交、推送、合并或提交 GitHub Review。
+不能替代新 head 的远端 CI 或独立复核。该阶段尚未提交、推送或合并；最终候选随后在上方链接的 CI 与独立复核中通过。
 
 G3 按现有授权照片规范收集数据，分别报告交付部件 Precision/Recall、人工删除候选率、
 自动与人工确认输出差异及图解可钩性；没有真实交互记录时人工指标写未评测，不用合成数据填补。
