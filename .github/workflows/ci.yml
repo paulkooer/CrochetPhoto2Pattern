@@ -167,6 +167,11 @@ jobs:
           uv build --wheel --out-dir dist/
           python3 - <<'EOF'
           import glob, zipfile
+          import tomllib
+          from email.parser import Parser
+
+          with open("pyproject.toml", "rb") as project_file:
+              project = tomllib.load(project_file)
 
           whl = glob.glob("dist/*.whl")[0]
           with zipfile.ZipFile(whl) as archive:
@@ -184,7 +189,7 @@ jobs:
           assert "Requires-Dist: anthropic" not in metadata
           assert "app/data/external-trial-evidence.json" in names
           assert any(n.endswith(".dist-info/licenses/LICENSE") for n in names)
-          assert "Version: 0.2.0b2" in metadata
+          assert Parser().parsestr(metadata)["Version"] == project["project"]["version"]
           assert "Requires-Python: >=3.11" in metadata
           # 声明的 Streamlit 下限必须出现在构建产物里（与 pyproject.toml、uv.lock 同步）
           assert "Requires-Dist: streamlit<2.0,>=1.66.1" in metadata
