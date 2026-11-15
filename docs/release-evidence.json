@@ -1,9 +1,9 @@
 {
-  "schema_version": 2,
-  "commit": "ba65b8db92c12cab80f4e157a0b11c47bf64763c",
-  "tree": "b2c18d71cfd615504ecd00c9fdef0f64b406ea07",
-  "commit_date": "2026-11-06",
-  "checks_completed_at": "2026-11-06T06:06:33Z",
+  "schema_version": 3,
+  "commit": "53adf3ceb02b19173b204c4d61fdae2e2b12d2bc",
+  "tree": "3f8758782452e3eea2a2da38f42dde3cf4258b5c",
+  "commit_date": "2026-11-15",
+  "checks_completed_at": "2026-11-15T15:41:31Z",
   "python": [
     "3.11",
     "3.12",
@@ -31,78 +31,104 @@
     "pose-unlocked (3.11)": "pass",
     "pose-unlocked (3.12)": "pass"
   },
+  "full_validation": {
+    "full-validation (CI)": "pass",
+    "full-validation (extras)": "pass",
+    "full-validation (browser)": "pass",
+    "full-validation (security)": "pass"
+  },
   "pip_audit": {
     "status": "pass",
-    "evidence_commit": "9063635b2411e59d3b3647710d06fa792146c6ba",
-    "evidence_tree": "b2c18d71cfd615504ecd00c9fdef0f64b406ea07",
-    "on_bound_commit": false,
-    "note": "security.yml 只在改动 pyproject.toml、uv.lock 或该工作流时对 push 运行 pip-audit。这里的通过来自同一棵树的检查，不一定是绑定提交自己的 push job。"
+    "evidence_commit": "53adf3ceb02b19173b204c4d61fdae2e2b12d2bc",
+    "evidence_tree": "3f8758782452e3eea2a2da38f42dde3cf4258b5c",
+    "on_bound_commit": true,
+    "note": "pip-audit 在绑定提交上通过。"
   },
   "run_refs": {
     "docker": {
-      "check_run_id": 127740621646,
-      "run_id": 42171643539,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643539/job/127740621646"
+      "check_run_id": 132862286091,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132862286091"
     },
     "type-check": {
-      "check_run_id": 127740621506,
-      "run_id": 42171643539,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643539/job/127740621506"
+      "check_run_id": 132862286184,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132862286184"
     },
     "test (3.11)": {
-      "check_run_id": 127740621824,
-      "run_id": 42171643539,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643539/job/127740621824"
+      "check_run_id": 132862286150,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132862286150"
     },
     "test (3.12)": {
-      "check_run_id": 127740621705,
-      "run_id": 42171643539,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643539/job/127740621705"
+      "check_run_id": 132862286117,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132862286117"
     },
     "test (3.13)": {
-      "check_run_id": 127740621728,
-      "run_id": 42171643539,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643539/job/127740621728"
+      "check_run_id": 132862286133,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132862286133"
     },
     "test (3.14)": {
-      "check_run_id": 127740621866,
-      "run_id": 42171643539,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643539/job/127740621866"
+      "check_run_id": 132862286181,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132862286181"
     },
     "streamlit-floor": {
-      "check_run_id": 127740621670,
-      "run_id": 42171643539,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643539/job/127740621670"
+      "check_run_id": 132862286089,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132862286089"
     },
     "browser-smoke": {
-      "check_run_id": 127740621289,
-      "run_id": 42171643584,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643584/job/127740621289"
+      "check_run_id": 132862283549,
+      "run_id": 43730696084,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696084/job/132862283549"
     },
     "optional-extras (pdf)": {
-      "check_run_id": 127740621269,
-      "run_id": 42171643523,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643523/job/127740621269"
+      "check_run_id": 132862273412,
+      "run_id": 43730696019,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696019/job/132862273412"
     },
     "optional-extras (pose)": {
-      "check_run_id": 127740621514,
-      "run_id": 42171643523,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643523/job/127740621514"
+      "check_run_id": 132862273492,
+      "run_id": 43730696019,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696019/job/132862273492"
     },
     "pose-unlocked (3.11)": {
-      "check_run_id": 127740621556,
-      "run_id": 42171643523,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643523/job/127740621556"
+      "check_run_id": 132862273420,
+      "run_id": 43730696019,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696019/job/132862273420"
     },
     "pose-unlocked (3.12)": {
-      "check_run_id": 127740621443,
-      "run_id": 42171643523,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42171643523/job/127740621443"
+      "check_run_id": 132862273470,
+      "run_id": 43730696019,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696019/job/132862273470"
+    },
+    "full-validation (CI)": {
+      "check_run_id": 132863730807,
+      "run_id": 43730696043,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696043/job/132863730807"
+    },
+    "full-validation (extras)": {
+      "check_run_id": 132863372871,
+      "run_id": 43730696019,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696019/job/132863372871"
+    },
+    "full-validation (browser)": {
+      "check_run_id": 132864026078,
+      "run_id": 43730696084,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696084/job/132864026078"
     },
     "pip-audit": {
-      "check_run_id": 127735998256,
-      "run_id": 42170206948,
-      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/42170206948/job/127735998256"
+      "check_run_id": 132862288883,
+      "run_id": 43730696116,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696116/job/132862288883"
+    },
+    "full-validation (security)": {
+      "check_run_id": 132862435976,
+      "run_id": 43730696116,
+      "url": "https://github.com/paulkooer/CrochetPhoto2Pattern/actions/runs/43730696116/job/132862435976"
     }
   },
   "g3_real_photo": "blocked",
