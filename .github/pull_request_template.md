@@ -14,6 +14,13 @@
 
 <!-- 兼容性、隐私、失败模式、Beta/门禁。 / Compatibility, privacy, failures, Beta claims, and gates. -->
 
+## 依赖与独立复核 / Dependencies and independent review
+
+<!-- 堆叠 PR 列出前置 PR、base/head SHA 和相对 main 的累计范围；squash 后重新整理下一分支并检查新 head。
+For stacked PRs list prerequisites, base/head SHAs and cumulative scope versus main. Rebase the next branch after squash and check its new head.
+核心生成器、评测、试钩及浏览器同步修改记录独立复核人/来源、确切 SHA、结论及尚未验证的边界；待审时明确填写 pending。
+For generator, evaluation, trial and browser synchronization changes record the independent reviewer/source, exact SHA, conclusion and unverified boundaries; state pending until reviewed. CI success alone is not an approval. -->
+
 ## 检查清单 / Checklist
 
 - [ ] 新行为有测试，缺陷修复有复现 / New behavior is tested; fixes include a reproducer

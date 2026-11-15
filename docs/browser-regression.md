@@ -25,7 +25,7 @@ printf '%s\n' "$task_browser_dir"
 CROCHET_HISTORY_MODE=single_user \
 CROCHET_HISTORY_DB="$task_browser_dir/history.sqlite" \
 CROCHET_POSE_MODEL="$task_browser_dir/unconfigured-pose.task" \
-.venv/bin/python -m streamlit run app/main.py \
+.venv/bin/python scripts/browser/serve_app.py app/main.py \
   --server.address=127.0.0.1 --server.port=18502 \
   --server.headless=true --browser.gatherUsageStats=false
 ```
@@ -35,6 +35,8 @@ CROCHET_POSE_MODEL="$task_browser_dir/unconfigured-pose.task" \
 ```sh
 CROCHET_PLAYWRIGHT_MODULE="$PWD/scripts/browser/node_modules/playwright" \
 node scripts/check_mask_canvas.cjs
+node --test scripts/browser/*.test.cjs
+node scripts/browser/check_upload_mutations.cjs
 node scripts/check_browser_workflow.cjs
 ```
 
@@ -61,6 +63,7 @@ node scripts/check_browser_workflow.cjs
 | 工程保存 | 下载文件包含当前完成圈次与个人备注 |
 | 手动页保存后载入照片页 | 展示 ID 不同，进度和备注分别保留 |
 | 独立浏览器上下文恢复 | 重新上传工程、恢复勾选与备注，重导出核对参数、进度与备注 |
+| 旧版试钩 ZIP | 导入旧源码 `4a19d70` 生成的固定合成包，核对保存的 18×24 小样；下载试钩与图解后在新上下文再次恢复、导出，比较完整记录及原图解字节 |
 | 无效文件导入 | 显示导入失败，并保留当前图解、进度与备注 |
 | 独立头部留口 | 预览尚未应用时备份保持闭合；应用 16 针开口、保存工程、新上下文恢复后设置仍为 16；再次关闭后导出恢复闭合模板 |
 | 帽子独立密度 | 默认 30×32、帽子 26×28；预览不替换当前结果，应用后其他部件圈序不变、头部进度保留、帽子进度清除；实际下载含部件密度，新上下文恢复设置和进度，单小样试钩入口禁用 |
@@ -77,7 +80,7 @@ node scripts/check_browser_workflow.cjs
 独立画布脚本另检查连续拖动笔画。页面断言会等待实际控件更新，避免把 WebSocket
 刷新尚未结束当成保存错误。Python 的 `test_history_title_lifecycle.py` 进一步覆盖
 旧预览应用、撤销/重做、未保存名称草稿、显式清空名称，以及数据库列和序列化内容一致。
-完整应用脚本共 30 条流程；独立密度用例的输入由当前锁定环境中的 `app.cli` 生成，
+完整应用脚本共 31 条流程；独立密度用例的输入由当前锁定环境中的 `app.cli` 生成，
 不读取私人参考资料，不代表照片识别或实体试钩。密度输入按数值含义核对，兼容控件的小数显示格式。
 称重与试钩表单中的测量值均为合成软件输入，不代表做过实物测量。
 
@@ -86,10 +89,64 @@ node scripts/check_browser_workflow.cjs
 `report.json` 记录代码提交、脚本 SHA-256、工作树是否干净、浏览器版本、各检查结果、
 页面异常和被拦截的外部请求。文件目录还保留合成输入、下载结果与截图；失败时增加
 页面 HTML 和截图。跨上下文恢复不共享浏览器会话，但两者访问同一隔离测试服务。
+隔离入口把自身所在的仓库根目录放在 `sys.path` 最前面；即使工作树借用其他检出的虚拟环境，
+应用仍从该工作树导入。服务端在上传确认中回传实际 `app.__file__`，报告写入
+`server_app_file` 并断言它属于报告所记录的检出；路径不匹配时流程失败。
+没有该字段的旧本地报告不能单凭 `source_commit` 证明被测应用的来源。
+无独立虚拟环境的工作树可用绝对路径设置 `CROCHET_TEST_PYTHON`，Node 依赖可通过
+`CROCHET_PLAYWRIGHT_MODULE` 指向现有安装。
 
 [browser 工作流](../.github/workflows/browser.yml) 安装锁定的 Playwright 与其 Chromium，
 运行独立画布及完整应用流程；合成证据和服务日志保留 7 天。PR 运行记录同时保留头提交
 和实际检出提交，不能把旧 SHA 的成功结果算作新 SHA 通过。
+
+### 异步同步与失败诊断
+
+运行提示的显示属于界面表现，不能据此判定 Python 已完成。同步 helper 核对连接状态、
+脚本 `notRunning` 状态及骨架元素消失；状态字段来自
+[Streamlit 1.67 的应用根节点](https://github.com/streamlit/streamlit/blob/1.67.0/frontend/app/src/App.tsx#L2878-L2887)。
+`notRunning` 仅用于检查当前界面空闲，不再用瞬时的 DOM `running` 变化识别上传刷新。
+每页在导航前注册 WebSocket 监听，上传按下面的消息顺序等待：成功的上传响应给出
+文件 ID → 客户端 `rerun_script` 包含该 ID → 随后的完整运行 `new_session` → 同运行 ID 的
+内容确认 → 成功 `script_finished`。内容确认必须包含目标文件 ID 与客户端所上传字节快照的
+SHA-256，且位于该运行开始和结束之间。旧请求排队、上传后才执行并成功结束，也不能代替内容确认。
+消息字段见 [Streamlit 1.67 协议](https://github.com/streamlit/streamlit/blob/1.67.0/proto/streamlit/proto/ForwardMsg.proto)。
+
+内容确认由测试专用的 `serve_app.py` / `upload_ack.py` 适配器发出：监听实际运行描述符，
+在 `file_uploader` 返回文件时对完整缓冲区求哈希，通过带运行 ID 的 `parent_message` 回传。
+它不改变文件游标或控件返回值，不保存文件内容，也不在 `app/`、正式启动命令或发行包中安装。
+直接启动 `streamlit run app/main.py` 不会生成确认，测试 helper 会超时并提示使用隔离入口。
+这证明本次运行取得了正确文件字节；业务解析成功仍由各流程的界面及下载内容断言判断。
+
+协议描述从实际安装的 Streamlit 提取，浏览器工具使用锁定的 protobuf.js 解码；它只增加
+Node 测试依赖，不改变应用依赖。这个适配面服务于当前锁定的 Streamlit 1.67 和顺序执行的
+单文件上传流程；升级框架须重新验证消息格式和测试适配器内部接口，不能把它当成任意并发/自动刷新的通用保证。
+服务端完成消息后再让出两个绘制帧并检查界面。原 300 ms 防抖不变；上传响应、运行完成、
+绘制及各界面条件分别有 45 秒上限，工作流整体仍为 15 分钟，不保证整条流程只需 45 秒。
+
+下载在点击前监听事件，同时为点击和事件等待安装拒绝处理。点击失败时，后续关闭浏览器
+不会用未处理的下载等待异常覆盖原始点击错误；所有下载内容断言仍保留。
+事件监听顺序遵循 [Playwright 下载说明](https://playwright.dev/docs/downloads)。
+
+23 项回归包含：上传响应后仍未开始运行的受控窗口、慢运行尾部、无延迟夹具在正常及
+8 倍 CPU 降速下的 24 次首次/替换上传、HTTP 失败、运行标识匹配及下载错误传播。
+新增确定性事件序列覆盖排队旧请求、错误内容哈希、错误文件/运行、跨越运行边界的确认及中断/片段运行。
+真实浏览器另通过 WebSocket 门闩暂存旧请求和目标上传请求，先只放行旧请求并确认它成功结束，
+断言 `upload()` 仍未返回；放行目标请求后，立即核对包含目标文件内容的末尾标记。
+这条门闩测试只保护请求/运行等待，不能区分是否保留内容确认。
+内容确认另由真实浏览器故障注入用例保护：服务端除上传地址回复外的消息均延迟 1 秒，
+先点击旧运行按钮再上传，连续 5 轮核实目标请求先于旧运行开始消息进入观察日志。
+旧运行成功结束但没有内容确认时，helper 必须继续等待，返回后立即核对目标内容。
+此注入有意改变两类消息的相对到达时间，不声称在自然的单连接时序下复现竞态。
+上传返回后用同步 DOM 读取断言末尾标记，不用会自行等待的定位器断言掩盖早返回。
+CI 运行 8 项变异检查：删除运行等待、只等上传响应、弱化请求顺序、忽略片段 ID、
+删除内容确认（纯协议和真实浏览器各一次）、忽略请求文件 ID、忽略内容哈希。
+每项必须由指定断言杀掉；浏览器内容确认变异必须触发立即读取的目标内容断言。
+真实片段结束状态使用 Streamlit 1.67 的 `3`；片段 ID 变异另用人为的完整运行状态 `0`
+保护冗余防线，不将这项变异算作真实片段流量中的有效区分。
+观察器忽略不属于本协议的非 JSON / 其他类型 parent 消息，但仍拒绝格式错误的本协议确认。
+这些检查在完整 31 条流程前执行，均不设置失败重试。完整报告保留 `harness_sha256`，
+`harness_files_sha256` 覆盖入口、helper、协议监听、描述提取及服务端确认脚本，并记录 Streamlit 协议版本。
 
 本套覆盖桌面 Chromium 的上述合成路径及 390 px 窄视口检查；Safari、Firefox、真实移动设备、真实照片交互、
 大文件与低内存压力测试仍需另行验证。它不改变 G3/G4，也不证明尺寸、耗线或实物效果。
