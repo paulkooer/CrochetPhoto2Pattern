@@ -21,7 +21,7 @@ CrochetPhoto2Pattern 当前是 **0.2.0-beta.2 工程候选版**：图解代数�
 仅在选定发布候选并完成检查后，按[发布流程](release-process.zh-CN.md)生成新收据。
 日常合并查看各自的 CI，不刷新发布证据，也不把证据哈希抄到本页。
 生成器只接受每项检查最新且成功完成的运行；使用另一个提交的 pip-audit 时，必须与候选树完全一致。
-G3 与 G4 仍是阻断。
+新收据还要求完整验证标记，纯文档 PR 的占位通过不能作为运行时验证。G3 与 G4 仍是阻断。
 
 以下命令只读取证据并核对指定提交，不访问网络或改写文件：
 
@@ -33,7 +33,16 @@ python scripts/bind_release_evidence.py --status --commit <candidate-sha>
 退出码 0 只表示本地一致性与 Git 绑定匹配，不代表全部发布门禁通过，也不认证远端运行来源。
 
 
-变更历史见 [CHANGELOG](../CHANGELOG.md)；逐轮验证的[旧状态快照](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.zh-CN.md)保留在 Git 中，不再追加到当前状态页。
+未汇总的新变更见 [changelog 片段](../changelog.d/README.md)。变更历史见 [CHANGELOG](../CHANGELOG.md)；逐轮验证的[旧状态快照](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.zh-CN.md)保留在 Git 中，不再追加到当前状态页。
+
+## 当前真实照片与审查边界
+
+已使用维护者授权的作品照片进行本地探索性评测。严格模式未达到发布门槛，标注确认与
+分层覆盖仍待完成；这不是通过验收的 G3 基线。原图与逐图报告保留在私有本机目录。
+G4 仍需绑定确切图解的独立实体试钩记录。
+
+#91 合并提交 `d2effababe7a7af4ba332207a55bbd46e9c454f8` 的评测、试钩工具与网格重构
+仍待 Fable 独立验收。下述历史验收不自动覆盖该提交或后续维护改动。
 
 ## 已独立验收的合并基线
 

@@ -23,7 +23,8 @@ Generate a new receipt only after selecting and checking a release candidate, fo
 the [release process](release-process.md). Routine merges use their own CI results and do
 not refresh this receipt or copy its hashes into this page. The generator rejects an
 unfinished or unsuccessful latest check, and accepts a separate pip-audit commit only when
-its tree matches the candidate's tree. G3 and G4 stay blocked.
+its tree matches the candidate's tree. New receipts also require full-validation markers;
+successful documentation placeholders do not establish runtime validation. G3 and G4 stay blocked.
 
 Check whether the saved receipt covers a particular commit without network access or writes:
 
@@ -36,7 +37,18 @@ covered or the receipt is inconsistent. Exit 0 confirms local consistency and th
 it does not mean all release gates pass or authenticate remote runs.
 
 
-See the [changelog](../CHANGELOG_EN.md) for changes. The [prior status snapshot](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.md) preserves the historical per-round verification records in Git.
+See [pending changelog fragments](../changelog.d/README.md) and the [changelog](../CHANGELOG_EN.md) for changes. The [prior status snapshot](https://github.com/paulkooer/CrochetPhoto2Pattern/blob/d12cda6e6dd02cee31c032a8341a8c58d03cd98b/docs/system-status.md) preserves the historical per-round verification records in Git.
+
+## Current photo evaluation and review boundaries
+
+An exploratory local evaluation now uses owner-authorized finished-work photos. The strict run
+did not meet release thresholds; annotation confirmation and stratified coverage remain open.
+It is not an accepted G3 baseline. Originals and per-image reports remain private and local.
+G4 still needs independent physical-trial records bound to exact patterns.
+
+Independent acceptance by Fable remains pending for the evaluation, trial-tool and grid refactors
+in #91, merged as `d2effababe7a7af4ba332207a55bbd46e9c454f8`. The historical acceptance below
+does not extend to that commit or subsequent maintenance.
 
 ## Independently accepted merged baseline
 
