@@ -13,6 +13,7 @@ import platform
 import re
 import sys
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -389,218 +390,216 @@ def _application_version() -> str:
         return "source-tree"
 
 
-def evaluate_dataset(
-    dataset_dir: str | Path,
-    *,
-    runner: EvaluationRunner | None = None,
-    release: bool = False,
-) -> dict[str, Any]:
-    """Evaluate every frozen case and return a report without hiding failures."""
-    _root, manifest, prepared = load_evaluation_dataset(dataset_dir)
-    run_case = runner or _default_local_runner()
-    thresholds = manifest.thresholds
-    if release:
-        floors = EvaluationThresholds(min_cases=30).model_dump()
-        thresholds = EvaluationThresholds(**{
-            key: max(value, floors[key]) for key, value in thresholds.model_dump().items()
-        })
-    case_reports: list[dict[str, Any]] = []
+@dataclass
+class _EvaluationTotals:
+    """Mutable accumulators scoped to one dataset evaluation."""
+    case_reports: list[dict[str, Any]] = field(default_factory=list)
+    part_f1_values: list[float] = field(default_factory=list)
+    flare_matches: list[float] = field(default_factory=list)
+    color_matches: list[float] = field(default_factory=list)
+    pattern_valid_values: list[float] = field(default_factory=list)
+    crochetable_values: list[float] = field(default_factory=list)
+    parade_export_values: list[float] = field(default_factory=list)
+    parade_complete_values: list[float] = field(default_factory=list)
+    parade_syntax_values: list[float] = field(default_factory=list)
+    case_pass_values: list[float] = field(default_factory=list)
+    pipeline_errors: int = 0
+    tag_counts: dict[str, int] = field(default_factory=dict)
 
-    part_f1_values: list[float] = []
-    flare_matches: list[float] = []
-    color_matches: list[float] = []
-    pattern_valid_values: list[float] = []
-    crochetable_values: list[float] = []
-    parade_export_values: list[float] = []
-    parade_complete_values: list[float] = []
-    parade_syntax_values: list[float] = []
-    case_pass_values: list[float] = []
-    pipeline_errors = 0
-    tag_counts: dict[str, int] = {}
 
-    for case, image_path in prepared:
-        for tag in case.tags:
-            tag_counts[tag] = tag_counts.get(tag, 0) + 1
-        expected_parts = set(case.expected.parts)
+def _evaluate_case(
+    case: EvaluationCase, image_path: Path, run_case: EvaluationRunner,
+    thresholds: EvaluationThresholds, totals: _EvaluationTotals,
+) -> None:
+    """Score one frozen image, recording failures and evidence."""
+    for tag in case.tags:
+        totals.tag_counts[tag] = totals.tag_counts.get(tag, 0) + 1
+    expected_parts = set(case.expected.parts)
+    try:
+        # Hash and decode the same bounded, immutable read. Reopening the
+        # path for either operation can attribute different pixels to this hash.
+        limit = MAX_UPLOAD_MB * 1024 * 1024
+        with image_path.open("rb") as handle:
+            image_bytes = handle.read(limit + 1)
+        if len(image_bytes) > limit:
+            raise EvaluationDatasetError(f"{case.id}: image exceeds {MAX_UPLOAD_MB}MB limit")
+        actual_sha = hashlib.sha256(image_bytes).hexdigest()
+        if actual_sha != case.sha256:
+            raise EvaluationDatasetError(
+                f"{case.id}: dataset file changed during evaluation: {case.file}; "
+                f"expected {case.sha256}, got {actual_sha}"
+            )
+        image = load_image_bytes(image_bytes)
+        del image_bytes
+        if image is None:
+            raise EvaluationDatasetError(f"unable to decode image: {case.file}")
         try:
-            # Hash and decode the same bounded, immutable read. Reopening the
-            # path for either operation can attribute different pixels to this hash.
-            limit = MAX_UPLOAD_MB * 1024 * 1024
-            with image_path.open("rb") as handle:
-                image_bytes = handle.read(limit + 1)
-            if len(image_bytes) > limit:
-                raise EvaluationDatasetError(f"{case.id}: image exceeds {MAX_UPLOAD_MB}MB limit")
-            actual_sha = hashlib.sha256(image_bytes).hexdigest()
-            if actual_sha != case.sha256:
-                raise EvaluationDatasetError(
-                    f"{case.id}: dataset file changed during evaluation: {case.file}; "
-                    f"expected {case.sha256}, got {actual_sha}"
-                )
-            image = load_image_bytes(image_bytes)
-            del image_bytes
-            if image is None:
-                raise EvaluationDatasetError(f"unable to decode image: {case.file}")
-            try:
-                result = run_case(image)
-            finally:
-                image.close()
+            result = run_case(image)
+        finally:
+            image.close()
 
-            analysis = result.get("analysis") or {}
-            analysis_parts = set(analysis.get("parts") or [])
-            delivered = _part_quantities((result.get("params") or {}).get("parts") or [], "quantity")
-            designed = _part_quantities((result.get("structure") or {}).get("parts") or [], "count")
-            actual_parts = set(delivered)
-            delivery_consistent = bool(delivered and delivered == designed and actual_parts == analysis_parts)
-            precision, recall, part_f1 = _part_metrics(expected_parts, actual_parts)
-            structure_parts = (result.get("structure") or {}).get("parts") or []
-            got_flare = any(
-                (part.get("name") if isinstance(part, dict) else getattr(part, "name", None))
-                == "裙子"
-                for part in structure_parts
-            )
-            colors = list(analysis.get("recommended_colors") or [])[:3]
-            flare_match = (
-                got_flare == case.expected.flare if case.expected.flare is not None else None
-            )
-            color_match = (
-                bool(set(case.expected.dominant_colors) & set(colors))
-                if case.expected.dominant_colors
-                else None
-            )
+        analysis = result.get("analysis") or {}
+        analysis_parts = set(analysis.get("parts") or [])
+        delivered = _part_quantities((result.get("params") or {}).get("parts") or [], "quantity")
+        designed = _part_quantities((result.get("structure") or {}).get("parts") or [], "count")
+        actual_parts = set(delivered)
+        delivery_consistent = bool(delivered and delivered == designed and actual_parts == analysis_parts)
+        precision, recall, part_f1 = _part_metrics(expected_parts, actual_parts)
+        structure_parts = (result.get("structure") or {}).get("parts") or []
+        got_flare = any(
+            (part.get("name") if isinstance(part, dict) else getattr(part, "name", None))
+            == "裙子"
+            for part in structure_parts
+        )
+        colors = list(analysis.get("recommended_colors") or [])[:3]
+        flare_match = (
+            got_flare == case.expected.flare if case.expected.flare is not None else None
+        )
+        color_match = (
+            bool(set(case.expected.dominant_colors) & set(colors))
+            if case.expected.dominant_colors
+            else None
+        )
 
-            from app.models.validator import validate_pattern
+        from app.models.validator import validate_pattern
 
-            validation = validate_pattern(result.get("params") or {})
-            pattern_valid = bool(validation["ok"] and validation["checked"] > 0)
-            from dataclasses import asdict
+        validation = validate_pattern(result.get("params") or {})
+        pattern_valid = bool(validation["ok"] and validation["checked"] > 0)
+        from dataclasses import asdict
 
-            from app.models.crochetability import at_or_above, crochetability_findings
+        from app.models.crochetability import at_or_above, crochetability_findings
 
-            findings = crochetability_findings(result.get("params") or {})
-            crochetable = not at_or_above(findings, "block")
-            # tier-2（CrochetBench 口径）：结果能否翻译为 CrochetPARADE DSL——
-            # 代数自检之外的"可执行正确性"最近似代理（其官方 translator 为
-            # GPL，不作依赖；这里校验导出 + emitter-level 语法自检）
-            from app.utils.parade_export import export_parade_report, lint_parade_dsl
+        findings = crochetability_findings(result.get("params") or {})
+        crochetable = not at_or_above(findings, "block")
+        # tier-2（CrochetBench 口径）：结果能否翻译为 CrochetPARADE DSL——
+        # 代数自检之外的"可执行正确性"最近似代理（其官方 translator 为
+        # GPL，不作依赖；这里校验导出 + emitter-level 语法自检）
+        from app.utils.parade_export import export_parade_report, lint_parade_dsl
 
-            parade_detail = None
-            try:
-                parade = export_parade_report(result)
-                parade_syntax_ok = not lint_parade_dsl(parade.text)
-                # 策略 v3：导出器已声明不支持的构造（环形起针、跨部件预留半针
-                # 接合）单列；其余内容必须完整翻译。严格完整率另行报告。
-                parade_export_ok = bool(parade_syntax_ok and not parade.failures)
-                parade_complete = bool(parade_syntax_ok and parade.complete)
-                parade_detail = {k: v for k, v in asdict(parade).items() if k != "text"}
-            except Exception:
-                parade_syntax_ok = False
-                parade_export_ok = False
-                parade_complete = False
-            case_passed = bool(
-                delivery_consistent
-                and recall >= thresholds.min_case_part_recall
-                and (flare_match is not False)
-                and (color_match is not False)
-                and pattern_valid
-                and crochetable
-                and parade_export_ok
-            )
-            case_report = {
-                "id": case.id,
-                "file": case.file,
-                "sha256": case.sha256,
-                "rights": case.rights.model_dump(mode="json"),
-                "tags": case.tags,
-                "expected_parts": sorted(expected_parts),
-                "actual_parts": sorted(actual_parts),
-                "review_hints": _review_hints(result),
-                "part_precision": round(precision, 4),
-                "part_recall": round(recall, 4),
-                "part_f1": round(part_f1, 4),
-                "parts_exact": actual_parts == expected_parts,
-                "delivery_consistent": delivery_consistent,
-                "expected_flare": case.expected.flare,
-                "actual_flare": got_flare,
-                "flare_match": flare_match,
-                "expected_dominant_colors": case.expected.dominant_colors,
-                "actual_colors_top3": colors,
-                "color_top3_match": color_match,
-                "pattern_valid": pattern_valid,
-                "crochetable": crochetable,
-                "crochetability": [asdict(f) for f in findings],
-                "parade_export_ok": parade_export_ok,
-                "parade_complete": parade_complete,
-                "parade_syntax_ok": parade_syntax_ok,
-                "parade_export": parade_detail,
-                "pattern_issues": validation["issues"],
-                "passed": case_passed,
-                "error": None,
-            }
-        except Exception as exc:
-            pipeline_errors += 1
-            part_f1 = 0.0
-            flare_match = False if case.expected.flare is not None else None
-            color_match = False if case.expected.dominant_colors else None
-            pattern_valid = False
-            crochetable = False
+        parade_detail = None
+        try:
+            parade = export_parade_report(result)
+            parade_syntax_ok = not lint_parade_dsl(parade.text)
+            # 策略 v3：导出器已声明不支持的构造（环形起针、跨部件预留半针
+            # 接合）单列；其余内容必须完整翻译。严格完整率另行报告。
+            parade_export_ok = bool(parade_syntax_ok and not parade.failures)
+            parade_complete = bool(parade_syntax_ok and parade.complete)
+            parade_detail = {k: v for k, v in asdict(parade).items() if k != "text"}
+        except Exception:
+            parade_syntax_ok = False
             parade_export_ok = False
             parade_complete = False
-            parade_syntax_ok = False
-            case_passed = False
-            case_report = {
-                "id": case.id,
-                "file": case.file,
-                "sha256": case.sha256,
-                "rights": case.rights.model_dump(mode="json"),
-                "tags": case.tags,
-                "expected_parts": sorted(expected_parts),
-                "actual_parts": [],
-                "review_hints": _review_hints(None),
-                "part_precision": 0.0,
-                "part_recall": 0.0,
-                "part_f1": 0.0,
-                "parts_exact": False,
-                "delivery_consistent": False,
-                "expected_flare": case.expected.flare,
-                "actual_flare": None,
-                "flare_match": flare_match,
-                "expected_dominant_colors": case.expected.dominant_colors,
-                "actual_colors_top3": [],
-                "color_top3_match": color_match,
-                "pattern_valid": False,
-                "crochetable": False,
-                "crochetability": [],
-                "parade_export_ok": False,
-                "parade_complete": False,
-                "parade_syntax_ok": False,
-                "parade_export": None,
-                "pattern_issues": [],
-                "passed": False,
-                "error": {"type": type(exc).__name__, "message": str(exc)[:500]},
-            }
+        case_passed = bool(
+            delivery_consistent
+            and recall >= thresholds.min_case_part_recall
+            and (flare_match is not False)
+            and (color_match is not False)
+            and pattern_valid
+            and crochetable
+            and parade_export_ok
+        )
+        case_report = {
+            "id": case.id,
+            "file": case.file,
+            "sha256": case.sha256,
+            "rights": case.rights.model_dump(mode="json"),
+            "tags": case.tags,
+            "expected_parts": sorted(expected_parts),
+            "actual_parts": sorted(actual_parts),
+            "review_hints": _review_hints(result),
+            "part_precision": round(precision, 4),
+            "part_recall": round(recall, 4),
+            "part_f1": round(part_f1, 4),
+            "parts_exact": actual_parts == expected_parts,
+            "delivery_consistent": delivery_consistent,
+            "expected_flare": case.expected.flare,
+            "actual_flare": got_flare,
+            "flare_match": flare_match,
+            "expected_dominant_colors": case.expected.dominant_colors,
+            "actual_colors_top3": colors,
+            "color_top3_match": color_match,
+            "pattern_valid": pattern_valid,
+            "crochetable": crochetable,
+            "crochetability": [asdict(f) for f in findings],
+            "parade_export_ok": parade_export_ok,
+            "parade_complete": parade_complete,
+            "parade_syntax_ok": parade_syntax_ok,
+            "parade_export": parade_detail,
+            "pattern_issues": validation["issues"],
+            "passed": case_passed,
+            "error": None,
+        }
+    except Exception as exc:
+        totals.pipeline_errors += 1
+        part_f1 = 0.0
+        flare_match = False if case.expected.flare is not None else None
+        color_match = False if case.expected.dominant_colors else None
+        pattern_valid = False
+        crochetable = False
+        parade_export_ok = False
+        parade_complete = False
+        parade_syntax_ok = False
+        case_passed = False
+        case_report = {
+            "id": case.id,
+            "file": case.file,
+            "sha256": case.sha256,
+            "rights": case.rights.model_dump(mode="json"),
+            "tags": case.tags,
+            "expected_parts": sorted(expected_parts),
+            "actual_parts": [],
+            "review_hints": _review_hints(None),
+            "part_precision": 0.0,
+            "part_recall": 0.0,
+            "part_f1": 0.0,
+            "parts_exact": False,
+            "delivery_consistent": False,
+            "expected_flare": case.expected.flare,
+            "actual_flare": None,
+            "flare_match": flare_match,
+            "expected_dominant_colors": case.expected.dominant_colors,
+            "actual_colors_top3": [],
+            "color_top3_match": color_match,
+            "pattern_valid": False,
+            "crochetable": False,
+            "crochetability": [],
+            "parade_export_ok": False,
+            "parade_complete": False,
+            "parade_syntax_ok": False,
+            "parade_export": None,
+            "pattern_issues": [],
+            "passed": False,
+            "error": {"type": type(exc).__name__, "message": str(exc)[:500]},
+        }
 
-        part_f1_values.append(part_f1)
-        if flare_match is not None:
-            flare_matches.append(float(flare_match))
-        if color_match is not None:
-            color_matches.append(float(color_match))
-        pattern_valid_values.append(float(pattern_valid))
-        crochetable_values.append(float(crochetable))
-        parade_export_values.append(float(parade_export_ok))
-        parade_complete_values.append(float(parade_complete))
-        parade_syntax_values.append(float(parade_syntax_ok))
-        case_pass_values.append(float(case_passed))
-        case_reports.append(case_report)
+    totals.part_f1_values.append(part_f1)
+    if flare_match is not None:
+        totals.flare_matches.append(float(flare_match))
+    if color_match is not None:
+        totals.color_matches.append(float(color_match))
+    totals.pattern_valid_values.append(float(pattern_valid))
+    totals.crochetable_values.append(float(crochetable))
+    totals.parade_export_values.append(float(parade_export_ok))
+    totals.parade_complete_values.append(float(parade_complete))
+    totals.parade_syntax_values.append(float(parade_syntax_ok))
+    totals.case_pass_values.append(float(case_passed))
+    totals.case_reports.append(case_report)
 
-    macro_part_f1 = _mean(part_f1_values)
-    flare_accuracy = _mean(flare_matches)
-    color_top3_accuracy = _mean(color_matches)
-    pattern_valid_rate = _mean(pattern_valid_values)
-    crochetable_rate = _mean(crochetable_values)
-    parade_export_rate = _mean(parade_export_values)
-    case_pass_rate = _mean(case_pass_values)
+
+def _evaluation_report(
+    manifest: EvaluationManifest, thresholds: EvaluationThresholds, totals: _EvaluationTotals,
+    runner: EvaluationRunner | None, release: bool,
+) -> dict[str, Any]:
+    """Aggregate scored cases and evaluate release policy."""
+    macro_part_f1 = _mean(totals.part_f1_values)
+    flare_accuracy = _mean(totals.flare_matches)
+    color_top3_accuracy = _mean(totals.color_matches)
+    pattern_valid_rate = _mean(totals.pattern_valid_values)
+    crochetable_rate = _mean(totals.crochetable_values)
+    parade_export_rate = _mean(totals.parade_export_values)
+    case_pass_rate = _mean(totals.case_pass_values)
     passed = bool(
-        len(case_reports) >= thresholds.min_cases
+        len(totals.case_reports) >= thresholds.min_cases
         and macro_part_f1 is not None
         and macro_part_f1 >= thresholds.min_macro_part_f1
         and case_pass_rate is not None
@@ -626,7 +625,8 @@ def evaluate_dataset(
         "complex_background": {"complex-background"},
         "low_contrast": {"low-contrast"},
     }
-    missing_groups = [name for name, tags in required_groups.items() if not tags.intersection(tag_counts)]
+    missing_groups = [name for name, tags in required_groups.items()
+                      if not tags.intersection(totals.tag_counts)]
     reasons = []
     if unique_images < 30:
         reasons.append("requires at least 30 distinct image SHA-256 hashes")
@@ -634,14 +634,16 @@ def evaluate_dataset(
         reasons.append("duplicate image content must be removed")
     if missing_groups:
         reasons.append("missing scene groups: " + ", ".join(missing_groups))
-    if len(flare_matches) != len(case_reports) or len(color_matches) != len(case_reports):
+    if (len(totals.flare_matches) != len(totals.case_reports)
+            or len(totals.color_matches) != len(totals.case_reports)):
         reasons.append("every case requires flare and dominant-color labels")
     if {case.expected.flare for case in manifest.cases} != {True, False}:
         reasons.append("requires both flare-positive and flare-negative labels")
     fixed_case_pass_rate = _mean([
         float(c.get("part_recall", 0) >= 0.5
               and c["flare_match"] is True and c["color_top3_match"] is True
-              and c["pattern_valid"] and c["crochetable"] and c["parade_export_ok"]) for c in case_reports
+              and c["pattern_valid"] and c["crochetable"] and c["parade_export_ok"])
+        for c in totals.case_reports
     ])
     fixed_quality = bool(
         macro_part_f1 is not None and macro_part_f1 >= 0.6
@@ -654,18 +656,18 @@ def evaluate_dataset(
         reasons.append("quality metrics do not meet release floors and configured thresholds")
     # Policy v2: evaluate minority classes and the artifact, not just the
     # average recognition score. These are engineering acceptance floors.
-    exact_rate = _mean([float(c["parts_exact"]) for c in case_reports])
-    labels = sorted({name for c in case_reports for name in c["expected_parts"]})
+    exact_rate = _mean([float(c["parts_exact"]) for c in totals.case_reports])
+    labels = sorted({name for c in totals.case_reports for name in c["expected_parts"]})
     part_recall = {
-        name: _mean([float(name in c["actual_parts"]) for c in case_reports
+        name: _mean([float(name in c["actual_parts"]) for c in totals.case_reports
                      if name in c["expected_parts"]]) for name in labels
     }
     flare_recall = {
-        str(label).lower(): _mean([float(c["flare_match"] is True) for c in case_reports
+        str(label).lower(): _mean([float(c["flare_match"] is True) for c in totals.case_reports
                                   if c["expected_flare"] is label]) for label in (True, False)
     }
     baseline = {"头部", "身体", "手臂", "腿部"}
-    baseline_f1 = _mean([_part_metrics(set(c["expected_parts"]), baseline)[2] for c in case_reports])
+    baseline_f1 = _mean([_part_metrics(set(c["expected_parts"]), baseline)[2] for c in totals.case_reports])
     sparse_groups = [name for name, tags in required_groups.items()
                      if sum(bool(tags.intersection(c.tags)) for c in manifest.cases) < 5]
     if sparse_groups:
@@ -676,7 +678,7 @@ def evaluate_dataset(
         reasons.append("delivered part exact-match rate must be at least 0.8")
     if any(value is None or value < 0.8 for value in [*part_recall.values(), *flare_recall.values()]):
         reasons.append("each part and each flare class requires recall of at least 0.8")
-    if any(not c["delivery_consistent"] for c in case_reports):
+    if any(not c["delivery_consistent"] for c in totals.case_reports):
         reasons.append("analysis, structure and delivered parts/counts must agree in every case")
     if macro_part_f1 is None or baseline_f1 is None or macro_part_f1 <= baseline_f1:
         reasons.append("delivered part macro F1 must exceed the fixed humanoid-template baseline")
@@ -708,25 +710,46 @@ def evaluate_dataset(
         "dataset": manifest.dataset.model_dump(mode="json"),
         "thresholds": thresholds.model_dump(mode="json"),
         "summary": {
-            "cases": len(case_reports),
-            "tag_counts": dict(sorted(tag_counts.items())),
-            "pipeline_errors": pipeline_errors,
-            "review_hint_metrics": _review_hint_metrics(case_reports),
+            "cases": len(totals.case_reports),
+            "tag_counts": dict(sorted(totals.tag_counts.items())),
+            "pipeline_errors": totals.pipeline_errors,
+            "review_hint_metrics": _review_hint_metrics(totals.case_reports),
             "macro_part_f1": macro_part_f1,
             "case_pass_rate": case_pass_rate,
-            "flare_labeled_cases": len(flare_matches),
+            "flare_labeled_cases": len(totals.flare_matches),
             "flare_accuracy": flare_accuracy,
-            "color_labeled_cases": len(color_matches),
+            "color_labeled_cases": len(totals.color_matches),
             "color_top3_accuracy": color_top3_accuracy,
             "pattern_valid_rate": pattern_valid_rate,
             "crochetable_rate": crochetable_rate,
             "parade_export_rate": parade_export_rate,
-            "parade_complete_rate": _mean(parade_complete_values),
-            "parade_syntax_rate": _mean(parade_syntax_values),
+            "parade_complete_rate": _mean(totals.parade_complete_values),
+            "parade_syntax_rate": _mean(totals.parade_syntax_values),
             "passed": passed,
         },
-        "cases": case_reports,
+        "cases": totals.case_reports,
     }
+
+
+def evaluate_dataset(
+    dataset_dir: str | Path,
+    *,
+    runner: EvaluationRunner | None = None,
+    release: bool = False,
+) -> dict[str, Any]:
+    """Evaluate every frozen case and return a report without hiding failures."""
+    _root, manifest, prepared = load_evaluation_dataset(dataset_dir)
+    run_case = runner or _default_local_runner()
+    thresholds = manifest.thresholds
+    if release:
+        floors = EvaluationThresholds(min_cases=30).model_dump()
+        thresholds = EvaluationThresholds(**{
+            key: max(value, floors[key]) for key, value in thresholds.model_dump().items()
+        })
+    totals = _EvaluationTotals()
+    for case, image_path in prepared:
+        _evaluate_case(case, image_path, run_case, thresholds, totals)
+    return _evaluation_report(manifest, thresholds, totals, runner, release)
 
 
 def write_evaluation_report(report: dict[str, Any], destination: str | Path) -> Path:

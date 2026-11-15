@@ -8,6 +8,10 @@ formats may still evolve during Beta; incompatible changes must include migratio
 
 ## Unreleased
 
+### Changed — 2026-11-15 Generator, evaluation, trial and UI module organization
+
+- Consolidate former #77–#83: extract shape generators, use `PartKind` in generation and assembly, separate evaluation stages and trial tools, and organize grid UI and stylesheet sections. Preserve saved names, complete output snapshots, record formats, widget order and CSS bytes; G3/G4 thresholds remain unchanged.
+
 ### Fixed — 2026-11-14 Browser upload content correlation
 
 - Require a successful full run to acknowledge the target file ID and actual byte SHA-256, rejecting an older queued rerun that only starts after the upload request. The isolated test launcher installs the acknowledgement adapter; production application code is unchanged. Path inputs use one byte snapshot for hashing and uploading.

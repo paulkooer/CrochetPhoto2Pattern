@@ -121,6 +121,17 @@ PART_LABELS_EN: dict[PartKind, str] = {
 # 不把未知结构静默替换成球体。显式设计的旧结构仍可导入。
 PART_NAMES = tuple(PART_LABELS_ZH[k] for k in PartKind)
 
+_PART_KINDS_BY_NAME = {label: kind for kind, label in PART_LABELS_ZH.items()}
+
+
+def part_kind_from_name(name: object) -> PartKind | None:
+    """Resolve canonical saved names without reinterpreting custom legacy names.
+
+    Stable ids and English labels are not saved-name aliases. Converting those
+    would change explicitly designed legacy parts named, for example, 'head'.
+    """
+    return _PART_KINDS_BY_NAME.get(name) if isinstance(name, str) else None
+
 
 class CrochetStitch(BaseModel):
     row: IntegerCount = Field(gt=0)
