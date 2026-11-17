@@ -1,0 +1,14 @@
+{
+  "zh": [
+    "补齐开衫三段用线的另接线、断线、暂停、恢复和藏线步骤，并检查当前工作环、线端状态与跨分段正反面连续性。",
+    "指定袖口接合版列出三次断线及六个线端的藏线；打开袖口版明确暂停工作环，保留后续接合用线。收尾动作不改变织物针位计数。",
+    "本构造统一正面分袖与挑袖，肩深按可用奇数行量化并显示估算值；旧工序标记为未跟踪用线。",
+    "生成下载缓存同时绑定输入和引擎版本；用线收尾记录仅表示图解已列出步骤，仍不证明实钩、边缘或合身通过。"
+  ],
+  "en": [
+    "Add explicit yarn starts, fasten-offs, parked/resumed loops and individual end-weaving instructions with active-loop and cross-section side checks.",
+    "Selected cuff seams include three fasten-offs and six end-weaving instructions; open cuffs preserve marked loops and their yarn supply. Finishing does not consume fabric sites.",
+    "Use RS split/pickup for this method, quantize depth to supported odd rows, and mark legacy paths as yarn-untracked.",
+    "Bind downloads to both inputs and engine version. Instruction accounting does not establish physical execution, edge quality or fit."
+  ]
+}

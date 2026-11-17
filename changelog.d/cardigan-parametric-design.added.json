@@ -1,0 +1,14 @@
+{
+  "zh": [
+    "新增对称五段式短针领肩设计：由领口、衣身展开宽度、袖围和肩深搜索配针与加针行，明示量化调整及不可满足的约束。",
+    "新增连续门襟与按距离定位的扣眼；工作边可显式转移引用归属，防止旧别名重复占位。",
+    "新增开衫组合设计CLI及手动页入口，生成衣身、下摆、门襟和双袖工序，区分假设、教程声明和用户小样密度。缺数据保留阶段，不补默认模板。",
+    "袖口默认保持打开，可显式选择末行BLO与首行预留FLO的接合候选。起链根部边、折向及合身仍待实物验证，不表示照片自动还原或整件试钩准备完成。"
+  ],
+  "en": [
+    "Add constrained five-panel SC yoke synthesis from neckline, body span, sleeve circumference and depth with explicit count adjustments.",
+    "Add continuous button-band synthesis and dimensional buttonhole placement; explicit edge-path transfers preserve canonical sites and invalidate old reservation aliases.",
+    "Add staged cardigan CLI and manual UI, with separate hypothetical, reference and user-entered gauges. Missing inputs preserve known stages without template fallback.",
+    "Keep cuffs open by default or explicitly select a last-row BLO to reserved first-row FLO seam candidate. Root-edge finishing, physical orientation, fit and photo-driven design remain unverified."
+  ]
+}

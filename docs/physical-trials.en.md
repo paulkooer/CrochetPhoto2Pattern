@@ -187,6 +187,36 @@ holdout records must explicitly set `cohort="validation"`.
 - Any changed round, stitch count, or part requires `pattern_modified=true` plus a
   `modifications` entry. Modified trials remain visible but are excluded from calibration.
 
+### Consistent first-trial procedure
+
+New patterns use the revised construction guidance. Restoring an old project or trial retains its
+original instructions and bound identity. Save the old record before regenerating and starting a new
+trial; restoration does not silently upgrade instructions.
+
+- Make a straight tube swatch with the finished item's yarn, hook, single crochet and spiral rounds.
+  Do not stuff or stretch it. Lay it gently flat and measure one face away from the foundation and
+  edges. Measure complete stitches and rounds over their actual lengths, then scale each count to
+  10 cm. Do not combine both layers or stretch a small swatch to 10 cm.
+- Use the head's stated eye round. Once that round has been crocheted, install safety eyes and
+  secure the washers from inside while the opening is accessible, before stuffing and closure.
+  Stuff gradually. Round 1 is the crown; the final-round side is the bottom that joins the body.
+  If stuffing spherical ears, add a little before the final rounds.
+- Test-fit a separate skirt on the unstuffed, unassembled body before attaching adjacent parts.
+  Equal stitch counts do not establish fit. Do not force a tight skirt; adjust the pattern and
+  start a new trial record. Fit and ease still require physical verification.
+- Lay the finished item flat with legs naturally straight and unstretched. Measure crown to sole,
+  excluding hats, ears and top decorations. Without legs, measure to the body bottom and record
+  the endpoints in the notes.
+- Add head width and height, crown/base flatness, assembly difficulties, and any unclear or
+  blocking part and round to `observation.notes`. Keep finished-item photos separately; the trial
+  ZIP does not store them. For a photo-derived trial, also record manual part, proportion and
+  color corrections.
+
+Make C1, C3, C2, V1 and V2 before repeats. After a second maker contributes one calibration and
+one validation item, at least one more calibration item is still needed to reach five calibration
+and three validation records. Both cohorts still require two makers and disjoint designs.
+Record modifications, failures and poor fit honestly; never substitute estimates for measurements.
+
 ## 3. Aggregate analysis
 
 ```bash

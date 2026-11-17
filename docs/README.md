@@ -13,6 +13,8 @@
 | Authorized real-photo evaluation / 授权真实照片评测 | [evaluation.en.md](evaluation.en.md) | [evaluation.md](evaluation.md) |
 | Third-party rights and takedown / 第三方权利与下架 | [policy](../THIRD_PARTY_CONTENT_EN.md) · [process](../NOTICE_AND_TAKEDOWN_EN.md) | [政策](../THIRD_PARTY_CONTENT.md) · [流程](../NOTICE_AND_TAKEDOWN.md) |
 | Physical trials and calibration / 实体试钩与校准 | [physical-trials.en.md](physical-trials.en.md) | [physical-trials.md](physical-trials.md) |
+| Dressed-doll construction prototype / 穿衣人偶结构原型 | [Usage and boundaries](dressed-doll-design.en.md) | [使用与边界](dressed-doll-design.md) |
+| Complex construction roadmap / 复杂构造推进路线 | [Gates and working-path experiment](construction-roadmap.en.md) | [验收关口与工序实验](construction-roadmap.md) |
 | Processing flow / 系统处理流程 | [flow.en.md](flow.en.md) | [flow.md](flow.md) |
 | Saved crochet projects and reserved-loop joins / 钩织工程与预留半针接合 | [User guide](../README.md#save-and-reopen-a-pattern) · [Schemas](schemas/project_state.schema.json) | [使用与格式](project-format.md) |
 | Editable grid projects and recoloring history / 平面网格工程与修色历史 | [Features](../README.md#features) | [使用与失败保护](project-format.md#平面网格工程与修色历史) |

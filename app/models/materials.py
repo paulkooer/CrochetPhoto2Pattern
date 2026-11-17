@@ -177,7 +177,8 @@ def yarn_requirements(parts: Sequence[Mapping[str, Any]], gauge: Gauge = DEFAULT
 
 
 def _materials_and_summary(parts: Sequence[Mapping[str, Any]], gauge: Gauge = DEFAULT_GAUGE,
-                           yarn_spec: dict | None = None) -> tuple[list[dict[str, Any]], dict]:
+                           yarn_spec: dict | None = None, *,
+                           updated_guidance: bool = True) -> tuple[list[dict[str, Any]], dict]:
     """One purchasable yarn list, followed by accessories. No duplicate group totals."""
     materials, summary = yarn_requirements(parts, gauge, yarn_spec)
     # 一体件会把"头部/身体"合并改名"头身（一体）"；显式识别这三个
@@ -229,18 +230,22 @@ def _materials_and_summary(parts: Sequence[Mapping[str, Any]], gauge: Gauge = DE
                         "端部折回成环并包裹防戳；儿童玩具勿用任何硬质"
                         "内骨架，改毛条等软质填充",
         })
-    # CYC 分档是"密度→档位"参考（见 Gauge.cyc_label）：前者是玩偶紧钩
-    # 惯例的钩针建议，后者是同密度的 CYC 标准钩针区间——并列展示而非混淆。
+    # 密度不能唯一确定线材重量档；购买清单仅给玩偶紧钩的试钩起点，
+    # 不再把由密度反推的 CYC 档位并列成另一种线材购买规格。
+    def hook_label(selected: Gauge) -> str:
+        detail = "仅作试钩起点，以实测密度为准" if updated_guidance else selected.cyc_label
+        return f"{selected.hook_yarn_label}（{detail}）"
+
     if has_independent_gauge({"parts":parts, "gauge":gauge.__dict__}):
         labels = dict.fromkeys(
-            f"{selected.hook_yarn_label}（{selected.cyc_label}）"
+            hook_label(selected)
             for selected in (gauge_for_part(p, gauge) for p in parts))
         for label in labels:
             materials.append({"item":label, "quantity":"按各部件小样核对实际针号；相同参考规格勿重复购买",
                               "count":1, "unit":"把", "scope":"reusable"})
     else:
         materials.append({
-            "item": f"{gauge.hook_yarn_label}（{gauge.cyc_label}）",
+            "item": hook_label(gauge),
             "quantity": "1 把", "count": 1, "unit": "把", "scope": "reusable",
         })
     materials.append({"item": "缝合针", "quantity": "1 根",

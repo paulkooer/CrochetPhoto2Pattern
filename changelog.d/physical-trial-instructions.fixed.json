@@ -1,0 +1,10 @@
+{
+  "zh": [
+    "修正试钩说明：安全眼在填充和封口前按部件圈号安装，明确头顶与连接方向、球形部件填充时机，独立裙筒在身体填充与装配前试套。",
+    "新图解材料清单不再把按密度反推的 CYC 等级并列为购买规格；Markdown/PDF 补充螺旋圈小样与统一总高测量口径，并区分球形目标直径与针数换算估值。旧工程与试钩恢复保留原说明和绑定身份；实际合身和可钩性仍待实体试钩。"
+  ],
+  "en": [
+    "Correct physical-trial instructions: install safety eyes at the part's stated round before stuffing and closure; clarify head orientation and spherical-part stuffing; test-fit separate skirts before body stuffing and assembly.",
+    "Remove gauge-inferred CYC categories from new purchase specifications. Add spiral swatch and finished-height procedures to Markdown/PDF, and distinguish target sphere diameters from stitch-derived estimates. Restored projects and trials retain their original guidance and identity. Fit and crochetability still require physical trials."
+  ]
+}

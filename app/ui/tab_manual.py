@@ -175,3 +175,11 @@ def render_tab_manual() -> None:
 
     if "manual_result" in st.session_state:
         render_results(st.session_state.manual_result, "manual_result")
+
+    from app.ui.cardigan_design import render_cardigan_designer
+    from app.ui.dressed_doll import render_dressed_doll_designer
+    from app.ui.working_paths import render_working_path_reader
+
+    render_cardigan_designer()
+    render_dressed_doll_designer()
+    render_working_path_reader()

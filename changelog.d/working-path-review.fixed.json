@@ -1,0 +1,12 @@
+{
+  "zh": [
+    "修复同段连续翻面行分段乱序及保留边别名绕过顺序检查的问题，并校验正反面交替。",
+    "继续工作环起链必须声明来源；未用锁针侧注销必须引用真实锁针位置。来源结果单列未钩织的留边声明，避免把账目闭合误读为实钩完成。",
+    "自查撤回下摆60行的确定性推导，完整开衫保留为设计假设稿，暂停整件试钩；袖窿小样不依赖这些假设。自查不等同独立审核。"
+  ],
+  "en": [
+    "Reject scrambled source order in turned rows of a declared section, including through held aliases, and require alternating fabric sides.",
+    "Require an anchor for live-loop chain continuation and genuine chain provenance for unused-chain retirement. Report non-working border declarations separately from stitch operations.",
+    "Withdraw the earlier 60-row hem derivation. Keep the full cardigan as an unverified design hypothesis on hold for whole-garment trials; the armhole exercise does not depend on those choices. Self-review is not independent review."
+  ]
+}

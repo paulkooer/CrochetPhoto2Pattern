@@ -2,6 +2,7 @@
 crochet2pattern = "app.cli:main"
 crochet2pattern-eval = "app.evaluation:main"
 crochet2pattern-trials = "app.trials:main"
+crochet2pattern-doll = "app.doll_cli:main"
 
 [build-system]
 requires = ["setuptools>=77.0", "wheel"]

@@ -1,0 +1,12 @@
+{
+  "zh": [
+    "新增 working-path-v2 人工工序检查：起链、保留边、锁针桥转角、行端挑针、预留半针、扣眼、接合引拔和接缝均记录明确来源，并检查行号及闭合翻面顺序。",
+    "手动页新增人工工序校验阅读入口与 --plan CLI，支持审查说明、逐行操作表、袖窿来源示意及 JSON/Markdown/PDF 导出；输入改变后禁用旧下载，排版失败保留工序。",
+    "复杂构造路线明确区分已知教程的人工录入、候选修正与照片生成；未接入自动照片还原，不代表合身、实钩或 G3/G4 通过。"
+  ],
+  "en": [
+    "Add working-path-v2 manual construction checking with explicit foundations, held edges, bridge corners, row ends, reserved half loops, buttonholes, binding slips and paired seams, including row-number and invisible-join turn-order checks.",
+    "Add a manual recipe reader and --plan CLI, review notes, readable row tables, armhole source diagrams and JSON/Markdown/PDF exports; source changes disable stale downloads and PDF failures retain the plan.",
+    "Distinguish manually encoded known tutorials and candidate repairs from photo generation. No automatic photo reconstruction, physical fit, execution or G3/G4 qualification is established."
+  ]
+}

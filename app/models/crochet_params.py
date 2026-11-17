@@ -517,8 +517,9 @@ def refresh_derived(params: PatternParams, *, previous_parts: list[PartData] | N
                            "rows_per_10cm": gauge.rows_per_10cm}
     if params.get("yarn_spec") is not None:
         params["yarn_spec"] = YarnSpec.model_validate(params["yarn_spec"]).model_dump()
+    updated_guidance = params.get("construction_guidance_version") == 1
     params["materials"], params["material_summary"] = _materials_and_summary(
-        parts, gauge, params.get("yarn_spec"))
+        parts, gauge, params.get("yarn_spec"), updated_guidance=updated_guidance)
     params["shaping"] = _shaping_meta(gauge)
     # 装配说明同样是 parts 的函数：删部件后不得残留对应步骤（F5）；
     # 裙子做法按生成时的口径保留
@@ -526,7 +527,8 @@ def refresh_derived(params: PatternParams, *, previous_parts: list[PartData] | N
     params["assembly_instructions"] = build_assembly(
         set(quantities), params.get("skirt_style", "ring"), quantities,
         params.get("assembly_plan"), openings=_openings_by_part(parts),
-        stitch_attachments=params.get("stitch_attachments"), opening_rows=opening_rows_by_part(parts))
+        stitch_attachments=params.get("stitch_attachments"), opening_rows=opening_rows_by_part(parts),
+        updated_guidance=updated_guidance)
     return params
 
 
@@ -717,21 +719,28 @@ class CrochetParamsGenerator:
             shape_label = {"ideal": "理想球形（sinθ 分布）",
                            "egg": "蛋形（下半收窄）"}.get(
                                style.sphere_mode, "标准球形")
+            finishing = ("再按末圈说明收口。" if head_opening_stitches is None
+                         else "保留末圈颈部开口，填充后用于缝合。")
             notes = (
                 f"{shape_label}，最大 {max_st} 针。"
+                "第 1 圈为头顶，末圈一侧为连接身体的头底。"
                 # 眼位锚定在最大围附近（专业图解以鼻线/眼窝等地标
                 # 定位——Supergurumi 蜜蜂"鼻线后2行"；本生成器无
                 # 地标，用几何近似）
-                f"第 {eye_round} 圈（最大围附近）安装安全眼（{eye_mm}mm，"
+                f"第 {eye_round} 圈安装安全眼（{eye_mm}mm，"
                 f"两眼间隔约 {eye_gap} 针，可依眼径与脸型调整）。"
-                "建议先钩小样测试张力。"
+                "安全眼须在填充和封口前安装并扣好内侧垫片；"
+                f"最后几圈前分次填充棉花，{finishing}"
+                f"目标头径 {diameter:g}cm；针数换算直径约 "
+                f"{max_st * part_gauge.stitch_w_cm / 3.14159:.1f}cm（未实测）。"
             )
             if head_opening_stitches is not None:
                 notes += (f"颈部留口：第 {rounds_raw[-1]['row']} 圈保留 {head_opening_stitches} 针，"
                           "不收口；开口大小与缝合分配需试钩核对。")
         else:
             color = sp.get("color", "body")
-            notes = f"小球形部件（直径 {diameter}cm），完成后缝合到主体。"
+            notes = (f"小球形部件（目标直径 {diameter}cm）；如需填充，"
+                     "在最后几圈前少量填棉，再按末圈说明收口，完成后缝合到主体。")
         if ladder_unreachable:
             notes += _LADDER_GAUGE_WARNING
         part = CrochetPart(
@@ -803,7 +812,9 @@ class CrochetParamsGenerator:
         if style.skirt_style == "attached":
             skirt_notes = "挑针接裙，免缝合；具体基底圈、预留圈与针目范围见装配说明。"
         else:
-            skirt_notes += "腰部套入身体后缝合固定。"
+            skirt_notes += ("先在身体未填棉、未装配时将腰部套入身体试套；"
+                            "同针数不保证能套合，过紧勿强拉，调整图解后再试套。"
+                            "试套通过后暂留腰位，完成身体填充和装配后再缝合固定。")
         if style.ruffle_hem:
             skirt_notes += "末圈波浪裙摆。"
         part = CrochetPart(
@@ -1098,6 +1109,7 @@ class CrochetParamsGenerator:
             "material_summary": material_summary,
             "parts": part_dicts,
             "assembly_instructions": assembly,
+            "construction_guidance_version": 1,
             "difficulty": analysis.difficulty,
             "estimated_time_minutes": estimate_minutes(part_dicts),
             "time_estimate_basis": time_estimate_basis(),
