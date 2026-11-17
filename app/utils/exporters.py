@@ -16,6 +16,8 @@ from app.models.stitch_notation import (
     mentions_invisible_decrease,
 )
 from app.models.stitches import (
+    AMIGURUMI_SWATCH_GUIDANCE,
+    FINISHED_HEIGHT_GUIDANCE,
     PLACEMENT_GUIDANCE,
     ROUND_WORKING_GUIDANCE,
     STITCH_LEGEND_US,
@@ -128,6 +130,7 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
     else:
         lines.append("> 密度（小样）：未记录（按经典图解默认 13 针 × 16 行 / 10cm）")
         lines.append("")
+    lines.extend(["> " + AMIGURUMI_SWATCH_GUIDANCE, "", "> " + FINISHED_HEIGHT_GUIDANCE, ""])
     from app.models.validator import shaping_policy_for_pattern
     shaping = shaping_policy_for_pattern(params)
     shaping_label = "默认密度" if has_independent_gauge(params) else "当前密度"
@@ -214,7 +217,8 @@ def export_markdown(params: Mapping[str, Any], analysis: Mapping[str, Any] | Non
         if caption := part_gauge_text(pd, g):
             lines.append(f"- **部件密度**：{caption}")
         if pd.get("diameter_cm"):
-            lines.append(f"- **直径**：{pd['diameter_cm']} cm")
+            diameter_label = "目标直径" if pd.get("type") == "sphere" else "直径"
+            lines.append(f"- **{diameter_label}**：{pd['diameter_cm']} cm")
         if pd.get("height_cm"):
             lines.append(f"- **高度/长度**：{pd['height_cm']} cm")
         if pd.get("opening_row") is not None:

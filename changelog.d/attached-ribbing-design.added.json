@@ -1,0 +1,12 @@
+{
+  "zh": [
+    "新增沿边肋纹设计模块：由目标长度、宽度及肋纹自己的针行密度生成行数、接合分配和明确逐行工序，支持短针与引拔、外缘双半针及首行半针预留。",
+    "起链后翻面与前一行翻面分开记录、导出；基底位置和当前工作环继续接受来源检查，不自动注销剩余边或猜测接缝方向。",
+    "新增 app.ribbing_design CLI，缺少密度时只输出设计缺口，不产生图解。当前仍是手工指定做法的设计候选，未接照片自动选择，也未建立实钩或合身证据。"
+  ],
+  "en": [
+    "Add attached-ribbing synthesis from target dimensions and construction-specific gauges to row counts, attachment distributions and explicit SC/slip-stitch working paths.",
+    "Record foundation-chain turns separately from preceding-row turns. Preserve unused edges and optional first-row loops without retiring sites or guessing seam orientation.",
+    "Add app.ribbing_design CLI. Missing gauges produce a gap report without a pattern; manual method selection, physical execution, fit and photo-driven synthesis remain unverified."
+  ]
+}

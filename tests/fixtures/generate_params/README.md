@@ -1,7 +1,13 @@
 # Generator output snapshots
 
-These fixtures freeze complete serialized `generate_params` results from source commit
-`60084d09db40d8f5d068980b99c632f736fc5de8`, before the shape-dispatch refactor.
+These fixtures freeze complete serialized `generate_params` results. The original capture
+preceded the shape-dispatch refactor at `60084d09db40d8f5d068980b99c632f736fc5de8`;
+`baseline_commit` retains that provenance. Revision `construction-guidance-v1` incorporates
+the reviewed eye/stuffing order, skirt test-fit, diameter and purchase-guidance corrections.
+Before refreshing, all 102 cases were compared against the original capture: changes were
+limited to part notes, assembly prose, hook purchase labels and the new guidance marker.
+Every ordered stitch table and numeric output remained unchanged. `baseline_commit` does
+not claim the revised fixture is the exact output of that historical commit.
 
 There are 102 cases: all 72 combinations of three gauge presets, three sphere modes,
 one-piece on/off, ring/attached skirts, and ruffled/plain hems; nine exact neck openings;

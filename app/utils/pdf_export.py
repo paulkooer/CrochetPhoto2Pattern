@@ -15,6 +15,8 @@ from typing import Any
 from app import PRODUCT_NAME, theme
 from app.models.colors import UNRESOLVED_DISPLAY_HEX, resolve_display_color, screen_swatch_suffix
 from app.models.stitches import (
+    AMIGURUMI_SWATCH_GUIDANCE,
+    FINISHED_HEIGHT_GUIDANCE,
     PLACEMENT_GUIDANCE,
     ROUND_WORKING_GUIDANCE,
     STITCH_LEGEND_US,
@@ -129,6 +131,8 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
         story.append(Paragraph(
             "密度（小样）：未记录（按经典图解默认 13 针 × 16 行 / 10cm）",
             small))
+    story.append(Paragraph(esc(AMIGURUMI_SWATCH_GUIDANCE), small))
+    story.append(Paragraph(esc(FINISHED_HEIGHT_GUIDANCE), small))
     from app.models.validator import shaping_policy_for_pattern
     shaping = shaping_policy_for_pattern(params)
     shaping_label = "默认密度" if has_independent_gauge(params) else "当前密度"
@@ -203,7 +207,8 @@ def export_pdf(params: Mapping[str, Any], analysis: Mapping[str, Any] | None = N
                 "圈次说明里的换线步骤描述共用针法；已单独改色的份整份使用自己的颜色。", small))
         dims = []
         if pd.get("diameter_cm"):
-            dims.append(f"直径 {esc(pd['diameter_cm'])}cm")
+            diameter_label = "目标直径" if pd.get("type") == "sphere" else "直径"
+            dims.append(f"{diameter_label} {esc(pd['diameter_cm'])}cm")
         if pd.get("height_cm"):
             dims.append(f"高 {esc(pd['height_cm'])}cm")
         if pd.get("opening_row") is not None:

@@ -13,7 +13,8 @@ _HEADLESS = [
     *sorted((_APP / "services").rglob("*.py")),
     *sorted((_APP / "trial_tools").rglob("*.py")),
     *(_APP / name for name in ("__init__.py", "cli.py", "evaluation.py", "trials.py",
-                               "schemas.py", "gauge_constraints.py")),
+                               "schemas.py", "gauge_constraints.py", "doll_cli.py", "working_paths.py",
+                               "ribbing_design.py", "cardigan_design.py")),
 ]
 
 
@@ -41,7 +42,8 @@ def test_headless_modules_do_not_import_ui_or_streamlit(path):
 
 
 def test_headless_entry_points_load_without_streamlit():
-    code = ("import sys, app.cli, app.evaluation, app.trials, app.utils.project; "
+    code = ("import sys, app.cli, app.doll_cli, app.working_paths, app.ribbing_design, "
+            "app.cardigan_design, app.evaluation, app.trials, app.utils.project; "
             "print(sorted(m for m in sys.modules if m == 'streamlit' or m.startswith('app.ui')))")
     out = subprocess.run([sys.executable, "-c", code], cwd=_APP.parent, capture_output=True,
                          text=True, check=True, timeout=60).stdout.strip()

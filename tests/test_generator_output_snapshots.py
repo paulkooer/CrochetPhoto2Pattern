@@ -1,4 +1,4 @@
-"""Freeze complete serialized generator outputs before moving its implementation.
+"""Freeze complete serialized generator outputs, including reviewed prose revisions.
 
 Refresh explicitly with ``python -m tests.test_generator_output_snapshots --write``
 only after reviewing an intentional behavior change. Pytest never rewrites fixtures.
@@ -19,6 +19,7 @@ from app.schemas import PART_NAMES, ImageAnalysis
 
 FIXTURES = Path(__file__).parent / "fixtures" / "generate_params"
 SOURCE_COMMIT = "60084d09db40d8f5d068980b99c632f736fc5de8"
+SNAPSHOT_REVISION = "construction-guidance-v1"
 MODES = ("ladder", "ideal", "egg")
 STYLES = [ShapingStyle(*values) for values in product(MODES, (False, True), ("ring", "attached"),
                                                     (False, True))]
@@ -70,14 +71,15 @@ def snapshots():
     for preset in PRESETS:
         with gzip.open(FIXTURES / f"{preset}.json.gz", "rt", encoding="utf-8") as handle:
             data = json.load(handle)
-        assert data["source_commit"] == SOURCE_COMMIT
+        assert data["baseline_commit"] == SOURCE_COMMIT
+        assert data["revision"] == SNAPSHOT_REVISION
         result[preset] = data["cases"]
     return result
 
 
 @pytest.mark.parametrize(("preset", "case", "style"), CASES,
                          ids=[f"{preset}-{case}" for preset, case, _style in CASES])
-def test_complete_serialized_generator_output_is_unchanged(snapshots, preset, case, style):
+def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
     assert generated(preset, case, style) == snapshots[preset][case]
 
 
@@ -85,7 +87,8 @@ def write_snapshots() -> None:
     FIXTURES.mkdir(parents=True, exist_ok=True)
     for preset in PRESETS:
         cases = {case: generated(name, case, style) for name, case, style in CASES if name == preset}
-        raw = (json.dumps({"source_commit": SOURCE_COMMIT, "cases": cases}, ensure_ascii=False,
+        raw = (json.dumps({"baseline_commit": SOURCE_COMMIT, "revision": SNAPSHOT_REVISION,
+                           "cases": cases}, ensure_ascii=False,
                           indent=2, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
         with (
             (FIXTURES / f"{preset}.json.gz").open("wb") as output,

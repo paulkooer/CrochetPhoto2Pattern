@@ -1,0 +1,10 @@
+{
+  "zh": [
+    "新增人工选型的穿衣人偶结构原型入口与 crochet2pattern-doll CLI：分别表达起链、圈钩、片钩、椭圆鞋底和装配去向，支持发束、帽檐/翻边、掌腕、鞋头鞋跟、衣片袖筒、裙层与包袋。",
+    "支持编辑设计 JSON、查看部件连接图及导出 JSON/Markdown/PDF；校验起针工作边、逐步针目消耗和装配引用，参数改变后禁用旧下载。原型尚未实钩，不代表照片自动还原或 G3/G4 通过。"
+  ],
+  "en": [
+    "Add a manually configured dressed-doll construction prototype and crochet2pattern-doll CLI, distinguishing foundations, rows, rounds, oval soles and joins for hair, hats, segmented arms, shoes, garments, skirt layers and bags.",
+    "Support editable design JSON, assembly graphs and JSON/Markdown/PDF exports, with foundation, stitch-inventory and graph validation plus stale-download protection. Physical execution, photo reconstruction and G3/G4 qualification remain unverified."
+  ]
+}

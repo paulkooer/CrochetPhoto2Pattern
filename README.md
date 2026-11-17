@@ -59,6 +59,12 @@ The exported DSL can be pasted into their locally-run web app for structural ana
 Unknown part names remain available for review. Remove mistaken labels or select supported parts before generation; unsupported anatomy is no longer replaced by a small sphere. Existing custom-structure backups remain importable.
 
 - Photo upload, plus manual and 2D grid workflows.
+- An opt-in [dressed-doll construction prototype](docs/dressed-doll-design.en.md) in the manual tab:
+  explicit hair, hat, palm/wrist, shoe, garment, skirt and bag structures with editable inputs and
+  printable instructions. Manually configured; physical fit and photo reconstruction remain unverified.
+- A [manual construction reader](docs/construction-roadmap.en.md) for explicit foundations, armholes,
+  row-edge pickups, buttonholes and seams, with source checks and printable row tables. This does not
+  infer those methods from a photograph.
 - Local photo analysis: candidate head-box checks and silhouette analysis without
   an LLM API key. The Photo UI starts from an unconfirmed template and shows contour hints;
   the noninteractive CLI automatically adds ear, skirt and tail candidates when detected.

@@ -61,7 +61,8 @@ def assembly_for_pattern(params: Mapping[str, Any]) -> str:
     return build_assembly(set(quantities), params.get("skirt_style", "ring"), quantities,
                           params.get("assembly_plan"), _openings_by_part(parts),
                           params.get("stitch_attachments"),
-                          opening_rows=opening_rows_by_part(parts))
+                          opening_rows=opening_rows_by_part(parts),
+                          updated_guidance=params.get("construction_guidance_version") == 1)
 
 
 def build_assembly(part_names, skirt_style: str = "ring",
@@ -69,7 +70,8 @@ def build_assembly(part_names, skirt_style: str = "ring",
                    assembly_plan: dict[str, Any] | None = None,
                    openings: dict[str, int] | None = None,
                    stitch_attachments: dict | None = None, *,
-                   opening_rows: dict[str, int] | None = None) -> str:
+                   opening_rows: dict[str, int] | None = None,
+                   updated_guidance: bool = True) -> str:
     """Build assembly text from the v2 graph, with a legacy name fallback."""
     quantities = quantities or {}
     openings = openings or {}
@@ -86,9 +88,10 @@ def build_assembly(part_names, skirt_style: str = "ring",
     def head_connection() -> str:
         head_n = openings_by_kind.get(PartKind.HEAD)
         if head_n is None or PartKind.HEAD not in rows_by_kind:
-            return ("用隐形缝合法将头部接合到身体顶部；"
-                    "头颈缝合处塞棉紧实，防止头部前倾"
-                    "（AmiguRoom 俄语熊评论区试钩共识）")
+            orientation = "头部第 1 圈为头顶，末圈收口一侧为头底；" if updated_guidance else ""
+            reference = "" if updated_guidance else "（AmiguRoom 俄语熊评论区试钩共识）"
+            return (orientation + "用隐形缝合法将头部接合到身体顶部；"
+                    "头颈缝合处塞棉紧实，防止头部前倾" + reference)
         head_row = f"第 {rows_by_kind[PartKind.HEAD]} 圈" if PartKind.HEAD in rows_by_kind else "末圈"
         body_row = f"第 {rows_by_kind[PartKind.BODY]} 圈" if PartKind.BODY in rows_by_kind else "末圈"
         body_n = openings_by_kind.get(PartKind.BODY)
@@ -127,18 +130,34 @@ def build_assembly(part_names, skirt_style: str = "ring",
         return f"{name}共 {quantity} 个，{many}"
 
     one_piece = _ONE_PIECE_NAME in part_names
-    steps: list[str] = ["按各部件标注数量分别完成并填充棉花"]
+    steps: list[str] = [] if updated_guidance else ["按各部件标注数量分别完成并填充棉花"]
+    if updated_guidance and PartKind.SKIRT in part_kinds and skirt_style != "attached":
+        entry = "一体件在身体底端收口前从底端套入" if one_piece else "从颈口一端套入"
+        steps.append(
+            "独立裙筒先试套：身体未填棉、相邻部件未缝合时，"
+            f"{entry}裙腰暂留腰位；过紧勿强拉，须改图重试并新建试钩记录")
+    if updated_guidance and (PartKind.HEAD in part_kinds or one_piece):
+        steps.append(
+            "头部安全眼按部件说明的具体圈号定位；在填充和封口前安装并扣好内侧垫片")
     if PartKind.BODY in part_kinds or one_piece:
         steps.append(
+            "可选配重：配重珠装入丝袜打结，身体减针前置底再填棉（3 岁以下儿童玩偶勿用）"
+            if updated_guidance else
             "可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始"
             "减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；"
             "3 岁以下儿童玩偶勿用）")
+    if updated_guidance:
+        steps.append("按部件标注数量制作，在开口缩小或封口前分次填充棉花，再进行下列缝合")
     if one_piece:
         steps.append("一体件钩完头部后先填充头部再继续钩身体（分阶段填充）")
     if PartKind.HEAD in part_kinds or one_piece:
-        steps.append("头部安装安全眼（第2/3高度处）")
+        if not updated_guidance:
+            steps.append("头部安装安全眼（第2/3高度处）")
         steps.append("用黑色毛线绣鼻子和嘴巴")
         steps.append(
+            "可选：针塑形（needle sculpting）——同色线自一侧眼位入针、横穿至对侧再穿回，"
+            "两端自同一针孔拉紧打结藏线，形成眼窝凹陷"
+            if updated_guidance else
             "可选：针塑形（needle sculpting）——长针带同色线自一侧眼位"
             "入针、横穿头内至对侧眼位再穿回，两端自同一针孔拉紧打结藏线，"
             "形成眼窝凹陷（PlanetJune needlesculpting；本图解塑形已内建，"
@@ -173,8 +192,10 @@ def build_assembly(part_names, skirt_style: str = "ring",
             else:
                 skirt_n = openings_by_kind.get(PartKind.SKIRT)
                 skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
-                steps.append(f"裙筒腰部{skirt_open}套入身体后缝合固定"
-                             "（腰部为开口起针）")
+                steps.append(
+                    f"将预先套入身体的裙筒腰部{skirt_open}调整到腰位后缝合固定"
+                    if updated_guidance else
+                    f"裙筒腰部{skirt_open}套入身体后缝合固定（腰部为开口起针）")
         if PartKind.TAIL in part_kinds:
             steps.append("尾巴缝合在身体后方")
         return "\n".join(f"{i}. {s}" for i, s in enumerate(steps, 1))
@@ -279,8 +300,10 @@ def build_assembly(part_names, skirt_style: str = "ring",
             else:
                 skirt_n = openings_by_kind.get(PartKind.SKIRT)
                 skirt_open = f"（{skirt_n} 针开口）" if skirt_n else ""
-                steps.append(f"裙筒腰部{skirt_open}套入{target_label}后缝合固定"
-                             "（腰部为开口起针）")
+                steps.append(
+                    f"将预先套入{target_label}的裙筒腰部{skirt_open}调整到腰位后缝合固定"
+                    if updated_guidance else
+                    f"裙筒腰部{skirt_open}套入{target_label}后缝合固定（腰部为开口起针）")
         elif canonical and source_kind is PartKind.TAIL and (target_kind is PartKind.BODY
                                                            or target == _ONE_PIECE_NAME):
             steps.append(f"尾巴缝合在{target_label}后方")

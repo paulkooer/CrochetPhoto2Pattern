@@ -588,6 +588,7 @@ class PatternParams(TypedDict, total=False):
     materials: list[Any]
     material_summary: dict[str, Any]
     assembly_instructions: str
+    construction_guidance_version: int
     assembly_plan: dict[str, Any]
     difficulty: str
     estimated_time_minutes: int
