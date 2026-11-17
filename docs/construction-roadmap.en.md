@@ -83,7 +83,7 @@ whether to turn after the foundation; these are not inferred from a total count.
 
 With 18 base sites and a hypothetical 6cm target, 40 rows/10cm produces 24 rows with alternating 2/1
 attachments; 30 rows/10cm produces 18 rows with two attachments per return. These are engineering inputs,
-not measurements of IMG_0623. Quantized dimensions are reported separately. Missing ribbing gauges or an
+not measurements of the reference photo. Quantized dimensions are reported separately. Missing ribbing gauges or an
 unsupported attachment rate do not produce a pattern or silently substitute ordinary SC gauge. Unused
 foundation faces, end rows and optional first-row front loops remain explicit; seam orientation is not
 automatically resolved, and no sites are retired to manufacture a closed inventory.
