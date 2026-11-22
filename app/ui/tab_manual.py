@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from dataclasses import asdict
 
 import streamlit as st
 
@@ -87,7 +88,8 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> ResultData:
     PipelineOrchestrator（那会连带初始化 ImageParser ）。
     """
     style = _style_from_session()
-    structure, params = _manual_design(analysis, gauge_from_ui(*_gauge_values()), style)
+    gauge = gauge_from_ui(*_gauge_values())
+    structure, params = _manual_design(analysis, gauge, style)
     require_crochetable(params)
     # 键集走 PatternResult 单一契约（与照片路径同构；无照片 → 无色带）
     return PatternResult(
@@ -96,6 +98,9 @@ def _run_pipeline_from_analysis(analysis: ImageAnalysis) -> ResultData:
         structure=dict(structure),
         params=dict(params),
         result_id=uuid.uuid4().hex[:12],
+        # 顶层密度须是本次实际选用的密度：导入规范化会补上它，缺了它，
+        # 未改动的图解新建试钩后会被判为"已改图"。
+        gauge=asdict(gauge),
         style={"sphere_mode": style.sphere_mode,
                "one_piece": style.one_piece,
                "skirt_style": style.skirt_style,

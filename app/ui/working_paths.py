@@ -31,7 +31,8 @@ def render_yarn_steps(plan: WorkingPath) -> None:
         return
     with st.expander("查看接线、暂停与收尾"):
         for step in actions:
-            st.markdown(f"**{md_safe(step.label)}**")
+            # Labels come from the loaded file: show them as text, never as Markdown.
+            st.text(step.label)
             st.write(step_text(step))
 
 
@@ -70,9 +71,13 @@ def render_working_path_reader() -> None:
         if stale:
             st.info("上传内容已改变；下方仍是上一份工序，重新校验后才能下载。")
         st.markdown("**工序设计核对稿 · 未实钩、未试穿**")
-        st.write(plan.title)
+        # The title and notes are whatever the loaded file says. st.text does not
+        # parse Markdown, so they cannot draw headings, images or links, and the
+        # app's own status line above stays the only formatted statement.
+        st.caption("以下标题和说明来自载入的文件，按原文显示；不是本应用的检查或验证结论。")
+        st.text(plan.title)
         for note in plan.review_notes:
-            st.info(note)
+            st.text(note)
         render_yarn_steps(plan)
         st.caption("通过的是已声明针位与控制步骤的检查；成品边及孔边保留也按声明计账，"
                    "不代表这些位置实际钩过。原文疑点、织物方向和实际合身仍须核对。")
