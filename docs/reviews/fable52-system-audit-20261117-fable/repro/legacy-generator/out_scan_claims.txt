@@ -1,0 +1,82 @@
+=== 1. hat note '帽围 N 针 > 头围' vs head widest round (fresh generation, manual-tab ranges) ===
+generated 594 (of which 6 would be stopped by the first-generation crochetability gate)
+hat widest <= head widest while note claims '>': 32
+  of those NOT stopped by the gate (i.e. reachable from the manual tab / CLI): 29
+  by (gauge, mode): {('classic', 'ladder'): 3, ('classic', 'ideal'): 3, ('classic', 'egg'): 4, ('dk', 'ladder'): 1, ('dk', 'ideal'): 1, ('dk', 'egg'): 1, ('fine', 'ladder'): 1, ('fine', 'ideal'): 1, ('fine', 'egg'): 1, ('g10x12', 'ladder'): 4, ('g10x12', 'ideal'): 4, ('g10x12', 'egg'): 5}
+   gauge=classic mode=ladder head=4.0cm hat=18 st head=18 st
+   gauge=classic mode=ladder head=5.5cm hat=24 st head=24 st
+   gauge=classic mode=ladder head=7.0cm hat=30 st head=30 st
+   gauge=classic mode=ideal head=4.0cm hat=18 st head=18 st
+   gauge=classic mode=ideal head=5.5cm hat=24 st head=24 st
+   gauge=classic mode=ideal head=7.0cm hat=30 st head=30 st
+   gauge=classic mode=egg head=4.0cm hat=18 st head=18 st
+   gauge=classic mode=egg head=5.5cm hat=24 st head=24 st
+   gauge=classic mode=egg head=7.0cm hat=30 st head=30 st
+   gauge=classic mode=egg head=9.5cm hat=42 st head=42 st
+   gauge=dk mode=ladder head=4.0cm hat=24 st head=24 st
+   gauge=dk mode=ideal head=4.0cm hat=24 st head=24 st
+
+=== 2. hat rounds vs eye round (same gauge; counts only) ===
+hat total rounds >= head eye round: {True: 36}
+gauge mode head_cm | head rounds | eye round | hat rounds (crown+wall) | head peak st | hat st
+  classic ladder   6.0 |  15 |  10 |  12 |  24 |  30
+  classic ladder   9.0 |  22 |  14 |  17 |  36 |  42
+  classic ladder  12.0 |  30 |  20 |  22 |  48 |  54
+  classic ladder  16.0 |  41 |  27 |  31 |  66 |  78
+  classic ideal    6.0 |  15 |   7 |  12 |  24 |  30
+  classic ideal    9.0 |  23 |  10 |  17 |  36 |  42
+  classic ideal   12.0 |  30 |  13 |  22 |  48 |  54
+  classic ideal   16.0 |  40 |  19 |  31 |  66 |  78
+  classic egg      6.0 |  15 |   6 |  12 |  24 |  30
+  classic egg      9.0 |  23 |   9 |  17 |  36 |  42
+  classic egg     12.0 |  30 |  12 |  22 |  48 |  54
+  classic egg     16.0 |  40 |  17 |  31 |  66 |  78
+  dk      ladder   6.0 |  12 |   8 |  12 |  30 |  36
+  dk      ladder   9.0 |  20 |  13 |  18 |  48 |  54
+  dk      ladder  12.0 |  27 |  18 |  24 |  66 |  72
+  dk      ladder  16.0 |  35 |  23 |  31 |  84 |  96
+  dk      ideal    6.0 |  13 |   6 |  12 |  30 |  36
+  dk      ideal    9.0 |  20 |  10 |  18 |  48 |  54
+  dk      ideal   12.0 |  26 |  13 |  24 |  66 |  72
+  dk      ideal   16.0 |  35 |  16 |  31 |  84 |  96
+  dk      egg      6.0 |  13 |   6 |  12 |  30 |  36
+  dk      egg      9.0 |  20 |   9 |  18 |  48 |  54
+  dk      egg     12.0 |  26 |  12 |  24 |  66 |  72
+  dk      egg     16.0 |  35 |  15 |  31 |  84 |  96
+  fine    ladder   6.0 |  14 |   9 |  14 |  36 |  42
+  fine    ladder   9.0 |  22 |  14 |  21 |  54 |  66
+  fine    ladder  12.0 |  31 |  20 |  27 |  78 |  84
+  fine    ladder  16.0 |  41 |  27 |  37 | 102 | 114
+  fine    ideal    6.0 |  15 |   7 |  14 |  36 |  42
+  fine    ideal    9.0 |  23 |  10 |  21 |  54 |  66
+  fine    ideal   12.0 |  30 |  16 |  27 |  78 |  84
+  fine    ideal   16.0 |  40 |  20 |  37 | 102 | 114
+  fine    egg      6.0 |  15 |   7 |  14 |  36 |  42
+  fine    egg      9.0 |  23 |   9 |  21 |  54 |  66
+  fine    egg     12.0 |  30 |  14 |  27 |  78 |  84
+  fine    egg     16.0 |  40 |  18 |  37 | 102 | 114
+
+=== 3. eye round: separate head vs one-piece (same inputs) ===
+  classic ladder separate: eye R14 of 22 (widest rounds R9–R14); one-piece: eye R10, neck R16 of 29
+  classic ideal  separate: eye R10 of 23 (widest rounds R9–R15); one-piece: eye R10, neck R17 of 30
+  classic egg    separate: eye R9 of 23 (widest rounds R8–R14); one-piece: eye R9, neck R16 of 29
+  dk      ladder separate: eye R13 of 20 (widest rounds R9–R12); one-piece: eye R10, neck R14 of 25
+  dk      ideal  separate: eye R10 of 20 (widest rounds R9–R12); one-piece: eye R10, neck R14 of 25
+  dk      egg    separate: eye R9 of 20 (widest rounds R8–R12); one-piece: eye R9, neck R14 of 25
+  fine    ladder separate: eye R14 of 22 (widest rounds R10–R13); one-piece: eye R11, neck R15 of 28
+  fine    ideal  separate: eye R10 of 23 (widest rounds R9–R15); one-piece: eye R10, neck R17 of 30
+  fine    egg    separate: eye R9 of 23 (widest rounds R8–R14); one-piece: eye R9, neck R16 of 29
+
+=== 4. attached skirt: reservation round position and loop convention ===
+{'reservation before last round': 30, 'reservation round also shapes (FLO inc/dec)': 0}
+loop convention text: 基底圈记号扣对应的第 1 针开始，按原圈序一一对应。多份部件按第 1 件接第 1 件依次配对。接合位置为模板腰位，需试钩确认；无需缝合。（朝向前提：按身体正面朝外、FLO 挑外侧前半针、裙子钩入内侧后半针的约定生成；若你的钩织朝向相反，挑针半针方向需对调——此约定尚未经实物试钩核实，见 F-11。）
+
+=== 5. open-ended parts: last-round stitches and whether the PART note mentions stuffing ===
+  头部   type=sphere   state=closed last R22=6 st peak=36; part note mentions 填充/填棉: True; last-round note: '，社区/PlanetJune fastening off 通行技法）'
+  身体   type=cylinder state=open last R15=24 st peak=36; part note mentions 填充/填棉: True; last-round note: '(3X,A)×6，隔3针减1针；断线留15cm用于缝合'
+  手臂   type=cylinder state=open last R8=6 st peak=12; part note mentions 填充/填棉: False; last-round note: '减针×6（A×6，每2针并1针）；断线留15cm用于缝合'
+  腿部   type=cylinder state=open last R9=6 st peak=12; part note mentions 填充/填棉: False; last-round note: '减针×6（A×6，每2针并1针）；断线留15cm用于缝合'
+  尾巴   type=cylinder state=open last R7=6 st peak=12; part note mentions 填充/填棉: False; last-round note: '减针×6（A×6，每2针并1针）；断线留15cm用于缝合'
+  耳朵   type=sphere   state=closed last R7=6 st peak=12; part note mentions 填充/填棉: True; last-round note: '，社区/PlanetJune fastening off 通行技法）'
+  帽子   type=cup      state=open last R17=42 st peak=42; part note mentions 填充/填棉: False; last-round note: '42X（不加不减）'
+  裙子   type=cup      state=open last R5=48 st peak=48; part note mentions 填充/填棉: True; last-round note: '48X（不加不减）'

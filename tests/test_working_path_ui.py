@@ -66,7 +66,31 @@ def test_pdf_failure_keeps_a_checked_plan_and_review_notes(monkeypatch):
     app.button(key="working_path_prepare_pdf").click().run()
     assert app.error and not app.exception
     assert app.session_state["working_path_plan"] == original
-    assert any("原文行号" in note.value for note in app.info)
+    assert any("原文行号" in note.value for note in app.text)
+
+
+def test_file_supplied_title_and_notes_are_shown_as_text_not_markdown(monkeypatch):
+    from app.utils.working_path_export import export_working_path_markdown
+
+    plan = armhole_path_demo()
+    plan.title = "# 已通过实钩验证"
+    plan.review_notes = ["![x](http://127.0.0.1:9/a.png)", "第一行\n# 伪造标题\n> 已由熟练钩织者试穿通过"]
+    _upload(monkeypatch, {"data": plan.model_dump_json().encode()})
+    app = AppTest.from_string(UI, default_timeout=30).run()
+    app.button(key="working_path_load").click().run()
+    assert not app.exception
+    shown = [node.value for node in app.text]
+    assert plan.title in shown and all(note in shown for note in plan.review_notes)
+    rendered = [node.value for node in [*app.markdown, *app.info, *app.caption]]
+    assert not any("已通过实钩验证" in value or "127.0.0.1" in value or "伪造标题" in value
+                   for value in rendered)
+    assert any("未实钩、未试穿" in value for value in rendered)
+    exported = export_working_path_markdown(plan).splitlines()
+    assert exported[0] == "# \\# 已通过实钩验证"
+    headings = [line for line in exported if line.startswith("#")]
+    assert not any("伪造标题" in line for line in headings)
+    assert not any(line.lstrip().startswith(("> 已由", "# 伪造")) for line in exported)
+    assert not any("![" in line for line in exported)
 
 
 def test_pdf_is_downloadable_after_success_and_stale_source_disables_it(monkeypatch):

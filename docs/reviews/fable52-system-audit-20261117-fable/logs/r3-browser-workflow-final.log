@@ -1,0 +1,61 @@
+##### node scripts/check_browser_workflow.cjs (server restarted on the final tree, 127.0.0.1:18514)
+PASS sidebar lists the gauge first and groups the existing-work entries
+PASS whole-grid colour replacement updates downloads and supports undo and redo
+PASS upload PNG and prepare local photo review
+PASS embedded canvas add/erase/undo/reset reaches the Streamlit app
+PASS complete subject/proportion/parts review and generate
+PASS result page folds sources by default and moves coordinates into the structure JSON
+PASS marker styles and repeated progress changes preserve the open, full-width part panel
+PASS download backup/JSON/Markdown/PDF and compare actual contents
+PASS legacy custom structure IDs survive import, rendering and backup export
+PASS unrecognized review markers remain in backup without false confirmation
+PASS placeholder colors are clear in the result and Markdown while backup values stay unchanged
+PASS first history save, undo and save keep the same stored record
+PASS project download contains the current progress and personal notes
+PASS manual-to-photo history load keeps two pages progress/notes isolated
+PASS fresh browser context restores project, then re-exports identical work
+PASS invalid import preserves the active project, progress and notes
+PASS preview exact 16-stitch head opening, restore project in new context, then close again
+PASS independent 26x28 hat with 30x32 body, unchanged work, trial gate and fresh project recovery
+PASS weighed 30x32 sample stays bound after trial default changes to 26x28, with fixed hat and fresh recovery
+PASS material preview/cancel/apply and unchanged material/size after undo retain redo, provenance, notes and progress
+PASS advanced JSON editors stay unmounted until the enable button is clicked
+PASS advanced JSON panel starts collapsed, keeps a draft through preview and cancel, and downloads stay applied until regeneration
+PASS colour panel previews the affected rounds and the worked-yarn notice, cancel is read-only, and apply/undo/redo keep stitches and completed rounds
+PASS per-copy colour reaches the Markdown export and survives a project restore with progress
+PASS colour panel renders inside a 390 px viewport without horizontal overflow
+PASS switching custom names restores their own swatches and shared display-colour changes are previewed
+PASS custom display swatch stays with its name through Markdown, PDF, Parade, undo, redo and project restore
+PASS old-source trial ZIP restores saved swatch and exact pattern bytes through two browser export cycles
+PASS legacy collision requires recovery, then separate copy progress survives a fresh project restore
+PASS 390 px viewport keeps the title on one line and the header opaque without Deploy
+PASS 390 px viewport opens the sidebar drawer with the same gauge-first outline
+PASS all 31 browser workflow checks; output <tmp>/workflow-evidence
+exit=0
+##### node scripts/check_mask_canvas.cjs
+PASS: add, erase, undo, continuous stroke, reset; no browser errors
+exit=0
+##### node --test scripts/browser/*.test.cjs
+delayed older-run messages: round 4/5 retained target content
+delayed older-run messages: round 5/5 retained target content
+✔ delayed older run messages cannot release upload before its content is rendered (24349.503792ms)
+✔ queued browser rerun finishes while target upload rerun is held (1674.907ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 71572.868334
+exit=0
+##### node scripts/browser/check_upload_mutations.cjs
+PASS mutation killed: no_run_wait; immediate final-marker assertion failed as intended
+PASS mutation killed: response_only; immediate final-marker assertion failed as intended
+PASS mutation killed: start_after_action; request-order rejection assertion failed as intended
+PASS mutation killed: include_fragment_runs; defensive fragment-ID rejection (synthetic full-run status) assertion failed as intended
+PASS mutation killed: ignore_content_ack; queued-request content rejection assertion failed as intended
+PASS mutation killed: ignore_content_ack_browser; real-browser immediate content marker under delayed server messages assertion failed as intended
+PASS mutation killed: ignore_request_file_id; target-file request rejection assertion failed as intended
+PASS mutation killed: ignore_digest; content-digest rejection assertion failed as intended
+exit=0

@@ -1,0 +1,106 @@
+====================================================================================================
+<repo>/eval_outputs/fable52-system-audit-20261117/examples/generated/doll-wide-brim
+
+[1] independent expansion of the written steps
+  OK      身体与颈段 ×1: magic_ring chains=0 32 圈; counts=6,12,18,24,25,25,25,25,25,25,25,25,20,20,20,25,25,25,25,25,25,25,25,25,25,25,19,13,8,8,8,8
+  OK      头部 ×1: magic_ring chains=0 26 圈; counts=6,6,12,18,24,30,30,36,36,42,42,42,42,42,42,36,36,36,30,24,24,18,18,12,6,6
+  OK      手掌与手臂 ×2: magic_ring chains=0 17 圈; counts=4,8,10,10,6,6,8,8,8,8,8,8,8,8,8,8,8
+  OK      腿部 ×2: magic_ring chains=0 19 圈; counts=6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+  OK      椭圆底鞋靴 ×2: oval_chain chains=6 10 圈; counts=12,18,18,18,15,14,11,10,10,10
+  OK      发帽底座 ×1: magic_ring chains=0 13 圈; counts=6,12,18,24,30,36,42,44,44,44,44,44,44
+  OK      长发束 ×12: flat_chain chains=16 1 行; counts=30
+  OK      前额短发束 ×4: flat_chain chains=8 1 行; counts=14
+  OK      宽檐帽 ×1: magic_ring chains=0 19 圈; counts=6,12,18,24,30,36,42,47,47,47,47,47,47,47,53,59,65,71,77
+  OK      内裙层 ×1: chain_ring chains=28 20 圈; counts=28,29,29,30,31,31,32,33,33,34,35,36,36,37,38,38,39,40,40,41
+  OK      外裙层 ×1: chain_ring chains=30 18 圈; counts=30,31,32,33,34,35,36,37,38,38,39,40,41,42,43,44,45,46
+  OK      整片衣身 ×1: flat_chain chains=15 15 行; counts=14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
+  OK      左右后开片 ×2: flat_chain chains=8 15 行; counts=7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+  OK      独立袖筒 ×2: chain_ring chains=13 13 圈; counts=13,13,13,13,13,13,13,13,13,13,13,13,13
+  OK      包袋主体折片 ×1: flat_chain chains=10 26 行; counts=9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9
+  OK      包盖 ×1: flat_chain chains=10 6 行; counts=9,9,9,9,9,9
+  OK      包袋背带 ×1: flat_chain chains=3 56 行; counts=2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,…,2,2,2,2,2,2
+  OK      花片圆心 ×3: magic_ring chains=0 1 圈; counts=6
+  OK      小花瓣片 ×15: magic_ring chains=0 2 圈; counts=4,8
+
+[2] plan.md vs plan.json
+  mismatches: 0
+
+[3] assembly.dot vs joins
+  dot nodes=19 edges=18; json components=19 joins=18
+  edges identical and in same order: True
+  node labels identical: True
+  dot mentions prototype/unverified/manual status: False
+  roots: ['body']
+
+[4] header totals recomputed from the expanded text
+  header says 19 logical / 54 physical / 7056 operations; recomputed 19 / 54 / 7056
+
+[5] placement of increases (descendants of each base stitch at the last round)
+  内裙层: 28 foundation stitches -> 41 hem stitches; foundation stitches with more than one descendant: [(28, 14.0)]
+  外裙层: 30 foundation stitches -> 46 hem stitches; foundation stitches with more than one descendant: [(30, 17.0)]
+  宽檐帽 brim: 47 crown-edge stitches -> 77; edge stitches carrying increases: [(7, 6.0), (15, 6.0), (23, 6.0), (31, 6.0), (39, 6.0), (47, 6.0)]
+
+[6] shoe arcs traced from the foundation chain
+  圈  1 [鞋底] W,3X,W,3X                              ->  12 | decreases=0 | stitches by origin: {'toe(near end)': 3, 'sideA': 3, 'heel(far end)': 3, 'sideB': 3}
+  圈  2 [鞋底] V×3,3X,V×3,3X                          ->  18 | decreases=0 | stitches by origin: {'toe(near end)': 6, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  3 [鞋底转鞋面] 只挑后半针；18X                              ->  18 | decreases=0 | stitches by origin: {'toe(near end)': 6, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  4 [鞋面] 18X                                    ->  18 | decreases=0 | stitches by origin: {'toe(near end)': 6, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  5 [鞋头收窄] (A)×3,3X,6X,3X                         ->  15 | decreases=3 | stitches by origin: {'toe(near end)': 3, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  6 [鞋头收窄] 1X,A,3X,6X,3X                          ->  14 | decreases=1 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  7 [鞋跟与鞋口] 2X,3X,(A)×3,3X                         ->  11 | decreases=3 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 3, 'sideB': 3}
+  圈  8 [鞋跟与鞋口] 2X,3X,1X,A,3X                          ->  10 | decreases=1 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 2, 'sideB': 3}
+  圈  9 [鞋口/短靴筒] 10X                                    ->  10 | decreases=0 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 2, 'sideB': 3}
+  圈 10 [鞋口/短靴筒] 10X                                    ->  10 | decreases=0 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 2, 'sideB': 3}
+====================================================================================================
+<repo>/eval_outputs/fable52-system-audit-20261117/examples/generated/doll-folded-cap
+
+[1] independent expansion of the written steps
+  OK      身体与颈段 ×1: magic_ring chains=0 32 圈; counts=6,12,18,24,25,25,25,25,25,25,25,25,20,20,20,25,25,25,25,25,25,25,25,25,25,25,19,13,8,8,8,8
+  OK      头部 ×1: magic_ring chains=0 26 圈; counts=6,6,12,18,24,30,30,36,36,42,42,42,42,42,42,36,36,36,30,24,24,18,18,12,6,6
+  OK      手掌与手臂 ×2: magic_ring chains=0 17 圈; counts=4,8,10,10,6,6,8,8,8,8,8,8,8,8,8,8,8
+  OK      腿部 ×2: magic_ring chains=0 19 圈; counts=6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+  OK      椭圆底鞋靴 ×2: oval_chain chains=6 10 圈; counts=12,18,18,18,15,14,11,10,10,10
+  OK      发帽底座 ×1: magic_ring chains=0 13 圈; counts=6,12,18,24,30,36,42,44,44,44,44,44,44
+  OK      长发束 ×12: flat_chain chains=16 1 行; counts=15
+  OK      前额短发束 ×4: flat_chain chains=8 1 行; counts=7
+  OK      片钩肋纹翻边 ×1: flat_chain chains=5 60 行; counts=4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,…,4,4,4,4,4,4
+  OK      帽身 ×1: magic_ring chains=0 16 圈; counts=6,12,18,24,30,36,42,47,47,47,47,47,47,47,47,47
+  OK      内裙层 ×1: chain_ring chains=28 20 圈; counts=28,29,29,30,31,31,32,33,33,34,35,36,36,37,38,38,39,40,40,41
+  OK      外裙层 ×1: chain_ring chains=30 18 圈; counts=30,31,32,33,34,35,36,37,38,38,39,40,41,42,43,44,45,46
+  OK      整片衣身 ×1: flat_chain chains=15 15 行; counts=14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
+  OK      左右前开片 ×2: flat_chain chains=8 15 行; counts=7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+  OK      独立袖筒 ×2: chain_ring chains=13 13 圈; counts=13,13,13,13,13,13,13,13,13,13,13,13,13
+  OK      包袋主体折片 ×1: flat_chain chains=10 26 行; counts=9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9
+  OK      包盖 ×1: flat_chain chains=10 6 行; counts=9,9,9,9,9,9
+  OK      包袋背带 ×1: flat_chain chains=3 56 行; counts=2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,…,2,2,2,2,2,2
+
+[2] plan.md vs plan.json
+  mismatches: 0
+
+[3] assembly.dot vs joins
+  dot nodes=18 edges=17; json components=18 joins=17
+  edges identical and in same order: True
+  node labels identical: True
+  dot mentions prototype/unverified/manual status: False
+  roots: ['body']
+
+[4] header totals recomputed from the expanded text
+  header says 18 logical / 37 physical / 6723 operations; recomputed 18 / 37 / 6723
+
+[5] placement of increases (descendants of each base stitch at the last round)
+  内裙层: 28 foundation stitches -> 41 hem stitches; foundation stitches with more than one descendant: [(28, 14.0)]
+  外裙层: 30 foundation stitches -> 46 hem stitches; foundation stitches with more than one descendant: [(30, 17.0)]
+
+[6] shoe arcs traced from the foundation chain
+  圈  1 [鞋底] W,3X,W,3X                              ->  12 | decreases=0 | stitches by origin: {'toe(near end)': 3, 'sideA': 3, 'heel(far end)': 3, 'sideB': 3}
+  圈  2 [鞋底] V×3,3X,V×3,3X                          ->  18 | decreases=0 | stitches by origin: {'toe(near end)': 6, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  3 [鞋底转鞋面] 只挑后半针；18X                              ->  18 | decreases=0 | stitches by origin: {'toe(near end)': 6, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  4 [鞋面] 18X                                    ->  18 | decreases=0 | stitches by origin: {'toe(near end)': 6, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  5 [鞋头收窄] (A)×3,3X,6X,3X                         ->  15 | decreases=3 | stitches by origin: {'toe(near end)': 3, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  6 [鞋头收窄] 1X,A,3X,6X,3X                          ->  14 | decreases=1 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 6, 'sideB': 3}
+  圈  7 [鞋跟与鞋口] 2X,3X,(A)×3,3X                         ->  11 | decreases=3 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 3, 'sideB': 3}
+  圈  8 [鞋跟与鞋口] 2X,3X,1X,A,3X                          ->  10 | decreases=1 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 2, 'sideB': 3}
+  圈  9 [鞋口/短靴筒] 10X                                    ->  10 | decreases=0 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 2, 'sideB': 3}
+  圈 10 [鞋口/短靴筒] 10X                                    ->  10 | decreases=0 | stitches by origin: {'toe(near end)': 2, 'sideA': 3, 'heel(far end)': 2, 'sideB': 3}
+
+TOTAL PROBLEMS: 0

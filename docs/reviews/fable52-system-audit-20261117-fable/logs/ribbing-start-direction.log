@@ -1,0 +1,36 @@
+================ body_length_cm=7.5 sleeve_length_cm=6.4
+stage=integrated_open_cuffs body_rows=21 sleeve_rows=18 (model accepted the plan)
+  hem   : loop on design_body_021 stitch 47 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_a: loop on design_sleeve_a_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  cuff_b: loop on design_sleeve_b_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 2
+exit=0
+================ body_length_cm=7.14 sleeve_length_cm=6.4
+stage=integrated_open_cuffs body_rows=20 sleeve_rows=18 (model accepted the plan)
+  hem   : loop on design_body_020 stitch 47 (row side RS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=WS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side RS, row turn=none, closure=none); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=0 -> needs SAME order => CONTRADICTION
+  cuff_a: loop on design_sleeve_a_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  cuff_b: loop on design_sleeve_b_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 3
+exit=0
+================ body_length_cm=7.5 sleeve_length_cm=6.1
+stage=integrated_open_cuffs body_rows=21 sleeve_rows=17 (model accepted the plan)
+  hem   : loop on design_body_021 stitch 47 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_a: loop on design_sleeve_a_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  cuff_b: loop on design_sleeve_b_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 2
+exit=0
+================ body_length_cm=7.14 sleeve_length_cm=6.1
+stage=integrated_open_cuffs body_rows=20 sleeve_rows=17 (model accepted the plan)
+  hem   : loop on design_body_020 stitch 47 (row side RS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=WS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side RS, row turn=none, closure=none); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=0 -> needs SAME order => CONTRADICTION
+  cuff_a: loop on design_sleeve_a_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  cuff_b: loop on design_sleeve_b_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [2, 3, 4, 5] = SAME order; declared turns=1 -> needs REVERSE order => CONTRADICTION
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 3
+exit=0

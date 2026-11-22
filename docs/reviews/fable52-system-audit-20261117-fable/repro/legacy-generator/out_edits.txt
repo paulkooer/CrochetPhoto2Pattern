@@ -1,0 +1,343 @@
+### base results
+  ok   base sep-ring
+  ok   base sep-attached
+  ok   base one-attached
+  ok   base one-ring-egg-dk
+  ok   base opening16
+  ok   base profile-fine
+
+### edits on sep-ring
+  ok   sep-ring resize head=6.0 height=12.0
+  ok   sep-ring resize head=12.0 height=30.0
+  ok   sep-ring resize head=9.0 height=40.0
+  ok   sep-ring resize head=20.0 height=60.0
+  !!   sep-ring resize head=4.0 height=10.0
+         - hat note claims '帽围 18 针 > 头围' but head widest round is 18 针
+  ok   sep-ring gauge 17.0x14.0
+  ok   sep-ring gauge 20.0x16.0
+  !!   sep-ring gauge 6.0x8.0
+         - hat note claims '帽围 18 针 > 头围' but head widest round is 18 针
+  ok   sep-ring gauge 40.0x50.0
+  !!   sep-ring structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 13.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 13.0 cm
+         - hat note claims '帽围 42 针 > 头围' but head widest round is 54 针
+  !!   sep-ring structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 6.0 cm
+  ok   sep-ring structure-edit 身体 {"count": 1, "dimensions": {"height_cm": 12.0}}
+  ok   sep-ring structure-edit 手臂 {"count": 3, "dimensions": {}}
+  ok   sep-ring structure-edit 手臂 {"count": 1, "dimensions": {}}
+  ok   sep-ring structure-edit 腿部 {"count": 2, "dimensions": {"length_cm": 9.0}}
+  !!   sep-ring structure-edit 帽子 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - hat note claims '帽围 24 针 > 头围' but head widest round is 36 针
+  ok   sep-ring structure-edit 裙子 {"count": 1, "dimensions": {"height_cm": 6.0}}
+  ok   sep-ring structure-edit 尾巴 {"count": 1, "dimensions": {}, "attachments": [{"target_part_id": "hea
+  ok   sep-ring structure-edit 耳朵 {"count": 2, "dimensions": {}, "attachments": []}
+  ok   sep-ring structure-remove 帽子
+  ok   sep-ring structure-remove 裙子
+  ok   sep-ring structure-remove 身体
+  ok   sep-ring structure-remove 头部
+  ok   sep-ring structure-remove 腿部
+  ok   sep-ring head-opening 16
+  ok   sep-ring head-opening 16 -> closed
+  ok   sep-ring head-opening 16 -> resize 12/30
+  ok   sep-ring head-opening 7
+  ok   sep-ring part-gauge 帽子 fine
+  ok   sep-ring part-gauge 裙子 dk
+  ok   sep-ring part-gauge 帽子 22x24 -> resize 12/30
+  ok   sep-ring part-gauge 帽子 22x24 -> back to default
+  ok   sep-ring yarn-spec with swatch
+  ok   sep-ring round-edit 手臂: last round 12->8
+  ok   sep-ring round-edit 身体: last round 30->26
+  ok   sep-ring round-edit 头部: last round 12->8
+  !!   sep-ring round-edit 帽子: last round 42->48
+         - mdcheck [ERROR] NOTE_HAT_ROUND 帽子: notes say 帽围 42 针, table peak 48
+  ok   sep-ring round-edit 裙子: last round 48->54
+
+### edits on sep-attached
+  ok   sep-attached resize head=6.0 height=12.0
+  ok   sep-attached resize head=12.0 height=30.0
+  ok   sep-attached resize head=9.0 height=40.0
+  ok   sep-attached resize head=20.0 height=60.0
+  !!   sep-attached resize head=4.0 height=10.0
+         - hat note claims '帽围 18 针 > 头围' but head widest round is 18 针
+  ok   sep-attached gauge 17.0x14.0
+  ok   sep-attached gauge 20.0x16.0
+  !!   sep-attached gauge 6.0x8.0
+         - hat note claims '帽围 18 针 > 头围' but head widest round is 18 针
+  ok   sep-attached gauge 40.0x50.0
+  !!   sep-attached structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 13.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 13.0 cm
+         - hat note claims '帽围 42 针 > 头围' but head widest round is 54 针
+  !!   sep-attached structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 6.0 cm
+  ok   sep-attached structure-edit 身体 {"count": 1, "dimensions": {"height_cm": 12.0}}
+  ok   sep-attached structure-edit 手臂 {"count": 3, "dimensions": {}}
+  ok   sep-attached structure-edit 手臂 {"count": 1, "dimensions": {}}
+  ok   sep-attached structure-edit 腿部 {"count": 2, "dimensions": {"length_cm": 9.0}}
+  !!   sep-attached structure-edit 帽子 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - hat note claims '帽围 24 针 > 头围' but head widest round is 36 针
+  ok   sep-attached structure-edit 裙子 {"count": 1, "dimensions": {"height_cm": 6.0}}
+  ok   sep-attached structure-edit 尾巴 {"count": 1, "dimensions": {}, "attachments": [{"target_part_id": "hea
+  ok   sep-attached structure-edit 耳朵 {"count": 2, "dimensions": {}, "attachments": []}
+  ok   sep-attached structure-remove 帽子
+  ok   sep-attached structure-remove 裙子
+  --   sep-attached structure-remove 身体: refused -> ValueError: 挑针接裙需要身体部件；请添加身体或选择独立裙筒
+  ok   sep-attached structure-remove 头部
+  ok   sep-attached structure-remove 腿部
+  ok   sep-attached head-opening 16
+  ok   sep-attached head-opening 16 -> closed
+  ok   sep-attached head-opening 16 -> resize 12/30
+  ok   sep-attached head-opening 7
+  ok   sep-attached part-gauge 帽子 fine
+  --   sep-attached part-gauge 裙子 dk: refused -> ValueError: 挑针接裙沿用身体密度，独立裙筒才可单独设置
+  ok   sep-attached part-gauge 帽子 22x24 -> resize 12/30
+  ok   sep-attached part-gauge 帽子 22x24 -> back to default
+       waist candidates [7, 8, 9, 10, 11, 12, 13, 14], current base row 11
+  ok   sep-attached move-skirt-join -> R7
+  ok   sep-attached move-skirt-join R7 -> resize 12/30
+  ok   sep-attached move-skirt-join R7 -> gauge dk
+  ok   sep-attached move-skirt-join -> R8
+  ok   sep-attached move-skirt-join -> R9
+  ok   sep-attached move-skirt-join -> R10
+  ok   sep-attached move-skirt-join -> R11
+  ok   sep-attached move-skirt-join -> R12
+  ok   sep-attached move-skirt-join -> R13
+  ok   sep-attached move-skirt-join -> R14
+  ok   sep-attached move-skirt-join R14 -> resize 12/30
+  ok   sep-attached move-skirt-join R14 -> gauge dk
+  ok   sep-attached yarn-spec with swatch
+  ok   sep-attached round-edit 手臂: last round 12->8
+  ok   sep-attached round-edit 身体: last round 30->26
+  ok   sep-attached round-edit 头部: last round 12->8
+  !!   sep-attached round-edit 帽子: last round 42->48
+         - mdcheck [ERROR] NOTE_HAT_ROUND 帽子: notes say 帽围 42 针, table peak 48
+  ok   sep-attached round-edit 裙子: last round 48->54
+
+### edits on one-attached
+  ok   one-attached resize head=6.0 height=12.0
+  ok   one-attached resize head=12.0 height=30.0
+  ok   one-attached resize head=9.0 height=40.0
+  ok   one-attached resize head=20.0 height=60.0
+  ok   one-attached resize head=4.0 height=10.0
+  ok   one-attached gauge 17.0x14.0
+  ok   one-attached gauge 20.0x16.0
+  ok   one-attached gauge 6.0x8.0
+  ok   one-attached gauge 40.0x50.0
+  !!   one-attached structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 13.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 13.0 cm
+  !!   one-attached structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 6.0 cm
+  ok   one-attached structure-edit 身体 {"count": 1, "dimensions": {"height_cm": 12.0}}
+  ok   one-attached structure-edit 手臂 {"count": 3, "dimensions": {}}
+  ok   one-attached structure-edit 手臂 {"count": 1, "dimensions": {}}
+  ok   one-attached structure-edit 腿部 {"count": 2, "dimensions": {"length_cm": 9.0}}
+  ok   one-attached structure-edit 帽子 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+  ok   one-attached structure-edit 裙子 {"count": 1, "dimensions": {"height_cm": 6.0}}
+  ok   one-attached structure-edit 尾巴 {"count": 1, "dimensions": {}, "attachments": [{"target_part_id": "hea
+  ok   one-attached structure-edit 耳朵 {"count": 2, "dimensions": {}, "attachments": []}
+  ok   one-attached structure-remove 帽子
+  ok   one-attached structure-remove 裙子
+  --   one-attached structure-remove 身体: refused -> ValueError: 挑针接裙需要身体部件；请添加身体或选择独立裙筒
+  ok   one-attached structure-remove 头部
+  ok   one-attached structure-remove 腿部
+  --   one-attached head-opening 16 (one-piece): refused -> ValueError: 头部留口仅适用于独立头部，不能与头身一体同时使用
+  ok   one-attached part-gauge 帽子 fine
+  --   one-attached part-gauge 裙子 dk: refused -> ValueError: 挑针接裙沿用身体密度，独立裙筒才可单独设置
+  ok   one-attached part-gauge 帽子 22x24 -> resize 12/30
+  ok   one-attached part-gauge 帽子 22x24 -> back to default
+       waist candidates [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28], current base row 19
+  ok   one-attached move-skirt-join -> R16
+  ok   one-attached move-skirt-join R16 -> resize 12/30
+  ok   one-attached move-skirt-join R16 -> gauge dk
+  ok   one-attached move-skirt-join -> R17
+  ok   one-attached move-skirt-join -> R18
+  ok   one-attached move-skirt-join -> R19
+  ok   one-attached move-skirt-join -> R20
+  ok   one-attached move-skirt-join -> R21
+  ok   one-attached move-skirt-join -> R22
+  ok   one-attached move-skirt-join -> R23
+  ok   one-attached move-skirt-join -> R24
+  ok   one-attached move-skirt-join -> R25
+  ok   one-attached move-skirt-join -> R26
+  ok   one-attached move-skirt-join -> R27
+  !!   one-attached move-skirt-join -> R28
+         - mdcheck [ERROR] ASSEMBLY_SKIRT_ANCHOR 装配: reservation row is the cinched last row
+  !!   one-attached move-skirt-join R28 -> resize 12/30
+         - mdcheck [ERROR] ASSEMBLY_SKIRT_ANCHOR 装配: reservation row is the cinched last row
+  !!   one-attached move-skirt-join R28 -> gauge dk
+         - mdcheck [ERROR] ASSEMBLY_SKIRT_ANCHOR 装配: reservation row is the cinched last row
+  ok   one-attached yarn-spec with swatch
+  ok   one-attached round-edit 手臂: last round 12->8
+  !!   one-attached round-edit 帽子: last round 42->48
+         - mdcheck [ERROR] NOTE_HAT_ROUND 帽子: notes say 帽围 42 针, table peak 48
+  ok   one-attached round-edit 裙子: last round 48->96
+  ok   one-attached round-edit 头身（一体）: last round 12->8
+
+### edits on one-ring-egg-dk
+  ok   one-ring-egg-dk resize head=6.0 height=12.0
+  ok   one-ring-egg-dk resize head=12.0 height=30.0
+  ok   one-ring-egg-dk resize head=9.0 height=40.0
+  ok   one-ring-egg-dk resize head=20.0 height=60.0
+  ok   one-ring-egg-dk resize head=4.0 height=10.0
+  ok   one-ring-egg-dk gauge 17.0x14.0
+  ok   one-ring-egg-dk gauge 20.0x16.0
+  ok   one-ring-egg-dk gauge 6.0x8.0
+  ok   one-ring-egg-dk gauge 40.0x50.0
+  !!   one-ring-egg-dk structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 13.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 13.0 cm
+  --   one-ring-egg-dk structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 6.0}}: refused -> ValueError: 头身一体钩要求身体顶端（颈部）不宽于头部：当前颈部 36 针，头部最大 30 针。身体比头宽时请取消“头身一体钩”改为分件生成，或调小身体直径
+  ok   one-ring-egg-dk structure-edit 身体 {"count": 1, "dimensions": {"height_cm": 12.0}}
+  ok   one-ring-egg-dk structure-edit 手臂 {"count": 3, "dimensions": {}}
+  ok   one-ring-egg-dk structure-edit 手臂 {"count": 1, "dimensions": {}}
+  ok   one-ring-egg-dk structure-edit 腿部 {"count": 2, "dimensions": {"length_cm": 9.0}}
+  ok   one-ring-egg-dk structure-edit 帽子 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+  ok   one-ring-egg-dk structure-edit 裙子 {"count": 1, "dimensions": {"height_cm": 6.0}}
+  ok   one-ring-egg-dk structure-edit 尾巴 {"count": 1, "dimensions": {}, "attachments": [{"target_part_id": "hea
+  ok   one-ring-egg-dk structure-edit 耳朵 {"count": 2, "dimensions": {}, "attachments": []}
+  ok   one-ring-egg-dk structure-remove 帽子
+  ok   one-ring-egg-dk structure-remove 裙子
+  ok   one-ring-egg-dk structure-remove 身体
+  ok   one-ring-egg-dk structure-remove 头部
+  ok   one-ring-egg-dk structure-remove 腿部
+  --   one-ring-egg-dk head-opening 16 (one-piece): refused -> ValueError: 头部留口仅适用于独立头部，不能与头身一体同时使用
+  ok   one-ring-egg-dk part-gauge 帽子 fine
+  ok   one-ring-egg-dk part-gauge 裙子 dk
+  ok   one-ring-egg-dk part-gauge 帽子 22x24 -> resize 12/30
+  ok   one-ring-egg-dk part-gauge 帽子 22x24 -> back to default
+  ok   one-ring-egg-dk yarn-spec with swatch
+  ok   one-ring-egg-dk round-edit 手臂: last round 12->8
+  !!   one-ring-egg-dk round-edit 帽子: last round 54->60
+         - mdcheck [ERROR] NOTE_HAT_ROUND 帽子: notes say 帽围 54 针, table peak 60
+  ok   one-ring-egg-dk round-edit 裙子: last round 60->66
+  ok   one-ring-egg-dk round-edit 头身（一体）: last round 12->8
+
+### edits on opening16
+  ok   opening16 resize head=6.0 height=12.0
+  ok   opening16 resize head=12.0 height=30.0
+  ok   opening16 resize head=9.0 height=40.0
+  ok   opening16 resize head=20.0 height=60.0
+  !!   opening16 resize head=4.0 height=10.0
+         - hat note claims '帽围 18 针 > 头围' but head widest round is 18 针
+  ok   opening16 gauge 17.0x14.0
+  ok   opening16 gauge 20.0x16.0
+  !!   opening16 gauge 6.0x8.0
+         - hat note claims '帽围 18 针 > 头围' but head widest round is 18 针
+  ok   opening16 gauge 40.0x50.0
+  !!   opening16 structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 13.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 13.0 cm
+         - hat note claims '帽围 42 针 > 头围' but head widest round is 54 针
+  !!   opening16 structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 6.0 cm
+  ok   opening16 structure-edit 身体 {"count": 1, "dimensions": {"height_cm": 12.0}}
+  ok   opening16 structure-edit 手臂 {"count": 3, "dimensions": {}}
+  ok   opening16 structure-edit 手臂 {"count": 1, "dimensions": {}}
+  ok   opening16 structure-edit 腿部 {"count": 2, "dimensions": {"length_cm": 9.0}}
+  !!   opening16 structure-edit 帽子 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - hat note claims '帽围 24 针 > 头围' but head widest round is 36 针
+  ok   opening16 structure-edit 裙子 {"count": 1, "dimensions": {"height_cm": 6.0}}
+  ok   opening16 structure-edit 尾巴 {"count": 1, "dimensions": {}, "attachments": [{"target_part_id": "hea
+  ok   opening16 structure-edit 耳朵 {"count": 2, "dimensions": {}, "attachments": []}
+  ok   opening16 structure-remove 帽子
+  ok   opening16 structure-remove 裙子
+  ok   opening16 structure-remove 身体
+  ok   opening16 structure-remove 头部
+  ok   opening16 structure-remove 腿部
+  ok   opening16 head-opening 16
+  ok   opening16 head-opening 16 -> closed
+  ok   opening16 head-opening 16 -> resize 12/30
+  ok   opening16 head-opening 7
+  ok   opening16 part-gauge 帽子 fine
+  ok   opening16 part-gauge 裙子 dk
+  ok   opening16 part-gauge 帽子 22x24 -> resize 12/30
+  ok   opening16 part-gauge 帽子 22x24 -> back to default
+  ok   opening16 yarn-spec with swatch
+  ok   opening16 round-edit 手臂: last round 12->8
+  ok   opening16 round-edit 身体: last round 30->26
+  --   opening16 round-edit 头部: last round 18->18: refused -> ValueError: 图解自检失败: 头部留口：头部留口必须引用实际末圈，且末圈针数等于保存的留口目标
+  !!   opening16 round-edit 帽子: last round 42->48
+         - mdcheck [ERROR] NOTE_HAT_ROUND 帽子: notes say 帽围 42 针, table peak 48
+  ok   opening16 round-edit 裙子: last round 48->54
+
+### edits on profile-fine
+  ok   profile-fine resize head=6.0 height=12.0
+  ok   profile-fine resize head=12.0 height=30.0
+  ok   profile-fine resize head=9.0 height=40.0
+  ok   profile-fine resize head=20.0 height=60.0
+  ok   profile-fine resize head=4.0 height=10.0
+  ok   profile-fine gauge 17.0x14.0
+  ok   profile-fine gauge 20.0x16.0
+  !!   profile-fine gauge 6.0x8.0
+         - hat note claims '帽围 18 针 > 头围' but head widest round is 18 针
+  ok   profile-fine gauge 40.0x50.0
+  !!   profile-fine structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 13.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 13.0 cm
+         - hat note claims '帽围 66 针 > 头围' but head widest round is 84 针
+  !!   profile-fine structure-edit 头部 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - header 目标头径 9.0 cm but structure/parts head is 6.0 cm
+  ok   profile-fine structure-edit 身体 {"count": 1, "dimensions": {"height_cm": 12.0}}
+  ok   profile-fine structure-edit 手臂 {"count": 3, "dimensions": {}}
+  ok   profile-fine structure-edit 手臂 {"count": 1, "dimensions": {}}
+  ok   profile-fine structure-edit 腿部 {"count": 2, "dimensions": {"length_cm": 9.0}}
+  !!   profile-fine structure-edit 帽子 {"count": 1, "dimensions": {"diameter_cm": 6.0}}
+         - hat note claims '帽围 36 针 > 头围' but head widest round is 54 针
+  ok   profile-fine structure-edit 裙子 {"count": 1, "dimensions": {"height_cm": 6.0}}
+  ok   profile-fine structure-edit 尾巴 {"count": 1, "dimensions": {}, "attachments": [{"target_part_id": "hea
+  ok   profile-fine structure-edit 耳朵 {"count": 2, "dimensions": {}, "attachments": []}
+  ok   profile-fine structure-remove 帽子
+  ok   profile-fine structure-remove 裙子
+  --   profile-fine structure-remove 身体: refused -> ValueError: 挑针接裙需要身体部件；请添加身体或选择独立裙筒
+  ok   profile-fine structure-remove 头部
+  ok   profile-fine structure-remove 腿部
+  ok   profile-fine head-opening 16
+  ok   profile-fine head-opening 16 -> closed
+  ok   profile-fine head-opening 16 -> resize 12/30
+  ok   profile-fine head-opening 7
+  ok   profile-fine part-gauge 帽子 fine
+  --   profile-fine part-gauge 裙子 dk: refused -> ValueError: 挑针接裙沿用身体密度，独立裙筒才可单独设置
+  ok   profile-fine part-gauge 帽子 22x24 -> resize 12/30
+  ok   profile-fine part-gauge 帽子 22x24 -> back to default
+       waist candidates [10, 11, 12, 13, 14, 15], current base row 11
+  ok   profile-fine move-skirt-join -> R10
+  ok   profile-fine move-skirt-join R10 -> resize 12/30
+  ok   profile-fine move-skirt-join R10 -> gauge dk
+  ok   profile-fine move-skirt-join -> R11
+  ok   profile-fine move-skirt-join -> R12
+  ok   profile-fine move-skirt-join -> R13
+  ok   profile-fine move-skirt-join -> R14
+  ok   profile-fine move-skirt-join -> R15
+  ok   profile-fine move-skirt-join R15 -> resize 12/30
+  ok   profile-fine move-skirt-join R15 -> gauge dk
+  ok   profile-fine yarn-spec with swatch
+  ok   profile-fine round-edit 手臂: last round 12->8
+  ok   profile-fine round-edit 身体: last round 42->38
+  ok   profile-fine round-edit 头部: last round 12->8
+  !!   profile-fine round-edit 帽子: last round 66->72
+         - mdcheck [ERROR] NOTE_HAT_ROUND 帽子: notes say 帽围 66 针, table peak 72
+  ok   profile-fine round-edit 裙子: last round 72->78
+
+### params-JSON edits (advanced editor path: rebuild_params) on sep-ring
+  ok   json drop 帽子
+  ok   json rename 手臂->胳膊
+  ok   json quantity 腿部=3
+  ok   json drop 身体
+  ok   json drop 头部
+  !!   json delete head rounds 13,14 (the eye round)
+         - mdcheck [ERROR] ROW_NUMBERS 头部: row labels are not 1..n: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]…
+         - mdcheck [ERROR] EYE_ROUND_MISSING 头部: eye round 14 is not in the table
+       head notes after deletion: 第 14 圈安装安全眼 | rows now: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 18, 19, 20, 21, 22]
+
+### does a later geometry edit keep a params-JSON deletion / rename?
+   after json drop 帽子: parts before resize ['头部', '身体', '手臂', '腿部', '尾巴', '耳朵', '裙子']
+                       parts after  resize ['头部', '身体', '手臂', '腿部', '尾巴', '耳朵', '帽子', '裙子']
+   after json rename 手臂->胳膊: parts before resize ['头部', '身体', '胳膊', '腿部', '尾巴', '耳朵', '帽子', '裙子']
+                             parts after  resize ['头部', '身体', '手臂', '腿部', '尾巴', '耳朵', '帽子', '裙子']
+
+SUMMARY: 229 audited results consistent; 37 inconsistency lines
+    11  N, "dimensions": {"diameter_cm": N}}: header 目标头径 N cm but structure/parts head is N cm
+     8  N, "dimensions": {"diameter_cm": N}}: hat note claims '帽围 N 针 > 头围' but head widest round
+     7  hat note claims '帽围 N 针 > 头围' but head widest round is N 针
+     6  last round N->N: mdcheck [ERROR] NOTE_HAT_ROUND 帽子: notes say 帽围 N 针, table peak N
+     3  mdcheck [ERROR] ASSEMBLY_SKIRT_ANCHOR 装配: reservation row is the cinched last row
+     1  mdcheck [ERROR] ROW_NUMBERS 头部: row labels are not N..n: [N, N, N, N, N, N, N, N, N, N, N,
+     1  mdcheck [ERROR] EYE_ROUND_MISSING 头部: eye round N is not in the table
+exit=0

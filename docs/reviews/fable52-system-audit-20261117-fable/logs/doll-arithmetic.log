@@ -1,0 +1,36 @@
+== 1. body length supplied by the generated rounds (linear estimate, not measured)
+   starter            height  gauge   allocated(body+neck)  rounds  straight  meridian  axial-estimate  share
+   wide_brim_curls       16  (22, 28)     8.00 cm              23     16      8.21      6.28 cm        79%
+   wide_brim_curls       16  (30, 36)     8.00 cm              30     21      8.33      6.31 cm        79%
+   wide_brim_curls       16  (14, 16)     8.00 cm              17     11     10.62      9.14 cm       114%
+   wide_brim_curls       24  (22, 28)    12.00 cm              32     22     11.43      8.21 cm        68%
+   wide_brim_curls       24  (30, 36)    12.00 cm              42     28     11.67      8.58 cm        72%
+   wide_brim_curls       24  (14, 16)    12.00 cm              21     14     13.12     10.49 cm        87%
+   wide_brim_curls       40  (22, 28)    20.00 cm              49     33     17.50     12.72 cm        64%
+   wide_brim_curls       40  (30, 36)    20.00 cm              63     42     17.50     12.32 cm        62%
+   wide_brim_curls       40  (14, 16)    20.00 cm              30     20     18.75     13.86 cm        69%
+   wide_brim_curls       60  (22, 28)    30.00 cm              69     47     24.64     17.11 cm        57%
+   wide_brim_curls       60  (30, 36)    30.00 cm              91     60     25.28     17.33 cm        58%
+   wide_brim_curls       60  (14, 16)    30.00 cm              44     28     27.50     19.62 cm        65%
+
+   default body rounds: [6, 12, 18, 24, 25, 25, 25, 25, 25, 25, 25, 25, 20, 20, 20, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 19, 13, 8, 8, 8, 8]
+   rounds per section: {'起针': 1, '下身': 11, '腰部': 3, '胸肩': 11, '肩部向颈部收窄': 3, '独立颈段': 3}
+   legs estimate 6.42 cm (target 6); body+neck estimate 8.21 cm (allocated 12); head target 6
+   sum with the head at its full target diameter: 20.6 cm against the stated target height 24 cm
+
+== 2. hair cap depth versus the eye-candidate round (both counted from the crown)
+   head rounds 26: [6, 6, 12, 18, 24, 30, 30, 36, 36, 42, 42, 42, 42, 42, 42, 36, 36, 36, 30, 24, 24, 18, 18, 12, 6, 6]
+   hair cap rounds 13: [6, 12, 18, 24, 30, 36, 42, 44, 44, 44, 44, 44, 44]
+   eye candidate round: 11; cap is 13 rounds deep = 4.64 cm from crown to rim; crown to eye round = 3.93 cm
+   join text: 先对齐头顶；发帽边缘放在眼位上方，确认后缝到头部
+   -> a crown-aligned cap of 13 rounds ends +2 rounds relative to the eye round (BELOW it)
+   height 16: cap rounds 9, eye round 9, head rounds 18 -> cap ends +0 rounds from the eye round
+   height 24: cap rounds 13, eye round 11, head rounds 26 -> cap ends +2 rounds from the eye round
+   height 40: cap rounds 21, eye round 21, head rounds 44 -> cap ends +0 rounds from the eye round
+   height 60: cap rounds 31, eye round 26, head rounds 66 -> cap ends +5 rounds from the eye round
+
+== 3. sweep: exception types escaping build_doll_plan
+   39366 combinations
+    28350  ValueError:     For further information visit https://errors.pydantic.de
+     6972  ValueError: 袖窿需前后各留 N 行边，但上衣片仅 N 行；请增加上衣片长度，或减小掌臂围度后重新生成
+     4044  plan built

@@ -1,0 +1,29 @@
+2026-11-17 14:55:50.975 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+height 48: UI (only the height field touched) versus CLI --starter --height 48
+  field                        UI      CLI
+  height_cm                 48.00    48.00
+  head_diameter_cm           6.00    12.00   <-- differs
+  leg_length_cm             12.00    12.00
+  body_diameter_cm           7.20     7.20
+  neck_diameter_cm           2.40     2.40
+  arm_length_cm             12.00    12.00
+  palm_diameter_cm           1.50     3.00   <-- differs
+  wrist_diameter_cm          0.90     1.80   <-- differs
+  foot_length_cm             3.00     6.00   <-- differs
+  foot_width_cm              1.60     3.20   <-- differs
+  brim_width_cm              3.60     3.60
+  bodice_length_cm           5.40    10.80   <-- differs
+  skirt_length_cm           14.00    14.00
+  bag_width_cm               8.00     8.00
+  bag_height_cm              9.00     9.00
+  strap_length_cm           40.00    40.00
+  head          UI:  26 steps, widest  42 st | CLI:  53 steps, widest  84 st
+  body          UI:  66 steps, widest  50 st | CLI:  57 steps, widest  50 st
+  arms          UI:  34 steps, widest  10 st | CLI:  34 steps, widest  21 st
+  shoes         UI:  10 steps, widest  18 st | CLI:  16 steps, widest  36 st
+  hair_cap      UI:  13 steps, widest  44 st | CLI:  25 steps, widest  86 st
+  garment_back  UI:  15 steps, widest  26 st | CLI:  30 steps, widest  26 st
+  notices shown by the UI after generating: none
+  any caption mentioning that some dimensions keep earlier values: False
+round trip: downloaded design JSON -> load -> plan
+  same plan after reload: True | same JSON bytes: True

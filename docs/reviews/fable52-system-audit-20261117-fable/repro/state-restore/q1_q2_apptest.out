@@ -1,0 +1,36 @@
+2026-11-18 13:25:58.907 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-18 13:26:01.933 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+=== q1_q2_apptest ===
+python 3.12.13 | app <repo>/app/__init__.py | version 0.2.0b3
+HEAD 6c88b7df5d53c18d4c8190288419faeb02cc1b13 | tmp <tmp>
+[generated A] rid=b7a14e748b49 rev=1a68db3084 ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+
+--- trial bound to a freshly generated manual result ---
+trial source_revision == pattern_revision(live result): False | live top-level gauge: None
+warnings mentioning 试钩原图解: ['当前图解已与试钩原图解不同；本记录继续绑定原图解。若实物也采用了修改，请在完成记录中声明改图内容；新设计请另建试钩。']
+saved swatch: True 15.0 | 预览按实测密度重算 disabled: True
+captions: ['重算入口仅用于试钩原图解；请从侧栏打开原试钩包后再操作。']
+
+--- Q1 export freshness ---
+[A + pdf + share + ticks] rid=b7a14e748b49 rev=1a68db3084 ws.rid_match=True pdf=82797c97d0 pdf_download_shown=True share=set md_cache_is_current=True ticks=24 record_rid_match=True errors=[] exc=0
+[after size edit] rid=55c5a3c92f27 rev=36d940bdeb ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+   notices: ['本次修改清除了 24 个受影响的已完成圈次；其他部件进度及个人备注已保留，可撤销恢复。']
+[pdf regenerated for edited] rid=55c5a3c92f27 rev=36d940bdeb ws.rid_match=True pdf=518339e961 pdf_download_shown=True share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+   new pdf differs from A pdf: True
+[after undo] rid=bec3cf39269d rev=1a68db3084 ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=24 record_rid_match=True errors=[] exc=0
+   undo restored A content: True
+[after redo] rid=9cbf9807dbd6 rev=36d940bdeb ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+[after untouched JSON 重新生成] rid=9cbf9807dbd6 rev=36d940bdeb ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+   result_id changed by a no-op apply: False | revision changed: False | success: ['针数代数与相邻圈跳变检查通过（已检查 48 圈）'] | info: ['此圈序需制作 2 份相同部件；总针数、材料和工时已按 2 份计算。', '设置与当前图解相同，已保留撤销、重做及完成进度。']
+[second untouched 重新生成] rid=9cbf9807dbd6 rev=36d940bdeb ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+   second no-op changed id: False
+[pdf prepared before import] rid=9cbf9807dbd6 rev=36d940bdeb ws.rid_match=True pdf=8179a9a40e pdf_download_shown=True share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+[after importing another pattern] rid=daf42cbaae9a rev=53f0e43345 ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+   trial workspace still present after import: True | edit history reset: True
+
+--- Q2 identical content, new generation ---
+[regenerated same spec as A] rid=185463aeafb1 rev=1a68db3084 ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=0 record_rid_match=True errors=[] exc=0
+   same content as A: True | new id: True | leftover chk_/notes keys of older ids: []
+[ticks+notes on regenerated] rid=185463aeafb1 rev=1a68db3084 ws.rid_match=True pdf=none pdf_download_shown=False share=none md_cache_is_current=True ticks=22 record_rid_match=True errors=[] exc=0
+photo-tab twin: ticks 0 | notes '' | pdf None | exc 0
+after ticking twin body: manual ticks 22 | twin ticks 15

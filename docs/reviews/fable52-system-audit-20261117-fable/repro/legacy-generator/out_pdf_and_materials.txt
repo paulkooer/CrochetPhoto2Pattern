@@ -1,0 +1,49 @@
+=== Markdown vs PDF: per-round rows, part notes and assembly lines ===
+  default: 54 round rows, 8 assembly steps; present in Markdown but not found in PDF text: none; Markdown-only sections: ['magic-ring bullet (✨ 魔法环起针)', 'alternative ring start (环起困难的替代法)', 'formula column (针法写法)']
+  all ring: 90 round rows, 13 assembly steps; present in Markdown but not found in PDF text: none; Markdown-only sections: ['magic-ring bullet (✨ 魔法环起针)', 'alternative ring start (环起困难的替代法)', 'formula column (针法写法)']
+  all one-piece attached ruffle dk egg: 84 round rows, 12 assembly steps; present in Markdown but not found in PDF text: none; Markdown-only sections: ['magic-ring bullet (✨ 魔法环起针)', 'alternative ring start (环起困难的替代法)', 'formula column (针法写法)']
+  opening 16 + part gauges: 92 round rows, 13 assembly steps; present in Markdown but not found in PDF text: none; Markdown-only sections: ['magic-ring bullet (✨ 魔法环起针)', 'alternative ring start (环起困难的替代法)', 'formula column (针法写法)']
+
+=== yarn / time arithmetic recomputed by hand for the default doll ===
+  stitches 1332 (stored 1332), physical rounds 71
+  grams by hand 114.86 vs summary 114.86; metres by hand 160.81 vs 160.8; => 12.1 cm of yarn per stitch incl. 10% allowance
+  minutes by hand 156 vs stored 156
+  implied yarn per stitch by gauge (model: grams ∝ stitch area; metres/100g by stitch-width band):
+     classic  stitch 0.77x0.62 cm: 0.0784 g/st, 11.0 cm/st = 3.9 x the stitch perimeter
+     dk       stitch 0.59x0.71 cm: 0.0685 g/st, 17.1 cm/st = 6.6 x the stitch perimeter
+     fine     stitch 0.50x0.62 cm: 0.0510 g/st, 12.7 cm/st = 5.7 x the stitch perimeter
+     6x8      stitch 1.67x1.25 cm: 0.3397 g/st, 47.6 cm/st = 8.2 x the stitch perimeter
+     40x50    stitch 0.25x0.20 cm: 0.0082 g/st, 2.0 cm/st = 2.3 x the stitch perimeter
+
+=== boundary inputs ===
+  normal 50g/125m: accepted -> 114.86 g, 287.15 m, balls 3, finite=True, validator ok=True
+  waste 100%: accepted -> 208.84 g, 522.1 m, balls 5, finite=True, validator ok=True
+  waste -1: refused (ValidationError: 1 validation error for YarnSpec
+waste_percent
+  Input should be greater than or equal to 0)
+  ball weight 0: refused (ValidationError: 1 validation error for YarnSpec
+ball_weight_g
+  Input should be greater than or equal to 0)
+  ball weight NaN: refused (ValidationError: 1 validation error for YarnSpec
+ball_weight_g
+  Value error, 线材数值必须是有限数值，不能是布尔值 [type=valu)
+  ball length inf: refused (ValidationError: 1 validation error for YarnSpec
+ball_length_m
+  Value error, 线材数值必须是有限数值，不能是布尔值 [type=valu)
+  ball weight True: refused (ValidationError: 1 validation error for YarnSpec
+ball_weight_g
+  Value error, 线材数值必须是有限数值，不能是布尔值 [type=valu)
+  smallest accepted ball (1e-6 g, 10000 m): accepted -> 114.86 g, 1148613424791.77 m, balls 114861344, finite=True, validator ok=True
+  swatch 1e-6 g over 1000x1000: accepted -> 0.0 g, 0.0 m, balls 2, finite=True, validator ok=True
+  swatch 2000 g over 1x1: accepted -> 2930400.0 g, 7326000.0 m, balls 58610, finite=True, validator ok=True
+  swatch partial: refused (ValidationError: 1 validation error for YarnSpec
+  Value error, 试片必须同时提供克重、每行针数和行数 [type=value_error, input)
+  Gauge(nan, 16): refused (尺寸或密度必须是有限数值，不能是布尔值)
+  Gauge(inf, 16): refused (尺寸或密度必须是有限数值，不能是布尔值)
+  Gauge(0, 16): refused (10cm 小样针数必须在 6–40 之间)
+  Gauge(-5, 16): refused (10cm 小样针数必须在 6–40 之间)
+  Gauge(5.9, 16): refused (10cm 小样针数必须在 6–40 之间)
+  Gauge(40.1, 16): refused (10cm 小样针数必须在 6–40 之间)
+  estimate_minutes([]) = 30 | one 1-stitch round = 30
+  all quantities 20: 23040 st, 2676 min, 1986.79 g; eyes row: 20 对 (10
+  4 cm-head doll: body is 18 st x 4.4 cm tall; weight row still reads: 1 份（每份约 3/4 杯，按体积调整）——…; wire row: 18号（≈1.2mm）纸包花艺线 4 根——…

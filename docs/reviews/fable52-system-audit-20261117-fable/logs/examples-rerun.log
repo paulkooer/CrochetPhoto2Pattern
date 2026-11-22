@@ -1,0 +1,99 @@
+app module: <repo>/app/__init__.py
+
+== armhole-demo: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/armhole-demo/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/armhole-demo/path-result.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/armhole-demo/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/armhole-demo/path-explanation.pdf
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (4299 vs 4299 bytes)
+   path-plan.json: identical
+   path-result.json: identical
+
+== doll-wide-brim: exit 0
+   stdout: {
+             "output": "<repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/doll-wide-brim",
+             "status": "unverified_prototype",
+             "components": 19,
+             "physical_parts": 54,
+             "stitch_outputs_and_chains": 7056
+           }
+   assembly.dot: identical
+   design.json: identical
+   plan.json: identical
+   plan.md: identical
+   plan.pdf: DIFFERENT (28839 vs 28839 bytes)
+
+== doll-folded-cap: exit 0
+   stdout: {
+             "output": "<repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/doll-folded-cap",
+             "status": "unverified_prototype",
+             "components": 18,
+             "physical_parts": 37,
+             "stitch_outputs_and_chains": 6723
+           }
+   assembly.dot: identical
+   design.json: identical
+   plan.json: identical
+   plan.md: identical
+   plan.pdf: DIFFERENT (28263 vs 28263 bytes)
+
+== attached-ribbing: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/attached-ribbing/design-proposal.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/attached-ribbing/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/attached-ribbing/path-result.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/attached-ribbing/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/attached-ribbing/path-explanation.pdf
+   design-proposal.json: identical
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (7019 vs 7019 bytes)
+   path-plan.json: identical
+   path-result.json: identical
+
+== cardigan-open: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-open/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-open/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-open/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-open/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-open/path-explanation.pdf
+   design-report.json: identical
+   design-request.json: identical
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (45674 vs 45674 bytes)
+   path-plan.json: identical
+
+== cardigan-seamed: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-seamed/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-seamed/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-seamed/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-seamed/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-seamed/path-explanation.pdf
+   design-report.json: identical
+   design-request.json: identical
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (46610 vs 46610 bytes)
+   path-plan.json: identical
+
+== cardigan-missing-gauge: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-missing-gauge/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-missing-gauge/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-missing-gauge/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-missing-gauge/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-missing-gauge/path-explanation.pdf
+   design-report.json: identical
+   design-request.json: identical
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (11530 vs 11530 bytes)
+   path-plan.json: identical
+
+== cardigan-depth-quantization: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-depth-quantization/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-depth-quantization/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-depth-quantization/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-depth-quantization/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/examples-rerun/cardigan-depth-quantization/path-explanation.pdf
+   design-report.json: identical
+   design-request.json: identical
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (47664 vs 47664 bytes)
+   path-plan.json: identical

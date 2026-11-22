@@ -1,0 +1,34 @@
+== 1. half loops ==
+free loop of a stitch whose other loop was never worked: REJECT  [as expected] :: 该半针没有被先前的挑针操作保留，不能凭空补出
+free loop on the SAME side that was worked (BLO worked, ask back): REJECT  [as expected] :: 该半针没有被先前的挑针操作保留，不能凭空补出
+two FreeLoops steps over the same front loops (both listed final): REJECT  [as expected] :: 最终工作边通过别名重复列出同一针位
+two FreeLoops aliases, only one listed final: ACCEPT :: created=16 consumed=8 final={'two': 4, 'lip_a': 4}
+   created: 16 | lip_a is lip_b: True | events for lip_b: []
+work the same lips through both aliases: REJECT  [as expected] :: 针位已使用，不能通过其他别名再次使用：Site(edge='one', position=1, face='front_loop')
+hold alias A then FreeLoops again: REJECT  [as expected] :: 针位已保留给 h，须通过该保留边继续
+split a reserved lip again (BLO of a front_loop site): REJECT  [as expected] :: 半针或特殊落针位不能再次拆分为半针
+FLO on a chain underside / row end: REJECT  [as expected] :: 半针或特殊落针位不能再次拆分为半针
+== 2. three working positions from one chain stitch (top FLO + reserved BLO + back bump) ==
+chain top worked FLO, BLO lip reserved, underside worked: ACCEPT :: created=24 consumed=12 final={'r1': 4, 'r2': 4, 'r3': 4}
+== 3. row ends ==
+row end of a route that is not flat (segment): REJECT  [as expected] :: 行侧挑针须引用已建立并明确方向的片钩行
+row end of joined_rows: REJECT  [as expected] :: 行侧挑针须引用已建立并明确方向的片钩行
+row end of a row not yet made: REJECT  [as expected] :: 行侧挑针须引用已建立并明确方向的片钩行
+same row end twice inside one RowEdges: REJECT  [as expected] :: 同一路径重复引用针位
+same row end under two step ids (alias), one listed final: ACCEPT :: created=9 consumed=4 final={'one': 4, 'side_a': 1}
+   created: 9 | same site: True
+same row end worked through both aliases: REJECT  [as expected] :: 针位已使用，不能通过其他别名再次使用：Site(edge='one', position=1, face='row_left')
+row end taken at the end that is slip-stitched to the base (attached ribbing shape): ACCEPT :: created=16 consumed=8 final={'rib1': 3, 'pick': 1, 'rest': 4}
+   row_end_site event: [((Site(edge='rib1', position=3, face='top'),), (Site(edge='rib1', position=1, face='row_right'),))]
+row ends listed in zig-zag order across both sides: ACCEPT :: created=24 consumed=16 final={'three': 4, 'band': 4}
+   markdown step text: 依序挑行端：one 的 left 行端；three 的 right 行端；two 的 left 行端；one 的 right 行端
+== 4. corners ==
+corner face without corner_sites: REJECT  [as expected] :: 工作边或表面尚未建立：br/corner_start
+corner sites on a bridge that skips nothing (adjacent stitches): ACCEPT :: created=18 consumed=8 final={'r': 6, 'sleeve': 4}
+corner sites must be accounted for: REJECT  [as expected] :: 有 2 个未使用针位未声明去向；须保留或继续钩织
+== 5. 'leave unworked' declarations ==
+both faces of the same chain stitches retired as 'unused chain face' in mid-row: ACCEPT :: created=22 consumed=16 final={'r': 6}
+   inventory: {'retired_without_work': 10, 'retirement_declarations': [{'step': 'gap_under', 'reason': 'unused_chain_face', 'sites': 2}, {'step': 'all_top', 'reason': 'unused_chain_face', 'sites': 8}], 'unconsumed_sites': 6}
+   formula of r: ('3X（里山），3X（里山）', '')
+ordinary stitch heads retired as unused chain face: REJECT  [as expected] :: 未用锁针侧须引用实际起链或锁针桥，不能用来注销普通针目
+a whole live row retired as finished_border, plan closes with nothing left: ACCEPT :: created=8 consumed=8 final={}

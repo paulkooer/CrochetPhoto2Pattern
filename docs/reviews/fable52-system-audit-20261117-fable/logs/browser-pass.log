@@ -1,0 +1,34 @@
+NOTE  tabs  | ["照片分析（本地）","手动输入","2D 像素网格"]
+NOTE  manual-tab expanders  | ["keyboard_arrow_right","","keyboard_arrow_right","","keyboard_arrow_right"]
+PASS  A1 default mode (no rib gauge) yields a staged draft, not a full design
+PASS  A1 report stage/flags  | stage=hem_blocked
+PASS  A2 changing gauge mode marks the kept result as stale
+PASS  A2 stale result: report and plan downloads are disabled in the browser
+PASS  A3 hypothetical gauges: integrated open-cuff design shown
+NOTE  A3 request (as recorded by the UI)  | {"hook_mm":3,"dimension_basis":"hypothetical","body_rows":21,"sleeve_rows":18,"stage":"integrated_open_cuffs"}
+PASS  A4 PDF prepared and offered
+PASS  A4 downloaded file is a PDF  | 45674 bytes
+PASS  A4 after editing body length: stale notice, PDF/plan/prepare all disabled
+PASS  A4 regenerating removes the PDF prepared for the earlier input
+NOTE  A5 even-row design from the UI  | {"body_rows":20,"stage":"integrated_open_cuffs","unresolved":3,"plan_sha256":"36e0d327e36e7a17"}
+PASS  A5 (informational) UI shows no warning about band path continuity for even body rows  | expected: no such warning exists in this build
+NOTE  A6 own-swatch inputs mentioning hook size  | []
+PASS  A6 (informational) own-swatch mode has no hook-size input  | report/PDF still carry hook_mm=3.0
+PASS  B1 doll prototype generated and labelled unverified
+NOTE  B1 UI default design  | {"hat":"wide_brim","hair":"curls","height":24,"layers":2}
+NOTE  B1  | UI Markdown is byte-identical to packaged CLI example doll-wide-brim/plan.md
+PASS  B2 doll PDF prepared and offered
+PASS  B3 after editing height: stale notice, Markdown and PDF downloads disabled
+PASS  B3 regenerating removes the PDF prepared for the earlier design
+PASS  C1 packaged cardigan plan loads in the reader
+PASS  C1 reader Markdown is byte-identical to the CLI Markdown for the same plan
+PASS  C2 reader PDF prepared and offered
+PASS  C3 new upload not yet loaded: stale notice, Markdown and PDF downloads disabled
+PASS  C4 loading the second plan replaces the view and drops the first plan's PDF
+PASS  C5 (informational) reader accepts the even-body cardigan plan from A5 with no error
+PASS  C6 rejected upload: error shown, previous plan kept, its downloads stay disabled
+PASS  D1 cardigan result still present after using the other two entries
+PASS  D1 doll result still present after using the reader
+PASS  D2 no request left 127.0.0.1 during the whole pass  | []
+NOTE  browser console errors  | []
+SUMMARY 25 passed, 0 failed

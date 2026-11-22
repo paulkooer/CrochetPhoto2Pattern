@@ -1,0 +1,20 @@
+[env] python 3.12.13 | app=<repo>/app/__init__.py | HEAD=6c88b7df5d53c18d4c8190288419faeb02cc1b13
+$ python -m app.doll_cli --starter wide_brim_curls --out-dir <scratch>/out/run1/doll-wide-brim --pdf
+  exit=0
+  stdout: { "output": "<repo>/eval_outputs/fable52-system-audit-20261117-fable-review/repro/dressed-doll/out/run1/doll-wide-brim", "status": "unverified_prototype", "components": 19, "physical_parts": 54, "stitch_outputs_and_chains": 7056 }
+  design.json: fresh sha256=4ae6d2e1c7ede1b3 len=684 | packaged sha256=4ae6d2e1c7ede1b3 len=684 | identical=True
+  plan.json: fresh sha256=3f28517c485589ae len=83116 | packaged sha256=3f28517c485589ae len=83116 | identical=True
+  plan.md: fresh sha256=c2e383c0d056e197 len=21216 | packaged sha256=c2e383c0d056e197 len=21216 | identical=True
+  assembly.dot: fresh sha256=2df02494995962eb len=1090 | packaged sha256=2df02494995962eb len=1090 | identical=True
+  plan.pdf: fresh sha256=a98d99261df91708 len=28839 | packaged sha256=9ca565da61676d8e len=28839 | identical=False (PDF embeds creation time/ID; compared separately in r07)
+$ python -m app.doll_cli --starter folded_cap_layers --out-dir <scratch>/out/run1/doll-folded-cap --pdf
+  exit=0
+  stdout: { "output": "<repo>/eval_outputs/fable52-system-audit-20261117-fable-review/repro/dressed-doll/out/run1/doll-folded-cap", "status": "unverified_prototype", "components": 18, "physical_parts": 37, "stitch_outputs_and_chains": 6723 }
+  design.json: fresh sha256=094afd59c0d8cb97 len=697 | packaged sha256=094afd59c0d8cb97 len=697 | identical=True
+  plan.json: fresh sha256=e8fbd8b9a13a6c8a len=93609 | packaged sha256=e8fbd8b9a13a6c8a len=93609 | identical=True
+  plan.md: fresh sha256=9a8ba815a5d77cdd len=20494 | packaged sha256=9a8ba815a5d77cdd len=20494 | identical=True
+  assembly.dot: fresh sha256=c3cebc705bc368b7 len=1000 | packaged sha256=c3cebc705bc368b7 len=1000 | identical=True
+  plan.pdf: fresh sha256=bb058070b615c4b2 len=28263 | packaged sha256=ada45477f0d483e3 len=28263 | identical=False (PDF embeds creation time/ID; compared separately in r07)
+re-run into existing dir: exit=2 stderr=无法生成结构原型：输出文件已存在，请另选目录：design.json, plan.json, plan.md, assembly.dot
+existing files untouched: True
+NON-PDF MISMATCHES: 0

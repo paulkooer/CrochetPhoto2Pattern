@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import io
+import re
 
 from app.models.working_path import (
     ChainBridge,
@@ -29,6 +30,20 @@ from app.utils.working_path_format import route_formula
 
 BOUNDARY = ("这是工序校验演示，起始织片由人工声明；没有起针、线材、尺寸或完整衣物步骤。"
             "只检查工作位置的来源、保留和使用，不能当作可穿着衣物或目标照片的试钩图解。")
+
+
+_BLOCK_START = re.compile(r"^(#|>|&gt;|[-+*=]|\d+[.)]|```|~~~)")
+
+
+def _md_line(value) -> str:
+    """File-supplied text as one inert Markdown line.
+
+    Titles, labels and notes come from the loaded plan. Line breaks are folded
+    so the text cannot start a paragraph, heading or quote of its own, and a
+    leading block marker is escaped so a list item cannot become a heading.
+    """
+    text = _md_text(" ".join(str(value).split()))
+    return "\\" + text if _BLOCK_START.match(text) else text
 
 
 def _span_text(span: Span) -> str:
@@ -106,9 +121,11 @@ def step_text(step: Step, *, events: list[StitchEvent] | tuple[StitchEvent, ...]
                 return "已预留的后半针 BLO"
             return "该工作边所提供的针位"
 
-        return (f"将 {_span_text(step.left)}（{selection(0, step.left_loop)}）与 {_span_text(step.right)}"
-                f"（{selection(1, step.right_loop)}）依序配对，同时穿过两侧作引拔接合；"
-                f"接合针不作为下一行工作边。{step.note}")
+        facing = ("" if step.side is None else
+                  f"以{'正面RS' if step.side == 'RS' else '反面WS'}朝向自己，前后半针按此时所见区分；")
+        return (f"{facing}将 {_span_text(step.left)}（{selection(0, step.left_loop)}）"
+                f"与 {_span_text(step.right)}（{selection(1, step.right_loop)}）依序配对，"
+                f"同时穿过两侧作引拔接合；接合针不作为下一行工作边。{step.note}")
     if isinstance(step, FinishEdge):
         return f"{_span_text(step.source)} 作为成品边保留，不再继续工作；记录原因 {step.reason}。"
     descriptions = []
@@ -154,10 +171,10 @@ def step_text(step: Step, *, events: list[StitchEvent] | tuple[StitchEvent, ...]
 
 def export_working_path_markdown(plan: WorkingPath) -> str:
     result = compile_working_path(plan)
-    lines = [f"# {_md_text(result.plan.title)}", "", f"> {scope_note(result.plan)}", ""]
+    lines = [f"# {_md_line(result.plan.title)}", "", f"> {scope_note(result.plan)}", ""]
     if result.plan.review_notes:
         lines += ["## 必须保留的审查说明", ""]
-        lines.extend(f"- {_md_text(note)}" for note in result.plan.review_notes)
+        lines.extend(f"- {_md_line(note)}" for note in result.plan.review_notes)
     lines += ["", "## 起始条件", ""]
     lines.extend(f"- `{edge.id}`：已有织片上人工声明的 {edge.count} 个顺序工作位置。"
                  for edge in result.plan.existing_edges)
@@ -165,8 +182,8 @@ def export_working_path_markdown(plan: WorkingPath) -> str:
     events_by_step: dict[str, list[StitchEvent]] = {}
     for event in result.events:
         events_by_step.setdefault(event.route, []).append(event)
-    lines.extend(f"{index}. **{_md_text(step.label)}**（`{step.id}`）："
-                 f"{_md_text(step_text(step, events=events_by_step.get(step.id)))}"
+    lines.extend(f"{index}. **{_md_line(step.label)}**（`{step.id}`）："
+                 f"{_md_line(step_text(step, events=events_by_step.get(step.id)))}"
                  for index, step in enumerate(result.plan.steps, 1))
     lines += ["", "## 留给后续工作的边", ""]
     lines.extend(f"- `{name}`：{len(sites)} 个可继续工作的针位。"

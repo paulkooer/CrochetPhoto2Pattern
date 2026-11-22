@@ -1,0 +1,178 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+..............................................s......................... [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 62%]
+.......................................................FF............... [ 64%]
+........................................................s............... [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+...............................FF................F...................... [ 89%]
+........................................................................ [ 91%]
+........................................................................ [ 93%]
+........................................................................ [ 95%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+.                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_default_density_changes_keep_fixed_garment_work_and_only_clear_affected_progress _
+
+    def test_default_density_changes_keep_fixed_garment_work_and_only_clear_affected_progress():
+        current = mark(regenerate_with_part_gauge(garment(), "帽子", Gauge(26, 28)), "帽子")
+        progress = {identity:True for identity,_,_ in progress_entries(current,"result")}
+        updated = regenerate_with_gauge(current, 32, 34)
+>       assert part(updated, "帽子") == part(current, "帽子")
+E       AssertionError: assert {'name': '帽子'...cm': 6.6, ...} == {'name': '帽子'...cm': 6.6, ...}
+E
+E         Omitting 12 identical items, use -vv to show
+E         Differing items:
+E         {'notes': '开口帽形（帽围 54 针，不收口），筒深 11 圈 ≈ 3.9cm（另有帽顶 9 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.8cm，头部最宽圈（60 针）约 18.8cm，帽口多约 2.0cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'} != {'notes': '开口帽形（帽围 54 针，不收口），筒深 11 圈 ≈ 3.9cm（另有帽顶 9 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.8cm，头部最宽圈（54 针）约 18.0cm，帽口多约 2.8cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'}
+E         {'rounds': [{'row': 1, 'stitches': 6, 'increase': 0, 'decrease': 0, ...}, {'row': 2, 'stitches': 12, 'increase': 6, 'd...stitches': 30, 'increase': 6, 'decrease': 0, ...}, {'row': 6, 'stitches': 36, 'increase': 6, 'decre...
+E
+E         ...Full output truncated, use '-vv' to show
+
+tests/test_part_gauge.py:125: AssertionError
+_ test_equal_effective_gauge_and_reset_do_not_erase_manual_rounds_or_progress __
+
+    def test_equal_effective_gauge_and_reset_do_not_erase_manual_rounds_or_progress():
+        current = mark(garment(), "帽子")
+        progress = {identity:True for identity,_,_ in progress_entries(current,"result")}
+        explicit = regenerate_with_part_gauge(current, "帽子", Gauge(30, 32))
+        assert part(explicit, "帽子")["rounds"] == part(current, "帽子")["rounds"]
+        assert retained_progress(current, explicit, "result", progress) == progress
+        reset = regenerate_with_part_gauge(explicit, "帽子", None)
+        assert reset["params"]["parts"] == current["params"]["parts"]
+        assert retained_progress(explicit, reset, "result", progress) == progress
+        bundle = create_trial_bundle(explicit, trial_id="uniform-explicit", maker_id="synthetic")
+        measured = update_trial_bundle(bundle, swatch={**bundle.record.swatch.model_dump(),
+            "measured":True, "stitches_per_10cm":28, "rows_per_10cm":30}, observation=None)
+        candidate = trial_gauge_candidate(measured, explicit)
+        assert candidate["params"]["gauge"] == asdict(Gauge(28,30))
+>       assert part(candidate,"帽子") == part(explicit,"帽子")
+E       AssertionError: assert {'name': '帽子'...cm': 6.6, ...} == {'name': '帽子'...cm': 6.6, ...}
+E
+E         Omitting 12 identical items, use -vv to show
+E         Differing items:
+E         {'notes': '开口帽形（帽围 60 针，不收口），筒深 13 圈 ≈ 4.1cm（另有帽顶 10 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.0cm，头部最宽圈（48 针）约 17.1cm，帽口多约 2.9cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'} != {'notes': '开口帽形（帽围 60 针，不收口），筒深 13 圈 ≈ 4.1cm（另有帽顶 10 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.0cm，头部最宽圈（54 针）约 18.0cm，帽口多约 2.0cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'}
+E         {'rounds': [{'row': 1, 'stitches': 6, 'increase': 0, 'decrease': 0, ...}, {'row': 2, 'stitches': 12, 'increase': 6, 'd...stitches': 30, 'increase': 6, 'decrease': 0, ...}, {'row': 6, 'stitches': 36, 'increase': 6, 'dec...
+E
+E         ...Full output truncated, use '-vv' to show
+
+tests/test_part_gauge.py:150: AssertionError
+_ test_unchanged_hat_keeps_usage_when_default_changes_to_or_away_from_its_density[pinned0] _
+
+pinned = Gauge(stitches_per_10cm=30.0, rows_per_10cm=32.0)
+
+    @pytest.mark.parametrize("pinned", [Gauge(30,32),Gauge(26,28)])
+    def test_unchanged_hat_keeps_usage_when_default_changes_to_or_away_from_its_density(pinned):
+        current = regenerate_with_part_gauge(edit_yarn(source(),SPEC),"帽子",pinned)
+        original = deepcopy(current)
+        updated = regenerate_with_gauge(current,26,28)
+        assert current == original
+>       assert hat(updated) == hat(current)
+E       AssertionError: assert {'name': '帽子'...cm': 6.6, ...} == {'name': '帽子'...cm': 6.6, ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'notes': '开口帽形（帽围 60 针，不收口），筒深 13 圈 ≈ 4.1cm（另有帽顶 10 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.0cm，头部最宽圈（48 针）约 18.5cm，帽口多约 1.5cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'} != {'notes': '开口帽形（帽围 60 针，不收口），筒深 13 圈 ≈ 4.1cm（另有帽顶 10 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.0cm，头部最宽圈（54 针）约 18.0cm，帽口多约 2.0cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'}
+E         Use -v to get more diff
+
+tests/test_swatch_provenance.py:78: AssertionError
+_ test_unchanged_hat_keeps_usage_when_default_changes_to_or_away_from_its_density[pinned1] _
+
+pinned = Gauge(stitches_per_10cm=26.0, rows_per_10cm=28.0)
+
+    @pytest.mark.parametrize("pinned", [Gauge(30,32),Gauge(26,28)])
+    def test_unchanged_hat_keeps_usage_when_default_changes_to_or_away_from_its_density(pinned):
+        current = regenerate_with_part_gauge(edit_yarn(source(),SPEC),"帽子",pinned)
+        original = deepcopy(current)
+        updated = regenerate_with_gauge(current,26,28)
+        assert current == original
+>       assert hat(updated) == hat(current)
+E       AssertionError: assert {'name': '帽子'...cm': 6.6, ...} == {'name': '帽子'...cm': 6.6, ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'notes': '开口帽形（帽围 54 针，不收口），筒深 11 圈 ≈ 3.9cm（另有帽顶 9 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.8cm，头部最宽圈（48 针）约 18.5cm，帽口多约 2.3cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'} != {'notes': '开口帽形（帽围 54 针，不收口），筒深 11 圈 ≈ 3.9cm（另有帽顶 9 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.8cm，头部最宽圈（54 针）约 18.0cm，帽口多约 2.8cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'}
+E         Use -v to get more diff
+
+tests/test_swatch_provenance.py:78: AssertionError
+_ test_ui_trial_apply_undo_redo_and_project_keep_fixed_hat_measurement_and_progress _
+
+    def test_ui_trial_apply_undo_redo_and_project_keep_fixed_hat_measurement_and_progress():
+        current = regenerate_with_part_gauge(edit_yarn(source(),SPEC),"帽子",Gauge(30,32))
+        at = AppTest.from_string(RENDER,default_timeout=30)
+        at.session_state["result"] = current
+        at.session_state["audit_bundle"] = measured_bundle(current)
+        at.run()
+        at.checkbox(key="chk_swatch_头部_0").check().run()
+        at.checkbox(key="chk_swatch_帽子_0").check().run()
+        at.text_area(key="project_notes_swatch").input("保留帽子已测用量").run()
+        at.button(key="trial_gauge_preview_result").click().run()
+        assert at.session_state["result"] == current
+        at.button(key="edit_swatch_preview_apply").click().run()
+        for action in (None,"undo","redo"):
+            if action:
+                rid = at.session_state["result"]["result_id"]
+                at.button(key=f"edit_{rid}_{action}").click().run()
+            assert not at.exception
+            saved = at.session_state["result"]
+            rid = saved["result_id"]
+>           assert hat(saved) == hat(current) and blue(saved) == blue(current)
+E           AssertionError: assert ({'name': '帽子'...cm': 6.6, ...} == {'name': '帽子'...cm': 6.6, ...}
+E
+E             Omitting 13 identical items, use -vv to show
+E             Differing items:
+E             {'notes': '开口帽形（帽围 60 针，不收口），筒深 13 圈 ≈ 4.1cm（另有帽顶 10 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.0cm，头部最宽圈（48 针）约 18.5cm，帽口多约 1.5cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'} != {'notes': '开口帽形（帽围 60 针，不收口），筒深 13 圈 ≈ 4.1cm（另有帽顶 10 圈径向加针盘，不计入筒深）。 按密度估算，帽口周长约 20.0cm，头部最宽圈（54 针）约 18.0cm，帽口多约 2.0cm；这是估算不是实测，头发或发帽还要占余量，先试戴再固定。'}
+E             Use -v to get more diff)
+
+tests/test_swatch_provenance.py:190: AssertionError
+----------------------------- Captured stderr call -----------------------------
+2026-11-20 10:27:21.812 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-20 10:27:21.812 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-20 10:27:21.830 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call -------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:522 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:522 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:522 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+=========================== short test summary info ============================
+FAILED tests/test_part_gauge.py::test_default_density_changes_keep_fixed_garment_work_and_only_clear_affected_progress
+FAILED tests/test_part_gauge.py::test_equal_effective_gauge_and_reset_do_not_erase_manual_rounds_or_progress
+FAILED tests/test_swatch_provenance.py::test_unchanged_hat_keeps_usage_when_default_changes_to_or_away_from_its_density[pinned0]
+FAILED tests/test_swatch_provenance.py::test_unchanged_hat_keeps_usage_when_default_changes_to_or_away_from_its_density[pinned1]
+FAILED tests/test_swatch_provenance.py::test_ui_trial_apply_undo_redo_and_project_keep_fixed_hat_measurement_and_progress
+5 failed, 3450 passed, 2 skipped in 130.93s (0:02:10)
+pytest exit=1

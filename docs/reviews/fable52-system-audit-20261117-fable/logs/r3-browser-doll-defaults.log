@@ -1,0 +1,5 @@
+before (height 24): {"原型目标总高（不含帽子，cm）":"24.00","原型头径（cm）":"6.00","手掌目标直径（cm）":"1.50","手腕目标直径（cm）":"0.90","鞋底目标长度（cm）":"3.00","鞋底目标宽度（cm）":"1.60","上衣片目标长度（cm）":"5.40"}
+after height -> 48 : {"原型目标总高（不含帽子，cm）":"48.00","原型头径（cm）":"12.00","手掌目标直径（cm）":"3.00","手腕目标直径（cm）":"1.80","鞋底目标长度（cm）":"6.00","鞋底目标宽度（cm）":"3.20","上衣片目标长度（cm）":"10.80"}
+generate at 48: plan generated
+downloaded design at 48: {"height_cm":48,"head_diameter_cm":12,"leg_length_cm":12,"body_diameter_cm":7.2,"neck_diameter_cm":2.4,"arm_length_cm":12,"palm_diameter_cm":3,"wrist_diameter_cm":1.8,"foot_length_cm":6,"foot_width_cm":3.2,"bodice_length_cm":10.8,"skirt_length_cm":14}
+scaled starter would be : {"head_diameter_cm":12,"leg_length_cm":12,"body_diameter_cm":7.2,"neck_diameter_cm":2.4,"arm_length_cm":12,"palm_diameter_cm":3,"wrist_diameter_cm":1.8,"foot_length_cm":6,"foot_width_cm":3.2,"bodice_length_cm":10.8,"skirt_length_cm":14}

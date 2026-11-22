@@ -100,6 +100,7 @@ filterwarnings = [
 [tool.ruff]
 line-length = 110
 target-version = "py311"
+extend-exclude = ["docs/reviews"]
 
 [tool.ruff.lint]
 # E/W pycodestyle、F pyflakes、I isort、B bugbear（常见隐患）、

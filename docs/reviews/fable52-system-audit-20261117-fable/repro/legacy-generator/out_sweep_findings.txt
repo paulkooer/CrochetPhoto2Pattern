@@ -1,0 +1,1219 @@
+## A basic classic ladder
+## A basic classic ideal
+## A basic classic egg
+## A basic dk ladder
+## A basic dk ideal
+## A basic dk egg
+## A basic fine ladder
+## A basic fine ideal
+## A basic fine egg
+## B all classic ladder onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ladder onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×48）'
+## B all classic ladder onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ladder onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×48；波浪裙摆'
+## B all classic ladder onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ladder onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×48）'
+## B all classic ladder onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ladder onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×48；波浪裙摆'
+## B all classic ideal onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ideal onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×48）'
+## B all classic ideal onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ideal onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×48；波浪裙摆'
+## B all classic ideal onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ideal onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×48）'
+## B all classic ideal onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic ideal onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×48；波浪裙摆'
+## B all classic egg onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic egg onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×48）'
+## B all classic egg onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic egg onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×48；波浪裙摆'
+## B all classic egg onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic egg onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×48）'
+## B all classic egg onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## B all classic egg onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×48；波浪裙摆'
+## B all dk ladder onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ladder onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×60）'
+## B all dk ladder onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ladder onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×60；波浪裙摆'
+## B all dk ladder onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ladder onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×60）'
+## B all dk ladder onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ladder onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×60；波浪裙摆'
+## B all dk ideal onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ideal onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×60）'
+## B all dk ideal onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ideal onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×60；波浪裙摆'
+## B all dk ideal onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ideal onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×60）'
+## B all dk ideal onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk ideal onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×60；波浪裙摆'
+## B all dk egg onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk egg onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×60）'
+## B all dk egg onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk egg onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×60；波浪裙摆'
+## B all dk egg onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk egg onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×60）'
+## B all dk egg onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## B all dk egg onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: 'V×60；波浪裙摆'
+## B all fine ladder onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ladder onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×72）'
+## B all fine ladder onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ladder onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: 'V×72；波浪裙摆'
+## B all fine ladder onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ladder onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×72）'
+## B all fine ladder onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ladder onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: 'V×72；波浪裙摆'
+## B all fine ideal onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ideal onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×72）'
+## B all fine ideal onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ideal onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: 'V×72；波浪裙摆'
+## B all fine ideal onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ideal onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×72）'
+## B all fine ideal onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine ideal onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: 'V×72；波浪裙摆'
+## B all fine egg onepiece=0 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine egg onepiece=0 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×72）'
+## B all fine egg onepiece=0 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine egg onepiece=0 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: 'V×72；波浪裙摆'
+## B all fine egg onepiece=1 skirt=ring ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine egg onepiece=1 skirt=ring ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '波浪裙摆：每针放2针（V×72）'
+## B all fine egg onepiece=1 skirt=attached ruffle=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## B all fine egg onepiece=1 skirt=attached ruffle=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: 'V×72；波浪裙摆'
+## C size head=4 height=10 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R7: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R3: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+## C size head=4 height=10 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R7: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R3: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+## C size head=4 height=10 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R3: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=4 height=10 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R3: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=4 height=10 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R9: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=4 height=10 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R9: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=4 height=10 g6x8 onepiece=0   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R4: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=10 g6x8 onepiece=1   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R4: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=10 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R24: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=10 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R24: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=10 g6x50 onepiece=0   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R15: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=10 g6x50 onepiece=1   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R15: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=10 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=10 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=10 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## C size head=4 height=10 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## C size head=4 height=10 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=4 height=10 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=6 height=12 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=6 height=12 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=6 height=12 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## C size head=6 height=12 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## C size head=6 height=12 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R14: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=6 height=12 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R14: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=6 height=12 g6x8 onepiece=0   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R5: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R3: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=6 height=12 g6x8 onepiece=1   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R5: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R3: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=6 height=12 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R35: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=6 height=12 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R35: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=6 height=12 g6x50 onepiece=0   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R23: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=6 height=12 g6x50 onepiece=1   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R23: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=6 height=12 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=6 height=12 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=6 height=12 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R19: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=6 height=12 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R19: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=6 height=12 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=6 height=12 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=9 height=18 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=9 height=18 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=9 height=18 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=9 height=18 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=9 height=18 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=9 height=18 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=9 height=18 g6x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=18 g6x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=18 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R53: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=18 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R53: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=18 g6x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R34: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=18 g6x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R34: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=18 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R27: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=18 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R27: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=18 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '78X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '90X（不加不减）'
+## C size head=9 height=18 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '78X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '90X（不加不减）'
+## C size head=9 height=18 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=9 height=18 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=9 height=60 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=9 height=60 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=9 height=60 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R19: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=9 height=60 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R19: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=9 height=60 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=9 height=60 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=9 height=60 g6x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=60 g6x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=60 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R53: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R65: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=60 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R53: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R65: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=60 g6x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R34: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R65: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=60 g6x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R34: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R65: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=9 height=60 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R27: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=60 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R27: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+## C size head=9 height=60 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '78X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R33: last round gives no fasten-off / close / leave-open instruction: '90X（不加不减）'
+## C size head=9 height=60 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '78X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R33: last round gives no fasten-off / close / leave-open instruction: '90X（不加不减）'
+## C size head=9 height=60 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R23: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=9 height=60 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R23: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=14 height=30 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R26: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=14 height=30 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R26: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=14 height=30 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=14 height=30 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=14 height=30 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R32: last round gives no fasten-off / close / leave-open instruction: '102X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '108X（不加不减）'
+## C size head=14 height=30 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R32: last round gives no fasten-off / close / leave-open instruction: '102X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '108X（不加不减）'
+## C size head=14 height=30 g6x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=14 height=30 g6x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=14 height=30 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R82: last round gives no fasten-off / close / leave-open instruction: '204X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '222X（不加不减）'
+## C size head=14 height=30 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R82: last round gives no fasten-off / close / leave-open instruction: '204X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '222X（不加不减）'
+## C size head=14 height=30 g6x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R53: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=14 height=30 g6x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R53: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=14 height=30 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R42: last round gives no fasten-off / close / leave-open instruction: '204X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '222X（不加不减）'
+## C size head=14 height=30 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R42: last round gives no fasten-off / close / leave-open instruction: '204X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '222X（不加不减）'
+## C size head=14 height=30 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R45: last round gives no fasten-off / close / leave-open instruction: '126X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '138X（不加不减）'
+## C size head=14 height=30 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R45: last round gives no fasten-off / close / leave-open instruction: '126X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '138X（不加不减）'
+## C size head=14 height=30 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=14 height=30 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R28: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## C size head=20 height=20 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R38: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '102X（不加不减）'
+## C size head=20 height=20 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R38: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '102X（不加不减）'
+## C size head=20 height=20 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R39: last round gives no fasten-off / close / leave-open instruction: '120X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+## C size head=20 height=20 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R39: last round gives no fasten-off / close / leave-open instruction: '120X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+## C size head=20 height=20 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R46: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '156X（不加不减）'
+## C size head=20 height=20 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R46: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '156X（不加不减）'
+## C size head=20 height=20 g6x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=20 g6x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=20 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R117: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=20 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R117: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=20 g6x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R76: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=20 g6x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R76: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=20 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R59: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=20 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R59: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=20 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R64: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R10: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=20 height=20 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R64: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R10: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=20 height=20 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R40: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '108X（不加不减）'
+## C size head=20 height=20 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R40: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '108X（不加不减）'
+## C size head=20 height=60 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R38: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R17: last round gives no fasten-off / close / leave-open instruction: '102X（不加不减）'
+## C size head=20 height=60 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R38: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R17: last round gives no fasten-off / close / leave-open instruction: '102X（不加不减）'
+## C size head=20 height=60 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R39: last round gives no fasten-off / close / leave-open instruction: '120X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R15: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+## C size head=20 height=60 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R39: last round gives no fasten-off / close / leave-open instruction: '120X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R15: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+## C size head=20 height=60 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R46: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R17: last round gives no fasten-off / close / leave-open instruction: '156X（不加不减）'
+## C size head=20 height=60 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R46: last round gives no fasten-off / close / leave-open instruction: '144X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R17: last round gives no fasten-off / close / leave-open instruction: '156X（不加不减）'
+## C size head=20 height=60 g6x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=60 g6x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=60 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R117: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R51: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=60 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R117: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R51: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=60 g6x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R76: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R51: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=60 g6x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R76: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R51: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## C size head=20 height=60 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R59: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=60 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R59: last round gives no fasten-off / close / leave-open instruction: '288X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '312X（不加不减）'
+## C size head=20 height=60 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R64: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R26: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=20 height=60 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R64: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R26: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=20 height=60 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R40: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R19: last round gives no fasten-off / close / leave-open instruction: '108X（不加不减）'
+## C size head=20 height=60 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R40: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R19: last round gives no fasten-off / close / leave-open instruction: '108X（不加不减）'
+## C size head=4 height=60 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R7: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R23: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+## C size head=4 height=60 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R7: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R23: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+## C size head=4 height=60 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=4 height=60 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R21: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=4 height=60 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R9: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R23: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=4 height=60 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R9: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R23: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=4 height=60 g6x8 onepiece=0   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R4: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=60 g6x8 onepiece=1   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R4: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=60 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R24: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R71: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=60 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R24: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R71: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=60 g6x50 onepiece=0   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R15: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R71: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=60 g6x50 onepiece=1   [would be blocked by crochetability gate]
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R15: last round gives no fasten-off / close / leave-open instruction: '6X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R71: last round gives no fasten-off / close / leave-open instruction: '12X（不加不减）'
+## C size head=4 height=60 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=60 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## C size head=4 height=60 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R36: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## C size head=4 height=60 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R13: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R36: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## C size head=4 height=60 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R26: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=4 height=60 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R8: last round gives no fasten-off / close / leave-open instruction: '18X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R26: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## C size head=12.5 height=31.5 classic onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R24: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+## C size head=12.5 height=31.5 classic onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R24: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+## C size head=12.5 height=31.5 dk onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R25: last round gives no fasten-off / close / leave-open instruction: '78X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+## C size head=12.5 height=31.5 dk onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R25: last round gives no fasten-off / close / leave-open instruction: '78X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '84X（不加不减）'
+## C size head=12.5 height=31.5 fine onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R29: last round gives no fasten-off / close / leave-open instruction: '90X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=12.5 height=31.5 fine onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R29: last round gives no fasten-off / close / leave-open instruction: '90X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '96X（不加不减）'
+## C size head=12.5 height=31.5 g6x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=12.5 height=31.5 g6x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R12: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=12.5 height=31.5 g40x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R73: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R25: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=12.5 height=31.5 g40x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R73: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R25: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=12.5 height=31.5 g6x50 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R48: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R25: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=12.5 height=31.5 g6x50 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R48: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R25: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## C size head=12.5 height=31.5 g40x8 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R37: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R10: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=12.5 height=31.5 g40x8 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R37: last round gives no fasten-off / close / leave-open instruction: '180X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R10: last round gives no fasten-off / close / leave-open instruction: '198X（不加不减）'
+## C size head=12.5 height=31.5 g25x25 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R41: last round gives no fasten-off / close / leave-open instruction: '114X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '120X（不加不减）'
+## C size head=12.5 height=31.5 g25x25 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R41: last round gives no fasten-off / close / leave-open instruction: '114X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R13: last round gives no fasten-off / close / leave-open instruction: '120X（不加不减）'
+## C size head=12.5 height=31.5 g13.5x17.5 onepiece=0
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R25: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+## C size head=12.5 height=31.5 g13.5x17.5 onepiece=1
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R25: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+## D opening=6 classic ladder
+## D opening=7 classic ladder
+## D opening=12 classic ladder
+## D opening=16 classic ladder
+## D opening=17 classic ladder
+## D opening=23 classic ladder
+## D opening=24 classic ladder
+## D opening=30 classic ladder
+## D opening=36 classic ladder
+## D opening=6 classic ideal
+## D opening=7 classic ideal
+## D opening=12 classic ideal
+## D opening=16 classic ideal
+## D opening=17 classic ideal
+## D opening=23 classic ideal
+## D opening=24 classic ideal
+## D opening=30 classic ideal
+## D opening=36 classic ideal
+## D opening=6 classic egg
+## D opening=7 classic egg
+## D opening=12 classic egg
+## D opening=16 classic egg
+## D opening=17 classic egg
+## D opening=23 classic egg
+## D opening=24 classic egg
+## D opening=30 classic egg
+## D opening=36 classic egg
+## D opening=6 dk ladder
+## D opening=7 dk ladder
+## D opening=12 dk ladder
+## D opening=16 dk ladder
+## D opening=17 dk ladder
+## D opening=23 dk ladder
+## D opening=24 dk ladder
+## D opening=30 dk ladder
+## D opening=36 dk ladder
+## D opening=48 dk ladder
+## D opening=6 dk ideal
+## D opening=7 dk ideal
+## D opening=12 dk ideal
+## D opening=16 dk ideal
+## D opening=17 dk ideal
+## D opening=23 dk ideal
+## D opening=24 dk ideal
+## D opening=30 dk ideal
+## D opening=36 dk ideal
+## D opening=48 dk ideal
+## D opening=6 dk egg
+## D opening=7 dk egg
+## D opening=12 dk egg
+## D opening=16 dk egg
+## D opening=17 dk egg
+## D opening=23 dk egg
+## D opening=24 dk egg
+## D opening=30 dk egg
+## D opening=36 dk egg
+## D opening=48 dk egg
+## D opening=6 fine ladder
+## D opening=7 fine ladder
+## D opening=12 fine ladder
+## D opening=16 fine ladder
+## D opening=17 fine ladder
+## D opening=23 fine ladder
+## D opening=24 fine ladder
+## D opening=30 fine ladder
+## D opening=36 fine ladder
+## D opening=48 fine ladder
+## D opening=6 fine ideal
+## D opening=7 fine ideal
+## D opening=12 fine ideal
+## D opening=16 fine ideal
+## D opening=17 fine ideal
+## D opening=23 fine ideal
+## D opening=24 fine ideal
+## D opening=30 fine ideal
+## D opening=36 fine ideal
+## D opening=48 fine ideal
+## D opening=6 fine egg
+## D opening=7 fine egg
+## D opening=12 fine egg
+## D opening=16 fine egg
+## D opening=17 fine egg
+## D opening=23 fine egg
+## D opening=24 fine egg
+## D opening=30 fine egg
+## D opening=36 fine egg
+## D opening=48 fine egg
+## E part gauges base=classic hat=fine skirt=dk
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## E part gauges base=fine hat=classic skirt=classic
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## E part gauges base=dk hat=g40x50 skirt=g6x8
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R53: last round gives no fasten-off / close / leave-open instruction: '132X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针18X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R4: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+## F profile=pear classic onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=pear classic onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '24X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=pear classic onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=pear classic onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=pear dk onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=pear dk onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=pear dk onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=pear dk onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=pear fine onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '(5X,A)×6，隔5针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=pear fine onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '(5X,A)×6，隔5针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=pear fine onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=pear fine onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=hourglass classic onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(2X,V)×6，隔2针加1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=hourglass classic onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(2X,V)×6，隔2针加1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=hourglass classic onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=hourglass classic onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=hourglass dk onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '(3X,V)×6，隔3针加1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=hourglass dk onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '(3X,V)×6，隔3针加1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=hourglass dk onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=hourglass dk onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=hourglass fine onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '(4X,V)×6，隔4针加1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=hourglass fine onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '(4X,V)×6，隔4针加1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=hourglass fine onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=hourglass fine onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=cone classic onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(2X,A)×6，隔2针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=cone classic onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(2X,A)×6，隔2针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=cone classic onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=cone classic onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=cone dk onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=cone dk onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=cone dk onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=cone dk onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=cone fine onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '(4X,A)×6，隔4针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=cone fine onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '(4X,A)×6，隔4针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=cone fine onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=cone fine onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=spiky classic onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R6: non-first round labelled 起针圈: '30X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R12: last round gives no fasten-off / close / leave-open instruction: '(X,A)×6，隔1针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=spiky classic onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R6: non-first round labelled 起针圈: '30X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R12: last round gives no fasten-off / close / leave-open instruction: '(X,A)×6，隔1针减1针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=spiky classic onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=spiky classic onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=spiky dk onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R8: non-first round labelled 起针圈: '42X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(A,A)×6，均匀减12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=spiky dk onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R8: non-first round labelled 起针圈: '42X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(A,A)×6，均匀减12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=spiky dk onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=spiky dk onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=spiky fine onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R15: last round gives no fasten-off / close / leave-open instruction: '(X,A,A)×6，均匀减12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=spiky fine onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R15: last round gives no fasten-off / close / leave-open instruction: '(X,A,A)×6，均匀减12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=spiky fine onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=spiky fine onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R7: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=flat classic onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=flat classic onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '36X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=flat classic onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=flat classic onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=flat dk onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=flat dk onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R9: non-first round labelled 起针圈: '48X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R14: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=flat dk onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=flat dk onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=flat fine onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=flat fine onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R10: non-first round labelled 起针圈: '54X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R16: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=flat fine onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=flat fine onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=thin classic onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R2: non-first round labelled 起针圈: '6X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R8: last round gives no fasten-off / close / leave-open instruction: '(X,V,X)×6'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=thin classic onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R2: non-first round labelled 起针圈: '6X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R8: last round gives no fasten-off / close / leave-open instruction: '(X,V,X)×6'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R9: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=thin classic onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=thin classic onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R8: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## F profile=thin dk onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R2: non-first round labelled 起针圈: '6X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R7: last round gives no fasten-off / close / leave-open instruction: '(2X,V,V)×6，均匀加12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=thin dk onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R2: non-first round labelled 起针圈: '6X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R7: last round gives no fasten-off / close / leave-open instruction: '(2X,V,V)×6，均匀加12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=thin dk onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针48X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=thin dk onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R18: last round gives no fasten-off / close / leave-open instruction: '54X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R10: last round gives no fasten-off / close / leave-open instruction: '60X（不加不减）'
+## F profile=thin fine onepiece=0 skirt=ring
+   [INFO] MISLABELLED_START 身体 R2: non-first round labelled 起针圈: '6X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R8: last round gives no fasten-off / close / leave-open instruction: '(3X,V,V)×6，均匀加12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=thin fine onepiece=0 skirt=attached
+   [INFO] MISLABELLED_START 身体 R2: non-first round labelled 起针圈: '6X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R8: last round gives no fasten-off / close / leave-open instruction: '(3X,V,V)×6，均匀加12针'
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R12: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=thin fine onepiece=1 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针54X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R6: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=thin fine onepiece=1 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R21: last round gives no fasten-off / close / leave-open instruction: '66X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R11: last round gives no fasten-off / close / leave-open instruction: '72X（不加不减）'
+## F profile=pear opening=12
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(3X,A)×6，隔3针减1针'
+## F profile=pear opening=16
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '(3X,A)×6，隔3针减1针'
+## F profile=hourglass opening=12
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## F profile=hourglass opening=16
+   [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+   [GAP] NO_FINISH_INSTRUCTION 身体 R13: last round gives no fasten-off / close / leave-open instruction: '30X（不加不减）'
+## G subset=头部 skirt=ring
+   [GAP] PART_NOT_ASSEMBLED 装配: no assembly step attaches 头部
+## G subset=头部 skirt=attached
+   [GAP] PART_NOT_ASSEMBLED 装配: no assembly step attaches 头部
+## G subset=身体 skirt=ring
+## G subset=身体 skirt=attached
+## G subset=头部+身体 skirt=ring
+## G subset=头部+身体 skirt=attached
+## G subset=头部+帽子+耳朵 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## G subset=头部+帽子+耳朵 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## G subset=身体+裙子+尾巴 skirt=ring
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## G subset=身体+裙子+尾巴 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## G subset=手臂+腿部 skirt=ring
+## G subset=手臂+腿部 skirt=attached
+## G subset=帽子 skirt=ring
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## G subset=帽子 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+## G subset=裙子 skirt=ring
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+   [GAP] SKIRT_NO_FIX_STEP 装配: ring skirt is never fixed in the assembly
+## G subset=头部+裙子 skirt=ring
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+   [GAP] SKIRT_NO_FIX_STEP 装配: ring skirt is never fixed in the assembly
+   [GAP] PART_NOT_ASSEMBLED 装配: no assembly step attaches 头部
+## G subset=头部+身体+裙子 skirt=ring
+   [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+## G subset=头部+身体+裙子 skirt=attached
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'

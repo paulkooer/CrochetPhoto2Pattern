@@ -1,0 +1,13 @@
+frozen outputs read from commit 6c88b7d; generated outputs from the working tree
+cases: 102; cases with any difference: 99
+   differing fields per case: {0: 3, 1: 3, 2: 96}
+   differing path assembly step: 帽口与头部最宽圈的估算对比: 96 cases
+   differing path part note of cup part '帽子': 删去 '> 头围，可直接佩戴': 96 cases
+   differing path assembly step: 挑针接裙的朝向说明: 36 cases
+   differing path part note of cup part '身体': 删去 '> 头围，可直接佩戴': 3 cases
+   hat note branch 'hat step: rim longer': 65 cases
+   hat note branch 'hat step: same length': 31 cases
+   e.g. attached skirt check [classic/matrix-02]: （先核对半针朝向，此约定尚未经实物试钩核实：钩第 15 圈的头三四针后停下看，第 14 圈留下没钩的那一根半针须露在身体外侧，裙子才钩得进去。若它落在身体内侧，拆掉这几针，整圈改为只挑后半针 BLO，把前半针留在外侧，接裙时钩入留下的前半针；并把你实际用的半针记进试钩记录。）
+   e.g. cup part note [classic/matrix-00]: 开口帽形（帽围 36 针，不收口），筒深 9 圈 ≈ 5.6cm（另有帽顶 6 圈径向加针盘，不计入筒深）。
+   e.g. hat step: rim longer [dk/matrix-00]: 12. 帽口 48 针不收口，戴在头部。按密度估算，帽口周长约 28.2cm，头部最宽圈（42 针）约 24.7cm，帽口多约 3.5cm；这是估算不是实测，头发或发帽还要占余量。先试戴，合适后再缝合固定
+   e.g. hat step: same length [classic/matrix-00]: 12. 帽口 36 针不收口，戴在头部。按密度估算，帽口周长约 27.7cm，头部最宽圈（36 针）约 27.7cm，两者相同，没有余量，可能偏紧；这是估算不是实测。先试戴，偏紧就把帽子直径改大后重新生成

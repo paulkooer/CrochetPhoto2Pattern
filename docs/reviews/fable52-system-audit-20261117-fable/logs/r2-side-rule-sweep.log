@@ -1,0 +1,39 @@
+== 0. packaged example plans (as committed) under the same rule
+   armhole-demo                 0 finding(s)
+   attached-ribbing             0 finding(s)
+   cardigan-depth-quantization  2 finding(s)
+      - design_cuff_a attachments travels the wrong way over top of design_sleeve_a
+      - design_cuff_b attachments travels the wrong way over top of design_sleeve_b
+   cardigan-missing-gauge       0 finding(s)
+   cardigan-open                2 finding(s)
+      - design_cuff_a attachments travels the wrong way over top of design_sleeve_a
+      - design_cuff_b attachments travels the wrong way over top of design_sleeve_b
+   cardigan-seamed              2 finding(s)
+      - design_cuff_a attachments travels the wrong way over top of design_sleeve_a
+      - design_cuff_b attachments travels the wrong way over top of design_sleeve_b
+
+== 1. sweep: body rows 2-41 x sleeve rows 17/18 x cuff mode (open / seamed), 28 rows per 10 cm
+
+   --- as_committed: 156 complete plans
+   body even:   4 plans -> (not generated: band_blocked)
+   body even:  76 plans -> design_band attachments travels the wrong way over front row ends; design_band attachments travels the wrong way over top of design_hem; design_band attachments travels the wrong way over unused face of design_hem_chain; design_band_base: path jumps 20 chain positions between a front edge and the neckline; design_cuff_a attachments travels the wrong way over top of design_sleeve_a; design_cuff_b attachments travels the wrong way over top of design_sleeve_b
+   body odd :  80 plans -> design_cuff_a attachments travels the wrong way over top of design_sleeve_a; design_cuff_b attachments travels the wrong way over top of design_sleeve_b
+
+   --- two_orders: 156 complete plans
+   body even:   4 plans -> (not generated: band_blocked)
+   body even:  76 plans -> design_band attachments travels the wrong way over front row ends; design_band attachments travels the wrong way over top of design_hem; design_band attachments travels the wrong way over unused face of design_hem_chain; design_band attachments travels the wrong way over unused face of design_neck_chain
+   body odd :  80 plans -> no contradiction
+
+   --- three_parts: 156 complete plans
+   body even:   4 plans -> (not generated: band_blocked)
+   body even:  76 plans -> no contradiction
+   body odd :  80 plans -> no contradiction
+
+   inputs whose stage differs between the three generators: 0 of 160
+
+== 2. what the three-part variant produces (default 21 rows vs 20 rows)
+   body 7.5 cm (21 rows) as_committed : hem attached with RS facing; band chain turn=counterclockwise; band attached with RS facing; buttonhole front = RS-rows-END edge; buttonhole rows = [5, 13, 21]
+   body 7.5 cm (21 rows) three_parts  : hem attached with RS facing; band chain turn=counterclockwise; band attached with RS facing; buttonhole front = RS-rows-END edge; buttonhole rows = [5, 13, 21]
+   body 7.1 cm (20 rows) as_committed : hem attached with WS facing; band chain turn=none; band attached with RS facing; buttonhole front = RS-rows-BEGIN edge; buttonhole rows = [5, 13, 21]
+   body 7.1 cm (20 rows) three_parts  : hem attached with WS facing; band chain turn=counterclockwise; band attached with WS facing; buttonhole front = RS-rows-BEGIN edge; buttonhole rows = [5, 13, 21]
+exit=0

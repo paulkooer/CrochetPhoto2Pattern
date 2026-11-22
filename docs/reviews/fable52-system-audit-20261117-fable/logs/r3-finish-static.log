@@ -1,0 +1,9 @@
+### ruff
+All checks passed!
+ruff exit=0
+### mypy
+Success: no issues found in 282 source files
+mypy exit=0
+### changelog fragments
+9 bilingual fragments valid
+changelog exit=0

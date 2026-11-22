@@ -1,0 +1,45 @@
+================ body_length_cm=7.5
+stage=integrated_open_cuffs body_rows=21 sleeve_rows=18
+band_base spans: [('design_hem_046', 1, 4, 'reverse'), ('design_front_up', 1, 29, 'forward'), ('design_neck_edge', 1, 21, 'reverse'), ('design_front_down', 1, 29, 'forward'), ('design_hem_outside', 1, 5, 'reverse')]
+last body row design_body_021: side=WS direction=reverse
+hem last row design_hem_046: side=WS turn=none; band chain turn_after_chain=counterclockwise; band row 1 side=RS
+  junction: row end of design_yoke_001 (row_right) sits over neck-chain position 22; path continues at neck-chain position 22 -> adjacent
+  junction: path leaves the neckline at chain position 2; next row end design_yoke_001 (row_left) sits over chain position 2 -> adjacent
+band neckline junction problems: 0
+sleeve a: last round design_sleeve_a_018 side=WS turn=counterclockwise closure=after_turn; cuff row 1 side=RS; cuff base order over that round starts [2, 3, 4, 5] ... ends [19, 1]
+   attachment travels in the SAME direction as the last round was worked, while the declared facing side is OPPOSITE to that round
+   -> CONTRADICTION: same direction of travel needs the same side facing (the model's own turned-row rule: reverse order <=> turned)
+sleeve b: last round design_sleeve_b_018 side=WS turn=counterclockwise closure=after_turn; cuff row 1 side=RS; cuff base order over that round starts [2, 3, 4, 5] ... ends [19, 1]
+   attachment travels in the SAME direction as the last round was worked, while the declared facing side is OPPOSITE to that round
+   -> CONTRADICTION: same direction of travel needs the same side facing (the model's own turned-row rule: reverse order <=> turned)
+exit=0
+================ body_length_cm=7.14
+stage=integrated_open_cuffs body_rows=20 sleeve_rows=18
+band_base spans: [('design_hem_046', 1, 4, 'reverse'), ('design_front_up', 1, 28, 'forward'), ('design_neck_edge', 1, 21, 'reverse'), ('design_front_down', 1, 28, 'forward'), ('design_hem_outside', 1, 5, 'reverse')]
+last body row design_body_020: side=RS direction=forward
+hem last row design_hem_046: side=RS turn=none; band chain turn_after_chain=none; band row 1 side=RS
+  junction: row end of design_yoke_001 (row_left) sits over neck-chain position 2; path continues at neck-chain position 22 -> NOT ADJACENT: jumps 20 chains along the neckline
+  junction: path leaves the neckline at chain position 2; next row end design_yoke_001 (row_right) sits over chain position 22 -> NOT ADJACENT: jumps 20 chains along the neckline
+band neckline junction problems: 2
+sleeve a: last round design_sleeve_a_018 side=WS turn=counterclockwise closure=after_turn; cuff row 1 side=RS; cuff base order over that round starts [2, 3, 4, 5] ... ends [19, 1]
+   attachment travels in the SAME direction as the last round was worked, while the declared facing side is OPPOSITE to that round
+   -> CONTRADICTION: same direction of travel needs the same side facing (the model's own turned-row rule: reverse order <=> turned)
+sleeve b: last round design_sleeve_b_018 side=WS turn=counterclockwise closure=after_turn; cuff row 1 side=RS; cuff base order over that round starts [2, 3, 4, 5] ... ends [19, 1]
+   attachment travels in the SAME direction as the last round was worked, while the declared facing side is OPPOSITE to that round
+   -> CONTRADICTION: same direction of travel needs the same side facing (the model's own turned-row rule: reverse order <=> turned)
+exit=0
+================ body_length_cm=7.86
+stage=integrated_open_cuffs body_rows=22 sleeve_rows=18
+band_base spans: [('design_hem_046', 1, 4, 'reverse'), ('design_front_up', 1, 30, 'forward'), ('design_neck_edge', 1, 21, 'reverse'), ('design_front_down', 1, 30, 'forward'), ('design_hem_outside', 1, 5, 'reverse')]
+last body row design_body_022: side=RS direction=forward
+hem last row design_hem_046: side=RS turn=none; band chain turn_after_chain=none; band row 1 side=RS
+  junction: row end of design_yoke_001 (row_left) sits over neck-chain position 2; path continues at neck-chain position 22 -> NOT ADJACENT: jumps 20 chains along the neckline
+  junction: path leaves the neckline at chain position 2; next row end design_yoke_001 (row_right) sits over chain position 22 -> NOT ADJACENT: jumps 20 chains along the neckline
+band neckline junction problems: 2
+sleeve a: last round design_sleeve_a_018 side=WS turn=counterclockwise closure=after_turn; cuff row 1 side=RS; cuff base order over that round starts [2, 3, 4, 5] ... ends [19, 1]
+   attachment travels in the SAME direction as the last round was worked, while the declared facing side is OPPOSITE to that round
+   -> CONTRADICTION: same direction of travel needs the same side facing (the model's own turned-row rule: reverse order <=> turned)
+sleeve b: last round design_sleeve_b_018 side=WS turn=counterclockwise closure=after_turn; cuff row 1 side=RS; cuff base order over that round starts [2, 3, 4, 5] ... ends [19, 1]
+   attachment travels in the SAME direction as the last round was worked, while the declared facing side is OPPOSITE to that round
+   -> CONTRADICTION: same direction of travel needs the same side facing (the model's own turned-row rule: reverse order <=> turned)
+exit=0

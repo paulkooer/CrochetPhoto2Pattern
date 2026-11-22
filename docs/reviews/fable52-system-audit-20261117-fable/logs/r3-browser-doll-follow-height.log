@@ -1,0 +1,7 @@
+start             {"height":"24.00","head":"6.00","palm":"1.50","bodice":"5.40","handEditedNote":"(none)","resetButton":0}
+height 25         {"height":"25.00","head":"6.25","palm":"1.56","bodice":"5.63","handEditedNote":"(none)","resetButton":0}
+height 31         {"height":"31.00","head":"7.75","palm":"1.94","bodice":"6.98","handEditedNote":"(none)","resetButton":0}
+head typed 7      {"height":"31.00","head":"7.00","palm":"1.94","bodice":"6.98","handEditedNote":"已手改、不随总高变化：原型头径。","resetButton":1}
+height 36         {"height":"36.00","head":"7.00","palm":"2.25","bodice":"8.10","handEditedNote":"已手改、不随总高变化：原型头径。","resetButton":1}
+after reset       {"height":"36.00","head":"9.00","palm":"2.25","bodice":"8.10","handEditedNote":"(none)","resetButton":0}
+height back to 24 {"height":"24.00","head":"6.00","palm":"1.50","bodice":"5.40","handEditedNote":"(none)","resetButton":0}

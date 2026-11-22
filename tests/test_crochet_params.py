@@ -372,6 +372,91 @@ def test_hat_is_open_cup_larger_than_head():
     assert "筒深" in hat.get("notes") and "不计入筒深" in hat.get("notes")
 
 
+def _hat_case(head_d, parts=("头部", "帽子"), **options):
+    from app.models.structure_designer import StructureDesigner
+
+    analysis = ImageAnalysis(
+        body_type="标准", head_diameter_cm=head_d, height_cm=18.0,
+        main_features=[], pose="站立", difficulty="easy", parts=list(parts),
+    )
+    params = CrochetParamsGenerator.generate_params(
+        analysis, StructureDesigner.design_3d_structure(analysis), **options)
+    hat = next(p for p in params["parts"] if p["name"] == "帽子")
+    step = next((line for line in params["assembly_instructions"].splitlines() if "帽口" in line), "")
+    return hat, step, params
+
+
+def test_hat_fit_is_stated_from_the_generated_rim_and_head():
+    """帽围余量须来自实际生成的针数；旧文案无论针数如何都写"> 头围，可直接佩戴"。"""
+    from app.models.gauge import DEFAULT
+
+    hat, step, params = _hat_case(9.0)
+    head = params["parts"][0]
+    assert (hat["rounds"][-1]["stitches"], max(r["stitches"] for r in head["rounds"])) == (42, 36)
+    assert f"帽口周长约 {42 * DEFAULT.stitch_w_cm:.1f}cm" in step
+    assert f"头部最宽圈（36 针）约 {36 * DEFAULT.stitch_w_cm:.1f}cm" in step
+    assert "帽口多约 4.6cm" in step and "先试戴" in step and "不是实测" in step
+    text = params["assembly_instructions"] + "".join(p.get("notes") or "" for p in params["parts"])
+    assert "可直接佩戴" not in text and "> 头围" not in text and "直接戴在头部" not in text
+
+    # 头径 6.7 cm：帽口与头部最宽圈都是 30 针，说明不得再声称帽围更大。
+    hat, step, params = _hat_case(6.7)
+    assert hat["rounds"][-1]["stitches"] == max(r["stitches"] for r in params["parts"][0]["rounds"]) == 30
+    assert "两者相同，没有余量" in step and "帽口多约" not in step
+    assert "先试戴，偏紧就把帽子直径改大后重新生成" in step
+
+
+def test_hat_fit_compares_lengths_when_the_hat_has_its_own_gauge():
+    """帽子用独立密度时，针数不可直接相比；按各自密度换算长度。"""
+    from app.models.gauge import DEFAULT, PRESETS
+
+    hat, step, _params = _hat_case(9.0, part_gauges={"帽子": PRESETS["fine"]})
+    assert hat["rounds"][-1]["stitches"] == 66
+    assert f"帽口周长约 {66 * PRESETS['fine'].stitch_w_cm:.1f}cm" in step
+    assert f"头部最宽圈（36 针）约 {36 * DEFAULT.stitch_w_cm:.1f}cm" in step
+    assert "帽口多约 5.3cm" in step
+
+
+def test_hat_part_itself_does_not_depend_on_the_head():
+    """独立密度的帽子在其余部件重算时必须保持不变，所以头部数据不进帽子部件。"""
+    from app.models.gauge import PRESETS
+
+    small, _step, _params = _hat_case(9.0, part_gauges={"帽子": PRESETS["fine"]})
+    other, _step, _params = _hat_case(9.0, part_gauges={"帽子": PRESETS["fine"]}, gauge=PRESETS["dk"])
+    assert small == other
+    assert "头部" not in small["notes"] and "不收口" in small["notes"]
+
+
+def test_hat_fit_without_a_separate_head():
+    from app.models.gauge import ShapingStyle
+
+    # 没有头部时无从比较：装配说明不出现任何帽围余量的说法。
+    hat, _step, params = _hat_case(9.0, parts=("身体", "帽子"))
+    assert "头部最宽圈" not in params["assembly_instructions"] + hat["notes"]
+    # 头身一体：只取颈部以上的圈作头部。
+    _hat, step, params = _hat_case(9.0, parts=("头部", "身体", "帽子"), style=ShapingStyle(one_piece=True))
+    assert params["parts"][0]["type"] == "onepiece"
+    assert "头部最宽圈（36 针）" in step and "帽口多约 4.6cm" in step
+
+
+@pytest.mark.parametrize(("rim", "widest", "expected"), [
+    (42, 36, "帽口多约 4.6cm"),
+    (36, 36, "两者相同"),
+    (30, 36, "帽口少约 4.6cm"),
+])
+def test_hat_fit_note_wording(rim, widest, expected):
+    from app.models.assembly import hat_fit_note
+
+    def part(name, kind, stitches):
+        return {"name": name, "type": kind, "rounds": [{"row": 1, "stitches": stitches}]}
+
+    parts = [part("头部", "sphere", widest), part("帽子", "cup", rim)]
+    note = hat_fit_note(parts, {"stitches_per_10cm": 13.0})
+    assert expected in note
+    assert sum(token in note for token in ("帽口多约", "两者相同", "帽口少约")) == 1
+    assert hat_fit_note(parts, None) == "" and hat_fit_note(parts[:1], {"stitches_per_10cm": 13.0}) == ""
+
+
 def test_stitches_scale_with_head_diameter():
     """身体/四肢针数随头径缩放（回归：旧硬编码 24/12 针）。"""
     big = _params_for(["头部", "身体", "手臂"], head_d=20.0, height=45.0)

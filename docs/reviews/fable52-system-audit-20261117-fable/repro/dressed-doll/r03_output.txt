@@ -1,0 +1,151 @@
+==============================================================================================================
+doll-wide-brim: gauge 22 st x 28 rows per 10cm -> stitch width 0.4545 cm, row height 0.3571 cm; garment_ease_cm=1.0
+
+## A. Profiles (stitches -> implied circumference / diameter)
+| part | where | stitches | circumference cm | diameter cm | design target |
+|---|---|---:|---:|---:|---|
+| body | lower body / hip | 25 | 11.36 | 3.62 | body_diameter 3.6 cm |
+| body | waist | 20 | 9.09 | 2.89 | (0.8 x torso, no design field) |
+| body | chest/shoulder | 25 | 11.36 | 3.62 | body_diameter 3.6 cm |
+| body | neck (open edge) | 8 | 3.64 | 1.16 | neck_diameter 1.2 cm |
+| head | max girth (rounds 10-15) | 42 | 19.09 | 6.08 | head_diameter 6.0 cm |
+| arm | palm max | 10 | 4.55 | 1.45 | palm_diameter 1.5 cm |
+| arm | wrist | 6 | 2.73 | 0.87 | wrist_diameter 0.9 cm |
+| arm | forearm / shoulder opening | 8 | 3.64 | 1.16 | (max(wrist+2, palm-2), no design field) |
+| leg | tube | 7 | 3.18 | 1.01 | max(wrist, 0.65 x foot_width)=1.04 cm |
+| shoe | sole edge | 18 | 8.18 | 2.60 |  |
+| shoe | opening | 10 | 4.55 | 1.45 |  |
+| hair cap | rim | 44 | 20.00 | 6.37 |  |
+| hat | crown rim (帽身) | 47 | 21.36 | 6.80 |  |
+| hat | brim outer edge | 77 | 35.00 | 11.14 | brim_width 1.8 cm |
+| skirt_1 | waist chain ring | 28 | 12.73 | 4.05 |  |
+| skirt_1 | hem | 41 | 18.64 | 5.93 |  |
+| skirt_2 | waist chain ring | 30 | 13.64 | 4.34 |  |
+| skirt_2 | hem | 46 | 20.91 | 6.66 |  |
+| sleeve | tube (both ends) | 13 | 5.91 | 1.88 |  |
+| garment | whole piece 14 + 2 open pieces x 7 | 28 | 12.73 | 4.05 |  |
+
+## B. Layer allowances (outer minus inner), implied by gauge only
+| interface | inner st | outer st | inner cm | outer cm | diff cm | diff % | radial gap between fabric mid-surfaces mm | where the allowance comes from |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| head max girth -> hair cap rim | 42 | 44 | 19.09 | 20.00 | +0.91 | +4.8 | +1.45 | planner.py:106 `cap_rim = head_peak + 2` (constant 2 st) |
+| hair cap rim -> hat crown rim (hair strands lie in between) | 44 | 47 | 20.00 | 21.36 | +1.36 | +6.8 | +2.17 | planner.py:117 `cap_rim + max(2, ceil(garment_ease_cm / stitch_w))` |
+| head max girth -> hat crown rim | 42 | 47 | 19.09 | 21.36 | +2.27 | +11.9 | +3.62 | sum of the two above |
+| body chest/hip -> garment (3 panels, before seams) | 25 | 28 | 11.36 | 12.73 | +1.36 | +12.0 | +2.17 | planner.py:133-134 `torso + max(2, ceil(garment_ease_cm / stitch_w))` |
+| body waist -> garment | 20 | 28 | 9.09 | 12.73 | +3.64 | +40.0 | +5.79 | garment is sized from the widest body round |
+| body hip (must pass) -> skirt_1 waist ring | 25 | 28 | 11.36 | 12.73 | +1.36 | +12.0 | +2.17 | planner.py:134,136 `torso + ease + 2*layer` |
+| body waist (where it sits) -> skirt_1 waist ring | 20 | 28 | 9.09 | 12.73 | +3.64 | +40.0 | +5.79 | same; not sized to the waist |
+| body hip (must pass) -> skirt_2 waist ring | 25 | 30 | 11.36 | 13.64 | +2.27 | +20.0 | +3.62 | planner.py:134,136 `torso + ease + 2*layer` |
+| body waist (where it sits) -> skirt_2 waist ring | 20 | 30 | 9.09 | 13.64 | +4.55 | +50.0 | +7.23 | same; not sized to the waist |
+| skirt_1 waist -> skirt_2 waist | 28 | 30 | 12.73 | 13.64 | +0.91 | +7.1 | +1.45 | planner.py:136 `+ layer * 2` (constant 2 st) |
+| palm max (must pass) -> sleeve | 10 | 13 | 4.55 | 5.91 | +1.36 | +30.0 | +2.17 | planner.py:146 `max(palm, upper) + ease` |
+| forearm (where it sits) -> sleeve | 8 | 13 | 3.64 | 5.91 | +2.27 | +62.5 | +3.62 | same; not sized to the forearm |
+| leg -> shoe opening | 7 | 10 | 3.18 | 4.55 | +1.36 | +42.9 | +2.17 | recipes.py:170 `max(leg + 2, 2*straight + 4)`; here the sole's straight sides decide |
+| body neck -> neckline perimeter (stitches left open) | 8 | 8 | 3.64 | 3.64 | +0.00 | +0.0 | +0.00 | planner.py:152-154 shoulder/neck split; garment also has an open placket |
+| sleeve top (stitches) -> armhole (row edges, front+back) | 13 | 16 | 5.91 | 5.71 | -0.19 | -3.3 | -0.31 | planner.py:147 `round(sleeve_n*stitch_w/(2*row_h))` |
+
+shoulder seam 5 st = 2.27 cm each; neck gap 4 st = 1.82 cm; panel 15 rows = 5.36 cm; armhole 8 row edges = 2.86 cm per panel; side seam 7 row edges = 2.50 cm
+whole piece 14 st = 6.36 cm wide vs half body circumference 5.68 cm; outer end of each shoulder seam is 3.18 cm from centre vs body radius 1.81 cm
+
+## C. Lengths and heights implied by the round counts
+body: 32 rounds = 11.43 cm along the surface; axial height ~8.21 cm (target body+neck 12 cm) -> 68% of target
+      rounds that add full height (count unchanged): 22 = 7.86 cm
+head: 26 rounds = 9.29 cm pole to pole along the surface (a 6 cm sphere has 9.42 cm); axial ~4.64 cm
+legs: 19 rounds = 6.79 cm; axial ~6.42 cm (target 6 cm)
+arms: 17 rounds = 6.07 cm (target 6 cm); palm section 4 rounds = 1.43 cm long, 1.45 cm across
+sum legs+body+head (axial, no overlap, no shoe sole) ~19.27 cm vs header target 24 cm -> 80%
+sleeve: 13 rounds = 4.64 cm; arm 6.07 cm
+skirt_1: 20 rounds = 7.14 cm (target skirt_length 7)
+skirt_2: 18 rounds = 6.43 cm (target skirt_length 7)
+
+## D. Hair cap depth vs eye round (both counted from the crown, same row gauge)
+hair cap: 13 rounds (8 to reach 44 st, then 5 straight) = 4.64 cm from crown to rim along the fabric
+head: reaches 42 st at round 10; eye candidate round 11 = 3.57-3.93 cm from the crown; equator of a 26-round head is between rounds 13 and 14
+cap rounds minus eye round = +2 rounds (+0.71 cm): positive means a crown-centred cap that follows the head ends BELOW the eye round
+round-by-round (cap st / head st): 1:6/6 2:12/6 3:18/12 4:24/18 5:30/24 6:36/30 7:42/30 8:44/36 9:44/36 10:44/42 11:44/42 12:44/42 13:44/42
+
+## E. Shoe sole
+chain 6 -> straight 3 st; 2 sole rounds -> implied sole 2.79 x 1.43 cm (targets 3 x 1.6 cm)
+opening 10 st = 4.55 cm vs leg 7 st = 3.18 cm
+
+## F. Brim
+brim rounds [53, 59, 65, 71, 77]: +6 per round; a flat ring at this gauge needs +4.94 per round -> flat edge would be 71.7 st, plan has 77 (+7.4%)
+
+## G. Hair strands
+hair: 12 strands, chain 16 -> 15 working chains = 6.82 cm before curling; V×15 = 30 sc
+fringe: 4 strands, chain 8 -> 7 working chains = 3.18 cm before curling; V×7 = 14 sc
+hair cap rim 20.00 cm; 12 long strands over sides+back
+==============================================================================================================
+doll-folded-cap: gauge 22 st x 28 rows per 10cm -> stitch width 0.4545 cm, row height 0.3571 cm; garment_ease_cm=1.0
+
+## A. Profiles (stitches -> implied circumference / diameter)
+| part | where | stitches | circumference cm | diameter cm | design target |
+|---|---|---:|---:|---:|---|
+| body | lower body / hip | 25 | 11.36 | 3.62 | body_diameter 3.6 cm |
+| body | waist | 20 | 9.09 | 2.89 | (0.8 x torso, no design field) |
+| body | chest/shoulder | 25 | 11.36 | 3.62 | body_diameter 3.6 cm |
+| body | neck (open edge) | 8 | 3.64 | 1.16 | neck_diameter 1.2 cm |
+| head | max girth (rounds 10-15) | 42 | 19.09 | 6.08 | head_diameter 6.0 cm |
+| arm | palm max | 10 | 4.55 | 1.45 | palm_diameter 1.5 cm |
+| arm | wrist | 6 | 2.73 | 0.87 | wrist_diameter 0.9 cm |
+| arm | forearm / shoulder opening | 8 | 3.64 | 1.16 | (max(wrist+2, palm-2), no design field) |
+| leg | tube | 7 | 3.18 | 1.01 | max(wrist, 0.65 x foot_width)=1.04 cm |
+| shoe | sole edge | 18 | 8.18 | 2.60 |  |
+| shoe | opening | 10 | 4.55 | 1.45 |  |
+| hair cap | rim | 44 | 20.00 | 6.37 |  |
+| hat | crown rim (帽身) | 47 | 21.36 | 6.80 |  |
+| skirt_1 | waist chain ring | 28 | 12.73 | 4.05 |  |
+| skirt_1 | hem | 41 | 18.64 | 5.93 |  |
+| skirt_2 | waist chain ring | 30 | 13.64 | 4.34 |  |
+| skirt_2 | hem | 46 | 20.91 | 6.66 |  |
+| sleeve | tube (both ends) | 13 | 5.91 | 1.88 |  |
+| garment | whole piece 14 + 2 open pieces x 7 | 28 | 12.73 | 4.05 |  |
+
+## B. Layer allowances (outer minus inner), implied by gauge only
+| interface | inner st | outer st | inner cm | outer cm | diff cm | diff % | radial gap between fabric mid-surfaces mm | where the allowance comes from |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| head max girth -> hair cap rim | 42 | 44 | 19.09 | 20.00 | +0.91 | +4.8 | +1.45 | planner.py:106 `cap_rim = head_peak + 2` (constant 2 st) |
+| hair cap rim -> hat crown rim (hair strands lie in between) | 44 | 47 | 20.00 | 21.36 | +1.36 | +6.8 | +2.17 | planner.py:117 `cap_rim + max(2, ceil(garment_ease_cm / stitch_w))` |
+| head max girth -> hat crown rim | 42 | 47 | 19.09 | 21.36 | +2.27 | +11.9 | +3.62 | sum of the two above |
+| hat rim (stitches) -> rib band length (rows) | 47 | 60 | 21.36 | 21.43 | +0.06 | +0.3 | +0.10 | planner.py:124 rows = round(hat_rim*stitch_w/row_h); BLO rib uses the plain sc row gauge |
+| body chest/hip -> garment (3 panels, before seams) | 25 | 28 | 11.36 | 12.73 | +1.36 | +12.0 | +2.17 | planner.py:133-134 `torso + max(2, ceil(garment_ease_cm / stitch_w))` |
+| body waist -> garment | 20 | 28 | 9.09 | 12.73 | +3.64 | +40.0 | +5.79 | garment is sized from the widest body round |
+| body hip (must pass) -> skirt_1 waist ring | 25 | 28 | 11.36 | 12.73 | +1.36 | +12.0 | +2.17 | planner.py:134,136 `torso + ease + 2*layer` |
+| body waist (where it sits) -> skirt_1 waist ring | 20 | 28 | 9.09 | 12.73 | +3.64 | +40.0 | +5.79 | same; not sized to the waist |
+| body hip (must pass) -> skirt_2 waist ring | 25 | 30 | 11.36 | 13.64 | +2.27 | +20.0 | +3.62 | planner.py:134,136 `torso + ease + 2*layer` |
+| body waist (where it sits) -> skirt_2 waist ring | 20 | 30 | 9.09 | 13.64 | +4.55 | +50.0 | +7.23 | same; not sized to the waist |
+| skirt_1 waist -> skirt_2 waist | 28 | 30 | 12.73 | 13.64 | +0.91 | +7.1 | +1.45 | planner.py:136 `+ layer * 2` (constant 2 st) |
+| palm max (must pass) -> sleeve | 10 | 13 | 4.55 | 5.91 | +1.36 | +30.0 | +2.17 | planner.py:146 `max(palm, upper) + ease` |
+| forearm (where it sits) -> sleeve | 8 | 13 | 3.64 | 5.91 | +2.27 | +62.5 | +3.62 | same; not sized to the forearm |
+| leg -> shoe opening | 7 | 10 | 3.18 | 4.55 | +1.36 | +42.9 | +2.17 | recipes.py:170 `max(leg + 2, 2*straight + 4)`; here the sole's straight sides decide |
+| body neck -> neckline perimeter (stitches left open) | 8 | 8 | 3.64 | 3.64 | +0.00 | +0.0 | +0.00 | planner.py:152-154 shoulder/neck split; garment also has an open placket |
+| sleeve top (stitches) -> armhole (row edges, front+back) | 13 | 16 | 5.91 | 5.71 | -0.19 | -3.3 | -0.31 | planner.py:147 `round(sleeve_n*stitch_w/(2*row_h))` |
+
+shoulder seam 5 st = 2.27 cm each; neck gap 4 st = 1.82 cm; panel 15 rows = 5.36 cm; armhole 8 row edges = 2.86 cm per panel; side seam 7 row edges = 2.50 cm
+whole piece 14 st = 6.36 cm wide vs half body circumference 5.68 cm; outer end of each shoulder seam is 3.18 cm from centre vs body radius 1.81 cm
+
+## C. Lengths and heights implied by the round counts
+body: 32 rounds = 11.43 cm along the surface; axial height ~8.21 cm (target body+neck 12 cm) -> 68% of target
+      rounds that add full height (count unchanged): 22 = 7.86 cm
+head: 26 rounds = 9.29 cm pole to pole along the surface (a 6 cm sphere has 9.42 cm); axial ~4.64 cm
+legs: 19 rounds = 6.79 cm; axial ~6.42 cm (target 6 cm)
+arms: 17 rounds = 6.07 cm (target 6 cm); palm section 4 rounds = 1.43 cm long, 1.45 cm across
+sum legs+body+head (axial, no overlap, no shoe sole) ~19.27 cm vs header target 24 cm -> 80%
+sleeve: 13 rounds = 4.64 cm; arm 6.07 cm
+skirt_1: 20 rounds = 7.14 cm (target skirt_length 7)
+skirt_2: 18 rounds = 6.43 cm (target skirt_length 7)
+
+## D. Hair cap depth vs eye round (both counted from the crown, same row gauge)
+hair cap: 13 rounds (8 to reach 44 st, then 5 straight) = 4.64 cm from crown to rim along the fabric
+head: reaches 42 st at round 10; eye candidate round 11 = 3.57-3.93 cm from the crown; equator of a 26-round head is between rounds 13 and 14
+cap rounds minus eye round = +2 rounds (+0.71 cm): positive means a crown-centred cap that follows the head ends BELOW the eye round
+round-by-round (cap st / head st): 1:6/6 2:12/6 3:18/12 4:24/18 5:30/24 6:36/30 7:42/30 8:44/36 9:44/36 10:44/42 11:44/42 12:44/42 13:44/42
+
+## E. Shoe sole
+chain 6 -> straight 3 st; 2 sole rounds -> implied sole 2.79 x 1.43 cm (targets 3 x 1.6 cm)
+opening 10 st = 4.55 cm vs leg 7 st = 3.18 cm
+
+## G. Hair strands
+hair: 12 strands, chain 16 -> 15 working chains = 6.82 cm before curling; 15X = 15 sc
+fringe: 4 strands, chain 8 -> 7 working chains = 3.18 cm before curling; 7X = 7 sc
+hair cap rim 20.00 cm; 12 long strands over sides+back

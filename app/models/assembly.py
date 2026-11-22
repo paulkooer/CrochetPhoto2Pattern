@@ -52,6 +52,55 @@ def _openings_by_part(parts: Sequence[Mapping[str, Any]]) -> dict[str, int]:
     return openings
 
 
+def hat_fit_note(parts: Sequence[Mapping[str, Any]], gauge: Mapping[str, Any] | None) -> str:
+    """Estimated hat rim against the widest head round, each by its own gauge.
+
+    Stitch counts times stitch width: an estimate from the input gauge, not a
+    measurement and not a fit guarantee. A hat may carry a gauge of its own, so
+    raw stitch counts are never compared. Returns "" when the pattern has no
+    hat, no head to compare with, or no recorded gauge. This belongs to the
+    assembly text, not to the hat part: a hat with a fixed gauge must stay
+    unchanged when the rest of the pattern is regenerated.
+    """
+    def width(part: Mapping[str, Any]) -> float | None:
+        own = part.get("gauge") or gauge
+        try:
+            stitches = float(own["stitches_per_10cm"]) if own else 0.0
+        except (KeyError, TypeError, ValueError):
+            return None
+        return 10.0 / stitches if stitches > 0 else None
+
+    hat = next((p for p in parts if part_kind_from_name(_part_name(p)) is PartKind.HAT
+                and p.get("type") == "cup" and _part_rounds(p)), None)
+    head_rounds: list[dict[str, Any]] = []
+    head = None
+    for part in parts:
+        rounds = _part_rounds(part)
+        if part_kind_from_name(_part_name(part)) is PartKind.HEAD:
+            head, head_rounds = part, list(rounds)
+        elif _part_name(part) == _ONE_PIECE_NAME and isinstance(part.get("neck_row"), int):
+            head, head_rounds = part, [rd for rd in rounds if rd.get("row", 0) <= part["neck_row"]]
+        if head_rounds:
+            break
+    if hat is None or head is None or not head_rounds:
+        return ""
+    hat_width, head_width = width(hat), width(head)
+    if hat_width is None or head_width is None:
+        return ""
+    widest = max(_round_stitches(rd) for rd in head_rounds)
+    rim_cm, head_cm = _round_stitches(_part_rounds(hat)[-1]) * hat_width, widest * head_width
+    difference = round(rim_cm, 1) - round(head_cm, 1)
+    measured = f"按密度估算，帽口周长约 {rim_cm:.1f}cm，头部最宽圈（{widest} 针）约 {head_cm:.1f}cm"
+    if difference > 0.05:
+        return (f"{measured}，帽口多约 {difference:.1f}cm；这是估算不是实测，头发或发帽还要占余量。"
+                "先试戴，合适后再缝合固定")
+    if difference > -0.05:
+        return (f"{measured}，两者相同，没有余量，可能偏紧；这是估算不是实测。"
+                "先试戴，偏紧就把帽子直径改大后重新生成")
+    return (f"{measured}，帽口少约 {-difference:.1f}cm，可能戴不过头部最宽处；这是估算不是实测。"
+            "先试戴，戴不上就把帽子直径改大后重新生成")
+
+
 def assembly_for_pattern(params: Mapping[str, Any]) -> str:
     """Render declared loop references from current data, not stale saved prose."""
     if "stitch_attachments" not in params and params.get("head_opening_stitches") is None:
@@ -62,7 +111,8 @@ def assembly_for_pattern(params: Mapping[str, Any]) -> str:
                           params.get("assembly_plan"), _openings_by_part(parts),
                           params.get("stitch_attachments"),
                           opening_rows=opening_rows_by_part(parts),
-                          updated_guidance=params.get("construction_guidance_version") == 1)
+                          updated_guidance=params.get("construction_guidance_version") == 1,
+                          hat_fit=hat_fit_note(parts, params.get("gauge")))
 
 
 def build_assembly(part_names, skirt_style: str = "ring",
@@ -71,7 +121,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
                    openings: dict[str, int] | None = None,
                    stitch_attachments: dict | None = None, *,
                    opening_rows: dict[str, int] | None = None,
-                   updated_guidance: bool = True) -> str:
+                   updated_guidance: bool = True, hat_fit: str = "") -> str:
     """Build assembly text from the v2 graph, with a legacy name fallback."""
     quantities = quantities or {}
     openings = openings or {}
@@ -110,6 +160,12 @@ def build_assembly(part_names, skirt_style: str = "ring",
                 if part_kind_from_name(connection.source_part) is PartKind.SKIRT:
                     return attachment_steps(connection)
         return "接裙位置待核对：旧图解未记录精确基底圈及预留圈，请先核对或重新生成后再钩织。"
+
+    def hat_step(hat_open: str) -> str:
+        # Patterns made under the older guidance keep their original sentence.
+        if not (updated_guidance and hat_fit):
+            return f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）"
+        return f"{hat_open}不收口，戴在头部。{hat_fit}"
 
     def opening_note(name: str | PartKind) -> str:
         name = saved_name(name)
@@ -185,7 +241,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
         if PartKind.HAT in part_kinds:
             hat_n = openings_by_kind.get(PartKind.HAT)
             hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
-            steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
+            steps.append(hat_step(hat_open))
         if PartKind.SKIRT in part_kinds:
             if skirt_style == "attached":
                 steps.append(skirt_connection())
@@ -292,7 +348,7 @@ def build_assembly(part_names, skirt_style: str = "ring",
                                                            or target == _ONE_PIECE_NAME):
             hat_n = openings_by_kind.get(PartKind.HAT)
             hat_open = f"帽口 {hat_n} 针" if hat_n else "帽口"
-            steps.append(f"{hat_open}不收口，直接戴在头部（试戴后可缝合固定）")
+            steps.append(hat_step(hat_open))
         elif canonical and source_kind is PartKind.SKIRT and (target_kind is PartKind.BODY
                                                              or target == _ONE_PIECE_NAME):
             if skirt_style == "attached":

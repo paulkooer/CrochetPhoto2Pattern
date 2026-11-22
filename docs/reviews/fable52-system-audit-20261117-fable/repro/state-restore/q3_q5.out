@@ -1,0 +1,129 @@
+=== q3_q5 ===
+python 3.12.13 | app <repo>/app/__init__.py | version 0.2.0b3
+HEAD 6c88b7df5d53c18d4c8190288419faeb02cc1b13 | tmp <tmp>
+arm rounds: [(1, 6), (2, 12), (3, 12), (4, 12), (5, 12), (6, 12), (7, 12), (8, 6)]
+
+[insert a round mid-arm, renumbered] arm rows now [1, 2, 3, 4, 5, 6, 7, 8, 9]
+   kept: {'头部/head': '22 rows 1..22', '身体/body': '15 rows 1..15', '手臂/arms_left': [1, 2, 3, 4, 5], '手臂/arms_right': [1, 2, 3, 4, 5]} | cleared: 6 | kept ids not in new pattern: []
+   impact: {'部件': '头部', '变化范围': '原有圈次保持不变', '保留完成圈次': 22, '清除完成圈次': 0}
+   impact: {'部件': '身体', '变化范围': '原有圈次保持不变', '保留完成圈次': 15, '清除完成圈次': 0}
+   impact: {'部件': '手臂', '变化范围': '从第 6 圈起重新核对', '保留完成圈次': 10, '清除完成圈次': 6}
+
+[insert a round, old labels kept (new=99)] arm rows now [1, 2, 3, 4, 5, 99, 6, 7, 8]
+   kept: {'头部/head': '22 rows 1..22', '身体/body': '15 rows 1..15', '手臂/arms_left': [1, 2, 3, 4, 5], '手臂/arms_right': [1, 2, 3, 4, 5]} | cleared: 6 | kept ids not in new pattern: []
+   impact: {'部件': '头部', '变化范围': '原有圈次保持不变', '保留完成圈次': 22, '清除完成圈次': 0}
+   impact: {'部件': '身体', '变化范围': '原有圈次保持不变', '保留完成圈次': 15, '清除完成圈次': 0}
+   impact: {'部件': '手臂', '变化范围': '从第 99 圈起重新核对', '保留完成圈次': 10, '清除完成圈次': 6}
+
+[remove a straight round, renumbered] edit rejected: 1 validation error for CrochetPart
+  Value error, 连接开口必须引用部件中存在的圈号 [type=value_error, input_value={'name': '手臂', 'type'...en', 'magic_ring': True}, input_type=d
+
+[remove a straight round, labels kept] arm rows now [1, 2, 3, 5, 6, 7, 8]
+   kept: {'头部/head': '22 rows 1..22', '身体/body': '15 rows 1..15', '手臂/arms_left': [1, 2, 3], '手臂/arms_right': [1, 2, 3]} | cleared: 10 | kept ids not in new pattern: []
+   impact: {'部件': '头部', '变化范围': '原有圈次保持不变', '保留完成圈次': 22, '清除完成圈次': 0}
+   impact: {'部件': '身体', '变化范围': '原有圈次保持不变', '保留完成圈次': 15, '清除完成圈次': 0}
+   impact: {'部件': '手臂', '变化范围': '从第 5 圈起重新核对', '保留完成圈次': 6, '清除完成圈次': 10}
+
+[renumber only (+100)] edit rejected: 1 validation error for CrochetPart
+  Value error, 连接开口必须引用部件中存在的圈号 [type=value_error, input_value={'name': '手臂', 'type'...en', 'magic_ring': True}, input_type=d
+
+[delete arm part] arm rows now n/a
+   kept: {'头部/head': '22 rows 1..22', '身体/body': '15 rows 1..15'} | cleared: 16 | kept ids not in new pattern: []
+   impact: {'部件': '头部', '变化范围': '原有圈次保持不变', '保留完成圈次': 22, '清除完成圈次': 0}
+   impact: {'部件': '身体', '变化范围': '原有圈次保持不变', '保留完成圈次': 15, '清除完成圈次': 0}
+   impact: {'部件': '手臂', '变化范围': '部件已删除', '保留完成圈次': 0, '清除完成圈次': 16}
+
+[rename arm part] arm rows now n/a
+   kept: {'头部/head': '22 rows 1..22', '身体/body': '15 rows 1..15'} | cleared: 16 | kept ids not in new pattern: []
+   impact: {'部件': '头部', '变化范围': '原有圈次保持不变', '保留完成圈次': 22, '清除完成圈次': 0}
+   impact: {'部件': '身体', '变化范围': '原有圈次保持不变', '保留完成圈次': 15, '清除完成圈次': 0}
+   impact: {'部件': '手臂', '变化范围': '部件已删除', '保留完成圈次': 0, '清除完成圈次': 16}
+   impact: {'部件': '手臂改', '变化范围': '新增部件', '保留完成圈次': 0, '清除完成圈次': 0}
+
+[reorder parts only] arm rows now [1, 2, 3, 4, 5, 6, 7, 8]
+   kept: {'头部/head': '22 rows 1..22', '身体/body': '15 rows 1..15', '手臂/arms_left': '8 rows 1..8', '手臂/arms_right': '8 rows 1..8'} | cleared: 0 | kept ids not in new pattern: []
+   impact: {'部件': '头部', '变化范围': '原有圈次保持不变', '保留完成圈次': 22, '清除完成圈次': 0}
+   impact: {'部件': '身体', '变化范围': '原有圈次保持不变', '保留完成圈次': 15, '清除完成圈次': 0}
+   impact: {'部件': '手臂', '变化范围': '原有圈次保持不变', '保留完成圈次': 16, '清除完成圈次': 0}
+
+[edit only last-round note] arm rows now [1, 2, 3, 4, 5, 6, 7, 8]
+   kept: {'头部/head': '22 rows 1..22', '身体/body': '15 rows 1..15', '手臂/arms_left': [1, 2, 3, 4, 5, 6, 7], '手臂/arms_right': [1, 2, 3, 4, 5, 6, 7]} | cleared: 2 | kept ids not in new pattern: []
+   impact: {'部件': '头部', '变化范围': '原有圈次保持不变', '保留完成圈次': 22, '清除完成圈次': 0}
+   impact: {'部件': '身体', '变化范围': '原有圈次保持不变', '保留完成圈次': 15, '清除完成圈次': 0}
+   impact: {'部件': '手臂', '变化范围': '从第 8 圈起重新核对', '保留完成圈次': 14, '清除完成圈次': 2}
+
+--- undo after ticking on the edited pattern (reconcile) ---
+snapshot had arm rows<=4; on edited pattern maker ticked 5,6,7; after undo: [['arms_left', 1], ['arms_left', 2], ['arms_left', 3], ['arms_left', 4], ['arms_left', 5], ['arms_right', 1], ['arms_right', 2], ['arms_right', 3], ['arms_right', 4], ['arms_right', 5]] | unmapped reported: 4
+
+--- Q5 malformed payloads (pure import path used by sidebar/result-page import) ---
+  rejected  truncated file: ValueError: 备份不是有效 JSON（第 1 行，第 7888 列）
+  rejected  empty object: ValueError: 请使用「备份完整结果」文件，需包含 analysis、structure 和 params
+  rejected  top-level list: ValueError: 备份顶层必须是 JSON 对象
+  rejected  NaN stitches: ValueError: 备份 JSON 不能包含 NaN 或 Infinity
+  rejected  duplicate key: ValueError: 备份 JSON 含重复字段，请修正后再导入
+  rejected  deep nesting: ValueError: 备份 JSON 嵌套过深，请使用系统导出的完整备份
+  rejected  future schema_version 4: UnsupportedFormatError: 不支持的图解格式版本 schema_version='4'（当前 3）；更新版本保存的文件请用更新版本的应用打开
+  rejected  schema_version int 3: UnsupportedFormatError: 不支持的图解格式版本 schema_version=3（当前 3）；更新版本保存的文件请用更新版本的应用打开
+  rejected  schema_version '0': UnsupportedFormatError: 不支持的图解格式版本 schema_version='0'（当前 3）；更新版本保存的文件请用更新版本的应用打开
+  rejected  params is list: ValidationError: 1 validation error for PatternResult
+params
+  Input should be a valid dictionary [type=dic
+  rejected  parts empty: ValueError: 图解必须包含非空 parts 部件列表
+  rejected  part is string: ValueError: 每个部件必须是对象
+  rejected  rounds missing: ValidationError: 1 validation error for CrochetPart
+rounds
+  Field required [type=missing, input_value={'na
+  rejected  stitches string '12abc': ValidationError: 1 validation error for CrochetPart
+rounds.0.stitches
+  Value error, 计数必须是有限整数，不能是布尔值 [type
+  rejected  stitches 1e12: ValueError: 图解自检失败: 头部 第 1 圈：针数 1000000000000 超出上限 100000
+  rejected  stitches float 6.5: ValidationError: 1 validation error for CrochetPart
+rounds.0.stitches
+  Value error, 计数必须是有限整数，不能是布尔值 [type
+  rejected  quantity 21: ValidationError: 1 validation error for CrochetPart
+quantity
+  Input should be less than or equal to 20 [ty
+  rejected  duplicate row ids: ValidationError: 1 validation error for CrochetPart
+rounds
+  Value error, 同一部件的圈号不能重复 [type=value_error, in
+  rejected  duplicate part names: ValueError: 部件名称不能重复: 头部
+  rejected  analysis missing height: ValidationError: 1 validation error for ImageAnalysis
+height_cm
+  Field required [type=missing, input_value历史记录 h1 损坏: Expecting value: line 1 column 501 (char 500)
+历史记录 h1 拒绝载入: 不支持的图解格式版本 schema_version='9'（当前 3）；更新版本保存的文件请用更新版本的应用打开
+
+  rejected  structure parts not list: ValueError: structure 字段无效（应为含 parts 列表的对象）
+  rejected  structure dup instance ids: ValidationError: 1 validation error for StructureGeometry
+parts.2
+  Value error, instance_id values must be
+  rejected  style unknown key: ValidationError: 1 validation error for StyleMetadata
+evil
+  Extra inputs are not permitted [type=extra_for
+  rejected  gauge strings: ValueError: 工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存
+  rejected  project_state extra field: ValueError: 工程记录格式无效，请核对工程版本、备注与进度
+  rejected  project_state future version: ValueError: 工程记录格式无效，请核对工程版本、备注与进度
+  rejected  progress value false: ValueError: 工程进度只允许记录已完成的圈次
+  rejected  progress unknown identity: ValueError: 工程进度引用了不存在的部件、实体或圈次
+  rejected  progress non-json key: ValueError: 工程进度引用了不存在的部件、实体或圈次
+  rejected  notes too long: ValueError: 工程记录格式无效，请核对工程版本、备注与进度
+  rejected  revision of another pattern: ValueError: 工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存
+  rejected  project_state null: ValueError: 工程记录格式无效，请核对工程版本、备注与进度
+  rejected  materials is string list (derived, ignored?): ValueError: 工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存
+  rejected  assembly text injected (derived?): ValueError: 工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存
+  rejected  total_stitches forged: ValueError: 工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存
+
+share tokens:
+  valid: decoded+imported
+  truncated: None
+  one char flipped: None
+  trailing data: None
+  empty: None
+  7000 chars: None
+
+history DB:
+  saved+loaded parts: 3
+  truncated blob: None (UI: 该记录已不存在)
+  json list: None (UI: 该记录已不存在)
+  future version: None (UI: 该记录已不存在)
+  parts emptied: import rejected (UI: 已损坏): 图解必须包含非空 parts 部件列表
+  list still works: 1

@@ -1,0 +1,48 @@
+== baseline ==
+baseline chain + row: ACCEPT  [as expected] :: created=9 consumed=3 final={'row': 3, 'outside': 3}
+== new yarn / anchors ==
+work with no yarn at all: REJECT  [as expected] :: 钩织前须另接新线或恢复已暂停的工作环
+cut immediately after NewYarn (no chain, no stitch): REJECT  [as expected] :: 收线或暂停须引用当前已有的工作环，不能跳到另一条线
+cut after only the foundation chain: REJECT  [as expected] :: 收线或暂停须引用当前已有的工作环，不能跳到另一条线
+park after only the foundation chain: REJECT  [as expected] :: 收线或暂停须引用当前已有的工作环，不能跳到另一条线
+NewYarn then nothing (dangling 'ready' strand): ACCEPT :: created=9 consumed=3 final={'row': 3, 'outside': 3}
+re-use a closed strand name: REJECT  [as expected] :: 新线段名称重复；暂停的线段须恢复，不能当作新线另起
+re-use a parked strand name: REJECT  [as expected] :: 新线段名称重复；暂停的线段须恢复，不能当作新线另起
+second strand while first is live: REJECT  [as expected] :: 另接线前须收掉或暂停当前工作环
+standing sc at a different site than declared: REJECT  [as expected] :: 另接线首针须在声明位置作单个起立短针
+standing sc anchor reached through reversed span of length 1 (same site): ACCEPT  [as expected] :: created=12 consumed=6 final={'r2': 3, 'outside': 3}
+first stitch after standing-sc join is a plain sc instead: REJECT  [as expected] :: 另接线首针须在声明位置作单个起立短针
+standing sc in the middle of a live strand: REJECT  [as expected] :: 起立短针须有另接新线记录，不能静默替换当前线段
+anchor retired between NewYarn and its first stitch: REJECT  [as expected] :: 针位已使用，不能通过其他别名再次使用：Site(edge='row', position=1, face='top')
+independent chain while a strand is live: REJECT  [as expected] :: 当前线段继续起链须明确接续工作环；另起链须声明新线段
+new independent chain borrowing an old stitch as root (takes_site): REJECT  [as expected] :: 新线独立起链不能借用旧工作环
+== park / resume ==
+work directly from a parked strand: REJECT  [as expected] :: 钩织前须另接新线或恢复已暂停的工作环
+resume a strand that was never parked: REJECT  [as expected] :: 恢复工作环须有暂停记录，且当前没有另一条正在工作的线段
+resume a closed strand: REJECT  [as expected] :: 恢复工作环须有暂停记录，且当前没有另一条正在工作的线段
+park at a site that is not the live loop: REJECT  [as expected] :: 收线或暂停的位置不等于当前工作环
+fasten off a parked strand without resuming: REJECT  [as expected] :: 收线或暂停须引用当前已有的工作环，不能跳到另一条线
+weave the finishing end of a parked strand: REJECT  [as expected] :: 结束端尚未断线收紧，不能提前声明已藏线
+resume a strand whose loop stitch was meanwhile worked over by another strand, then chain on from it: ACCEPT :: created=18 consumed=8 final={'over': 3, 'tail': 2, 'outside': 3, 'ext_out': 2}
+   parked loop site consumed by: ['over', 'ext']
+== fasten off / weave ==
+fasten off at the wrong stitch: REJECT  [as expected] :: 收线或暂停的位置不等于当前工作环
+fasten off twice: REJECT  [as expected] :: 收线或暂停须引用当前已有的工作环，不能跳到另一条线
+weave finishing end before cutting: REJECT  [as expected] :: 结束端尚未断线收紧，不能提前声明已藏线
+weave starting end, then 'both': REJECT  [as expected] :: 同一个线端不能重复登记藏线
+weave 'both', then starting again: REJECT  [as expected] :: 同一个线端不能重复登记藏线
+weave an unknown strand: REJECT  [as expected] :: 藏线须引用已经钩入织物的线段
+weave starting end of a strand that only chained: REJECT  [as expected] :: 藏线须引用已经钩入织物的线段
+border declared finished in place of fastening off (live loop retired, never cut): ACCEPT :: created=9 consumed=9 final={}
+   yarn_accounting: {'mode': 'explicit', 'evidence': 'instruction_declarations_only', 'all_fasten_off_steps_present': False, 'all_weave_steps_present': False} working
+live loop stitch retired, then the strand still fastens off 'at' the retired stitch: ACCEPT :: created=9 consumed=6 final={'outside': 3}
+== facing side ==
+next row on the other side with no turn declared: REJECT  [as expected] :: 当前织物朝向与下一行正反面不一致，须明确翻面或另接线
+NewYarn says RS; chain turns; first row therefore has to be declared WS: ACCEPT :: created=9 consumed=3 final={'row': 3, 'outside': 3}
+  ... and the same plan with the first row declared RS: REJECT  [as expected] :: 当前织物朝向与下一行正反面不一致，须明确翻面或另接线
+extension chain from the row end, no turn, then working back along chain and row on the same side: ACCEPT :: created=18 consumed=8 final={'r2': 5, 'outside': 3, 'ext_out': 2}
+== seam start ==
+seam starting at the far end of the last row: REJECT  [as expected] :: 接合须从当前工作环一端开始，不能无说明跳到另一端
+seam started with a brand-new strand (standing join) instead of the live loop: REJECT  [as expected] :: 接合须从当前工作环一端开始，不能无说明跳到另一端
+seam from the live loop (declared order A: left reverse / right forward): ACCEPT  [as expected] :: created=18 consumed=15 final={'outside': 3}
+seam from the live loop (declared order B: left reverse / right reverse): ACCEPT :: created=18 consumed=15 final={'outside': 3}

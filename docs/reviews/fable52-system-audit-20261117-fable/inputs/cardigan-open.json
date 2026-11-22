@@ -1,0 +1,48 @@
+{
+  "schema_version": "cardigan-design-v1",
+  "dimension_basis": "hypothetical",
+  "yoke": {
+    "neck_edge_cm": 8.076923076923077,
+    "body_span_cm": 17.692307692307693,
+    "sleeve_circumference_cm": 6.9230769230769225,
+    "yoke_depth_cm": 3.2142857142857144,
+    "stitches_per_10cm": 26.0,
+    "rows_per_10cm": 28.0,
+    "gauge_basis": "hypothetical"
+  },
+  "method": {
+    "prefix": "design",
+    "hook_mm": 3.0,
+    "underarm_chains": 5,
+    "stitch_adjustment": 1,
+    "split_side": "RS"
+  },
+  "body_length_cm": 7.5,
+  "sleeve_length_cm": 6.4,
+  "hem_width_cm": 1.9,
+  "band_width_cm": 1.0,
+  "cuff_width_cm": 3.5,
+  "hem_gauge": {
+    "stitches_per_10cm": 26.0,
+    "rows_per_10cm": 26.0,
+    "basis": "hypothetical"
+  },
+  "band_gauge": {
+    "stitches_per_10cm": 40.0,
+    "rows_per_10cm": 40.0,
+    "basis": "hypothetical"
+  },
+  "cuff_gauge": {
+    "stitches_per_10cm": 40.0,
+    "rows_per_10cm": 40.0,
+    "basis": "hypothetical"
+  },
+  "buttonhole_positions_cm": [
+    1.0,
+    3.0,
+    5.0
+  ],
+  "buttonhole_chains": 2,
+  "cuff_seam": "open_review",
+  "finishing_tail_cm": 15.0
+}

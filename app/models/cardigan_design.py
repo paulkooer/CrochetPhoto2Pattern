@@ -13,6 +13,7 @@ from app.models.raglan_yoke import YokeMethod, YokeTarget, generate_yoke, propos
 from app.models.working_path import (
     EdgePath,
     FastenOff,
+    FoundationChain,
     NewYarn,
     Operation,
     ParkYarn,
@@ -28,7 +29,7 @@ from app.models.working_path import (
     compile_working_path,
 )
 
-CARDIGAN_ENGINE_VERSION = "cardigan-parametric-2"
+CARDIGAN_ENGINE_VERSION = "cardigan-parametric-3"
 
 
 class RibGauge(PathModel):
@@ -113,6 +114,16 @@ def _extend_body(plan: WorkingPath, prefix: str, count: int) -> str:
     return last
 
 
+def _facing(side: Literal["RS", "WS"]) -> str:
+    return "正面" if side == "RS" else "反面"
+
+
+def _note_ribbing_start(plan: WorkingPath, chain: str, text: str) -> None:
+    """State in plain words which face is toward the maker on attaching rows."""
+    step = next(s for s in plan.steps if isinstance(s, FoundationChain) and s.id == chain)
+    step.note = f"{step.note}{text}"
+
+
 def _rib_target(sites: int, length: float, width: float, gauge: RibGauge) -> RibbingTarget:
     return RibbingTarget(base_sites=sites, edge_length_cm=length, width_cm=width,
                          rib_rows_per_10cm=gauge.rows_per_10cm,
@@ -171,6 +182,8 @@ def assemble_cardigan(request: CardiganRequest) -> CardiganResult:
         return stop("hem_blocked", "；".join(hem.reasons))
     plan = generated
     assert hem.layout is not None
+    _note_ribbing_start(plan, f"{prefix}_hem_chain",
+                        f"本段每逢奇数行回到衣身末行作接合，此时衣身{_facing(hem_method.start_side)}朝向自己。")
     hem_last = f"{prefix}_hem_{hem.layout.rows:03d}"
     hem_width = hem.layout.width_stitches
     # Each front-side pickup is declared once per preceding row, excluding the
@@ -180,12 +193,19 @@ def assemble_cardigan(request: CardiganRequest) -> CardiganResult:
                     and step.section in (f"{prefix}_yoke", f"{prefix}_body")]
     side: Literal["left", "right"] = "left" if body_route.row_direction == "forward" else "right"
     other_side: Literal["left", "right"] = "right" if side == "left" else "left"
+    # The front worked first is fixed by the last body row; an even number of
+    # body rows therefore mirrors the band (owner decision 2026-11-19). Name the
+    # edge without left/right, which depend on the maker's hand.
+    begins = (side == "left") == (garment_rows[0].row_direction == "forward")
+    first_front = "正面行起头的一侧" if begins == (garment_rows[0].side == "RS") else "正面行收尾的一侧"
+    second_front = "正面行收尾的一侧" if first_front == "正面行起头的一侧" else "正面行起头的一侧"
+    worn = "左" if first_front == "正面行起头的一侧" else "右"
     up, down = f"{prefix}_front_up", f"{prefix}_front_down"
     band_base, band_corner = f"{prefix}_band_base", f"{prefix}_band_corner"
     plan.steps += [
-        RowEdges(id=up, label="第一侧前襟行端，由下往上", rows=[
+        RowEdges(id=up, label=f"第一侧前襟（{first_front}）行端，由下往上", rows=[
             RowEnd(row=row.id, side=side) for row in reversed(garment_rows[:-1])]),
-        RowEdges(id=down, label="另一侧前襟行端，由上往下", rows=[
+        RowEdges(id=down, label=f"另一侧前襟（{second_front}）行端，由上往下", rows=[
             RowEnd(row=row.id, side=other_side) for row in garment_rows[:-1]]),
         EdgePath(id=band_corner, label="门襟起链根部：用记号扣标出，保留作边缘检查", spans=[
             Span(edge=hem_last, first=hem_width, last=hem_width)]),
@@ -193,7 +213,9 @@ def assemble_cardigan(request: CardiganRequest) -> CardiganResult:
             *([Span(edge=hem_last, first=1, last=hem_width-1, direction="reverse")]
               if hem_width > 1 else []),
             Span(edge=up, first=1, last=len(garment_rows)-1),
-            Span(edge=f"{prefix}_neck_edge", first=1, last=yoke.layout.neck_stitches, direction="reverse"),
+            # Enter the neckline at the end the first front reaches.
+            Span(edge=f"{prefix}_neck_edge", first=1, last=yoke.layout.neck_stitches,
+                 direction="reverse" if side == "right" else "forward"),
             Span(edge=down, first=1, last=len(garment_rows)-1),
             Span(edge=f"{prefix}_hem_outside", first=1, last=hem_width, direction="reverse"),
         ]),
@@ -212,11 +234,14 @@ def assemble_cardigan(request: CardiganRequest) -> CardiganResult:
         buttonhole_positions_cm=request.buttonhole_positions_cm,
     )
     hem_route = _row(plan, hem_last)
+    assert hem_route.side is not None  # ribbing rows are flat rows and always declare a side
+    band_side = _opposite(hem_route.side)
     band_method = RibbingMethod(
         prefix=f"{prefix}_band", title="连续门襟与扣眼设计候选", base_edge=band_base,
         current_loop=Span(edge=band_corner, first=1, last=1), stitch="slst", foundation_face="underside",
-        foundation_turn="counterclockwise" if hem_route.side == "WS" else "none",
-        hook_mm=hook, start_side="RS", outer_turning_chain=1, buttonhole_chains=request.buttonhole_chains,
+        # The band returns along the last hem row, so it always turns first.
+        foundation_turn="counterclockwise", hook_mm=hook, start_side=band_side,
+        outer_turning_chain=1, buttonhole_chains=request.buttonhole_chains,
         design_basis="门襟行端按每行一位挑针；跨领口顺序及根部保留公开记录，转角平整度未验证。",
     )
     band, generated = design_button_band(plan, band_method, band_target)
@@ -225,6 +250,14 @@ def assemble_cardigan(request: CardiganRequest) -> CardiganResult:
         return stop("band_blocked", "；".join(band.reasons))
     plan = generated
     assert band.ribbing.layout is not None
+    band_facing = _facing(band_method.start_side)
+    _note_ribbing_start(plan, f"{prefix}_band_chain",
+                        f"本段每逢奇数行回到衣物边缘作接合，此时衣物{band_facing}朝向自己；"
+                        f"扣眼开在第一侧前襟，即{first_front}。")
+    plan.review_notes.append(
+        f"朝向与前襟：衣身共{body_rows}行，门襟接合行以衣物{band_facing}朝向自己，扣眼在{first_front}的前襟；"
+        "衣身行数的奇偶改变时，这两项一起镜像。"
+        f"按右手钩织推算，该前襟是穿着者的{worn}前襟，左手钩织相反；此推算未经实物确认。")
     body_yarn = f"{prefix}_body_yarn"
     plan.steps += [
         FastenOff(id=f"{prefix}_finish_body_yarn", label="门襟完成后断线收紧", yarn=body_yarn,
@@ -261,8 +294,9 @@ def assemble_cardigan(request: CardiganRequest) -> CardiganResult:
             previous = identifier
         plan.final_edges.remove(opening)
         cuff_base = f"{prefix}_cuff_{name}_base"
-        plan.steps.append(EdgePath(id=cuff_base, label="袖口从闭合环相邻针开始一周", spans=[
-            Span(edge=previous, first=2, last=yoke.layout.sleeve_stitches),
+        # The last sleeve round ends with a turn, so the cuff travels back over it.
+        plan.steps.append(EdgePath(id=cuff_base, label="袖口从闭合环相邻针开始，沿末圈反向一周", spans=[
+            Span(edge=previous, first=2, last=yoke.layout.sleeve_stitches, direction="reverse"),
             Span(edge=previous, first=1, last=1),
         ]))
         plan.final_edges.append(cuff_base)
@@ -282,15 +316,26 @@ def assemble_cardigan(request: CardiganRequest) -> CardiganResult:
         if generated is None:
             return stop(f"cuff_{name}_blocked", "；".join(cuff.reasons))
         plan = generated
+        _note_ribbing_start(plan, f"{prefix}_cuff_{name}_chain",
+                            f"本段每逢奇数行回到袖子末圈作接合，此时袖子{_facing(cuff_method.start_side)}朝向自己。")
         if request.cuff_seam == "blo_to_reserved_flo":
             assert cuff.layout is not None
             cuff_last = f"{prefix}_cuff_{name}_{cuff.layout.rows:03d}"
             cuff_start = f"{prefix}_cuff_{name}_start_loops"
+            # The seam travels back over the last cuff row, so that row ends with
+            # a turn and the seam is worked with the other face toward the maker.
+            last_row = next(s for s in plan.steps if isinstance(s, Route) and s.id == cuff_last)
+            assert last_row.side is not None  # ribbing rows are flat rows and always declare a side
+            last_row.turn = "counterclockwise"
+            seam_side = _opposite(last_row.side)
             plan.steps.append(Seam(
                 id=f"{prefix}_cuff_{name}_seam", label=f"袖口{name.upper()}指定半针接合候选",
                 left=Span(edge=cuff_last, first=1, last=cuff.layout.width_stitches, direction="reverse"),
                 right=Span(edge=cuff_start, first=1, last=cuff.layout.width_stitches),
-                left_loop="back", note="从当前环所在的末行末针开始，与首行第一针配对；"
+                left_loop="back", side=seam_side,
+                note=f"末行钩完翻面后，以袖口{_facing(seam_side)}朝向自己，沿末行往回接合；"
+                "末行的后半针指此时离自己较远的那一根。"
+                "从当前环所在的末行末针开始，与首行第一针配对；"
                 "这是新设计的BLO/FLO接合选择，不声称对应原教程inner/outer或已验证折向。"))
             plan.final_edges = [edge for edge in plan.final_edges if edge not in (cuff_last, cuff_start)]
             plan.steps += [

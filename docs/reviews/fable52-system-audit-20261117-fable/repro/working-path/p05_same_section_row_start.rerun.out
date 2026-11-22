@@ -1,0 +1,20 @@
+== yarn_tracking=False ==
+A  row 2 works r1 stitches 20..11 (starts under the hook, stops early): ACCEPT  [as expected] :: created=70 consumed=30 final={'r2': 10, 'left_over': 10, 'outside': 20}
+B  row 2 works r1 stitches 10..1 (starts 10 stitches away from the hook): ACCEPT :: created=70 consumed=30 final={'r2': 10, 'left_over': 10, 'outside': 20}
+   hook after row 1 is on: Site(edge='r1', position=20, face='top') | first stitch of row 2 goes into: Site(edge='r1', position=10, face='top')
+   recipe-PDF table cells for plan A: ['1', '20X（里山）', '20', '未填', '来源：ch第1–20位；CH1，逆时针翻面', '2', '10X', '10', '未填', '本行不翻面；接下一道工序或收尾']
+   recipe-PDF table cells for plan B: ['1', '20X（里山）', '20', '未填', '来源：ch第1–20位；CH1，逆时针翻面', '2', '10X', '10', '未填', '本行不翻面；接下一道工序或收尾']
+   markdown A: 3. **衣片 第 2 行**（`r2`）：在 r1 的顺序工作位第 11–20 位（反向） 钩每位置 1 短针。本段形成 10 个工作位置。flat，WS，行方向 reverse；按实际来源分段：10X。
+   markdown B: 3. **衣片 第 2 行**（`r2`）：在 r1 的顺序工作位第 1–10 位（反向） 钩每位置 1 短针。本段形成 10 个工作位置。flat，WS，行方向 reverse；按实际来源分段：10X。
+== yarn_tracking=True ==
+A  row 2 works r1 stitches 20..11 (starts under the hook, stops early): ACCEPT  [as expected] :: created=70 consumed=30 final={'r2': 10, 'left_over': 10, 'outside': 20}
+B  row 2 works r1 stitches 10..1 (starts 10 stitches away from the hook): ACCEPT :: created=70 consumed=30 final={'r2': 10, 'left_over': 10, 'outside': 20}
+   hook after row 1 is on: Site(edge='r1', position=20, face='top') | first stitch of row 2 goes into: Site(edge='r1', position=10, face='top')
+   recipe-PDF table cells for plan A: ['1', '20X（里山）', '20', '未填', '来源：ch第1–20位；CH1，逆时针翻面', '2', '10X', '10', '未填', '本行不翻面；接下一道工序或收尾']
+   recipe-PDF table cells for plan B: ['1', '20X（里山）', '20', '未填', '来源：ch第1–20位；CH1，逆时针翻面', '2', '10X', '10', '未填', '本行不翻面；接下一道工序或收尾']
+   markdown A: 4. **衣片 第 2 行**（`r2`）：在 r1 的顺序工作位第 11–20 位（反向） 钩每位置 1 短针。本段形成 10 个工作位置。flat，WS，行方向 reverse；按实际来源分段：10X。
+   markdown B: 4. **衣片 第 2 行**（`r2`）：在 r1 的顺序工作位第 1–10 位（反向） 钩每位置 1 短针。本段形成 10 个工作位置。flat，WS，行方向 reverse；按实际来源分段：10X。
+== other shapes the same-section check lets through ==
+row 2 skips every other stitch of row 1 (12,10,8,...) with the skipped ones held: ACCEPT :: created=27 consumed=15 final={'r2': 3, 'gaps': 9}
+row 2 = two far-apart chunks (12..10 then 3..1), middle held, no chain between them: ACCEPT :: created=30 consumed=18 final={'r2': 6, 'mid': 6}
+control: same chunks in ascending order are rejected: REJECT  [as expected] :: r2 翻面后的来源顺序须沿上一行反向工作，不能分段跳回

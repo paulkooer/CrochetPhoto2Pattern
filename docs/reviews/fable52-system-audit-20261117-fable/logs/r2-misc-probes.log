@@ -1,0 +1,17 @@
+== A. are binding (attachment) stitches covered by the same-section direction check?
+  REJECTED  row 2 = sc in stitch 4, then ordinary sc in 1,2,3 (wrong way) -> r2 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+  ACCEPTED  row 2 = sc in stitch 4, then ATTACHING slst in 1,2,3 (same wrong way)
+== B. md_safe on block-level Markdown
+   '# 已通过实钩验证' -> '# 已通过实钩验证'
+   '![x](http://127.0.0.1:9/a.png)' -> '!\\[x\\](http://127.0.0.1:9/a.png)'
+   '第一行\n# 伪造标题' -> '第一行\n# 伪造标题'
+   '> 引用\n- 列表 **粗体**' -> '&gt; 引用\n- 列表 **粗体**'
+== C. hair cap rim vs eye round, two estimators (default gauge 22 st / 28 rows)
+   height 16: head max 30 st, cap rim 32 st; eye round 9, cap rounds 9; by rounds x row height: eye 3.21 cm, cap rim 3.21 cm; by axial projection: eye 1.43 cm, cap rim 1.40 cm
+              body: 23 rounds; target 8.0 cm; rounds x row height 8.21 cm (103%); axial projection 6.28 cm (79%)
+   height 24: head max 42 st, cap rim 44 st; eye round 11, cap rounds 13; by rounds x row height: eye 3.93 cm, cap rim 4.64 cm; by axial projection: eye 1.43 cm, cap rim 2.11 cm
+              body: 32 rounds; target 12.0 cm; rounds x row height 11.43 cm (95%); axial projection 8.21 cm (68%)
+   height 40: head max 72 st, cap rim 74 st; eye round 21, cap rounds 21; by rounds x row height: eye 7.50 cm, cap rim 7.50 cm; by axial projection: eye 3.21 cm, cap rim 3.18 cm
+              body: 49 rounds; target 20.0 cm; rounds x row height 17.50 cm (88%); axial projection 12.72 cm (64%)
+   height 60: head max 102 st, cap rim 104 st; eye round 26, cap rounds 31; by rounds x row height: eye 9.29 cm, cap rim 11.07 cm; by axial projection: eye 3.21 cm, cap rim 4.97 cm
+              body: 69 rounds; target 30.0 cm; rounds x row height 24.64 cm (82%); axial projection 17.11 cm (57%)

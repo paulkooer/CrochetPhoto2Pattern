@@ -1,0 +1,66 @@
+=== q4_roundtrip ===
+python 3.12.13 | app <repo>/app/__init__.py | version 0.2.0b3
+HEAD 6c88b7df5d53c18d4c8190288419faeb02cc1b13 | tmp <tmp>
+
+--- A. live result vs. its own backup re-imported (what a maker gets back) ---
+S1 manual default(头部,身体)
+   revision live=5a3a2b195e reimported=9f4253cf6b reimported-twice=9f4253cf6b | live==reimported: False | idempotent: True
+   trial source_revision vs live: DIFFERENT | top-level gauge live=None
+   share token: 4984 chars | rebuild_params(history-save path) changes: 0
+     backup-diff /gauge: NoneType 'None' -> dict "{'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}"
+S2 manual all parts
+   revision live=b9dd6d4951 reimported=1eae5eefd5 reimported-twice=1eae5eefd5 | live==reimported: False | idempotent: True
+   trial source_revision vs live: DIFFERENT | top-level gauge live=None
+   share token: too large | rebuild_params(history-save path) changes: 0
+     backup-diff /gauge: NoneType 'None' -> dict "{'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}"
+S4 smoke _mock_result
+   revision live=ad9f912a89 reimported=ad9f912a89 reimported-twice=ad9f912a89 | live==reimported: True | idempotent: True
+   trial source_revision vs live: same | top-level gauge live={'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}
+   share token: 5648 chars | rebuild_params(history-save path) changes: 0
+S3 manual one-piece + attached skirt
+   revision live=f443773d73 reimported=76b6195876 reimported-twice=76b6195876 | live==reimported: False | idempotent: True
+   trial source_revision vs live: DIFFERENT | top-level gauge live=None
+   share token: too large | rebuild_params(history-save path) changes: 0
+     backup-diff /gauge: NoneType 'None' -> dict "{'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}"
+S3b manual attached skirt
+   revision live=fbd4a16c15 reimported=ad8a10d9ef reimported-twice=ad8a10d9ef | live==reimported: False | idempotent: True
+   trial source_revision vs live: DIFFERENT | top-level gauge live=None
+   share token: too large | rebuild_params(history-save path) changes: 0
+     backup-diff /gauge: NoneType 'None' -> dict "{'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}"
+S5 S2 + resize(10,20)
+   revision live=f6ff95a7a0 reimported=f6ff95a7a0 reimported-twice=f6ff95a7a0 | live==reimported: True | idempotent: True
+   trial source_revision vs live: same | top-level gauge live={'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}
+   share token: too large | rebuild_params(history-save path) changes: 0
+S7 S2 + yarn spec
+   revision live=1023373a46 reimported=ed97e3d619 reimported-twice=ed97e3d619 | live==reimported: False | idempotent: True
+   trial source_revision vs live: DIFFERENT | top-level gauge live=None
+   share token: too large | rebuild_params(history-save path) changes: 0
+     backup-diff /gauge: NoneType 'None' -> dict "{'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}"
+S8 S2 + head opening 16
+   revision live=a8083677c3 reimported=a8083677c3 reimported-twice=a8083677c3 | live==reimported: True | idempotent: True
+   trial source_revision vs live: same | top-level gauge live={'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}
+   share token: too large | rebuild_params(history-save path) changes: 0
+S6 S2 + round note edit
+   revision live=8ca3ac5b23 reimported=ba1d123b1f reimported-twice=ba1d123b1f | live==reimported: False | idempotent: True
+   trial source_revision vs live: DIFFERENT | top-level gauge live=None
+   share token: too large | rebuild_params(history-save path) changes: 0
+     backup-diff /gauge: NoneType 'None' -> dict "{'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}"
+S9 photo(mock vision, synthetic image)
+   revision live=5b5badff30 reimported=5b5badff30 reimported-twice=5b5badff30 | live==reimported: True | idempotent: True
+   trial source_revision vs live: same | top-level gauge live={'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}
+   share token: too large | rebuild_params(history-save path) changes: 0
+
+--- B. project file: progress + notes round trip ---
+progress identical: True (38 ticks) | notes identical: True
+params diff saved-file vs restored session: none
+project_state keys: ['completed_rounds', 'notes', 'pattern_revision', 'saved_with_version', 'schema_version'] | top-level keys dropped vs session: ['preview', 'result_id']
+tampered project rejected: 工程中的图解版本与进度绑定版本不一致；请恢复原工程，在系统内修改图解后重新保存
+
+--- C. trial bundle bound to exact pattern bytes ---
+members: {'pattern.json': 31381, 't-9.trial.json': 830, 'draft.json': 390}
+reopen: source bytes identical: True | record equal: True | draft equal: True | re-encode byte-identical: True
+  pattern.json: one round note edited: rejected -> 试钩记录与原图解不匹配，请恢复同一次下载的记录包
+  pattern.json: part colour edited: rejected -> 试钩记录与原图解不匹配，请恢复同一次下载的记录包
+  pattern.json: same content, re-indented: rejected -> 试钩记录与原图解不匹配，请恢复同一次下载的记录包
+  trial.json: swatch edited, draft.json kept: rejected -> 未完成测量草稿与试钩记录不匹配，请使用同一次下载的完整记录包
+  trial.json: re-indented only, draft.json kept: rejected -> 未完成测量草稿与试钩记录不匹配，请使用同一次下载的完整记录包
