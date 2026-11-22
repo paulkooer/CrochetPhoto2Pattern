@@ -17,7 +17,7 @@ from app.models.working_path import (
     Site,
     compile_working_path,
 )
-from app.utils.working_path_export import scope_note
+from app.utils.working_path_export import export_working_path_markdown, scope_note
 from app.working_paths import read_path
 
 
@@ -99,6 +99,105 @@ def test_odd_sleeve_length_changes_cuff_start_side_without_an_extra_turn():
     assert isinstance(cuff_chain, FoundationChain) and cuff_chain.turn_after_chain == "none"
     assert cuff_start.side == "WS"
     compile_working_path(plan)
+
+
+@pytest.mark.parametrize("sleeve_rows", [17, 18])
+def test_cuff_travels_back_over_the_last_sleeve_round_after_its_turn(sleeve_rows):
+    result = assemble_cardigan(_request(sleeve_length_cm=sleeve_rows/2.8))
+    compiled = compile_working_path(result.plan)
+    for name in ("a", "b"):
+        base = compiled.edges[f"design_cuff_{name}_base"]
+        assert {site.edge for site in base} == {f"design_sleeve_{name}_{sleeve_rows:03d}"}
+        assert [site.position for site in base] == [*range(19, 1, -1), 1]
+    chain = next(s for s in result.plan.steps if s.id == "design_cuff_a_chain")
+    facing = "反面" if sleeve_rows % 2 else "正面"
+    assert f"袖子{facing}朝向自己" in chain.note
+
+
+@pytest.mark.parametrize(("body_rows", "band_side", "direction", "front", "worn"), [
+    (21, "RS", "reverse", "正面行收尾的一侧", "右前襟"),
+    (20, "WS", "forward", "正面行起头的一侧", "左前襟"),
+])
+def test_band_is_continuous_and_mirrored_by_body_row_parity(body_rows, band_side, direction, front, worn):
+    result = assemble_cardigan(_request(body_length_cm=body_rows/2.8))
+    assert result.stage == "integrated_open_cuffs" and result.stages["body"]["rows"] == body_rows
+    plan = result.plan
+    compiled = compile_working_path(plan)
+    steps = {step.id: step for step in plan.steps}
+    assert steps["design_band_chain"].turn_after_chain == "counterclockwise"
+    assert steps["design_band_001"].side == band_side
+    assert steps["design_band_001"].side != steps["design_hem_046"].side
+    neck = next(span for span in steps["design_band_base"].spans if span.edge == "design_neck_edge")
+    assert neck.direction == direction
+    # Each front's top row end sits over the neck-chain position the path uses next to it.
+    over = {e.outputs[0]: e.sources[0].position for e in compiled.events
+            if e.route == "design_yoke_001" and e.role == "working"}
+    anchor = {e.outputs[0]: e.sources[0] for e in compiled.events if e.stitch == "row_end_site"}
+    sites = compiled.edges["design_band_base"]
+    junctions = [(over[anchor[a]], b.position) for a, b in zip(sites, sites[1:], strict=False)
+                 if a.face.startswith("row_") and b.edge == "design_neck_chain"]
+    junctions += [(a.position, over[anchor[b]]) for a, b in zip(sites, sites[1:], strict=False)
+                  if a.edge == "design_neck_chain" and b.face.startswith("row_")]
+    assert len(junctions) == 2 and all(a == b for a, b in junctions)
+    facing = "正面" if band_side == "RS" else "反面"
+    assert f"衣物{facing}朝向自己" in steps["design_band_chain"].note
+    assert front in steps["design_band_chain"].note and front in steps["design_front_up"].label
+    note = next(n for n in plan.review_notes if n.startswith("朝向与前襟"))
+    assert front in note and worn in note and "未经实物确认" in note
+    assert result.to_dict()["ready_for_whole_garment_trial"] is False
+
+
+def test_checker_rejects_a_band_that_crosses_the_neckline_or_starts_unturned():
+    for body in (7.5, 20/2.8):
+        result = assemble_cardigan(_request(body_length_cm=body))
+        plan = result.plan.model_copy(deep=True)
+        neck = next(span for step in plan.steps if step.id == "design_band_base"
+                    for span in step.spans if span.edge == "design_neck_edge")
+        neck.direction = "forward" if neck.direction == "reverse" else "reverse"
+        with pytest.raises(ValueError, match="跳位"):
+            compile_working_path(plan)
+        plan = result.plan.model_copy(deep=True)
+        base = next(step for step in plan.steps if step.id == "design_cuff_a_base")
+        base.spans[0].direction = "forward"
+        with pytest.raises(ValueError, match="朝向不符"):
+            compile_working_path(plan)
+
+
+def test_checker_rejects_a_band_path_that_crosses_from_one_front_to_the_other():
+    plan = assemble_cardigan(_request()).plan.model_copy(deep=True)
+    base = next(step for step in plan.steps if step.id == "design_band_base")
+    neck = next(i for i, span in enumerate(base.spans) if span.edge == "design_neck_edge")
+    # Same sites, but the neckline is moved after the second front: the path now
+    # steps from the top of one front straight to the top of the other.
+    base.spans.insert(neck + 1, base.spans.pop(neck))
+    with pytest.raises(ValueError, match="分属织片两条侧边"):
+        compile_working_path(plan)
+
+
+@pytest.mark.parametrize("sleeve_rows", [17, 18])
+def test_cuff_seam_declares_its_turn_and_facing_side(sleeve_rows):
+    result = assemble_cardigan(_request(sleeve_length_cm=sleeve_rows/2.8, cuff_seam="blo_to_reserved_flo"))
+    assert result.stage == "integrated_cuff_seam_candidate"
+    plan = result.plan
+    steps = {step.id: step for step in plan.steps}
+    seam = steps["design_cuff_a_seam"]
+    last = steps[seam.left.edge]
+    assert last.turn == "counterclockwise" and seam.side is not None and seam.side != last.side
+    facing = "正面" if seam.side == "RS" else "反面"
+    assert f"袖口{facing}朝向自己" in seam.note and "离自己较远" in seam.note
+    text = export_working_path_markdown(plan)
+    assert f"以{'正面RS' if seam.side == 'RS' else '反面WS'}朝向自己，前后半针按此时所见区分" in text
+    # Without the turn, or travelling the last row the other way, the checker refuses.
+    broken = plan.model_copy(deep=True)
+    next(s for s in broken.steps if s.id == last.id).turn = "none"
+    with pytest.raises(ValueError, match="朝向与接合声明的正反面不一致"):
+        compile_working_path(broken)
+    broken = plan.model_copy(deep=True)
+    wrong = next(s for s in broken.steps if s.id == seam.id)
+    wrong.side = last.side
+    next(s for s in broken.steps if s.id == last.id).turn = "none"
+    with pytest.raises(ValueError, match="朝向不符"):
+        compile_working_path(broken)
 
 
 def test_another_size_changes_panels_hem_and_band_counts():

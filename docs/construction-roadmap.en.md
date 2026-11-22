@@ -55,8 +55,24 @@ post stitches, mixed stitch heights and general crochet-as-you-go joins remain u
 cloth simulation, fit, likeness or physical-execution evidence. Half-loop and row-end sites are introduced
 explicitly when supported by source records; this does not enumerate every unused loop in the fabric.
 Within a declared section, turned continuations check canonical source order and alternating fabric
-sides, including through held aliases. This does not infer continuity between sections or the geometry
-of arbitrary pickup paths. Results list sites retired by declaration separately: a closed inventory
+sides, including through held aliases. Rows that declare a facing side are also checked for direction of
+travel: with one face toward the maker, travel around every edge of the fabric has one rotational sense,
+and the other face reverses it. This applies to ordinary stitches and attaching slip stitches, whatever
+the section is called and through edge aliases, over row tops, front row ends, the unused face of a
+foundation chain and the far face of a chain bridge; a ribbing strip returning to its base row by row is
+checked the same way. Inside a re-ordered edge, consecutive row ends must lie on the same side edge, and
+the path may not jump between a row end and the foundation chain below it. A continuing row starts at or
+next to the stitch holding the loop; a seam that declares its facing side is checked along the edge
+holding the loop. Still unmodelled: adjacency at corners, between chain bridges and neighbouring sites
+and where a strip meets its base, how the far edge of a seam lies, and legacy segments without a declared
+side. Four further shapes currently pass: a turn declared on a `segment` row leaves the recorded facing
+side unchanged; the stitches a chain buttonhole skips are not compared with its chain count and may lie
+on another edge; two separated runs within one row are not checked for a chain between them, and the
+sites in between can be retired by a hold or finished-border declaration; when ordinary stitches follow
+attaching slip stitches in the same row, the loop is recorded on the last attaching slip stitch, so
+fastening off, parking or continuing at the true last stitch is rejected. The direction rule is derived
+from geometry and has no physical trial behind it yet.
+Results list sites retired by declaration separately: a closed inventory
 includes declared finished borders and does not mean every site was actually crocheted.
 
 ## Gate 2: complete an evidence-based cardigan
@@ -128,9 +144,19 @@ start/end loops and two root heads. Cuff seams, root-edge finishing, corner geom
 remain unresolved, so it is not ready for a whole-garment trial. Photo-driven method selection and G3/G4
 qualification have not been established.
 
+The band chain always turns, and its first row is worked with the other face of the last hem row toward
+the maker; the neckline is entered at the end the first front reaches. Which front is worked first
+follows from the last body row, so an even number of body rows mirrors the whole band: attaching rows
+are worked wrong side facing and the buttonholes sit on the front where right-side rows begin; with an
+odd number, right side facing and the front where right-side rows end. Both are generated, and the
+pattern states the facing side and the buttonhole front at the hem, band and cuff starts and in the
+review notes. The wearer's left/right is inferred for a right-handed maker and is not physically
+confirmed. Cuffs attach back over the last sleeve round, because that round ends with a turn.
+
 Cuffs remain open by default. An explicitly selected `blo_to_reserved_flo` alternative pairs the last
 row in reverse, starting at its live-loop end, with the reserved first-row FLO in forward order; the
-last-row side uses BLO. It is a new seam-design candidate, not a verified interpretation of the source
+last-row side uses BLO. The last cuff row then ends with a turn and the seam declares the face toward
+the maker, so "back loop" means the strand farther from the maker at that moment. It is a new seam-design candidate, not a verified interpretation of the source
 tutorial's inner/outer directions or folded appearance. Physical edge and fit checks remain outstanding.
 
 ### Yarn segments and finishing controls

@@ -5,6 +5,7 @@ measure gauge, or establish that a physical piece can be made or fits.
 """
 from __future__ import annotations
 
+import itertools
 from dataclasses import asdict, dataclass, field, replace
 from typing import Annotated, Literal
 
@@ -215,6 +216,10 @@ class Seam(PathModel):
     right: Span
     left_loop: Loop = "both"
     right_loop: Loop = "both"
+    # Face toward the maker while joining. `left` is the edge holding the loop
+    # and is travelled like a row worked into it; "front"/"back" loops are named
+    # as seen with this face toward the maker. None leaves direction unchecked.
+    side: Literal["RS", "WS"] | None = None
     source_ref: str = Field(default="", max_length=240)
     note: str = Field(default="", max_length=1200)
 
@@ -383,11 +388,21 @@ class _Compiler:
         self.pending_start: Literal["foundation_chain", "standing_sc"] | None = None
         self.pending_anchor: Site | None = None
         self.pending_chain_work: Site | None = None
+        # Travel bookkeeping: where each worked site lies along a physical edge.
+        self.row_index: dict[Site, tuple[str, int]] = {}
+        self.row_order: dict[str, int] = {}
+        self.row_root: dict[str, str] = {}
+        self.parents: dict[Site, tuple[Site, ...]] = {}
+        self.bridge_rows: dict[str, str] = {}
+        self.chains: dict[str, FoundationChain] = {}
+        self.chain_travel: dict[str, tuple[str, int]] = {}
+        self.attach_last: Site | None = None
 
     def yarn_control(self, step: YarnControl) -> None:
         if not self.yarn_tracking:
             raise ValueError("用线动作须启用 yarn_tracking，不能当作已检查的旧工序")
         sources: tuple[Site, ...] = ()
+        self.attach_last = None
         if isinstance(step, NewYarn):
             if self.active_yarn is not None:
                 raise ValueError("另接线前须收掉或暂停当前工作环")
@@ -457,6 +472,8 @@ class _Compiler:
             if (self.pending_start is not None or self.pending_chain_work is not None
                     or self.resolve(step.left)[0] != self.current_loop):
                 raise ValueError("接合须从当前工作环一端开始，不能无说明跳到另一端")
+            if step.side is not None and self.expected_side != step.side:
+                raise ValueError("当前织物朝向与接合声明的正反面不一致，须明确翻面或另接线")
             return
         first = step.operations[0]
         if self.pending_start == "foundation_chain":
@@ -566,6 +583,8 @@ class _Compiler:
         self.edges[step.id, step.work_face] = first
         self.edges[step.id, step.other_face] = second
         self.chain_sites.update(first + second)
+        self.chains[step.id] = step
+        self.attach_last = None
         self.events.append(StitchEvent(step.id, "foundation_chain", parents, first + second,
                                        note="跳过的起立链不作后续工作针位；根部连接另有明确来源"))
         self.current_loop = None
@@ -612,6 +631,11 @@ class _Compiler:
         self.available(right, via=step.right.edge)
         if set(left).intersection(right):
             raise ValueError("接缝不能通过别名将同一针位接到自身")
+        if step.side is not None:
+            # The near edge is travelled like a row worked into it. The far edge
+            # is only paired position by position; how it lies is not modelled.
+            for before, after in itertools.pairwise(left):
+                self._check_pair(step.id, step.side, before, after)
         bindings = []
         for i, (a, b) in enumerate(zip(left, right, strict=True), 1):
             self.consume((a,), step.left_loop)
@@ -675,12 +699,16 @@ class _Compiler:
         output: list[Site] = []
         bindings = 0
         binding_sites: list[Site] = []
+        stream: list[tuple[Site, bool]] = []
+        if step.mode != "segment":
+            self.check_first_stitch(step)
         for op_index, op in enumerate(step.operations):
             if isinstance(op, ChainBridge):
                 top = tuple(self.create(Site(op.id, i)) for i in range(1, op.count + 1))
                 bottom = tuple(self.create(Site(op.id, i, "underside")) for i in range(1, op.count + 1))
                 self.edges[op.id, "top"], self.edges[op.id, "underside"] = top, bottom
                 self.chain_sites.update(top + bottom)
+                self.bridge_rows[op.id] = step.id
                 output.extend(top if op.route_face == "top" else bottom)
                 self.events.append(StitchEvent(step.id, "chain", (), top + bottom))
                 if op.placement == "buttonhole":
@@ -688,6 +716,7 @@ class _Compiler:
                     skipped = self.resolve(op.skipped)
                     self.available(skipped, via=op.skipped.edge)
                     self.consume(skipped, "both")
+                    stream.extend((site, False) for site in skipped)
                     other = bottom if op.route_face == "top" else top
                     self.consumed.update(other)
                     self.events.append(StitchEvent(step.id, "buttonhole_boundary", skipped + other, (),
@@ -710,6 +739,7 @@ class _Compiler:
                 continue
             sites = self.resolve(op.source)
             self.available(sites, via=op.source.edge)
+            stream.extend((site, op.disposition == "binding") for site in sites)
             inputs = 2 if op.stitch == "dec" else 1
             outputs = 2 if op.stitch == "inc" else 1
             if len(sites) % inputs:
@@ -726,20 +756,171 @@ class _Compiler:
                     children = tuple(self.create(Site(step.id, len(output) + offset + 1))
                                      for offset in range(outputs))
                     output.extend(children)
+                    for child in children:
+                        self.parents[child] = parents
                 self.consume(parents, op.loop)
                 self.events.append(StitchEvent(step.id, op.stitch, parents, children,
                                                role=op.disposition, source_loops=(op.loop,) * len(parents)))
         if len(output) != step.expected_sites:
             raise ValueError(f"{step.id} 工作边应有 {step.expected_sites} 个位置，实际 {len(output)} 个")
+        if step.side is not None:
+            self.check_travel(step.id, step.side, stream)
         self.edges[step.id, "top"] = tuple(output)
         if binding_sites:
             self.edges[step.id, "binding"] = tuple(binding_sites)
+        self.row_order[step.id] = len(self.row_order)
+        below = next((self.row_index[site][0] for site, binding in stream
+                      if not binding and site in self.row_index), None)
+        self.row_root[step.id] = step.id if below is None else self.row_root[below]
+        for index, site in enumerate(output):
+            self.row_index[site] = (step.id, index)
         self.rows[step.id] = step
         self.current_loop = binding_sites[-1] if binding_sites else output[-1]
         if step.closure != "none":
             self.events.append(StitchEvent(step.id, "invisible_slip", (output[-1], output[0]), (),
                                            role="closure", note=step.closure))
             self.current_loop = output[0]
+
+    def check_first_stitch(self, step: Route) -> None:
+        """A row that continues on the row holding the loop starts at the loop.
+
+        Applies only when both the working loop and the first source lie on the
+        top of the same earlier row. The stitch next to the loop is also allowed:
+        a closed round starts beside its join, and a flat row may skip its first
+        stitch as an edge decrease (that stitch must still be held or finished).
+        Starts on chains, row ends and other edges are checked where they are
+        declared (foundation chains, new yarn, seams).
+        """
+        first = step.operations[0]
+        if self.current_loop not in self.row_index or not isinstance(first, Work):
+            return
+        source = self.resolve(first.source)[0]
+        row, loop_at = self.row_index[self.current_loop]
+        if self.row_index.get(source, ("", 0))[0] != row:
+            return
+        start = self.row_index[source][1]
+        count = len(self.edges[row, "top"])
+        away = abs(start - loop_at)
+        if self.rows[row].closure != "none":
+            away = min(away, count - away)
+        if away > 1:
+            raise ValueError(f"{step.id} 的首针离当前工作环所在针目 {away} 位；"
+                             "须从工作环所在针目或其相邻针目起钩，或声明断线另接")
+
+    def _line(self, site: Site) -> tuple[tuple[str, ...], int] | None:
+        """Name the physical edge a site lies on and its position along it."""
+        if site in self.row_index:
+            row, index = self.row_index[site]
+            return ("top", row), index
+        if site.face in ("row_left", "row_right") and site.edge in self.rows:
+            row_step = self.rows[site.edge]
+            begins = (site.face == "row_left") == (row_step.row_direction == "forward")
+            edge = "begin" if begins == (row_step.side == "RS") else "end"
+            return ("row_end", self.row_root[site.edge], edge), self.row_order[site.edge]
+        chain = self.chains.get(site.edge)
+        if chain is not None and site.face == chain.other_face:
+            return ("chain", site.edge), site.position
+        if site.edge in self.bridge_rows and site.face in ("top", "underside"):
+            return ("bridge", site.edge), site.position
+        return None
+
+    def _expected_travel(self, key: tuple[str, ...], side: str) -> int | None:
+        """+1/-1 along the edge for work done with `side` facing the maker.
+
+        One face toward the maker fixes one rotational sense around every edge
+        of that fabric; the other face reverses it. This holds for either hand.
+        """
+        if key[0] == "top":
+            worked = self.rows[key[1]].side
+            return None if worked is None else (1 if side == worked else -1)
+        if key[0] == "row_end":
+            # On the edge where RS rows begin, RS-facing travel runs to later rows.
+            return 1 if (key[2] == "begin") == (side == "RS") else -1
+        if key[0] == "chain":
+            travel = self.chain_travel.get(key[1])
+            return None if travel is None else (-travel[1] if side == travel[0] else travel[1])
+        worked = self.rows[self.bridge_rows[key[1]]].side
+        return None if worked is None else (-1 if side == worked else 1)
+
+    def _compare_travel(self, identifier: str, side: str, key: tuple[str, ...],
+                        before: int, after: int) -> None:
+        expected = self._expected_travel(key, side)
+        if expected is None or before == after:
+            return
+        actual = 1 if after > before else -1
+        if key[0] == "top" and self.rows[key[1]].closure != "none":
+            count = len(self.edges[key[1], "top"])
+            if count > 2 and (after - before) % count == 1:
+                actual = 1
+            elif count > 2 and (before - after) % count == 1:
+                actual = -1
+        if actual != expected:
+            where = {"top": f"{key[1]} 的工作边", "row_end": "织片侧边的行端",
+                     "chain": f"{key[1]} 起链的另一侧", "bridge": f"{key[1]} 锁针桥的另一侧"}[key[0]]
+            facing = "正面RS" if side == "RS" else "反面WS"
+            raise ValueError(f"{identifier} 的落针顺序与声明的朝向不符：以{facing}朝向自己时，"
+                             f"沿{where}须朝相反方向前进；须改顺序或声明翻面")
+
+    def _chain_below_row_end(self, site: Site) -> Site | None:
+        row_step = self.rows[site.edge]
+        edge = self.edges[site.edge, "top"]
+        begins = (site.face == "row_left") == (row_step.row_direction == "forward")
+        parents = self.parents.get(edge[0] if begins else edge[-1], ())
+        if not parents:
+            return None
+        below = parents[0] if begins else parents[-1]
+        chain = self.chains.get(below.edge)
+        return below if chain is not None and below.face == chain.work_face else None
+
+    def _check_pair(self, identifier: str, side: str, before: Site, after: Site) -> None:
+        """Two sites the hook visits one after the other."""
+        before_line, line = self._line(before), self._line(after)
+        if before_line is not None and line is not None:
+            if before_line[0] == line[0]:
+                self._compare_travel(identifier, side, line[0], before_line[1], line[1])
+            elif before_line[0][0] == line[0][0] == "row_end" and before_line[0][1] == line[0][1]:
+                raise ValueError(f"{identifier} 相邻两个行端分属织片两条侧边，路径横跨织片；"
+                                 "须声明桥链、断线另接或其他转换动作")
+        for row_end, other in ((before, after), (after, before)):
+            if (row_end.face in ("row_left", "row_right") and row_end.edge in self.rows
+                    and other.edge in self.chains
+                    and other.face == self.chains[other.edge].other_face):
+                below = self._chain_below_row_end(row_end)
+                if below is None or below.edge != other.edge or below.position == other.position:
+                    continue
+                raise ValueError(
+                    f"{identifier} 在行端与起链之间跳位：该行端位于 {other.edge} "
+                    f"第 {below.position} 位上方，路径却接第 {other.position} 位；"
+                    "须按相邻位置前进或声明转换动作")
+
+    def check_travel(self, identifier: str, side: str, stream: list[tuple[Site, bool]]) -> None:
+        """Check hook travel over every edge this step works or attaches to.
+
+        Covers ordinary stitches and attaching slip stitches (also from one row
+        of a strip to the next), through any alias, without regard to section
+        names. Junctions are checked between row ends, and between a row end and
+        the foundation chain its row was worked into. Other junctions (corners,
+        bridges, a strip meeting its base) are not modelled. A seam is checked
+        along the edge holding the loop when it declares its facing side.
+        """
+        previous: Site | None = None
+        first_binding = True
+        for site, binding in stream:
+            worked_chain = self.chains.get(site.edge)
+            if (worked_chain is not None and site.face == worked_chain.work_face and previous is not None
+                    and previous.edge == site.edge and previous.face == site.face
+                    and site.edge not in self.chain_travel):
+                self.chain_travel[site.edge] = (side, 1 if site.position > previous.position else -1)
+            if binding and first_binding:
+                # A strip returns to its base where the previous attaching row left it.
+                if self.attach_last is not None:
+                    self._check_pair(identifier, side, self.attach_last, site)
+                first_binding = False
+            if previous is not None:
+                self._check_pair(identifier, side, previous, site)
+            if binding:
+                self.attach_last = site
+            previous = site
 
     def check_turned_continuation(self, previous: Route, step: Route) -> None:
         """Check the declared section's ordinary turned rows, resolving aliases.
