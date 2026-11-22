@@ -65,14 +65,16 @@ the path may not jump between a row end and the foundation chain below it. A con
 next to the stitch holding the loop; a seam that declares its facing side is checked along the edge
 holding the loop. Still unmodelled: adjacency at corners, between chain bridges and neighbouring sites
 and where a strip meets its base, how the far edge of a seam lies, and legacy segments without a declared
-side. Four further shapes currently pass: a turn declared on a `segment` row leaves the recorded facing
-side unchanged; the stitches a chain buttonhole skips are not compared with its chain count and may lie
-on another edge; two separated runs within one row are not checked for a chain between them, and the
-sites in between can be retired by a hold or finished-border declaration; when ordinary stitches follow
-attaching slip stitches in the same row, the loop is recorded on the last attaching slip stitch, so
-fastening off, parking or continuing at the true last stitch is rejected. The reader page, the cardigan
-designer and the path exports list these four shapes beside the check result. The direction rule is
-derived from geometry and has no physical trial behind it yet.
+side. Four further shapes currently pass: in a path with yarn tracking, a turn declared on a `segment`
+row that declares no facing side does not update the recorded facing side, and a legacy path without
+yarn tracking records no facing side at all; the stitches a chain buttonhole skips are not compared
+with its chain count and may lie on another edge; two separated runs within one row are not checked
+for a chain between them, and the sites in between can be retired by a hold or finished-border
+declaration; when ordinary stitches follow attaching slip stitches in the same row, the loop is
+recorded on the last attaching slip stitch, so fastening off, parking or continuing at the true last
+stitch is rejected. The reader page, the cardigan designer and the path exports list these four shapes
+beside the check result. The direction rule is derived from geometry and has no physical trial behind
+it yet.
 Results list sites retired by declaration separately: a closed inventory
 includes declared finished borders and does not mean every site was actually crocheted.
 

@@ -147,17 +147,27 @@ def _flat(id_: str, side: str, *operations, sites: int, **extra) -> Route:
                 row_direction="forward" if side == "RS" else "reverse", **extra)
 
 
-def _flat_row_after_a_turned_segment_row(side: Literal["RS", "WS"]) -> WorkingPath:
+def _turned_segment_then_flat(third_side: Literal["RS", "WS"], *, tracked: bool,
+                              segment_side: Literal["RS", "WS"] | None = None) -> WorkingPath:
     # Turns after r1 and after r2 put the right side toward the maker again before r3.
+    first = (Span(edge="ch", first=1, last=6, face="underside") if tracked
+             else Span(edge="base", first=1, last=6))
+    declared = {} if segment_side is None else {"side": segment_side, "row_direction": "reverse"}
+    rows = [
+        _flat("r1", "RS", Work(source=first), sites=6, section="a", row_number=1,
+              turn="counterclockwise", turning_chains=1),
+        _row("r2", Work(source=Span(edge="r1", first=1, last=6, direction="reverse")), sites=6,
+             mode="segment", turn="clockwise", turning_chains=1, **declared),
+        _flat("r3", third_side, Work(source=Span(edge="r2", first=1, last=6, direction="reverse")), sites=6,
+              section="c", row_number=1),
+    ]
+    if not tracked:
+        return WorkingPath(title="旧式分段行翻面", existing_edges=[ExistingEdge(id="base", count=6)],
+                           steps=[*rows], final_edges=["r3"])
     return WorkingPath(title="分段行翻面", yarn_tracking=True, steps=[
         NewYarn(id="start", label="起针", yarn="y", method="foundation_chain", side="RS"),
         FoundationChain(id="ch", label="起链", chains=7, work_face="underside", other_face="top"),
-        _flat("r1", "RS", Work(source=Span(edge="ch", first=1, last=6, face="underside")), sites=6,
-              section="a", row_number=1, turn="counterclockwise", turning_chains=1),
-        _row("r2", Work(source=Span(edge="r1", first=1, last=6, direction="reverse")), sites=6,
-             mode="segment", turn="clockwise", turning_chains=1),
-        _flat("r3", side, Work(source=Span(edge="r2", first=1, last=6, direction="reverse")), sites=6,
-              section="c", row_number=1),
+        *rows,
         Hold(id="other", label="起链另一侧", spans=[Span(edge="ch", first=1, last=6, face="top")]),
         FastenOff(id="cut", label="断线", yarn="y", source=Span(edge="r3", first=6, last=6), tail_cm=10.0),
         WeaveEnds(id="weave", label="藏线", yarn="y", ends="both"),
@@ -213,11 +223,23 @@ def test_every_shape_the_scope_statement_names_is_one_the_checker_still_accepts(
     compile_working_path(plan())
 
 
-def test_a_turn_on_a_segment_row_still_leaves_the_recorded_side_unchanged():
-    assert "分段行（segment）上声明的翻面不改变记录的朝向" in CHECK_SCOPE
-    compile_working_path(_flat_row_after_a_turned_segment_row("WS"))
+def test_a_turn_on_a_segment_row_without_a_side_still_leaves_the_recorded_side_unchanged():
+    assert "在跟踪用线的工序中，未声明正反面的分段行（segment）上声明的翻面不会更新记录的朝向" in CHECK_SCOPE
+    compile_working_path(_turned_segment_then_flat("WS", tracked=True))
     with pytest.raises(ValueError, match="当前织物朝向与下一行正反面不一致"):
-        compile_working_path(_flat_row_after_a_turned_segment_row("RS"))
+        compile_working_path(_turned_segment_then_flat("RS", tracked=True))
+
+
+def test_the_segment_turn_gap_does_not_reach_rows_that_declare_a_side_or_untracked_paths():
+    # A segment row that declares its side records the turn like any flat row.
+    compile_working_path(_turned_segment_then_flat("RS", tracked=True, segment_side="WS"))
+    with pytest.raises(ValueError, match="当前织物朝向与下一行正反面不一致"):
+        compile_working_path(_turned_segment_then_flat("WS", tracked=True, segment_side="WS"))
+    # Without yarn tracking no facing side is recorded, so neither claim has anything to disagree with.
+    assert "未跟踪用线的旧式工序不记录该朝向" in CHECK_SCOPE
+    for side in ("RS", "WS"):
+        result = compile_working_path(_turned_segment_then_flat(side, tracked=False))
+        assert result.to_dict()["yarn_accounting"]["mode"] == "legacy_untracked"
 
 
 def test_the_loop_is_still_recorded_on_the_last_attaching_slip_stitch():
