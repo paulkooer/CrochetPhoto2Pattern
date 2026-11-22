@@ -22,6 +22,7 @@
 | External rule references / 外部规则参考证据 | [SOURCES.en.md](SOURCES.en.md) | [SOURCES.md](SOURCES.md) |
 | Real-browser regression / 真实浏览器回归 | [Setup and evidence scope](browser-regression.md) | [运行方式与验证范围](browser-regression.md) |
 | Upload correlation and stacked PR review / 上传关联与堆叠 PR 复核 | [Scope and merge order (Chinese)](reviews/upload-and-stack-20261114.md) | [范围与合并顺序](reviews/upload-and-stack-20261114.md) |
+| Whole-system audit of `6c88b7d` and its fixes / 提交 `6c88b7d` 全系统审核与修复记录 | [Report, errata, fix record and repro scripts (Chinese)](reviews/fable52-system-audit-20261117-fable/REPORT.md) | [报告、勘误、修复记录与复现脚本](reviews/fable52-system-audit-20261117-fable/REPORT.md) |
 | Image memory and batch concurrency / 图片内存与批量并发 | [Measurements and reproduction (Chinese)](image-memory.md) | [测量范围与复现](image-memory.md) |
 | Single-image 3D design / 单图 3D 重建设计 | [3d-reconstruction-design.en.md](3d-reconstruction-design.en.md) | [3d-reconstruction-design.md](3d-reconstruction-design.md) |
 

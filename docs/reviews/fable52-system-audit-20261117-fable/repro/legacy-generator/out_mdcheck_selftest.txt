@@ -1,0 +1,19 @@
+baseline findings on a valid generated pattern:
+   [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+   [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+mutation [stitch count 30 -> 31 in one row] -> 7 ERROR(s): PRODUCES_WRONG
+mutation [formula column (4X,V)x6 -> (3X,V)x6] -> 3 ERROR(s): CONSUMES_WRONG
+mutation [note formula changed, column kept] -> 4 ERROR(s): CONSUMES_WRONG
+mutation [interval wording wrong] -> 1 ERROR(s): INTERVAL_CLAIM
+mutation [magic ring count wrong] -> 1 ERROR(s): START_COUNT
+mutation [arm opening count in assembly wrong] -> 1 ERROR(s): ASSEMBLY_OPENING_COUNT
+mutation [eye step moved after stuffing] -> 1 ERROR(s): EYES_AFTER_STUFFING
+mutation [skirt anchor row shifted] -> 1 ERROR(s): ASSEMBLY_SKIRT_ANCHOR
+mutation [skirt anchor stitch count wrong] -> 1 ERROR(s): ASSEMBLY_SKIRT_ANCHOR
+mutation [workload stitches wrong] -> 1 ERROR(s): WORKLOAD_TOTALS
+mutation [decrease column dropped] -> 3 ERROR(s): INC_DEC_COLUMNS
+mutation [finish instruction moved off the last row] -> 1 ERROR(s): FINISH_NOT_LAST
+mutation [hat note peak wrong] -> 1 ERROR(s): NOTE_HAT_ROUND
+mutation [opening bullet wrong] -> 1 ERROR(s): OPENING_BULLET
+mutation [yarn subtotal wrong] -> 1 ERROR(s): YARN_SUBTOTAL
+SELFTEST PASSED []

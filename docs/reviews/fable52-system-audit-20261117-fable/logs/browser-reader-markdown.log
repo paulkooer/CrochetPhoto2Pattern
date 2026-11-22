@@ -1,0 +1,6 @@
+plan accepted: true
+img elements inside the reader pointing at the probe: 2
+anchors inside the reader pointing at the probe: 1
+headings rendered from a review note (h1 with forged text): 1
+bold rendered from the title: 1
+requests the browser attempted to the probe port: ["http://127.0.0.1:8799/title.png","http://127.0.0.1:8799/note.png"]

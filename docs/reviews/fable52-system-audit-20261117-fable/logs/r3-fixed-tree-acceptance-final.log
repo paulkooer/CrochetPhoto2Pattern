@@ -1,0 +1,12 @@
+##### r3_fixed_tree_acceptance.py old-6c88b7d.jsonl new-worktree-final.jsonl (new dump regenerated from the final tree)
+inputs: 160; stage differs old vs new: 0
+site inventory (sites created, consumed, size of every final edge, step count, stitch counts by kind), each plan compiled by its own tree's checker: identical for 160 of 160
+== fixed generator, independent side rule
+   body even:  76 -> no contradiction
+   body even:   4 -> not generated: band_blocked
+   body odd :  80 -> no contradiction
+== complete plans from the 6c88b7d generator, compiled by the fixed checker
+   body even:  76 -> rejected: <step> 的落针顺序与声明的朝向不符：以正面RS朝向自己时，沿<step> 的工作边须朝相反方向前进；须改顺序或声明翻面
+   body odd :  40 -> rejected: <step> 的落针顺序与声明的朝向不符：以反面WS朝向自己时，沿<step> 的工作边须朝相反方向前进；须改顺序或声明翻面
+   body odd :  40 -> rejected: <step> 的落针顺序与声明的朝向不符：以正面RS朝向自己时，沿<step> 的工作边须朝相反方向前进；须改顺序或声明翻面
+exit=0

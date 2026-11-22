@@ -1,0 +1,41 @@
+== 1. bounds ==
+last beyond edge: REJECT  [as expected] :: 针位越界：seed 只有 12 个工作位置
+first=0: REJECT  [as expected] :: 1 validation error for WorkingPath | steps.0.route.operations.0.work.source.first | Input should be greater than or equal to 1 [type=greater_than_equal, input_value=0, input_type=int] | For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal
+first>last: REJECT  [as expected] :: 1 validation error for WorkingPath | steps.0.route.operations.0.work.source | Value error, 针位范围须 first <= last；反向工作请声明 direction=reverse [type=value_error, input_value={'edge': 'seed', 'first':... 'direction': 'forward'}, input_type=dict] | For further information visit https://errors.pydantic.dev/2.14/v/value_error
+float position: REJECT  [as expected] :: 1 validation error for WorkingPath | steps.0.route.operations.0.work.source.first | Input should be a valid integer [type=int_type, input_value=1.0, input_type=float] | For further information visit https://errors.pydantic.dev/2.14/v/int_type
+string position: REJECT  [as expected] :: 1 validation error for WorkingPath | steps.0.route.operations.0.work.source.first | Input should be a valid integer [type=int_type, input_value='1', input_type=str] | For further information visit https://errors.pydantic.dev/2.14/v/int_type
+unknown face on edge: REJECT  [as expected] :: 工作边或表面尚未建立：seed/underside
+== 2. overlapping / double booking ==
+two ops overlap in one route: REJECT  [as expected] :: 针位已使用，不能通过其他别名再次使用：Site(edge='seed', position=6, face='top')
+same site twice inside one hold: REJECT  [as expected] :: 同一路径重复引用针位
+hold re-holds a held site: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+hold over original name of held site: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+== 3. edge_path transfer chains ==
+re-path from a path (p1->p2) and partition: ACCEPT  [as expected] :: created=12 consumed=0 final={'p2': 9, 'p3': 3}
+old hold name after transfer (work): REJECT  [as expected] :: 针位已保留给 p1，须通过该保留边继续
+old path name after second transfer (work): REJECT  [as expected] :: 针位已保留给 p2，须通过该保留边继续
+original edge after transfer (work): REJECT  [as expected] :: 针位已保留给 p1，须通过该保留边继续
+hold over a path alias: REJECT  [as expected] :: 针位已保留给 p2，须通过该保留边继续
+edge_path takes reserved site through original name: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+edge_path overlap between spans: REJECT  [as expected] :: 工作边重排重复引用同一针位
+== 4. reserved sites reached through the original name by every consumer ==
+work: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+finish_edge: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+seam left: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+seam right: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+foundation anchor takes_site: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+buttonhole skipped: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+new_yarn anchor: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+final edge by original name: REJECT  [as expected] :: 针位已保留给 h1，须通过该保留边继续
+final edge by hold name + remainder: ACCEPT  [as expected] :: created=12 consumed=0 final={'h1': 6, 'rest': 6}
+== 5. scrambled / non-adjacent hold feeding one run of stitches ==
+hold = seed 1-2 then seed 11-12, worked as one run: ACCEPT :: created=16 consumed=4 final={'r': 4, 'mid': 8}
+   sources: [('seed', 1), ('seed', 2), ('seed', 11), ('seed', 12)]
+   formula: ('4X', '')
+== 6. stale membership after transfer ==
+   held_edges: {'h1': [1, 2, 3, 4, 5, 6], 'p1': [6, 5, 4, 3, 2, 1], 'p2': [6, 5, 4, 7, 8, 9, 10, 11, 12], 'p3': [3, 2, 1]}
+   to_dict held_edges keys: ['h1', 'p1', 'p2', 'p3'] | site seed/1 listed under: ['h1', 'p1', 'p3']
+== 7. positions above 1000 on a long row ==
+1001-stitch row as final edge: REJECT  [UNEXPECTED] :: 1 validation error for WorkingPath | steps.0.route.expected_sites | Input should be less than or equal to 1000 [type=less_than_equal, input_value=1001, input_type=int] | For further information visit https://errors.pydantic.dev/2.14/v/less_than_equal
+continue the 1001-stitch row (span 1..1001): REJECT :: 3 validation errors for WorkingPath | steps.0.route.expected_sites | Input should be less than or equal to 1000 [type=less_than_equal, input_value=1001, input_type=int] | For further information visit https://errors.pydantic.dev/2.14/v/less_than_equal
+continue the 1001-stitch row in two ops (1..1000, 1001..1001): REJECT :: 4 validation errors for WorkingPath | steps.0.route.expected_sites | Input should be less than or equal to 1000 [type=less_than_equal, input_value=1001, input_type=int] | For further information visit https://errors.pydantic.dev/2.14/v/less_than_equal

@@ -1,0 +1,52 @@
+== strict JSON ==
+demo round trip: ACCEPT
+duplicate top-level key: REJECT (ValueError) :: 备份 JSON 含重复字段，请修正后再导入
+duplicate nested key: REJECT (ValueError) :: 备份 JSON 含重复字段，请修正后再导入
+float for int: REJECT (ValidationError) :: 1 validation error for WorkingPath | existing_edges.0.count | Input should be a valid integer [type=int_type, input_value=28.0, input_type=float]
+string for int: REJECT (ValidationError) :: 1 validation error for WorkingPath | existing_edges.0.count | Input should be a valid integer [type=int_type, input_value='28', input_type=str]
+bool for int: REJECT (ValidationError) :: 1 validation error for WorkingPath | existing_edges.0.count | Input should be a valid integer [type=int_type, input_value=True, input_type=bool]
+NaN: REJECT (ValueError) :: 备份 JSON 不能包含 NaN 或 Infinity
+overflowing float: REJECT (ValueError) :: 备份 JSON 不能包含非有限数值
+5000-digit integer: REJECT (ValueError) :: Exceeds the limit (4300 digits) for integer string conversion: value has 5000 digits; use sys.set_int_max_str_digits() to increase the limit
+0 for bool: REJECT (ValidationError) :: 1 validation error for WorkingPath | steps.0.route.operations.1.chain.corner_sites | Input should be a valid boolean [type=bool_type, input_value=0, input_type=int]
+unknown top-level key: REJECT (ValidationError) :: 1 validation error for WorkingPath | extra | Extra inputs are not permitted [type=extra_forbidden, input_value=1, input_type=int]
+unknown step key: REJECT (ValidationError) :: 1 validation error for WorkingPath | steps.1.hold.reserve | Extra inputs are not permitted [type=extra_forbidden, input_value=True, input_type=bool]
+wrong-case discriminator: REJECT (ValidationError) :: 1 validation error for WorkingPath | steps.1 | Input tag 'Hold' found using 'kind' does not match any of the expected tags: 'route', 'hold', 'edge_path', 'foundation_chain', 'row_edges', 'free_loops', 'seam', 'finish_edge', 'new_y
+top-level list: REJECT (ValidationError) :: 1 validation error for WorkingPath | Input should be a valid dictionary or instance of WorkingPath [type=model_type, input_value=[{'schema_version': 'work...[], 'review_notes': []}], input_type=list] | For further information visi
+top-level string: REJECT (ValidationError) :: 1 validation error for WorkingPath | Input should be a valid dictionary or instance of WorkingPath [type=model_type, input_value='just a string', input_type=str] | For further information visit https://errors.pydantic.dev/2.14/v/m
+empty file: REJECT (JSONDecodeError) :: Expecting value: line 1 column 1 (char 0)
+UTF-8 BOM: ACCEPT
+UTF-16: REJECT (UnicodeDecodeError) :: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+200k nested arrays: REJECT (ValueError) :: 工序 JSON 嵌套过深
+100k nested objects: REJECT (ValueError) :: 工序 JSON 嵌套过深
+2 MiB + 1 of spaces: REJECT (ValueError) :: 工序文件超过 2 MiB 上限
+lone surrogate in title: REJECT (ValidationError) :: 1 validation error for WorkingPath | title | Input should be a valid string, unable to parse raw data as a unicode string [type=string_unicode, input_value='\ud800', input_type=str]
+NUL in title: ACCEPT
+== strict typing of floats written as integers (hand-written JSON) ==
+tail_cm: 15 and hook_mm: 3 (JSON integers): ACCEPT
+tail_cm: 15.0 and hook_mm: 3.0: ACCEPT
+== schema_version tricks ==
+v1 demo: ACCEPT
+v1 + flat mode: REJECT (ValueError) :: 这些工序需要 working-path-v2 格式，不能冒充旧版能力
+v1 + section/row_number on a segment route: ACCEPT
+v1 + turn and turning chain on a segment route: ACCEPT
+v1 + input_origin manual_instructions + gauges + review_notes: ACCEPT
+v1 + route.gauge: REJECT (ValueError) :: 这些工序需要 working-path-v2 格式，不能冒充旧版能力
+v1 + BLO work: REJECT (ValueError) :: 这些工序需要 working-path-v2 格式，不能冒充旧版能力
+v1 + slst: REJECT (ValueError) :: 这些工序需要 working-path-v2 格式，不能冒充旧版能力
+v1 + edge_path step: REJECT (ValueError) :: 这些工序需要 working-path-v2 格式，不能冒充旧版能力
+v1 + yarn_tracking true: REJECT (ValueError) :: 钩织前须另接新线或恢复已暂停的工作环
+v1 + underside face span in hold (already in demo): ACCEPT
+unknown version working-path-v3: REJECT (ValidationError) :: 1 validation error for WorkingPath | schema_version | Input should be 'working-path-v1' or 'working-path-v2' [type=literal_error, input_value='working-path-v3', input_type=str]
+version omitted (defaults to v2): ACCEPT
+== limits ==
+601 steps: REJECT  [as expected] :: 1 validation error for WorkingPath | steps | List should have at most 600 items after validation, not 601 [type=too_long, input_value=[{'kind': 'hold', 'id': '...irection': 'forward'}]}], input_type=list] | For further information visit https://errors.pydantic.dev/2.14/v/too_long
+101 operations in a route: REJECT  [as expected] :: 1 validation error for WorkingPath | steps.0.route.operations | List should have at most 100 items after validation, not 101 [type=too_long, input_value=[{'kind': 'work', 'source...isposition': 'working'}], input_type=list] | For further information visit https://errors.pydantic.dev/2.14/v/too_long
+21 existing edges: REJECT  [as expected] :: 1 validation error for WorkingPath | existing_edges | List should have at most 20 items after validation, not 21 [type=too_long, input_value=[{'id': 'e0', 'count': 1}...id': 'e20', 'count': 1}], input_type=list] | For further information visit https://errors.pydantic.dev/2.14/v/too_long
+20 x 1000 existing sites = exactly 20000, nothing created: REJECT :: 有 999 个未使用针位未声明去向；须保留或继续钩织
+20000 sites + one more stitch: REJECT  [as expected] :: 工作路径的针位数量超过上限
+== CLI behaviour on bad input and wording ==
+exit code: 2 | out dir created: False
+stderr: 工序演示未导出：r 工作边应有 4 个位置，实际 5 个
+missing file exit code: 2
+stderr: 工序演示未导出：[Errno 2] No such file or directory: '<repo>/eval_outputs/fable52-system-audit-20261117-fable-review/repro

@@ -1,0 +1,18 @@
+inputs offered in own-swatch mode: ['领口展开边长 cm', '衣身展开宽度 cm（不含门襟）', '袖围 cm', '领肩深度 cm（含分袖行）', '腋下至下摆前的衣身长度 cm', '袖长 cm（不含袖口）', '普通短针 / 10cm', '普通短针行 / 10cm', '下摆肋纹宽 cm', '门襟宽 cm', '袖口肋纹宽 cm', '下摆短针BLO针 / 10cm', '下摆短针BLO行 / 10cm', '门襟引拔BLO针 / 10cm', '门襟引拔BLO行 / 10cm', '袖口引拔BLO针 / 10cm', '袖口引拔BLO行 / 10cm', '收线预留尾长 cm', '扣眼距工作路径起点 cm（逗号分隔）', '袖口接合设计']
+any input for hook size: False
+errors shown: []
+stage: integrated_open_cuffs
+request.dimension_basis: user_dimensions | dimensions used: {'neck_edge_cm': 8.1, 'body_span_cm': 17.7, 'sleeve_circumference_cm': 6.9, 'yoke_depth_cm': 3.2} (these are the untouched example defaults)
+request.method.hook_mm: 3.0
+  plan gauge: {'id': 'design_sc', 'hook_mm': 3.0, 'basis': 'user_entered_swatch', 'stitches_per_10cm': 24.0, 'rows_per_10cm': 27.0}
+  plan gauge: {'id': 'design_hem_gauge', 'hook_mm': 3.0, 'basis': 'user_entered_swatch', 'stitches_per_10cm': 25.0, 'rows_per_10cm': 25.0}
+  plan gauge: {'id': 'design_band_gauge', 'hook_mm': 3.0, 'basis': 'user_entered_swatch', 'stitches_per_10cm': 38.0, 'rows_per_10cm': 38.0}
+  plan gauge: {'id': 'design_cuff_a_gauge', 'hook_mm': 3.0, 'basis': 'user_entered_swatch', 'stitches_per_10cm': 38.0, 'rows_per_10cm': 38.0}
+  plan gauge: {'id': 'design_cuff_b_gauge', 'hook_mm': 3.0, 'basis': 'user_entered_swatch', 'stitches_per_10cm': 38.0, 'rows_per_10cm': 38.0}
+  review note: 输入密度来源user_entered_swatch，非本次实测。尺寸仅为线性估算：neck_edge=7.917cm；body_span=17.083cm；sleeve_circumference=7.083cm；yoke_depth=3.333cm
+  review note: 尺寸来源user_dimensions；衣身长度从分袖后的首行起计，袖长不含袖口。领肩、衣身、下摆和门襟连续用一段线；门襟收线后，两袖分别另接线。
+  PDF line: 短针片钩及袖子闭合行：3mm；每10cm 24针 × 27行；用户输入的小样数据，未独立核验。
+  PDF line: 沿边肋纹：sc：3mm；每10cm 25针 × 25行；用户输入的小样数据，未独立核验。
+  PDF line: 沿边肋纹：slst：3mm；每10cm 38针 × 38行；用户输入的小样数据，未独立核验。
+  PDF line: 沿边肋纹：slst：3mm；每10cm 38针 × 38行；用户输入的小样数据，未独立核验。
+  PDF line: 沿边肋纹：slst：3mm；每10cm 38针 × 38行；用户输入的小样数据，未独立核验。

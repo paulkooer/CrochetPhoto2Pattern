@@ -1,0 +1,614 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+................................F....................................... [ 33%]
+.....................................s.................................. [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+................FFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+=================================== FAILURES ===================================
+___ test_alternative_starter_and_invalid_palm_wrist_fail_without_losing_plan ___
+
+    def test_alternative_starter_and_invalid_palm_wrist_fail_without_losing_plan():
+        app = AppTest.from_string(RENDER, default_timeout=30).run()
+        app.selectbox(key="doll_design_starter").select("folded_cap_layers").run()
+        app.button(key="doll_design_generate").click().run()
+        assert not app.exception
+        original = app.session_state["doll_design_plan"]
+        assert any(p["id"] == "hat_band" for p in original["components"])
+        assert not any(p["id"] == "flower_centres" for p in original["components"])
+>       app.number_input(key="doll_design_wrist_folded_cap_layers").set_value(2.0).run()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dressed_doll_ui.py:38:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[NumberInput(key='doll_design_height', _value=InitialValue(), label='原型目标总高（不含帽子，cm）', min=16.0, max=...'doll_design_hair_chains_folded_cap_layers', _value=InitialValue(), label='每根长发束起针锁针数', min=6.0, max=120.0, step=1.0)])
+key = 'doll_design_wrist_folded_cap_layers'
+
+    def __call__(self, key: str) -> El_co:
+        """Return the first element in this collection with the given user key.
+
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+>       raise KeyError(key)
+E       KeyError: 'doll_design_wrist_folded_cap_layers'
+
+.venv/lib/python3.12/site-packages/streamlit/testing/v1/element_tree.py:602: KeyError
+----------------------------- Captured stderr call -----------------------------
+2026-11-20 04:33:52.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call -------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:522 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-00] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-00'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-01] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-01'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='ring', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-02] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-02'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='attached', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-03] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-03'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='attached', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-04] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-04'
+style = ShapingStyle(sphere_mode='ladder', one_piece=True, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-05] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-05'
+style = ShapingStyle(sphere_mode='ladder', one_piece=True, skirt_style='ring', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-06] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-06'
+style = ShapingStyle(sphere_mode='ladder', one_piece=True, skirt_style='attached', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-07] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-07'
+style = ShapingStyle(sphere_mode='ladder', one_piece=True, skirt_style='attached', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-08] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-08'
+style = ShapingStyle(sphere_mode='ideal', one_piece=False, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-09] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-09'
+style = ShapingStyle(sphere_mode='ideal', one_piece=False, skirt_style='ring', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-10] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-10'
+style = ShapingStyle(sphere_mode='ideal', one_piece=False, skirt_style='attached', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-11] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-11'
+style = ShapingStyle(sphere_mode='ideal', one_piece=False, skirt_style='attached', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-12] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-12'
+style = ShapingStyle(sphere_mode='ideal', one_piece=True, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-13] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-13'
+style = ShapingStyle(sphere_mode='ideal', one_piece=True, skirt_style='ring', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-14] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-14'
+style = ShapingStyle(sphere_mode='ideal', one_piece=True, skirt_style='attached', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-15] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-15'
+style = ShapingStyle(sphere_mode='ideal', one_piece=True, skirt_style='attached', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-16] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-16'
+style = ShapingStyle(sphere_mode='egg', one_piece=False, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-17] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-17'
+style = ShapingStyle(sphere_mode='egg', one_piece=False, skirt_style='ring', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-18] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-18'
+style = ShapingStyle(sphere_mode='egg', one_piece=False, skirt_style='attached', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-19] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-19'
+style = ShapingStyle(sphere_mode='egg', one_piece=False, skirt_style='attached', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-20] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-20'
+style = ShapingStyle(sphere_mode='egg', one_piece=True, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-21] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-21'
+style = ShapingStyle(sphere_mode='egg', one_piece=True, skirt_style='ring', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-22] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-22'
+style = ShapingStyle(sphere_mode='egg', one_piece=True, skirt_style='attached', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-23] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'classic', case = 'matrix-23'
+style = ShapingStyle(sphere_mode='egg', one_piece=True, skirt_style='attached', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-00] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'dk', case = 'matrix-00'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-01] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'dk', case = 'matrix-01'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='ring', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-02] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'dk', case = 'matrix-02'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='attached', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-03] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'dk', case = 'matrix-03'
+style = ShapingStyle(sphere_mode='ladder', one_piece=False, skirt_style='attached', ruffle_hem=True)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':... F-11。）', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 14 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头部', 'type': 'sphere', 'quantity': 1, 'diameter_cm': 8.3, ...}, {'name': '身体', 'type': 'cylinder'...uantity': 1, 'diameter_cm': None, ...}, {'name': '耳朵', 'type': 'sphere', 'quantity': 2, 'diameter_cm': 2.9, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 8.3, ...}, {'aut...None, ...}, {'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': 2.9, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+_ test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-04] _
+
+snapshots = {'classic': {'empty': {'exception': 'PatternGenerationError', 'message': '生成的图解未通过自检: 图解缺少有效的部件列表'}, 'fallback': {'ass...ema_version': '1.0', 'source': 'structure_v2'}, 'construction_guidance_version': 1, 'difficulty': 'medium', ...}, ...}}
+preset = 'dk', case = 'matrix-04'
+style = ShapingStyle(sphere_mode='ladder', one_piece=True, skirt_style='ring', ruffle_hem=False)
+
+    @pytest.mark.parametrize(("preset", "case", "style"), CASES,
+                             ids=[f"{preset}-{case}" for preset, case, _style in CASES])
+    def test_complete_serialized_generator_output_matches_reviewed_snapshot(snapshots, preset, case, style):
+>       assert generated(preset, case, style) == snapshots[preset][case]
+E       AssertionError: assert {'materials':...腰位后缝合固定', ...} == {'assembly_in...'medium', ...}
+E
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'parts': [{'name': '头身（一体）', 'type': 'onepiece', 'quantity': 1, 'diameter_cm': None, ...}, {'name': '手臂', 'type': 'cy..., 'quantity': 2, 'diameter_cm': 2.9, ...}, {'name': '帽子', 'type': 'cup', 'quantity': 1, 'diameter_cm': 9.5, ...}, ...]} != {'parts': [{'auto_color_summary': None, 'color': 'skin', 'connection_state': 'closed', 'diameter_cm': None, ...}, {'au...': 2.9, ...}, {'auto_color_summary': None, 'color': 'body', 'connection_state': 'open', 'diameter_cm': 9.5, ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_generator_output_snapshots.py:83: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_dressed_doll_ui.py::test_alternative_starter_and_invalid_palm_wrist_fail_without_losing_plan
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-00]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-01]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-02]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-03]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-04]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-05]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-06]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-07]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-08]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-09]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-10]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-11]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-12]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-13]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-14]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-15]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-16]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-17]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-18]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-19]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-20]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-21]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-22]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[classic-matrix-23]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-00]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-01]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-02]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-03]
+FAILED tests/test_generator_output_snapshots.py::test_complete_serialized_generator_output_matches_reviewed_snapshot[dk-matrix-04]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 30 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+30 failed, 1382 passed, 1 skipped in 47.99s
+pytest exit=1

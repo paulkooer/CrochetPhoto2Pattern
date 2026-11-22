@@ -1,0 +1,168 @@
+
+######## cardigan-depth-quantization.json  (in-memory copy == module function: True)
+
+=== body 7.5 cm -> 21 rows; sleeve 6.4 cm -> 18 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=4290 consumed=4196 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=['cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4290 consumed=4196 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4290 consumed=4196 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.5 cm -> 21 rows; sleeve 6.1 cm -> 17 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=4252 consumed=4158 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=['cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4252 consumed=4158 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4252 consumed=4158 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.1 cm -> 20 rows; sleeve 6.4 cm -> 18 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=4231 consumed=4137 inventory_same_as_committed=True neck_junctions=[('enter', 2, 22), ('leave', 2, 22)] mismatched=2 direction_contradictions=['band', 'cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4231 consumed=4137 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=['band']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4231 consumed=4137 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=WS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.1 cm -> 20 rows; sleeve 6.1 cm -> 17 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=4193 consumed=4099 inventory_same_as_committed=True neck_junctions=[('enter', 2, 22), ('leave', 2, 22)] mismatched=2 direction_contradictions=['band', 'cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4193 consumed=4099 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=['band']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4193 consumed=4099 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=WS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+######## cardigan-missing-gauge.json  (in-memory copy == module function: True)
+
+=== body 7.5 cm -> 21 rows; sleeve 6.4 cm -> 18 rows; stage=hem_blocked
+  as_committed  stage=hem_blocked: not a complete plan, skipped
+  two_orders    stage=hem_blocked: not a complete plan, skipped
+  three_parts   stage=hem_blocked: not a complete plan, skipped
+
+=== body 7.5 cm -> 21 rows; sleeve 6.1 cm -> 17 rows; stage=hem_blocked
+  as_committed  stage=hem_blocked: not a complete plan, skipped
+  two_orders    stage=hem_blocked: not a complete plan, skipped
+  three_parts   stage=hem_blocked: not a complete plan, skipped
+
+=== body 7.1 cm -> 20 rows; sleeve 6.4 cm -> 18 rows; stage=hem_blocked
+  as_committed  stage=hem_blocked: not a complete plan, skipped
+  two_orders    stage=hem_blocked: not a complete plan, skipped
+  three_parts   stage=hem_blocked: not a complete plan, skipped
+
+=== body 7.1 cm -> 20 rows; sleeve 6.1 cm -> 17 rows; stage=hem_blocked
+  as_committed  stage=hem_blocked: not a complete plan, skipped
+  two_orders    stage=hem_blocked: not a complete plan, skipped
+  three_parts   stage=hem_blocked: not a complete plan, skipped
+
+######## cardigan-open.json  (in-memory copy == module function: True)
+
+=== body 7.5 cm -> 21 rows; sleeve 6.4 cm -> 18 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=4054 consumed=3960 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=['cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4054 consumed=3960 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4054 consumed=3960 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.5 cm -> 21 rows; sleeve 6.1 cm -> 17 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=4016 consumed=3922 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=['cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4016 consumed=3922 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4016 consumed=3922 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.1 cm -> 20 rows; sleeve 6.4 cm -> 18 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=3987 consumed=3893 inventory_same_as_committed=True neck_junctions=[('enter', 2, 22), ('leave', 2, 22)] mismatched=2 direction_contradictions=['band', 'cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=3987 consumed=3893 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=['band']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=3987 consumed=3893 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=WS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.1 cm -> 20 rows; sleeve 6.1 cm -> 17 rows; stage=integrated_open_cuffs
+  as_committed  compiles=yes created=3949 consumed=3855 inventory_same_as_committed=True neck_junctions=[('enter', 2, 22), ('leave', 2, 22)] mismatched=2 direction_contradictions=['band', 'cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=3949 consumed=3855 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=['band']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=3949 consumed=3855 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=WS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+######## cardigan-seamed.json  (in-memory copy == module function: True)
+
+=== body 7.5 cm -> 21 rows; sleeve 6.4 cm -> 18 rows; stage=integrated_cuff_seam_candidate
+  as_committed  compiles=yes created=4082 consumed=4044 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=['cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4082 consumed=4044 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4082 consumed=4044 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.5 cm -> 21 rows; sleeve 6.1 cm -> 17 rows; stage=integrated_cuff_seam_candidate
+  as_committed  compiles=yes created=4044 consumed=4006 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=['cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4044 consumed=4006 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4044 consumed=4006 inventory_same_as_committed=True neck_junctions=[('enter', 22, 22), ('leave', 2, 2)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=WS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.1 cm -> 20 rows; sleeve 6.4 cm -> 18 rows; stage=integrated_cuff_seam_candidate
+  as_committed  compiles=yes created=4015 consumed=3977 inventory_same_as_committed=True neck_junctions=[('enter', 2, 22), ('leave', 2, 22)] mismatched=2 direction_contradictions=['band', 'cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=4015 consumed=3977 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=['band']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=4015 consumed=3977 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=WS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_018#1 row_side=WS row_turn=counterclockwise closure=after_turn chain_turn=none rib_row1_side=RS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+=== body 7.1 cm -> 20 rows; sleeve 6.1 cm -> 17 rows; stage=integrated_cuff_seam_candidate
+  as_committed  compiles=yes created=3977 consumed=3939 inventory_same_as_committed=True neck_junctions=[('enter', 2, 22), ('leave', 2, 22)] mismatched=2 direction_contradictions=['band', 'cuff_a', 'cuff_b']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [2, 3, 4]..[19, 1] = same; needs reverse
+  two_orders    compiles=yes created=3977 consumed=3939 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=['band']
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=none rib_row1_side=RS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs same
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+  three_parts   compiles=yes created=3977 consumed=3939 inventory_same_as_committed=True neck_junctions=[('enter', 2, 2), ('leave', 22, 22)] mismatched=0 direction_contradictions=none
+      band: loop design_hem_046#5 row_side=RS row_turn=none closure=none chain_turn=counterclockwise rib_row1_side=WS attach order over that row [4, 3, 2]..[2, 1] = reverse; needs reverse
+      cuff_a: loop design_sleeve_a_017#1 row_side=RS row_turn=counterclockwise closure=before_turn chain_turn=none rib_row1_side=WS attach order over that row [19, 18, 17]..[2, 1] = reverse; needs reverse
+
+######## checker probes (row 1: 4 sc, RS, then a declared turn; loop is on stitch 4)
+  ACCEPTED  control: row 2 same section, takes 4,3,2,1
+  REJECTED  row 2 same section, takes 1,2,3,4 after the turn -> r2 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+  ACCEPTED  same wrong row 2, section renamed to 'b'
+  ACCEPTED  same wrong row 2, no section at all
+  ACCEPTED  6-stitch row; row 2 same section takes 3,2,1 (starts 3 stitches from the loop)
+exit=0

@@ -1,0 +1,115 @@
+fixture revisions: {'classic': None, 'dk': None, 'fine': None} -> {'classic': 'construction-guidance-v1', 'dk': 'construction-guidance-v1', 'fine': 'construction-guidance-v1'}
+cases per preset: {'classic': 34, 'dk': 34, 'fine': 34} total 102
+
+=== Q6. every one of the 102 refreshed snapshot cases: baseline vs audited ===
+differing leaves inside any rounds[] (stitches / inc / dec / notes / colour / region): 0
+    99  /assembly_instructions   e.g. classic/fallback
+          - old: 1. 按各部件标注数量分别完成并填充棉花
+2. 可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；3 岁以下儿童玩偶勿用）
+3. 头部安装安全眼（第2/3高度处）
+4. 用黑色毛线绣鼻子和嘴巴
+5. 可选：针塑形（needle sculpting）——长针带同色线自一侧眼位入针、横穿头内至对侧眼位再穿回，两端自同一针孔拉紧打结藏线，形成眼窝凹陷（PlanetJune needlesculpting；本图解塑形已内建，此步仅在想要更立体五官时使用）
+6. 用隐形缝合法将头部接合到身体顶部；头颈缝合处塞棉紧实，防止头部前倾（AmiguRoom 俄语熊评论区试钩共识）
+7
+          + new: 1. 独立裙筒先试套：身体未填棉、相邻部件未缝合时，从颈口一端套入裙腰暂留腰位；过紧勿强拉，须改图重试并新建试钩记录
+2. 头部安全眼按部件说明的具体圈号定位；在填充和封口前安装并扣好内侧垫片
+3. 可选配重：配重珠装入丝袜打结，身体减针前置底再填棉（3 岁以下儿童玩偶勿用）
+4. 按部件标注数量制作，在开口缩小或封口前分次填充棉花，再进行下列缝合
+5. 用黑色毛线绣鼻子和嘴巴
+6. 可选：针塑形（needle sculpting）——同色线自一侧眼位入针、横穿至对侧再穿回，两端自同一针孔拉紧打结藏线，形成眼窝凹陷
+7. 头部第 1 圈为头顶，末圈收口一侧为头底；用隐形缝合法将头部接合到身体顶部；头颈缝合处塞棉紧实，防止头部前倾
+8. 手臂缝合到身体一
+    99  /construction_guidance_version   e.g. classic/fallback
+          - old: <absent>
+          + new: 1
+   103  /materials[]/item   e.g. classic/fallback
+          - old: 4–5mm 钩针 + 特粗/珊瑚绒线（CYC #3 light · 标准钩针 4.5–5.5mm）
+          + new: 4–5mm 钩针 + 特粗/珊瑚绒线（仅作试钩起点，以实测密度为准）
+    63  /parts[]/notes:头部   e.g. classic/fallback
+          - old: 标准球形，最大 36 针。第 14 圈（最大围附近）安装安全眼（10mm，两眼间隔约 6 针，可依眼径与脸型调整）。建议先钩小样测试张力。
+          + new: 标准球形，最大 36 针。第 1 圈为头顶，末圈一侧为连接身体的头底。第 14 圈安装安全眼（10mm，两眼间隔约 6 针，可依眼径与脸型调整）。安全眼须在填充和封口前安装并扣好内侧垫片；最后几圈前分次填充棉花，再按末圈说明收口。目标头径 8.3cm；针数换算直径约 8.8cm（未实测）。
+    93  /parts[]/notes:耳朵   e.g. classic/independent-gauges
+          - old: 小球形部件（直径 2.9cm），完成后缝合到主体。
+          + new: 小球形部件（目标直径 2.9cm）；如需填充，在最后几圈前少量填棉，再按末圈说明收口，完成后缝合到主体。
+    63  /parts[]/notes:裙子   e.g. classic/fallback
+          - old: 开口裙筒（腰 36 针开口起针 → 裙摆 42 针），实际高约 5.6cm。腰部套入身体后缝合固定。
+          + new: 开口裙筒（腰 36 针开口起针 → 裙摆 42 针），实际高约 5.6cm。先在身体未填棉、未装配时将腰部套入身体试套；同针数不保证能套合，过紧勿强拉，调整图解后再试套。试套通过后暂留腰位，完成身体填充和装配后再缝合固定。
+material rows whose label changed (quantities, grams, metres, summary, totals, minutes all asserted equal):
+    33  ('4–5mm 钩针 + 特粗/珊瑚绒线（CYC #3 light · 标准钩针 4.5–5.5mm）', '->', '4–5mm 钩针 + 特粗/珊瑚绒线（仅作试钩起点，以实测密度为准）')
+    35  ('2.0–2.5mm 钩针 + 中细/4股棉线（CYC #2 fine · 标准钩针 3.5–4.5mm）', '->', '2.0–2.5mm 钩针 + 中细/4股棉线（仅作试钩起点，以实测密度为准）')
+    35  ('2.5–3.5mm 钩针 + DK/中粗线（CYC #2 fine · 标准钩针 3.5–4.5mm）', '->', '2.5–3.5mm 钩针 + DK/中粗线（仅作试钩起点，以实测密度为准）')
+
+=== Q5a. old-format params (baseline fixture, no version key) through the audited refresh/import code ===
+{'refresh_derived: identical': 99, 'rebuild_params: identical': 99}
+import_backup(old matrix-00): params identical to stored old params: True | version key present: False
+old assembly as loaded:
+   1. 按各部件标注数量分别完成并填充棉花
+   2. 可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；3 岁以下儿童玩偶勿用）
+   3. 头部安装安全眼（第2/3高度处）
+   4. 用黑色毛线绣鼻子和嘴巴
+   5. 可选：针塑形（needle sculpting）——长针带同色线自一侧眼位入针、横穿头内至对侧眼位再穿回，两端自同一针孔拉紧打结藏线，形成眼窝凹陷（PlanetJune needlesculpting；本图解塑形已内建，此步仅在想要更立体五官时使用）
+   6. 用隐形缝合法将头部接合到身体顶部；头颈缝合处塞棉紧实，防止头部前倾（AmiguRoom 俄语熊评论区试钩共识）
+   7. 手臂对称缝合到身体两侧上方（开口 6 针，小开口可捏扁缝合）
+   8. 腿部对称缝合到身体底部（开口 6 针，小开口可捏扁缝合）
+   9. 尾巴缝合在身体后方
+   10. 耳朵对称缝合在头部两侧
+   11. 帽口 36 针不收口，直接戴在头部（试戴后可缝合固定）
+   12. 裙筒腰部（36 针开口）套入身体后缝合固定（腰部为开口起针）
+independent check of the old result's Markdown -> ['[ERROR] EYES_AFTER_STUFFING 装配: eye step 3 comes after stuffing step 1']
+old head part note: 标准球形，最大 36 针。第 14 圈（最大围附近）安装安全眼（10mm，两眼间隔约 6 针，可依眼径与脸型调整）。建议先钩小样测试张力。
+
+=== Q5b. old result + non-geometry edits keep legacy guidance ===
+edit_yarn: version key present: False | assembly unchanged: True | hook row: ['4–5mm 钩针 + 特粗/珊瑚绒线（CYC #3 light · 标准钩针 4.5–5.5mm）']
+edit_rounds: version key present: False | first assembly step: 1. 按各部件标注数量分别完成并填充棉花
+
+=== Q5c. old result + geometry edit (quick resize, height only) ===
+version key after resize: 1
+   头部: kept verbatim (old wording)
+   身体: regenerated (new wording)
+   手臂: regenerated (new wording)
+   腿部: regenerated (new wording)
+   尾巴: regenerated (new wording)
+   耳朵: kept verbatim (old wording)
+   帽子: kept verbatim (old wording)
+   裙子: regenerated (new wording)
+assembly after resize:
+   1. 独立裙筒先试套：身体未填棉、相邻部件未缝合时，从颈口一端套入裙腰暂留腰位；过紧勿强拉，须改图重试并新建试钩记录
+   2. 头部安全眼按部件说明的具体圈号定位；在填充和封口前安装并扣好内侧垫片
+   3. 可选配重：配重珠装入丝袜打结，身体减针前置底再填棉（3 岁以下儿童玩偶勿用）
+   4. 按部件标注数量制作，在开口缩小或封口前分次填充棉花，再进行下列缝合
+   5. 用黑色毛线绣鼻子和嘴巴
+   6. 可选：针塑形（needle sculpting）——同色线自一侧眼位入针、横穿至对侧再穿回，两端自同一针孔拉紧打结藏线，形成眼窝凹陷
+   7. 头部第 1 圈为头顶，末圈收口一侧为头底；用隐形缝合法将头部接合到身体顶部；头颈缝合处塞棉紧实，防止头部前倾
+   8. 手臂对称缝合到身体两侧上方（开口 6 针，小开口可捏扁缝合）
+   9. 腿部对称缝合到身体底部（开口 6 针，小开口可捏扁缝合）
+   10. 尾巴缝合在身体后方
+   11. 耳朵对称缝合在头部两侧
+   12. 帽口 36 针不收口，直接戴在头部（试戴后可缝合固定）
+   13. 将预先套入身体的裙筒腰部（36 针开口）调整到腰位后缝合固定
+head note after resize: 标准球形，最大 36 针。第 14 圈（最大围附近）安装安全眼（10mm，两眼间隔约 6 针，可依眼径与脸型调整）。建议先钩小样测试张力。
+skirt note after resize: 开口裙筒（腰 36 针开口起针 → 裙摆 42 针），实际高约 6.2cm。先在身体未填棉、未装配时将腰部套入身体试套；同针数不保证能套合，过紧勿强拉，调整图解后再试套。试套通过后暂留腰位，完成身体填充和装配后再缝合固定。
+independent check after resize -> no ERROR
+
+=== Q5d. new result: which values of the key select which guidance; is the key validated? ===
+   1 (generated)            validate ok=True; accepted; guidance=NEW; eye step #2, stuffing step #4; head note still says eyes before stuffing: True
+   key removed              validate ok=True; accepted; guidance=LEGACY; eye step #3, stuffing step #1; head note still says eyes before stuffing: True
+   2 (a future revision)    validate ok=True; accepted; guidance=LEGACY; eye step #3, stuffing step #1; head note still says eyes before stuffing: True
+   "1" (string)             validate ok=True; accepted; guidance=LEGACY; eye step #3, stuffing step #1; head note still says eyes before stuffing: True
+   0                        validate ok=True; accepted; guidance=LEGACY; eye step #3, stuffing step #1; head note still says eyes before stuffing: True
+   null                     validate ok=True; accepted; guidance=LEGACY; eye step #3, stuffing step #1; head note still says eyes before stuffing: True
+   true                     validate ok=True; accepted; guidance=NEW; eye step #2, stuffing step #4; head note still says eyes before stuffing: True
+   1.0                      validate ok=True; accepted; guidance=NEW; eye step #2, stuffing step #4; head note still says eyes before stuffing: True
+   [1]                      validate ok=True; accepted; guidance=LEGACY; eye step #3, stuffing step #1; head note still says eyes before stuffing: True
+new parts + key removed -> assembly:
+   1. 按各部件标注数量分别完成并填充棉花
+   2. 可选：坐/站姿增稳——配重珠约 3/4 杯装入丝袜打结，于身体开始减针、开口尚能伸手时置入底部，再正常填充（Grace and Yarn；3 岁以下儿童玩偶勿用）
+   3. 头部安装安全眼（第2/3高度处）
+   4. 用黑色毛线绣鼻子和嘴巴
+   5. 可选：针塑形（needle sculpting）——长针带同色线自一侧眼位入针、横穿头内至对侧眼位再穿回，两端自同一针孔拉紧打结藏线，形成眼窝凹陷（PlanetJune needlesculpting；本图解塑形已内建，此步仅在想要更立体五官时使用）
+   6. 用隐形缝合法将头部接合到身体顶部；头颈缝合处塞棉紧实，防止头部前倾（AmiguRoom 俄语熊评论区试钩共识）
+   7. 手臂对称缝合到身体两侧上方（开口 6 针，小开口可捏扁缝合）
+   8. 腿部对称缝合到身体底部（开口 6 针，小开口可捏扁缝合）
+   9. 尾巴缝合在身体后方
+   10. 耳朵对称缝合在头部两侧
+   11. 帽口 36 针不收口，直接戴在头部（试戴后可缝合固定）
+   12. 裙筒腰部（36 针开口）套入身体后缝合固定（腰部为开口起针）

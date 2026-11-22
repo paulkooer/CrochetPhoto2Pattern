@@ -1,0 +1,10 @@
+### ruff
+ruff 0.17.4
+All checks passed!
+ruff exit=0
+### uv lock --check
+Resolved 75 packages in 24ms
+lock exit=
+### changelog fragments check
+8 bilingual fragments valid
+changelog exit=0

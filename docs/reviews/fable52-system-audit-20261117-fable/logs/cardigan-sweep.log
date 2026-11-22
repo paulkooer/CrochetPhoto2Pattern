@@ -1,0 +1,47 @@
+== Part 1: parity sweep (rows are quantised from cm at 28 rows/10cm)
+  body rows even / sleeve rows even:  19 accepted plans -> band_direction_vs_turn,band_jumps_across_neckline,cuff_a_direction_vs_turn,cuff_b_direction_vs_turn   (e.g. body=4)
+  body rows even / sleeve rows even:   1 accepted plans -> stage:band_blocked   (e.g. body=-)
+  body rows even / sleeve rows odd :  19 accepted plans -> band_direction_vs_turn,band_jumps_across_neckline,cuff_a_direction_vs_turn,cuff_b_direction_vs_turn   (e.g. body=4)
+  body rows even / sleeve rows odd :   1 accepted plans -> stage:band_blocked   (e.g. body=-)
+  body rows odd  / sleeve rows even:  20 accepted plans -> cuff_a_direction_vs_turn,cuff_b_direction_vs_turn   (e.g. body=3)
+  body rows odd  / sleeve rows odd :  20 accepted plans -> cuff_a_direction_vs_turn,cuff_b_direction_vs_turn   (e.g. body=3)
+
+== Part 2: boundary inputs -> how assemble_cardigan ends
+  defaults: stage=integrated_open_cuffs steps=333
+  body_length 0.01cm (0 rows): stage=length_blocked steps=- 衣身或袖长量化后的行数超出1–80行范围。
+  body_length 0.2cm (1 row): stage=band_blocked steps=69 扣眼已越过第一侧前襟，落入领口或另一侧；须调整设计位置。
+  body_length 50cm (140 rows): stage=length_blocked steps=- 衣身或袖长量化后的行数超出1–80行范围。
+  sleeve_length 0.2cm (1 row): stage=integrated_open_cuffs steps=299
+  sleeve_length 50cm: stage=length_blocked steps=- 衣身或袖长量化后的行数超出1–80行范围。
+  hem_width 0.1cm (0 st): stage=hem_blocked steps=37 尺寸换算得到46行、0针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密度
+  hem_width 0.4cm (1 st): stage=integrated_open_cuffs steps=319
+  band_width 0.3cm (1 st): stage=band_blocked steps=89 门襟宽度不足：扣眼须留出至少一个普通肋纹针位，未生成扣眼工序。
+  band_width 0.5cm (2 st): stage=band_blocked steps=89 门襟宽度不足：扣眼须留出至少一个普通肋纹针位，未生成扣眼工序。
+  cuff_width 0.3cm (1 st): stage=integrated_open_cuffs steps=333
+  cuff_width 10cm (40 st): stage=integrated_open_cuffs steps=333
+  buttonholes unsorted: ValueError[ValidationError] 1 validation error for ButtonBandTarget |     For further information visit https://errors.pydantic.dev/2.14/v/value_error
+  buttonholes duplicated: ValueError[ValidationError] 1 validation error for ButtonBandTarget |     For further information visit https://errors.pydantic.dev/2.14/v/value_error
+  buttonhole at 0.2cm: stage=band_blocked steps=89 扣眼量化后过近、处于首行或超出门襟；不会静默合并或移动扣眼。
+  buttonhole at 90cm: stage=band_blocked steps=89 扣眼量化后过近、处于首行或超出门襟；不会静默合并或移动扣眼。
+  buttonhole_chains 10: stage=band_blocked steps=89 门襟宽度不足：扣眼须留出至少一个普通肋纹针位，未生成扣眼工序。
+  neck 2cm (5 st): stage=yoke_blocked steps=- 量化后领口5针、肩深约9行，超出本做法范围。
+  neck 100cm: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  yoke depth 0.5cm: stage=yoke_blocked steps=- 量化后领口21针、肩深约1.4行，超出本做法范围。
+  yoke depth 28cm (79 rows): stage=band_blocked steps=159 门襟未生成：尺寸换算得到330行、4针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静
+  sleeve circ 2.7cm (7 st): stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  sleeve circ 40cm: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  body span 100cm: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  adult-ish (neck 40, body 100, sleeve 30, depth 20, lengths 35): stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  underarm_chains 15: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  underarm_chains 3: stage=integrated_open_cuffs steps=333
+  stitch_adjustment 0: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±0针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  stitch_adjustment 3: stage=integrated_open_cuffs steps=333
+  gauge 100/100: stage=hem_blocked steps=115 尺寸换算得到46行、5针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密度
+  gauge 5/5: stage=yoke_blocked steps=- 量化后领口4针、肩深约1.60714行，超出本做法范围。
+  hem gauge rows 100: stage=hem_blocked steps=37 尺寸换算得到176行、5针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密
+  hem gauge rows 5: stage=hem_blocked steps=37 尺寸换算得到8行、5针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密度或
+  band gauge 5/5: stage=band_blocked steps=89 门襟未生成：尺寸换算得到16行、1针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默
+  cuff gauge 100/100: stage=cuff_a_blocked steps=243 尺寸换算得到74行、35针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密
+  prefix 20 chars: stage=integrated_open_cuffs steps=333
+  seamed cuffs: stage=integrated_cuff_seam_candidate steps=335
+  seamed cuffs, cuff_width 0.3cm: stage=integrated_cuff_seam_candidate steps=335

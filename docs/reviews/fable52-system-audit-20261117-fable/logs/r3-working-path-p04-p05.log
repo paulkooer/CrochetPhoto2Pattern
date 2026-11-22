@@ -1,0 +1,26 @@
+##### p04_hook_position_after_binding.py on the fixed tree
+row = standing sc, 2 binding slip stitches into the base, then 3 more sc (hook ends on the 4th stitch)
+fasten off at the last stitch actually made (band_row/4): REJECT :: 收线或暂停的位置不等于当前工作环
+fasten off 'at' the 2nd binding slip stitch (band_row binding/2): ACCEPT :: created=16 consumed=8 final={'band_row': 4, 'rest': 4}
+   recorded loop_reference: {'edge': 'band_row', 'position': 2, 'face': 'binding'}
+   event order in the row: [('standing_sc', 'working', [('band_row', 1, 'top')]), ('slst', 'binding', [('band_row', 1, 'binding')]), ('slst', 'binding', [('band_row', 2, 'binding')]), ('sc', 'working', [('band_row', 2, 'top')]), ('sc', 'working', [('band_row', 3, 'top')]), ('sc', 'working', [('band_row', 4, 'top')])]
+   exported fasten-off line: 3. **收线**（`end`）：在band_row 的接合引拔位第 2–2 位（正向）对应的当前工作环结束线段 main。剪断线，留约15cm尾线，将线端从工作环抽出并拉紧；藏线另列。这一步不增加或消耗织物针目。
+continue a chain from the last stitch actually made: REJECT :: 继续起链须从当前工作环出发，不能任意引用旧针目
+continue a chain from the binding slip stitch: ACCEPT :: created=22 consumed=10 final={'band_row': 4, 'rest': 4, 'r2': 2, 'o': 2}
+park at the last stitch actually made: REJECT :: 收线或暂停的位置不等于当前工作环
+seam starting at the last stitch actually made: REJECT :: 接合须从当前工作环一端开始，不能无说明跳到另一端
+-- control: binding slip stitches last in the row (what the shipped generators emit) --
+binding last, fasten off at the binding stitch: ACCEPT  [as expected] :: created=16 consumed=8 final={'band_row': 4, 'rest': 4}
+exit=0
+##### p05_same_section_row_start.py on the fixed tree
+== yarn_tracking=False ==
+A  row 2 works r1 stitches 20..11 (starts under the hook, stops early): ACCEPT  [as expected] :: created=70 consumed=30 final={'r2': 10, 'left_over': 10, 'outside': 20}
+B  row 2 works r1 stitches 10..1 (starts 10 stitches away from the hook): REJECT :: r2 的首针离当前工作环所在针目 10 位；须从工作环所在针目或其相邻针目起钩，或声明断线另接
+== yarn_tracking=True ==
+A  row 2 works r1 stitches 20..11 (starts under the hook, stops early): ACCEPT  [as expected] :: created=70 consumed=30 final={'r2': 10, 'left_over': 10, 'outside': 20}
+B  row 2 works r1 stitches 10..1 (starts 10 stitches away from the hook): REJECT :: r2 的首针离当前工作环所在针目 10 位；须从工作环所在针目或其相邻针目起钩，或声明断线另接
+== other shapes the same-section check lets through ==
+row 2 skips every other stitch of row 1 (12,10,8,...) with the skipped ones held: ACCEPT :: created=27 consumed=15 final={'r2': 3, 'gaps': 9}
+row 2 = two far-apart chunks (12..10 then 3..1), middle held, no chain between them: ACCEPT :: created=30 consumed=18 final={'r2': 6, 'mid': 6}
+control: same chunks in ascending order are rejected: REJECT  [as expected] :: r2 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+exit=0

@@ -1,0 +1,30 @@
+== which inputs stop at band_blocked
+   body 2 rows -> band_blocked 扣眼已越过第一侧前襟，落入领口或另一侧；须调整设计位置。
+   body 3 rows -> integrated_open_cuffs
+   body 4 rows -> integrated_open_cuffs
+
+== body 7.5 cm (21 rows), mirrored-band generator: what the maker reads
+    38. **沿边肋纹起链**（`design_hem_chain`）：从 design_body_corner 的顺序工作位第 1–1 位（正向） 的当前工作环继续起链，锁 6 针；跳过钩旁 1 针。起链后逆时针翻面。后续工作用里山，起链另一侧针目另有记录。接续当前工作环，不把起链计作额外使用一个基底针目。
+    39. **沿边肋纹 第 1 行**（`design_hem_001`）：在 design_hem_chain 的锁针反面工作位第 1–5 位（正向） 钩每位置 1 短针；在 design_hem_base 的顺序工作位第 1–2 位（正向） 钩每位置 1 引拔针；这些是接合引拔，不进入下一行工作边。本段形成 5 个工作位置。flat，RS，行方向 forward；逆时针翻面；密度记录 design_hem_gauge；按实际来源分段：5X（里山）；接合2引拔→design_hem_base第1–2位。
+    90. **沿边肋纹起链**（`design_band_chain`）：从 design_band_corner 的顺序工作位第 1–1 位（正向） 的当前工作环继续起链，锁 5 针；跳过钩旁 1 针。起链后逆时针翻面。后续工作用里山，起链另一侧针目另有记录。接续当前工作环，不把起链计作额外使用一个基底针目。
+    91. **沿边肋纹 第 1 行**（`design_band_001`）：在 design_band_chain 的锁针反面工作位第 1–4 位（正向） 钩每位置 1 引拔针；在 design_band_base 的顺序工作位第 1–2 位（正向） 钩每位置 1 引拔针；这些是接合引拔，不进入下一行工作边。本段形成 4 个工作位置。flat，RS，行方向 forward；逆时针翻面；密度记录 design_band_gauge；按实际来源分段：4SL（里山）；接合2引拔→design_band_base第1–2位。
+    92. **沿边肋纹 第 2 行**（`design_band_002`）：在 design_band_001 的顺序工作位第 1–4 位（反向） 只挑后半针，钩每位置 1 引拔针。本段形成 4 个工作位置。flat，WS，行方向 reverse；逆时针翻面；翻转锁针 1 针，不计入工作边；密度记录 design_band_gauge；按实际来源分段：4SL-BLO。
+    95. **沿边肋纹 第 5 行**（`design_band_005`）：在 design_band_004 的顺序工作位第 3–4 位（反向） 只挑后半针，钩每位置 1 引拔针；锁 2 针，命名 design_band_hole_005；正面进入本段工作边，反面留作开口边；design_band_004 的顺序工作位第 1–2 位（反向） 不钩，作为扣眼孔边保留；在 design_band_base 的顺序工作位第 4–5 位（正向） 钩每位置 1 引拔针；这些是接合引拔，不进入下一行工作边。本段形成 4 个工作位置（含锁针桥所选工作面）。flat，RS，行方向 forward；逆时针翻面；密度记录 design_band_gauge；按实际来源分段：2SL-BLO，2CH，跳过2针；接合2引拔（行端）→design_band_base第4–5位。
+   notes mentioning buttonholes:
+       - 目标扣眼位置\[1.0, 3.0, 5.0\]cm；量化行号(5, 13, 21)；行中心线性估计(1.125, 3.125, 5.125)cm；另一侧纽扣候选行号(126, 118, 110)，须实物核对。
+       - 扣眼只放在第一侧返回基底的行；对应纽扣行号按两端距离镜像给出，须实物别针对齐。
+       - 扣眼锁针数由做法指定，未用引拔针密度估算可容纳的纽扣直径。
+   any plain statement of which face/front? -> ['镜像']
+
+== body 7.1 cm (20 rows), mirrored-band generator: what the maker reads
+    37. **沿边肋纹起链**（`design_hem_chain`）：从 design_body_corner 的顺序工作位第 1–1 位（正向） 的当前工作环继续起链，锁 6 针；跳过钩旁 1 针。起链后逆时针翻面。后续工作用里山，起链另一侧针目另有记录。接续当前工作环，不把起链计作额外使用一个基底针目。
+    38. **沿边肋纹 第 1 行**（`design_hem_001`）：在 design_hem_chain 的锁针反面工作位第 1–5 位（正向） 钩每位置 1 短针；在 design_hem_base 的顺序工作位第 1–2 位（正向） 钩每位置 1 引拔针；这些是接合引拔，不进入下一行工作边。本段形成 5 个工作位置。flat，WS，行方向 reverse；逆时针翻面；密度记录 design_hem_gauge；按实际来源分段：5X（里山）；接合2引拔→design_hem_base第1–2位。
+    89. **沿边肋纹起链**（`design_band_chain`）：从 design_band_corner 的顺序工作位第 1–1 位（正向） 的当前工作环继续起链，锁 5 针；跳过钩旁 1 针。起链后逆时针翻面。后续工作用里山，起链另一侧针目另有记录。接续当前工作环，不把起链计作额外使用一个基底针目。
+    90. **沿边肋纹 第 1 行**（`design_band_001`）：在 design_band_chain 的锁针反面工作位第 1–4 位（正向） 钩每位置 1 引拔针；在 design_band_base 的顺序工作位第 1–2 位（正向） 钩每位置 1 引拔针；这些是接合引拔，不进入下一行工作边。本段形成 4 个工作位置。flat，WS，行方向 reverse；逆时针翻面；密度记录 design_band_gauge；按实际来源分段：4SL（里山）；接合2引拔→design_band_base第1–2位。
+    91. **沿边肋纹 第 2 行**（`design_band_002`）：在 design_band_001 的顺序工作位第 1–4 位（反向） 只挑后半针，钩每位置 1 引拔针。本段形成 4 个工作位置。flat，RS，行方向 forward；逆时针翻面；翻转锁针 1 针，不计入工作边；密度记录 design_band_gauge；按实际来源分段：4SL-BLO。
+    94. **沿边肋纹 第 5 行**（`design_band_005`）：在 design_band_004 的顺序工作位第 3–4 位（反向） 只挑后半针，钩每位置 1 引拔针；锁 2 针，命名 design_band_hole_005；正面进入本段工作边，反面留作开口边；design_band_004 的顺序工作位第 1–2 位（反向） 不钩，作为扣眼孔边保留；在 design_band_base 的顺序工作位第 4–5 位（正向） 钩每位置 1 引拔针；这些是接合引拔，不进入下一行工作边。本段形成 4 个工作位置（含锁针桥所选工作面）。flat，WS，行方向 reverse；逆时针翻面；密度记录 design_band_gauge；按实际来源分段：2SL-BLO，2CH，跳过2针；接合2引拔（行端）→design_band_base第4–5位。
+   notes mentioning buttonholes:
+       - 目标扣眼位置\[1.0, 3.0, 5.0\]cm；量化行号(5, 13, 21)；行中心线性估计(1.125, 3.125, 5.125)cm；另一侧纽扣候选行号(122, 114, 106)，须实物核对。
+       - 扣眼只放在第一侧返回基底的行；对应纽扣行号按两端距离镜像给出，须实物别针对齐。
+       - 扣眼锁针数由做法指定，未用引拔针密度估算可容纳的纽扣直径。
+   any plain statement of which face/front? -> ['镜像']

@@ -1,0 +1,178 @@
+##### ribbing_start_direction.py, body and sleeve length in cm: 7.5 6.4285
+stage=integrated_open_cuffs body_rows=21 sleeve_rows=18 (model accepted the plan)
+  hem   : loop on design_body_021 stitch 47 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_a: loop on design_sleeve_a_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_b: loop on design_sleeve_b_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 0
+exit=0
+##### ribbing_start_direction.py, body and sleeve length in cm: 7.1 6.4285
+stage=integrated_open_cuffs body_rows=20 sleeve_rows=18 (model accepted the plan)
+  hem   : loop on design_body_020 stitch 47 (row side RS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=WS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side RS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=WS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_a: loop on design_sleeve_a_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_b: loop on design_sleeve_b_018 stitch 1 (row side WS, row turn=counterclockwise, closure=after_turn); chain turn=none; ribbing row 1 side=RS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 0
+exit=0
+##### ribbing_start_direction.py, body and sleeve length in cm: 7.5 6.0714
+stage=integrated_open_cuffs body_rows=21 sleeve_rows=17 (model accepted the plan)
+  hem   : loop on design_body_021 stitch 47 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side WS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=RS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_a: loop on design_sleeve_a_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_b: loop on design_sleeve_b_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 0
+exit=0
+##### ribbing_start_direction.py, body and sleeve length in cm: 7.1 6.0714
+stage=integrated_open_cuffs body_rows=20 sleeve_rows=17 (model accepted the plan)
+  hem   : loop on design_body_020 stitch 47 (row side RS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=WS; first attachments over that row: stitches [46, 45, 44, 43] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  band  : loop on design_hem_046 stitch 5 (row side RS, row turn=none, closure=none); chain turn=counterclockwise; ribbing row 1 side=WS; first attachments over that row: stitches [4, 3, 2, 1] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_a: loop on design_sleeve_a_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  cuff_b: loop on design_sleeve_b_017 stitch 1 (row side RS, row turn=counterclockwise, closure=before_turn); chain turn=none; ribbing row 1 side=WS; first attachments over that row: stitches [19, 18, 17, 16] = REVERSE order; declared turns=1 -> needs REVERSE order => consistent
+  model on an ordinary round using the cuff's order (2..n, 1): REJECTED -> probe_extra_round 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+contradictions: 0
+exit=0
+##### cardigan_sweep.py
+== Part 1: parity sweep (rows are quantised from cm at 28 rows/10cm)
+  body rows even / sleeve rows even:  19 accepted plans -> none   (e.g. body=4)
+  body rows even / sleeve rows even:   1 accepted plans -> stage:band_blocked   (e.g. body=-)
+  body rows even / sleeve rows odd :  19 accepted plans -> none   (e.g. body=4)
+  body rows even / sleeve rows odd :   1 accepted plans -> stage:band_blocked   (e.g. body=-)
+  body rows odd  / sleeve rows even:  20 accepted plans -> none   (e.g. body=3)
+  body rows odd  / sleeve rows odd :  20 accepted plans -> none   (e.g. body=3)
+
+== Part 2: boundary inputs -> how assemble_cardigan ends
+  defaults: stage=integrated_open_cuffs steps=333
+  body_length 0.01cm (0 rows): stage=length_blocked steps=- 衣身或袖长量化后的行数超出1–80行范围。
+  body_length 0.2cm (1 row): stage=band_blocked steps=69 扣眼已越过第一侧前襟，落入领口或另一侧；须调整设计位置。
+  body_length 50cm (140 rows): stage=length_blocked steps=- 衣身或袖长量化后的行数超出1–80行范围。
+  sleeve_length 0.2cm (1 row): stage=integrated_open_cuffs steps=299
+  sleeve_length 50cm: stage=length_blocked steps=- 衣身或袖长量化后的行数超出1–80行范围。
+  hem_width 0.1cm (0 st): stage=hem_blocked steps=37 尺寸换算得到46行、0针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密度
+  hem_width 0.4cm (1 st): stage=integrated_open_cuffs steps=319
+  band_width 0.3cm (1 st): stage=band_blocked steps=89 门襟宽度不足：扣眼须留出至少一个普通肋纹针位，未生成扣眼工序。
+  band_width 0.5cm (2 st): stage=band_blocked steps=89 门襟宽度不足：扣眼须留出至少一个普通肋纹针位，未生成扣眼工序。
+  cuff_width 0.3cm (1 st): stage=integrated_open_cuffs steps=333
+  cuff_width 10cm (40 st): stage=integrated_open_cuffs steps=333
+  buttonholes unsorted: ValueError[ValidationError] 1 validation error for ButtonBandTarget |     For further information visit https://errors.pydantic.dev/2.14/v/value_error
+  buttonholes duplicated: ValueError[ValidationError] 1 validation error for ButtonBandTarget |     For further information visit https://errors.pydantic.dev/2.14/v/value_error
+  buttonhole at 0.2cm: stage=band_blocked steps=89 扣眼量化后过近、处于首行或超出门襟；不会静默合并或移动扣眼。
+  buttonhole at 90cm: stage=band_blocked steps=89 扣眼量化后过近、处于首行或超出门襟；不会静默合并或移动扣眼。
+  buttonhole_chains 10: stage=band_blocked steps=89 门襟宽度不足：扣眼须留出至少一个普通肋纹针位，未生成扣眼工序。
+  neck 2cm (5 st): stage=yoke_blocked steps=- 量化后领口5针、肩深约9行，超出本做法范围。
+  neck 100cm: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  yoke depth 0.5cm: stage=yoke_blocked steps=- 量化后领口21针、肩深约1.4行，超出本做法范围。
+  yoke depth 28cm (79 rows): stage=band_blocked steps=159 门襟未生成：尺寸换算得到330行、4针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静
+  sleeve circ 2.7cm (7 st): stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  sleeve circ 40cm: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  body span 100cm: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  adult-ish (neck 40, body 100, sleeve 30, depth 20, lengths 35): stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  underarm_chains 15: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±1针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  underarm_chains 3: stage=integrated_open_cuffs steps=333
+  stitch_adjustment 0: stage=yoke_blocked steps=- 固定领口与肩深下，四分界每次共加8针，无法同时满足衣身和袖围的±0针调整范围。请修改设计约束或选用另一构造，不会自动改成
+  stitch_adjustment 3: stage=integrated_open_cuffs steps=333
+  gauge 100/100: stage=hem_blocked steps=115 尺寸换算得到46行、5针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密度
+  gauge 5/5: stage=yoke_blocked steps=- 量化后领口4针、肩深约1.60714行，超出本做法范围。
+  hem gauge rows 100: stage=hem_blocked steps=37 尺寸换算得到176行、5针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密
+  hem gauge rows 5: stage=hem_blocked steps=37 尺寸换算得到8行、5针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密度或
+  band gauge 5/5: stage=band_blocked steps=89 门襟未生成：尺寸换算得到16行、1针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默
+  cuff gauge 100/100: stage=cuff_a_blocked steps=243 尺寸换算得到74行、35针宽；超出本模块的偶数行、1–40针宽、最多200行或每次接合1–2位的范围。没有静默改成另一密
+  prefix 20 chars: stage=integrated_open_cuffs steps=333
+  seamed cuffs: stage=integrated_cuff_seam_candidate steps=335
+  seamed cuffs, cuff_width 0.3cm: stage=integrated_cuff_seam_candidate steps=335
+exit=0
+##### model_guarantee_probes.py
+
+=== T1 control - turned row, same section, previous row worked in the SAME order
+    physical reading: after turning, the loop is on stitch 6 of row 1; a row cannot begin in stitch 1 at the far end
+    MODEL REJECTS: ValueError: r2 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+
+=== T2 - identical steps, but the second row is given a new section name
+    physical reading: same as T1: 6 stitches in, 6 out, but the yarn is at the other end of the row and no cut/rejoin is declared
+    MODEL REJECTS: ValueError: r2 的首针离当前工作环所在针目 5 位；须从工作环所在针目或其相邻针目起钩，或声明断线另接
+
+=== T3 - identical steps with no section on the second row
+    physical reading: same as T1
+    MODEL REJECTS: ValueError: r2 的首针离当前工作环所在针目 5 位；须从工作环所在针目或其相邻针目起钩，或声明断线另接
+
+=== T4 - row 1 declares no turn, row 2 (new section) claims WS
+    physical reading: without turning, the wrong side cannot be facing
+    MODEL REJECTS: ValueError: 当前织物朝向与下一行正反面不一致，须明确翻面或另接线
+
+=== T5 - a segment-mode row with turn=clockwise sits between two flat rows
+    physical reading: two turns were made (after r1 and after r2), so RS is facing again; r3 declares WS
+    MODEL ACCEPTS: created=30 consumed=18 unconsumed=12 retired_without_work=0
+
+=== T6 - 1 chain declared as a buttonhole that skips 10 stitches on another edge
+    physical reading: a buttonhole spans the stitches it skips; 1 chain cannot stand in for 10 stitches on a different edge
+    MODEL ACCEPTS: created=20 consumed=17 unconsumed=3 retired_without_work=11
+
+=== T7 - half of a live row is retired as 'finished_border', the rest worked
+    physical reading: stitches 4-7 sit between worked stitches 3 and 8; the row jumps a 4-stitch gap with no chain
+    MODEL ACCEPTS: created=16 consumed=10 unconsumed=6 retired_without_work=4
+
+=== T8 - tracked yarn is never fastened off or woven in
+    physical reading: the piece ends with a live loop and two loose ends
+    MODEL ACCEPTS: created=18 consumed=6 unconsumed=12 retired_without_work=0
+    yarn report: {'all_fasten_off_steps_present': False, 'all_weave_steps_present': False} {'y': 'working'}
+exit=0
+##### doll_increase_columns.py
+== wide_brim_curls
+  内裙层: 28 -> 41 stitches over 20 rounds; 13 increases
+     foundation stitches that received any increase: 10 of 28
+     hem stitches descending from the 3 most-increased foundation stitches: [(6, 3), (9, 3), (13, 3)]
+     first rounds as written: ['2:11X,V,16X', '3:29X', '4:5X,V,23X', '5:16X,V,13X', '6:31X']
+  外裙层: 30 -> 46 stitches over 18 rounds; 16 increases
+     foundation stitches that received any increase: 14 of 30
+     hem stitches descending from the 3 most-increased foundation stitches: [(16, 3), (23, 3), (4, 2)]
+     first rounds as written: ['2:12X,V,17X', '3:23X,V,7X', '4:5X,V,26X', '5:17X,V,15X', '6:31X,V,2X']
+== folded_cap_layers
+  内裙层: 28 -> 41 stitches over 20 rounds; 13 increases
+     foundation stitches that received any increase: 10 of 28
+     hem stitches descending from the 3 most-increased foundation stitches: [(6, 3), (9, 3), (13, 3)]
+     first rounds as written: ['2:11X,V,16X', '3:29X', '4:5X,V,23X', '5:16X,V,13X', '6:31X']
+  外裙层: 30 -> 46 stitches over 18 rounds; 16 increases
+     foundation stitches that received any increase: 14 of 30
+     hem stitches descending from the 3 most-increased foundation stitches: [(16, 3), (23, 3), (4, 2)]
+     first rounds as written: ['2:12X,V,17X', '3:23X,V,7X', '4:5X,V,26X', '5:17X,V,15X', '6:31X,V,2X']
+exit=0
+##### doll_arithmetic.py
+== 1. body length supplied by the generated rounds (linear estimate, not measured)
+   starter            height  gauge   allocated(body+neck)  rounds  straight  meridian  axial-estimate  share
+   wide_brim_curls       16  (22, 28)     8.00 cm              25     18      8.93      7.00 cm        87%
+   wide_brim_curls       16  (30, 36)     8.00 cm              32     23      8.89      6.86 cm        86%
+   wide_brim_curls       16  (14, 16)     8.00 cm              14      8      8.75      7.27 cm        91%
+   wide_brim_curls       24  (22, 28)    12.00 cm              38     28     13.57     10.35 cm        86%
+   wide_brim_curls       24  (30, 36)    12.00 cm              49     35     13.61     10.53 cm        88%
+   wide_brim_curls       24  (14, 16)    12.00 cm              21     14     13.12     10.49 cm        87%
+   wide_brim_curls       40  (22, 28)    20.00 cm              63     47     22.50     17.72 cm        89%
+   wide_brim_curls       40  (30, 36)    20.00 cm              81     60     22.50     17.32 cm        87%
+   wide_brim_curls       40  (14, 16)    20.00 cm              36     26     22.50     17.61 cm        88%
+   wide_brim_curls       60  (22, 28)    30.00 cm              95     73     33.93     26.40 cm        88%
+   wide_brim_curls       60  (30, 36)    30.00 cm             122     91     33.89     25.94 cm        86%
+   wide_brim_curls       60  (14, 16)    30.00 cm              54     38     33.75     25.87 cm        86%
+
+   default body rounds: [6, 12, 18, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 20, 20, 20, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 19, 13, 8, 8, 8, 8]
+   rounds per section: {'起针': 1, '下身': 13, '腰部': 3, '胸肩': 15, '肩部向颈部收窄': 3, '独立颈段': 3}
+   legs estimate 6.42 cm (target 6); body+neck estimate 10.35 cm (allocated 12); head target 6
+   sum with the head at its full target diameter: 22.8 cm against the stated target height 24 cm
+
+== 2. hair cap depth versus the eye-candidate round (both counted from the crown)
+   head rounds 26: [6, 6, 12, 18, 24, 30, 30, 36, 36, 42, 42, 42, 42, 42, 42, 36, 36, 36, 30, 24, 24, 18, 18, 12, 6, 6]
+   hair cap rounds 13: [6, 12, 18, 24, 30, 36, 42, 44, 44, 44, 44, 44, 44]
+   eye candidate round: 11; cap is 13 rounds deep = 4.64 cm from crown to rim; crown to eye round = 3.93 cm
+   join text: 发帽共 13 圈，眼位候选在头部第 11 圈：对齐头顶平戴时，帽缘预计落在眼位同一高度或更低。请把发帽向后倾斜，使前缘高于眼位、后缘落在后脑下部，用珠针固定，对照已装好的眼睛确认；前缘仍遮眼时，拆掉发帽末尾的平钩圈后再缝。圈号只是按针数的估计，两个部件轮廓不同，须以试戴为准
+   -> a crown-aligned cap of 13 rounds ends +2 rounds relative to the eye round (BELOW it)
+   height 16: cap rounds 9, eye round 9, head rounds 18 -> cap ends +0 rounds from the eye round
+   height 24: cap rounds 13, eye round 11, head rounds 26 -> cap ends +2 rounds from the eye round
+   height 40: cap rounds 21, eye round 21, head rounds 44 -> cap ends +0 rounds from the eye round
+   height 60: cap rounds 31, eye round 26, head rounds 66 -> cap ends +5 rounds from the eye round
+
+== 3. sweep: exception types escaping build_doll_plan
+   39366 combinations
+    28350  ValueError:     For further information visit https://errors.pydantic.de
+     6972  ValueError: 袖窿需前后各留 N 行边，但上衣片仅 N 行；请增加上衣片长度，或减小掌臂围度后重新生成
+     4044  plan built
+exit=0

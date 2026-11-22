@@ -1,0 +1,16 @@
+== 1. shoe: stitches left on the toe arc and the heel arc at the opening
+   (arcs are the two 'W' ends of the oval; the straight sides never change)
+   height 16 gauge (22, 28): sole edge 16 (arcs 6+6, sides 2+2); toe decreases in rounds [5, 6] -> 2 left; heel decreases in rounds [7, 8] -> 2 left; opening 8 = 2+2+2+2; leg 6
+   height 24 gauge (22, 28): sole edge 18 (arcs 6+6, sides 3+3); toe decreases in rounds [5, 6] -> 2 left; heel decreases in rounds [7, 8] -> 2 left; opening 10 = 2+3+2+3; leg 7
+   height 24 gauge (30, 36): sole edge 26 (arcs 9+9, sides 4+4); toe decreases in rounds [6, 7, 8] -> 4 left; heel decreases in rounds [9, 10, 11] -> 4 left; opening 12 = 4+4+4+4; leg 10
+   height 40 gauge (22, 28): sole edge 34 (arcs 12+12, sides 5+5); toe decreases in rounds [7, 8, 9, 10] -> 6 left; heel decreases in rounds [11, 12, 13, 14] -> 6 left; opening 14 = 6+5+6+5; leg 12
+   height 60 gauge (22, 28): sole edge 52 (arcs 18+18, sides 8+8); toe decreases in rounds [9, 10, 11, 12, 13, 14] -> 10 left; heel decreases in rounds [15, 16, 17, 18, 19, 20] -> 10 left; opening 20 = 10+8+10+8; leg 18
+
+== 2. which layer rejects swept inputs (all inputs are inside the UI's widget ranges)
+    25272  input rejected by DollDesign: Value error, 掌腕分段要求手掌直径大于手腕直径
+    15552  input rejected by DollDesign: Value error, 总高须为头部、腿部以外留下至少 Ncm 的身体与颈部设计空间
+    14040  input rejected by DollDesign: Value error, 鞋底长度须不小于宽度
+    12840  plan built
+    10920  generator ValueError: 袖窿需前后各留 N 行边，但上衣片仅 N 行；请增加上衣片长度，或减小掌臂围度后重新生成
+     4320  input rejected by DollDesign: Value error, 上衣长度不能超过头部以外的目标长度
+   sample: generator ValueError: 袖窿需前后各留 N 行边，但上衣片仅 N 行；请增加上衣片长度，或减小掌臂围 <- {'height_cm': 16.0, 'head_diameter_cm': 2.0, 'palm_diameter_cm': 0.4, 'wrist_diameter_cm': 0.3, 'foot_length_cm': 1.0, 'foot_width_cm': 0.5, 'bodice_length_cm': 1.0, 'stitches_per_10cm': 6.0, 'rows_per_10cm': 8.0}

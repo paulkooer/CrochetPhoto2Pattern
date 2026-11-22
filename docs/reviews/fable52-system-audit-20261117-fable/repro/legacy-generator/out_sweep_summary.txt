@@ -1,0 +1,26 @@
+specs=432 {'generated': 427, 'generated_but_blocked_by_crochetability_gate': 12, 'rejected': 5}
+checked: {'rows': 51941, 'formulas_expanded': 98316, 'parts': 2754, 'finish:cinched': 638, 'finish:open_tail_for_sewing': 1448, 'finish:declared_open': 0, 'finish:none': 668, 'neck_anchor_checked': 91, 'skirt_anchor_checked': 236}
+
+rejections (message -> count, first label):
+     3  ValueError: 头部留口 48 针大于当前头围最大 36 针，请先调小留口针数   e.g. D opening=48 classic ladder
+     2  ValueError: 挑针接裙需要身体部件；请添加身体或选择独立裙筒   e.g. G subset=裙子 skirt=attached
+
+findings by code (count, distinct parts, first two examples):
+    668  GAP NO_FINISH_INSTRUCTION
+           B all classic ladder onepiece=0 skirt=ring ruffle=0 :: [GAP] NO_FINISH_INSTRUCTION 帽子 R17: last round gives no fasten-off / close / leave-open instruction: '42X（不加不减）'
+           B all classic ladder onepiece=0 skirt=ring ruffle=0 :: [GAP] NO_FINISH_INSTRUCTION 裙子 R5: last round gives no fasten-off / close / leave-open instruction: '48X（不加不减）'
+      3  GAP PART_NOT_ASSEMBLED
+           G subset=头部 skirt=ring :: [GAP] PART_NOT_ASSEMBLED 装配: no assembly step attaches 头部
+           G subset=头部 skirt=attached :: [GAP] PART_NOT_ASSEMBLED 装配: no assembly step attaches 头部
+      2  GAP SKIRT_NO_FIX_STEP
+           G subset=裙子 skirt=ring :: [GAP] SKIRT_NO_FIX_STEP 装配: ring skirt is never fixed in the assembly
+           G subset=头部+裙子 skirt=ring :: [GAP] SKIRT_NO_FIX_STEP 装配: ring skirt is never fixed in the assembly
+     79  GAP START_RING_NO_FOUNDATION
+           B all classic ladder onepiece=0 skirt=ring ruffle=0 :: [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+           B all classic ladder onepiece=0 skirt=ring ruffle=1 :: [GAP] START_RING_NO_FOUNDATION 裙子 R1: start is written as '腰部环形起针36X成环（引拔连接，开口勿收口）': no chain/foundation count or technique is given
+     40  INFO MISLABELLED_START
+           F profile=pear classic onepiece=0 skirt=ring :: [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+           F profile=pear classic onepiece=0 skirt=attached :: [INFO] MISLABELLED_START 身体 R7: non-first round labelled 起针圈: '36X（起针圈）'
+
+ERROR findings: 0
+exit=0

@@ -1,0 +1,99 @@
+app module: <repo>/app/__init__.py
+
+== armhole-demo: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/armhole-demo/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/armhole-demo/path-result.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/armhole-demo/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/armhole-demo/path-explanation.pdf
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (4299 vs 4299 bytes)
+   path-plan.json: identical
+   path-result.json: identical
+
+== doll-wide-brim: exit 0
+   stdout: {
+             "output": "<repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/doll-wide-brim",
+             "status": "unverified_prototype",
+             "components": 19,
+             "physical_parts": 54,
+             "stitch_outputs_and_chains": 7206
+           }
+   assembly.dot: identical
+   design.json: identical
+   plan.json: DIFFERENT (85660 vs 83116 bytes)
+   plan.md: DIFFERENT (22494 vs 21216 bytes)
+   plan.pdf: DIFFERENT (30001 vs 28839 bytes)
+
+== doll-folded-cap: exit 0
+   stdout: {
+             "output": "<repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/doll-folded-cap",
+             "status": "unverified_prototype",
+             "components": 18,
+             "physical_parts": 37,
+             "stitch_outputs_and_chains": 6873
+           }
+   assembly.dot: identical
+   design.json: identical
+   plan.json: DIFFERENT (96153 vs 93609 bytes)
+   plan.md: DIFFERENT (21772 vs 20494 bytes)
+   plan.pdf: DIFFERENT (29430 vs 28263 bytes)
+
+== attached-ribbing: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/attached-ribbing/design-proposal.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/attached-ribbing/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/attached-ribbing/path-result.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/attached-ribbing/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/attached-ribbing/path-explanation.pdf
+   design-proposal.json: identical
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (7019 vs 7019 bytes)
+   path-plan.json: identical
+   path-result.json: identical
+
+== cardigan-open: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-open/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-open/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-open/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-open/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-open/path-explanation.pdf
+   design-report.json: DIFFERENT (9461 vs 9461 bytes)
+   design-request.json: identical
+   path-explanation.md: DIFFERENT (149481 vs 148693 bytes)
+   path-explanation.pdf: DIFFERENT (46663 vs 45674 bytes)
+   path-plan.json: DIFFERENT (324774 vs 323981 bytes)
+
+== cardigan-seamed: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-seamed/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-seamed/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-seamed/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-seamed/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-seamed/path-explanation.pdf
+   design-report.json: DIFFERENT (9400 vs 9400 bytes)
+   design-request.json: identical
+   path-explanation.md: DIFFERENT (150716 vs 149498 bytes)
+   path-explanation.pdf: DIFFERENT (48449 vs 46610 bytes)
+   path-plan.json: DIFFERENT (326429 vs 325302 bytes)
+
+== cardigan-missing-gauge: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-missing-gauge/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-missing-gauge/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-missing-gauge/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-missing-gauge/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-missing-gauge/path-explanation.pdf
+   design-report.json: DIFFERENT (4844 vs 4844 bytes)
+   design-request.json: identical
+   path-explanation.md: identical
+   path-explanation.pdf: DIFFERENT (11530 vs 11530 bytes)
+   path-plan.json: identical
+
+== cardigan-depth-quantization: exit 0
+   stdout: <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-depth-quantization/design-request.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-depth-quantization/design-report.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-depth-quantization/path-plan.json
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-depth-quantization/path-explanation.md
+           <repo>/eval_outputs/fable52-system-audit-20261117-fable-review/out/r3/examples-rerun-final/cardigan-depth-quantization/path-explanation.pdf
+   design-report.json: DIFFERENT (9458 vs 9458 bytes)
+   design-request.json: identical
+   path-explanation.md: DIFFERENT (155489 vs 154701 bytes)
+   path-explanation.pdf: DIFFERENT (48092 vs 47664 bytes)
+   path-plan.json: DIFFERENT (337928 vs 337135 bytes)

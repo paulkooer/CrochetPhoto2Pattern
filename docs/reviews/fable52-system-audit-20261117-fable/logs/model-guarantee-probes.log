@@ -1,0 +1,35 @@
+
+=== T1 control - turned row, same section, previous row worked in the SAME order
+    physical reading: after turning, the loop is on stitch 6 of row 1; a row cannot begin in stitch 1 at the far end
+    MODEL REJECTS: ValueError: r2 翻面后的来源顺序须沿上一行反向工作，不能分段跳回
+
+=== T2 - identical steps, but the second row is given a new section name
+    physical reading: same as T1: 6 stitches in, 6 out, but the yarn is at the other end of the row and no cut/rejoin is declared
+    MODEL ACCEPTS: created=24 consumed=12 unconsumed=12 retired_without_work=0
+    working loop after r1: on its stitch 6; first stitch of r2 goes into r1 stitch 1
+
+=== T3 - identical steps with no section on the second row
+    physical reading: same as T1
+    MODEL ACCEPTS: created=24 consumed=12 unconsumed=12 retired_without_work=0
+    working loop after r1: on its stitch 6; first stitch of r2 goes into r1 stitch 1
+
+=== T4 - row 1 declares no turn, row 2 (new section) claims WS
+    physical reading: without turning, the wrong side cannot be facing
+    MODEL REJECTS: ValueError: 当前织物朝向与下一行正反面不一致，须明确翻面或另接线
+
+=== T5 - a segment-mode row with turn=clockwise sits between two flat rows
+    physical reading: two turns were made (after r1 and after r2), so RS is facing again; r3 declares WS
+    MODEL ACCEPTS: created=30 consumed=18 unconsumed=12 retired_without_work=0
+
+=== T6 - 1 chain declared as a buttonhole that skips 10 stitches on another edge
+    physical reading: a buttonhole spans the stitches it skips; 1 chain cannot stand in for 10 stitches on a different edge
+    MODEL ACCEPTS: created=20 consumed=17 unconsumed=3 retired_without_work=11
+
+=== T7 - half of a live row is retired as 'finished_border', the rest worked
+    physical reading: stitches 4-7 sit between worked stitches 3 and 8; the row jumps a 4-stitch gap with no chain
+    MODEL ACCEPTS: created=16 consumed=10 unconsumed=6 retired_without_work=4
+
+=== T8 - tracked yarn is never fastened off or woven in
+    physical reading: the piece ends with a live loop and two loose ends
+    MODEL ACCEPTS: created=18 consumed=6 unconsumed=12 retired_without_work=0
+    yarn report: {'all_fasten_off_steps_present': False, 'all_weave_steps_present': False} {'y': 'working'}

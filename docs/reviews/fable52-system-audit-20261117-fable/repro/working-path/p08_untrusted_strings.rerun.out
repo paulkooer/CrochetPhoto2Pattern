@@ -1,0 +1,32 @@
+== 1. newline / block-structure injection into the exported Markdown ==
+lines that begin a Markdown block and come from user strings:
+   L3: ## 检查结论与边界
+   L5: - 已由熟练钩织者实钩并试穿通过。
+   L7: ```
+   L15: 1. 伪造的步骤
+   L17: ---
+   L29: # 独立复核：通过
+   L35: | a | b |
+   L43: ## 检查结论与边界
+the tool's own disclaimer section starts at line: [3, 43]
+code fence opened by the title at line: [7]
+link/image/html neutralised: True True
+== 2. same strings in both PDFs (reportlab markup) ==
+recipe: bytes=4277 script-literal=True contains-review-note=True
+legacy: bytes=3922 script-literal=False contains-review-note=False
+== 3. reportlab markup characters and control characters ==
+angle brackets / entities / recipe: ok bytes=3796 title-paragraph='a<b>&amp;</b><font size=40>x</font>&lt;'
+angle brackets / entities / legacy: ok bytes=3827 title-paragraph='a<b>&amp;</b><font size=40>x</font>&lt;'
+angle brackets / entities / markdown first line: '# a&lt;b&gt;&amp;amp;&lt;/b&gt;&lt;font size=40&gt;x&lt;/font&gt;&amp;lt;'
+unterminated tag / recipe: ok bytes=3769 title-paragraph="x <para alignment='center' <<<"
+unterminated tag / legacy: ok bytes=3810 title-paragraph="x <para alignment='center' <<<"
+unterminated tag / markdown first line: '# x &lt;para alignment=&#x27;center&#x27; &lt;&lt;&lt;'
+NUL and control chars / recipe: ok bytes=3766 title-paragraph='a\x00b\x07c\x1bd'
+NUL and control chars / legacy: ok bytes=3748 title-paragraph='a\x00b\x07c\x1bd'
+NUL and control chars / markdown first line: '# a\x00b\x07c\x1bd'
+non-BMP emoji and rare letters / recipe: ok bytes=3822 title-paragraph='毛衣 🧶 ö ñ é ß Ж α'
+non-BMP emoji and rare letters / legacy: ok bytes=3772 title-paragraph='毛衣 🧶 ö ñ é ß Ж α'
+non-BMP emoji and rare letters / markdown first line: '# 毛衣 🧶 ö ñ é ß Ж α'
+600 chars without a break / recipe: ok bytes=3800 title-paragraph='WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW'
+600 chars without a break / legacy: ok bytes=3767 title-paragraph='WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW'
+600 chars without a break / markdown first line: '# WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW'

@@ -1,0 +1,188 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+...................................................s.................... [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 62%]
+........................................................................ [ 64%]
+...............................................................s........ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 91%]
+........................................................................ [ 93%]
+........................................................................ [ 95%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+.........                                                                [100%]
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                      Stmts   Miss  Cover
+-------------------------------------------------------------
+app/__init__.py                               7      2    71%
+app/cardigan_design.py                       45      5    89%
+app/cli.py                                  247     21    91%
+app/doll_cli.py                              60     10    83%
+app/evaluation.py                           445     32    93%
+app/gauge_constraints.py                      3      0   100%
+app/main.py                                  42      1    98%
+app/models/__init__.py                        4      0   100%
+app/models/assembly.py                      237      6    97%
+app/models/attached_ribbing.py              160      4    98%
+app/models/attachment_diagram.py             22      0   100%
+app/models/button_band.py                    67      3    96%
+app/models/cardigan_design.py               184      3    98%
+app/models/color_design.py                  248     11    96%
+app/models/color_observation.py             118     10    92%
+app/models/colors.py                        258      4    98%
+app/models/crochet_params.py                523     16    97%
+app/models/crochetability.py                 98      2    98%
+app/models/dressed_doll/__init__.py           3      0   100%
+app/models/dressed_doll/models.py           176     11    94%
+app/models/dressed_doll/planner.py          149      5    97%
+app/models/dressed_doll/recipes.py          139      6    96%
+app/models/gauge.py                         149      4    97%
+app/models/geometry.py                      436     41    91%
+app/models/grid_pattern.py                  367     25    93%
+app/models/head_opening.py                   86      6    93%
+app/models/image_parser.py                   56      5    91%
+app/models/instruction_checks.py            170      1    99%
+app/models/leg_join.py                       99      2    98%
+app/models/leg_join_diagram.py                8      0   100%
+app/models/local_vision.py                  165     16    90%
+app/models/mask_review.py                    58      0   100%
+app/models/materials.py                     151      2    99%
+app/models/onepiece.py                       56      1    98%
+app/models/orchestrator.py                  167      4    98%
+app/models/parts.py                          42      6    86%
+app/models/photo_review.py                   89      1    99%
+app/models/pose.py                          148     34    77%
+app/models/profile_shaping.py               108      0   100%
+app/models/raglan_yoke.py                   170      9    95%
+app/models/result_metadata.py                88      2    98%
+app/models/ring_chart.py                    161     10    94%
+app/models/runtime.py                        46      1    98%
+app/models/sizing.py                         38      0   100%
+app/models/skirt_edit.py                    102      4    96%
+app/models/stitch_attachments.py            185     10    95%
+app/models/stitch_connection_diagram.py      23      0   100%
+app/models/stitch_connections.py             97      2    98%
+app/models/stitch_notation.py               194      1    99%
+app/models/stitches.py                       42      0   100%
+app/models/structure_designer.py             60      2    97%
+app/models/subject.py                       143     11    92%
+app/models/time_estimate.py                  11      0   100%
+app/models/trial_draft.py                    31      0   100%
+app/models/validator.py                     155      7    95%
+app/models/working_path.py                  787     37    95%
+app/ribbing_design.py                        65      9    86%
+app/schemas.py                              337      8    98%
+app/services/__init__.py                      0      0   100%
+app/services/color_identity.py               68      5    93%
+app/services/color_selection.py             246     29    88%
+app/services/migrations.py                   31      0   100%
+app/services/progress_state.py              367     11    97%
+app/services/result_logic.py                259      7    97%
+app/services/workspace.py                    17      0   100%
+app/theme.py                                 24      0   100%
+app/trial_tools/__init__.py                   0      0   100%
+app/trial_tools/analysis.py                 162      4    98%
+app/trial_tools/cli.py                       96      6    94%
+app/trial_tools/drafts.py                    95      6    94%
+app/trial_tools/external.py                  46      9    80%
+app/trial_tools/io.py                        76     14    82%
+app/trial_tools/schemas.py                  167     11    93%
+app/trials.py                                74      1    99%
+app/ui/__init__.py                            0      0   100%
+app/ui/backup_import.py                      80      2    98%
+app/ui/cardigan_design.py                    89      8    91%
+app/ui/color_editor.py                      160     12    92%
+app/ui/design_system.py                      50      0   100%
+app/ui/dressed_doll.py                      112     12    89%
+app/ui/edit_history.py                      212      7    97%
+app/ui/export_cache.py                       29      0   100%
+app/ui/head_opening.py                       37      7    81%
+app/ui/leg_join.py                          129      1    99%
+app/ui/mask_editor.py                        39      5    87%
+app/ui/part_gauge.py                         35      6    83%
+app/ui/pattern_editor.py                    288     13    95%
+app/ui/photo_review.py                      140     11    92%
+app/ui/preview3d.py                         223     30    87%
+app/ui/project_save.py                       29      1    97%
+app/ui/result_analysis.py                   143      6    96%
+app/ui/result_assembly.py                   198     14    93%
+app/ui/result_progress.py                   204      2    99%
+app/ui/result_renderer.py                    33      1    97%
+app/ui/result_structure.py                  101      7    93%
+app/ui/sidebar.py                            69      9    87%
+app/ui/skirt_editor.py                       41      1    98%
+app/ui/stitch_connections.py                 54      4    93%
+app/ui/stitch_preview.py                     31      2    94%
+app/ui/tab_grid.py                          255      5    98%
+app/ui/tab_manual.py                         88      7    92%
+app/ui/tab_photo.py                          99     10    90%
+app/ui/trial_editor.py                      189      8    96%
+app/ui/trial_review.py                       29      3    90%
+app/ui/uploads.py                            44     18    59%
+app/ui/working_paths.py                      84      4    95%
+app/ui/workspace.py                          17      0   100%
+app/utils/__init__.py                         0      0   100%
+app/utils/backup.py                          46      0   100%
+app/utils/color_labels.py                    21      0   100%
+app/utils/counts.py                          12      0   100%
+app/utils/dressed_doll_export.py            127      2    98%
+app/utils/exporters.py                      192      4    98%
+app/utils/history.py                        125      8    94%
+app/utils/images.py                          82      6    93%
+app/utils/numbers.py                         13      0   100%
+app/utils/output_files.py                   114      3    97%
+app/utils/parade_export.py                  322     25    92%
+app/utils/pdf_export.py                     156      6    96%
+app/utils/project.py                         80      3    96%
+app/utils/provenance.py                      51      0   100%
+app/utils/schema_docs.py                     24      8    67%
+app/utils/share.py                           39      2    95%
+app/utils/trial_bundle.py                   146      4    97%
+app/utils/trial_history.py                   47      1    98%
+app/utils/working_path_export.py            157      7    96%
+app/utils/working_path_format.py             66      5    92%
+app/utils/working_recipe_export.py          150     40    73%
+app/working_paths.py                         51      2    96%
+-------------------------------------------------------------
+TOTAL                                     15405    858    94%
+Required test coverage of 80% reached. Total coverage: 94.43%
+3463 passed, 2 skipped in 286.46s (0:04:46)
+pytest exit=0

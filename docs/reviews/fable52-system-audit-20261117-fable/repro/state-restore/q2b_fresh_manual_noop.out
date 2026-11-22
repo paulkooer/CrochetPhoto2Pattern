@@ -1,0 +1,7 @@
+2026-11-18 13:50:27.777 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+=== q2b_fresh_manual_noop ===
+python 3.12.13 | app <repo>/app/__init__.py | version 0.2.0b3
+HEAD 6c88b7df5d53c18d4c8190288419faeb02cc1b13 | tmp <tmp>
+fresh: gauge None params.gauge {'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0}
+untouched JSON apply -> new result_id: True | revision changed: True | gauge now {'stitches_per_10cm': 13.0, 'rows_per_10cm': 16.0} | undo depth 1 | ticks kept 22 | success: ['已根据修正更新图解，向上查看结果！'] | exc 0
+trial created after that apply: source_revision == live: True | mismatch warning shown: False

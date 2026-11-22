@@ -1,0 +1,16 @@
+== 1. 'row ends' in the interior of one physical row ==
+row-end sites taken at the junction of two halves of the same row: ACCEPT :: created=24 consumed=12 final={'a': 5, 'b': 5, 'picked': 2}
+   row-end anchors: [('a', 5, 'row_right'), ('b', 1, 'row_left')]
+   created sites: 24 (10 seed + 10 row + 2 'row ends' + 2 picked)
+== 2. bridge whose far end lands on its own underside ==
+ch 3 'bridge' followed by work into the same chain's underside: ACCEPT :: created=17 consumed=7 final={'r': 10}
+   formula: ('2X，3CH，3X（里山），2X', '')
+== 3. tracked strand jumps between unconnected pieces without cutting ==
+row on piece A, then row on separate piece B with the same uncut strand: ACCEPT :: created=24 consumed=12 final={'on_a': 6, 'on_b': 6}
+    1. **接线**（`join`）：取新线段 main，在piece_a 的顺序工作位第 1–1 位（正向）另接线；朝向正面RS，下一步在该位置作一个无结起立短针，随后按表钩织。
+    2. **织片A上的一行**（`on_a`）：在 piece_a 的顺序工作位第 1–1 位（正向） 钩无结起立短针；在 piece_a 的顺序工作位第 2–6 位（正向） 钩每位置 1 短针。本段形成 6 个工作位置。flat，RS，行方向 forward；按实际来源分段：1起立X，5X。
+    3. **织片B上的一行**（`on_b`）：在 piece_b 的顺序工作位第 1–6 位（正向） 钩每位置 1 短针。本段形成 6 个工作位置。flat，RS，行方向 forward；按实际来源分段：6X。
+    4. **收线**（`end`）：在on_b 的顺序工作位第 6–6 位（正向）对应的当前工作环结束线段 main。剪断线，留约15cm尾线，将线端从工作环抽出并拉紧；藏线另列。这一步不增加或消耗织物针目。
+   yarn ids on events: ['main']
+== 4. same thing after a resume: hook is on row/3, next stitches are made elsewhere ==
+resume at row/3, then work a row on an unrelated edge: ACCEPT :: created=19 consumed=8 final={'row': 3, 'far': 5, 'outside': 3}
