@@ -19,6 +19,9 @@ Open the manual-input tab and expand `穿衣人偶结构原型（新增）` at t
 2. Enter the target height and this prototype's stitch/row gauge. The defaults, 24cm and 22 stitches/
    28 rows per 10cm, are design assumptions. Measure round, flat-row and ribbing swatches separately.
 3. Adjust head, palm/wrist, sole dimensions, bodice length, hair and hat construction, then generate.
+   Head, palm/wrist, sole and bodice sizes are offered in proportion to the target height and follow it;
+   a size you edit keeps the value you typed, the page lists which sizes are hand-edited, and
+   `恢复为按总高比例的尺寸` returns them to proportion.
 4. Inspect component sections and the assembly graph. Download the design JSON, plan JSON,
    Markdown, and optionally prepare a PDF.
 5. Changing inputs retains the previous plan for inspection but disables its downloads until regeneration.
@@ -42,6 +45,13 @@ actual assembly references; it is not a predicted finished object or a physical 
 Fit remains unverified. Sleeve stitches and panel row edges are different units: distribute seams by
 length rather than assuming one stitch per row. The examples approximate structure in crochet and
 do not reproduce every texture or material visible in a reference photograph.
+
+Plain body rounds are set so that the target height sits at the midpoint of two estimates: one counts a
+full row height for every round, the other only the axial part of shaping rounds. Both are printed in the
+body's fitting notes and neither is a measurement. Skirt increases are staggered from round to round
+instead of stacking in one column; parts with deliberate shaping (toe, heel) are unchanged. The hair-cap
+join text is generated from the cap's round count and the head's eye round: when the cap has at least as
+many rounds, it asks for a tilted, pinned fitting instead of stating that the rim sits above the eyes.
 
 ## CLI and formats
 

@@ -14,7 +14,7 @@ from ..schemas import (
     StructureData,
     part_kind_from_name,
 )
-from .assembly import _openings_by_part, build_assembly, opening_rows_by_part
+from .assembly import _openings_by_part, build_assembly, hat_fit_note, opening_rows_by_part
 from .color_design import (
     PART_SPAN,
     PART_SPAN_BY_KIND,
@@ -528,7 +528,7 @@ def refresh_derived(params: PatternParams, *, previous_parts: list[PartData] | N
         set(quantities), params.get("skirt_style", "ring"), quantities,
         params.get("assembly_plan"), openings=_openings_by_part(parts),
         stitch_attachments=params.get("stitch_attachments"), opening_rows=opening_rows_by_part(parts),
-        updated_guidance=updated_guidance)
+        updated_guidance=updated_guidance, hat_fit=hat_fit_note(parts, params.get("gauge")))
     return params
 
 
@@ -861,7 +861,7 @@ class CrochetParamsGenerator:
             opening_row=rounds_raw[-1]["row"],
             connection_state="open",
             notes=(
-                f"开口帽形（帽围 {max_st} 针 > 头围，不收口可直接佩戴），"
+                f"开口帽形（帽围 {max_st} 针，不收口），"
                 f"筒深 {wall_rounds} 圈 ≈ {actual_h}cm"
                 f"（另有帽顶 {crown_rounds} 圈径向加针盘，不计入筒深）。"
             ),
@@ -1087,7 +1087,8 @@ class CrochetParamsGenerator:
         assembly = build_assembly(
             part_names, style.skirt_style, quantities, assembly_plan,
             openings=_openings_by_part(part_dicts), stitch_attachments=stitch_attachments,
-            opening_rows=opening_rows_by_part(part_dicts))
+            opening_rows=opening_rows_by_part(part_dicts),
+            hat_fit=hat_fit_note(part_dicts, {"stitches_per_10cm": gauge.stitches_per_10cm}))
 
         # F13 生成门禁：生成器自己产出的图解必须通过自检，代数矛盾
         # 在此处拦截（而不是等到结果页才显示警告）

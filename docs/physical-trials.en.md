@@ -204,6 +204,15 @@ trial; restoration does not silently upgrade instructions.
 - Test-fit a separate skirt on the unstuffed, unassembled body before attaching adjacent parts.
   Equal stitch counts do not establish fit. Do not force a tight skirt; adjust the pattern and
   start a new trial record. Fit and ease still require physical verification.
+- The loop used for an attached skirt has not been physically confirmed. The pattern works the
+  body's reservation round in front loops only and then crochets the skirt into the remaining back
+  loops; when the body is worked in the round with the right side out, those remaining loops may
+  lie on the inside of the body, where the skirt cannot be worked. To check, make a 12-stitch,
+  4-round tube with the same yarn and hook, work round 5 in front loops only, add 2 rounds, and
+  note whether the loops left on round 4 lie outside or inside the tube and which face was
+  outward while working. If they lie inside, follow the check written in the pattern and work
+  back loops instead, and state this in `modifications`. The generator's convention stays as it
+  is until two makers report the same result.
 - Lay the finished item flat with legs naturally straight and unstretched. Measure crown to sole,
   excluding hats, ears and top decorations. Without legs, measure to the body bottom and record
   the endpoints in the notes.

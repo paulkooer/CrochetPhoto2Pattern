@@ -19,7 +19,7 @@ from app.schemas import PART_NAMES, ImageAnalysis
 
 FIXTURES = Path(__file__).parent / "fixtures" / "generate_params"
 SOURCE_COMMIT = "60084d09db40d8f5d068980b99c632f736fc5de8"
-SNAPSHOT_REVISION = "construction-guidance-v1"
+SNAPSHOT_REVISION = "construction-guidance-v2"
 MODES = ("ladder", "ideal", "egg")
 STYLES = [ShapingStyle(*values) for values in product(MODES, (False, True), ("ring", "attached"),
                                                     (False, True))]

@@ -1,0 +1,20 @@
+{
+  "zh": [
+    "开衫：袖口沿袖子末圈反向接合，领口从第一侧前襟到达的一端进入，门襟起链总是翻面并以下摆末行的另一面起钩；衣身行数为偶数时门襟按镜像生成。下摆、门襟、袖口起头处和审查说明写明接合行朝哪一面、扣眼在哪一侧前襟。",
+    "工序检查器：落针方向须与声明的朝向一致，适用于普通针和接合引拔、跨分段和边的别名；工作边内部的行端与起链之间不得跳位；续钩的首针须在工作环所在针目或相邻针目；接缝可声明朝向并按此检查。此前生成的开衫工序会被新检查拒绝，须重新生成。",
+    "手动页：生成结果记录实际选用的密度，未改动的图解新建试钩后不再提示已改图，保存实测密度后可预览重算。",
+    "工序阅读页与逐步说明：载入文件中的标题、说明和步骤名按纯文本显示，不再作为 Markdown 渲染。",
+    "穿衣人偶：未手改的轮廓尺寸随目标总高变化，手改的尺寸保留并可一键恢复；裙片加针位置逐圈错开；身体圈数按两种高度估算的中间值对齐目标并写明两个估算；发帽位置说明按实际圈数生成。",
+    "帽子：删去无论针数如何都出现的“帽围大于头围，可直接佩戴”，装配说明改为按各自密度估算帽口与头部最宽圈的周长并要求试戴。挑针接裙的半针朝向说明改为可自查的步骤，不再引用仓库中不存在的编号。",
+    "以上均为程序检查和估算层面的修正，尚无实物试钩、合身或照片还原证据；G3、G4 状态不变。"
+  ],
+  "en": [
+    "Cardigan: cuffs attach back over the last sleeve round, the neckline is entered at the end the first front reaches, and the band chain always turns and starts on the other face of the last hem row; an even number of body rows gives a mirrored band. The hem, band and cuff starts and the review notes state which face is toward the maker on attaching rows and which front carries the buttonholes.",
+    "Working-path checker: stitch order must agree with the declared facing side, for ordinary stitches and attaching slip stitches, across sections and edge aliases; a re-ordered edge may not jump between a row end and its foundation chain; a continuing row starts at or next to the stitch holding the loop; a seam may declare its facing side and is checked against it. Cardigan plans generated earlier are rejected by the new checks and must be regenerated.",
+    "Manual page: the result records the gauge actually used, so a new trial from an unchanged pattern no longer reports a changed pattern and a saved measured gauge can be previewed.",
+    "Working-path reader and step export: titles, notes and step labels from the loaded file are shown as plain text instead of being rendered as Markdown.",
+    "Dressed doll: untouched outline sizes follow the target height, hand-edited sizes are kept and can be restored in one step; skirt increases are staggered from round to round; body rounds meet the target at the midpoint of two stated height estimates; hair-cap placement text follows the generated rounds.",
+    "Hat: remove the claim that the rim exceeds the head and can be worn directly, which was printed whatever the counts were; the assembly text now estimates the rim and the widest head round from each part's gauge and asks for a test fit. The attached-skirt loop note becomes a self-check and no longer cites a label absent from the repository.",
+    "These are corrections at the level of program checks and estimates; there is still no physical crochet, fit or photo-likeness evidence, and G3/G4 remain unchanged."
+  ]
+}

@@ -1,6 +1,7 @@
 """Compose editable clothed-doll designs from independently checked components."""
 from __future__ import annotations
 
+import itertools
 import math
 
 from app.models.crochet_params import _ideal_sphere_rounds
@@ -52,6 +53,7 @@ class _PlanBuilder:
         self.gauge = Gauge(design.stitches_per_10cm, design.rows_per_10cm)
         self.components: list[Component] = []
         self.joins: list[Join] = []
+        self.eye_round = 0
 
     def add(self, part: Component, target: str | None = None, placement: str = "") -> Component:
         self.components.append(part)
@@ -66,18 +68,60 @@ class _PlanBuilder:
         if neck >= torso:
             raise ValueError("当前密度下颈部与身体无法分出不同围度，请调整尺寸或密度")
         body_height = d.height_cm - d.head_diameter_cm - d.leg_length_cm
-        body = RoundBuilder(g)
-        body.step(torso, "下身")
-        body.hold(max(2, round(body_height / g.row_h_cm * 0.2)), "下身")
-        body.step(max(neck + 2, round(torso * 0.8)), "腰部")
-        body.hold(2, "腰部")
-        body.step(torso, "胸肩")
-        body.hold(max(2, round(body_height / g.row_h_cm * 0.3)), "胸肩")
-        body.step(neck, "肩部向颈部收窄")
-        body.hold(max(2, round(1.0 / g.row_h_cm)), "独立颈段")
+        target_rounds = round(body_height / g.row_h_cm)
+
+        def shaped(lower: int, upper: int) -> RoundBuilder:
+            builder = RoundBuilder(g)
+            builder.step(torso, "下身")
+            builder.hold(lower, "下身")
+            builder.step(max(neck + 2, round(torso * 0.8)), "腰部")
+            builder.hold(2, "腰部")
+            builder.step(torso, "胸肩")
+            builder.hold(upper, "胸肩")
+            builder.step(neck, "肩部向颈部收窄")
+            builder.hold(max(2, round(1.0 / g.row_h_cm)), "独立颈段")
+            return builder
+
+        def heights(builder: RoundBuilder) -> tuple[float, float]:
+            """Two estimates of the finished height, from the input gauge.
+
+            High: every round adds one row height. Low: a round adds only the
+            axial part of its row height, so the base disc and the shoulder
+            shelf add almost nothing. A stuffed body lies between the two.
+            """
+            counts = [s.stitches for s in builder.steps]
+            low = sum(
+                math.sqrt(max(0.0, g.row_h_cm ** 2 - ((b - a) * g.stitch_w_cm / (2 * math.pi)) ** 2))
+                for a, b in itertools.pairwise(counts))
+            return len(counts) * g.row_h_cm, low
+
+        lower, upper = max(2, round(target_rounds * 0.2)), max(2, round(target_rounds * 0.3))
+        body = shaped(lower, upper)
+        # The shaping, waist and neck rounds do not grow with the target height,
+        # so two fixed shares of it left larger bodies short. Plain rounds add one
+        # row height to both estimates: add or remove them until the midpoint of
+        # the two estimates meets the target, keeping two plain rounds per section.
+        high, low = heights(body)
+        change = round((body_height - (high + low) / 2) / g.row_h_cm)
+        change = max(change, 4 - lower - upper)
+        if change:
+            lower_share = round(change * 0.4)
+            lower, upper = lower + lower_share, upper + change - lower_share
+            if lower < 2:
+                lower, upper = 2, upper + lower - 2
+            if upper < 2:
+                lower, upper = lower + upper - 2, 2
+            body = shaped(lower, upper)
+            high, low = heights(body)
         self.add(circular("body", "身体与颈段", "下身—腰—胸肩—颈部", body, color="肤色",
                           finish="在颈口仍能操作时分次填棉；颈口留开口和长线头，连接到头底",
-                          fitting=["先试穿所有衣物；记录腰围、胸围、颈围以及身体实际高度"]))
+                          fitting=["先试穿所有衣物；记录腰围、胸围、颈围以及身体实际高度",
+                                   f"身体与颈段的目标高度是 {body_height:.1f} cm，共 {len(body.steps)} 圈。"
+                                   f"按输入密度有两种估算：每一圈都按行高计，约 {high:.1f} cm；"
+                                   f"起底、腰部和收肩的加减针圈只计其竖直部分，约 {low:.1f} cm。"
+                                   "填棉后的实际高度预计在两者之间，圈数按两者的中间值对齐目标。"
+                                   "两个数都不是实测：先钩好身体、填棉后量实际高度，"
+                                   "偏矮或偏高就在下身或胸肩增减平钩圈，定下来再做衣物"]))
         raw = _ideal_sphere_rounds(d.head_diameter_cm, g, egg=True)
         head = RoundBuilder(g, raw[0]["stitches"])
         for row in raw[1:]:
@@ -85,6 +129,7 @@ class _PlanBuilder:
         peak = max(s.stitches for s in head.steps)
         first_peak = next(i + 1 for i, s in enumerate(head.steps) if s.stitches == peak)
         eye = min(len(head.steps) - 1, first_peak + 1)
+        self.eye_round = eye
         self.add(circular("head", "头部", "独立头部", head, color="肤色",
                           finish=f"第 1 圈为头顶，末圈侧为头底；第 {eye} 圈为眼位候选。"
                                  "安装安全眼并扣好内侧垫片后再分次填棉；末圈穿线收口，留线连接颈部",
@@ -104,10 +149,22 @@ class _PlanBuilder:
     def hair_and_hat(self, head_peak: int) -> None:
         d, g = self.design, self.gauge
         cap_rim = head_peak + 2
-        self.add(open_cap("hair_cap", "发帽底座", cap_rim,
-                          max(2, round(d.head_diameter_cm * 0.3 / g.row_h_cm)), g,
-                          color="发色", role="发帽"), "head",
-                 "先对齐头顶；发帽边缘放在眼位上方，确认后缝到头部")
+        cap = open_cap("hair_cap", "发帽底座", cap_rim,
+                       max(2, round(d.head_diameter_cm * 0.3 / g.row_h_cm)), g,
+                       color="发色", role="发帽")
+        # Say where the rim is expected to fall from the generated counts, rather
+        # than promising a position. The cap and the head have different profiles,
+        # so round numbers are only a rough guide and a pinned fitting decides.
+        cap_rounds = len(cap.steps)
+        if cap_rounds >= self.eye_round:
+            placement = (f"发帽共 {cap_rounds} 圈，眼位候选在头部第 {self.eye_round} 圈：对齐头顶平戴时，"
+                         "帽缘预计落在眼位同一高度或更低。请把发帽向后倾斜，使前缘高于眼位、后缘落在后脑下部，"
+                         "用珠针固定，对照已装好的眼睛确认；前缘仍遮眼时，拆掉发帽末尾的平钩圈后再缝。"
+                         "圈号只是按针数的估计，两个部件轮廓不同，须以试戴为准")
+        else:
+            placement = (f"发帽共 {cap_rounds} 圈，眼位候选在头部第 {self.eye_round} 圈；先对齐头顶，"
+                         "用珠针固定，对照已装好的眼睛确认帽缘在眼位上方后再缝到头部")
+        self.add(cap, "head", placement)
         self.add(strand("hair", "长发束", d.hair_chain_count, d.hair_strands,
                         curled=d.hair == "curls", color="发色"), "hair_cap",
                  "先做一根校对垂长，余下沿两侧和后部均匀分配；前额留出脸部空间")

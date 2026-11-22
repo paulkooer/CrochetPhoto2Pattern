@@ -13,6 +13,47 @@ from app.models.gauge import Gauge
 from app.ui.result_renderer import md_safe
 from app.utils.dressed_doll_export import export_doll_graph, export_doll_markdown, export_doll_pdf
 
+_SCALED_INPUTS = {
+    "head_diameter_cm": ("head", "原型头径"), "palm_diameter_cm": ("palm", "手掌直径"),
+    "wrist_diameter_cm": ("wrist", "手腕直径"), "foot_length_cm": ("foot_length", "鞋底长度"),
+    "foot_width_cm": ("foot_width", "鞋底宽度"), "bodice_length_cm": ("bodice", "上衣片长度"),
+}
+
+
+def _back_to_proportion(keys: dict[str, str], proportional: dict[str, float], offered_key: str) -> None:
+    """Button callback: put every size back on the proportion for the height now shown."""
+    for field, key in keys.items():
+        st.session_state[key] = proportional[field]
+    st.session_state[offered_key] = dict(proportional)
+
+
+def _follow_height(profile: str, base: DollDesign) -> dict[str, str]:
+    """Keep the proportional inputs in step with the total height until they are edited.
+
+    Each input holds its value in session state. A value still equal to the
+    proportion last offered follows a new height or gauge; a value the user
+    changed stays as typed and is listed, with a button to return to proportion.
+    Must run before the inputs are created. Returns field name -> widget key.
+    """
+    keys = {field: f"doll_design_{short}_{profile}" for field, (short, _label) in _SCALED_INPUTS.items()}
+    offered_key = f"doll_design_offered_{profile}"
+    offered = st.session_state.get(offered_key, {})
+    proportional = {field: float(getattr(base, field)) for field in keys}
+    custom = [field for field, key in keys.items()
+              if key in st.session_state and field in offered and st.session_state[key] != offered[field]]
+    st.caption("下列尺寸按目标总高的比例给出，并随总高变化；手改过的尺寸保持所填数值，不再跟随。")
+    if custom:
+        st.caption("已手改、不随总高变化：" + "、".join(_SCALED_INPUTS[field][1] for field in custom) + "。")
+        # The callback runs before the next redraw, so that redraw already shows
+        # the proportional values and no longer lists anything as hand-edited.
+        st.button("恢复为按总高比例的尺寸", key=f"doll_design_reset_{profile}",
+                  on_click=_back_to_proportion, args=(keys, proportional, offered_key))
+    for field, key in keys.items():
+        if field not in custom:
+            st.session_state[key] = proportional[field]
+    st.session_state[offered_key] = proportional
+    return keys
+
 
 def _design_inputs() -> DollDesign | None:
     source = st.radio("原型方案来源", ["从起始方案调整", "载入设计 JSON"], horizontal=True,
@@ -42,25 +83,22 @@ def _design_inputs() -> DollDesign | None:
     base = starter_design(profile, height_cm=height, gauge=Gauge(stitches, rows))
     st.caption("这组密度单独用于结构原型，是输入假设；先分别实测片钩、圈钩与肋纹小样。")
     with st.expander("调整关键轮廓与构造"):
+        keys = _follow_height(profile, base)
         left, right = st.columns(2)
         with left:
-            head = st.number_input("原型头径（cm）", 2.0, 20.0, base.head_diameter_cm, 0.1,
-                                   key=f"doll_design_head_{profile}")
-            palm = st.number_input("手掌目标直径（cm）", 0.4, 6.0, base.palm_diameter_cm, 0.1,
-                                   key=f"doll_design_palm_{profile}")
-            wrist = st.number_input("手腕目标直径（cm）", 0.3, 4.0, base.wrist_diameter_cm, 0.1,
-                                    key=f"doll_design_wrist_{profile}")
+            head = st.number_input("原型头径（cm）", 2.0, 20.0, step=0.1, key=keys["head_diameter_cm"])
+            palm = st.number_input("手掌目标直径（cm）", 0.4, 6.0, step=0.1, key=keys["palm_diameter_cm"])
+            wrist = st.number_input("手腕目标直径（cm）", 0.3, 4.0, step=0.1, key=keys["wrist_diameter_cm"])
             hair = st.selectbox("发束构造", ["curls", "straight"],
                                 index=int(base.hair == "straight"),
                                 format_func=lambda x: "卷发回钩" if x == "curls" else "直发回钩",
                                 key=f"doll_design_hair_{profile}")
         with right:
-            foot_length = st.number_input("鞋底目标长度（cm）", 1.0, 10.0, base.foot_length_cm, 0.1,
-                                          key=f"doll_design_foot_length_{profile}")
-            foot_width = st.number_input("鞋底目标宽度（cm）", 0.5, 8.0, base.foot_width_cm, 0.1,
-                                         key=f"doll_design_foot_width_{profile}")
-            bodice = st.number_input("上衣片目标长度（cm）", 1.0, 30.0, base.bodice_length_cm, 0.1,
-                                     key=f"doll_design_bodice_{profile}")
+            foot_length = st.number_input("鞋底目标长度（cm）", 1.0, 10.0, step=0.1,
+                                          key=keys["foot_length_cm"])
+            foot_width = st.number_input("鞋底目标宽度（cm）", 0.5, 8.0, step=0.1, key=keys["foot_width_cm"])
+            bodice = st.number_input("上衣片目标长度（cm）", 1.0, 30.0, step=0.1,
+                                     key=keys["bodice_length_cm"])
             hat = st.selectbox("帽子构造", ["wide_brim", "folded_band"],
                                index=int(base.hat == "folded_band"),
                                format_func=lambda x: "帽身＋宽帽檐" if x == "wide_brim" else "帽身＋片钩翻边",

@@ -30,6 +30,39 @@ def expression_for_change(before: int, after: int) -> str:
     return ",".join(groups)
 
 
+def staggered_increase(before: int, after: int, turn: int) -> str:
+    """Even increases whose starting point moves from round to round.
+
+    For pieces meant to widen all the way round (skirts). `expression_for_change`
+    always ends a repeat with the increase, so a round with one increase puts it
+    on the last stitch every time and the fabric widens in a single column. Here
+    the same repeats start `offset` stitches later, and the offset walks round
+    the piece by the golden-ratio step so successive rounds do not line up.
+    Stitch use per round is unchanged. Shaped parts (toe, heel) must not use it.
+    """
+    change = after - before
+    plain = before - change
+    if change < 1:
+        return expression_for_change(before, after)
+    if plain < 0:
+        raise ValueError("该过渡需要额外桥接圈")
+    base, extra = divmod(plain, change)
+    widths = [base] * (change - extra) + [base + 1] * extra
+    offset = int(widths[0] * ((turn * 0.6180339887) % 1))
+    widths[0] -= offset
+    groups: list[tuple[str, int]] = []
+    for width in widths:
+        body = f"{width}X,V" if width else "V"
+        if groups and groups[-1][0] == body:
+            groups[-1] = (body, groups[-1][1] + 1)
+        else:
+            groups.append((body, 1))
+    parts = [f"({body})×{repeats}" if repeats > 1 else body for body, repeats in groups]
+    if offset:
+        parts.append(f"{offset}X")
+    return ",".join(parts)
+
+
 class RoundBuilder:
     def __init__(self, gauge: Gauge, first: int = 6):
         self.gauge = gauge
@@ -40,7 +73,7 @@ class RoundBuilder:
         return self.steps[-1].stitches
 
     def step(self, target: int, section: str, *, note: str = "",
-             loops: Literal["both", "front", "back"] = "both") -> None:
+             loops: Literal["both", "front", "back"] = "both", stagger: bool = False) -> None:
         if not 1 <= target <= 1000:
             raise ValueError("部件围度超出可生成范围")
         while True:
@@ -53,7 +86,8 @@ class RoundBuilder:
                 raise ValueError("针目不足以继续加减针")
             self.steps.append(WorkStep(
                 number=len(self.steps) + 1, section=section,
-                expression=expression_for_change(before, after), stitches=after,
+                expression=(staggered_increase(before, after, len(self.steps)) if stagger
+                            else expression_for_change(before, after)), stitches=after,
                 loops=loops, note=note if after == target else "过渡圈，完成后继续本段",
             ))
             if after == target:
@@ -199,8 +233,10 @@ def skirt(id: str, name: str, waist: int, hem: int, rows: int, gauge: Gauge,
     builder = RoundBuilder(gauge, first=waist)
     for i in range(1, rows):
         target = round(waist + (hem - waist) * i / max(1, rows - 1))
-        builder.step(target, "裙身展开")
+        builder.step(target, "裙身展开", stagger=True)
     return circular(id, name, "独立开放裙层", builder, color=color,
                     foundation=Foundation(kind="chain_ring", chains=waist),
                     finish="上下均留开口，不填棉；先套到未装配身体，再决定腰位固定方式",
-                    fitting=["先做腰部起针环试套身体，锁针起环须避免过紧；未验证穿着余量"])
+                    fitting=["先做腰部起针环试套身体，锁针起环须避免过紧；未验证穿着余量",
+                             "各圈加针的位置逐圈错开，使裙摆沿一周放开；每圈第 1 针挂记号扣，"
+                             "照每圈写出的顺序钩，不要把加针都挪到圈尾。展开是否均匀须看样片"])
