@@ -1,5 +1,6 @@
 """Readable rows retain actual anchors, attachments, control order and uncertainty."""
 import json
+import re
 
 import pytest
 
@@ -14,6 +15,7 @@ from app.models.working_path import (
     armhole_path_demo,
     compile_working_path,
 )
+from app.utils.working_path_export import CHECK_SCOPE
 from app.utils.working_recipe_export import export_working_recipe_pdf, recipe_rows, route_formula
 from app.working_paths import MAX_PLAN_BYTES, main, read_path
 
@@ -82,6 +84,7 @@ def test_pdf_retains_review_notes_real_stitch_counts_and_does_not_invent_missing
     text = " ".join(captured)
     assert "尺寸尚未实测" in text and "未实钩" in text and "未填" in text
     assert "里山" in text and "行" in text and "工作针位包含锁针桥" in text
+    assert CHECK_SCOPE in re.sub(r"</?font[^>]*>", "", text)
 
 
 def test_cli_reads_manual_paths_without_replacing_them_with_the_demo(tmp_path):

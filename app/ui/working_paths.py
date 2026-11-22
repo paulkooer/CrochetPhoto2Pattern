@@ -19,7 +19,7 @@ from app.models.working_path import (
     compile_working_path,
 )
 from app.ui.result_renderer import md_safe
-from app.utils.working_path_export import export_working_path_markdown, step_text
+from app.utils.working_path_export import CHECK_SCOPE, export_working_path_markdown, step_text
 from app.utils.working_recipe_export import export_working_recipe_pdf, route_formula
 from app.working_paths import MAX_PLAN_BYTES, read_path
 
@@ -81,6 +81,7 @@ def render_working_path_reader() -> None:
         render_yarn_steps(plan)
         st.caption("通过的是已声明针位与控制步骤的检查；成品边及孔边保留也按声明计账，"
                    "不代表这些位置实际钩过。原文疑点、织物方向和实际合身仍须核对。")
+        st.caption(CHECK_SCOPE)
         records = []
         events_by_route: dict[str, list[StitchEvent]] = {}
         for event in result.events:
