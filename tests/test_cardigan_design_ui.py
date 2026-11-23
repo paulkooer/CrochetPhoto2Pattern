@@ -2,6 +2,8 @@
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from app.utils.working_path_export import CHECK_SCOPE
+
 UI = "from app.ui.cardigan_design import render_cardigan_designer\nrender_cardigan_designer()"
 
 
@@ -24,6 +26,7 @@ def test_example_is_generated_and_changed_dimensions_disable_old_downloads():
     assert stored["report"]["stage"] == "integrated_open_cuffs"
     assert stored["plan"]["input_origin"] == "parametric_design"
     assert any(node.label == "查看接线、暂停与收尾" for node in app.expander)
+    assert CHECK_SCOPE in [node.value for node in app.caption]
     app.number_input(key="cardigan_neck").set_value(9.0).run()
     assert all(node.proto.disabled for node in app.get("download_button"))
     assert app.session_state["cardigan_design_result"] == stored
@@ -54,6 +57,7 @@ def test_selecting_own_swatch_does_not_relabel_the_example_numbers_as_measuremen
     assert not app.exception
     stored = app.session_state["cardigan_design_result"]
     assert stored["report"]["stage"] == "yoke_blocked" and stored["plan"] is None
+    assert CHECK_SCOPE not in [node.value for node in app.caption]
 
 
 def test_changed_generator_version_keeps_old_view_but_disables_its_downloads(monkeypatch):

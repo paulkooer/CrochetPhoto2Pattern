@@ -19,7 +19,7 @@ from app.models.working_path import (
     WorkingPath,
     compile_working_path,
 )
-from app.utils.working_path_export import scope_note, step_text
+from app.utils.working_path_export import CHECK_SCOPE, scope_note, step_text
 from app.utils.working_path_format import route_controls, route_formula
 
 
@@ -206,7 +206,8 @@ def export_working_recipe_pdf(plan: WorkingPath) -> bytes:
                 story.append(KeepTogether([p(step.label, heading), p(text)]))
     story += [p("本稿检查范围", heading),
               p("已检查声明针位的建立、保留、使用与去向，以及记录的行号、接合和翻面控制。"
-                "未实钩、未试穿，也未作织物形变或最终外观模拟。候选修改不等于原作者意图已确认。")]
+                "未实钩、未试穿，也未作织物形变或最终外观模拟。候选修改不等于原作者意图已确认。"),
+              p(CHECK_SCOPE)]
     buffer = io.BytesIO()
 
     def page(canvas, doc):

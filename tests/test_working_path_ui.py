@@ -5,6 +5,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from app.models.working_path import armhole_path_demo
+from app.utils.working_path_export import CHECK_SCOPE
 
 UI = """
 from app.ui.working_paths import render_working_path_reader
@@ -39,6 +40,7 @@ def test_recipe_loads_and_source_change_disables_old_downloads(monkeypatch):
     assert not app.exception
     original = app.session_state["working_path_plan"]
     assert original["title"].startswith("袖窿")
+    assert CHECK_SCOPE in [node.value for node in app.caption]
     downloads = {node.key: node for node in app.get("download_button")}
     assert not downloads["working_path_download_md"].proto.disabled
     holder["data"] = b'{"schema_version":"wrong"}'

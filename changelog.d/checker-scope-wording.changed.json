@@ -1,0 +1,8 @@
+{
+  "zh": [
+    "工序阅读页、开衫设计页和工序的 Markdown、PDF 导出写明：检查通过只表示已建模的针位、方向和控制关系没有矛盾，不表示整件织物的几何已经验证，并列出目前仍会通过的未建模写法。检查规则没有变化。"
+  ],
+  "en": [
+    "The working-path reader, the cardigan designer and the Markdown and PDF exports of a path now state that a passed check covers only the modelled stitch positions, directions and control relations, not the geometry of the whole fabric, and list unmodelled shapes that still pass. The checks themselves are unchanged."
+  ]
+}

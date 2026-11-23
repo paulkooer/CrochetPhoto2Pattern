@@ -4,7 +4,11 @@ import json
 import pytest
 
 from app.models.working_path import armhole_path_demo
-from app.utils.working_path_export import export_working_path_markdown, export_working_path_pdf
+from app.utils.working_path_export import (
+    CHECK_SCOPE,
+    export_working_path_markdown,
+    export_working_path_pdf,
+)
 from app.working_paths import main, write_demo
 
 
@@ -16,6 +20,7 @@ def test_explanation_distinguishes_held_sites_chain_faces_and_unverified_physica
     assert "left_sleeve`：9" in text
     assert "不能当作" in text and "闭合接头" in text and "跨圈外钩" in text
     assert "两个工作位不代表锁了两针" in text
+    assert CHECK_SCOPE in text and "已建模" in CHECK_SCOPE and "几何" in CHECK_SCOPE
 
 
 def test_optional_pdf_contains_explanation_without_claiming_a_finished_garment(monkeypatch):
@@ -36,6 +41,7 @@ def test_optional_pdf_contains_explanation_without_claiming_a_finished_garment(m
     text = " ".join(captured)
     assert "工序校验演示" in text and "实体试钩" in text and "不是完整衣物图解" in text
     assert "反面工作位" in text and "body_edge" in text
+    assert CHECK_SCOPE in text
 
 
 def test_cli_outputs_round_trip_and_keep_existing_evidence(tmp_path, capsys):

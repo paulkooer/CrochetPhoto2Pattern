@@ -12,6 +12,7 @@ from app.models.raglan_yoke import YokeMethod, YokeTarget
 from app.models.working_path import WorkingPath
 from app.ui.result_renderer import md_safe
 from app.ui.working_paths import render_yarn_steps
+from app.utils.working_path_export import CHECK_SCOPE
 from app.utils.working_recipe_export import export_working_recipe_pdf
 
 
@@ -133,6 +134,7 @@ def render_cardigan_designer() -> None:
         if stored["plan"] is None:
             return
         plan = WorkingPath.model_validate(stored["plan"])
+        st.caption(CHECK_SCOPE)
         render_yarn_steps(plan)
         st.download_button("下载开衫工序 JSON", plan.model_dump_json(indent=2), "cardigan-path.json",
                            "application/json", key="cardigan_download_plan", disabled=stale)
